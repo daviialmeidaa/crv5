@@ -1,0 +1,24 @@
+node_modules/
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Optional IDE Profiles
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

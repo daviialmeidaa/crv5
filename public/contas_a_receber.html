@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contas a Receber | Nexomed</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        nexo: {
+                            50:  '#e0f7fa',
+                            100: '#b2ebf2',
+                            200: '#80deea',
+                            300: '#4dd0e1',
+                            400: '#26c6da',
+                            500: '#0097A7',
+                            600: '#00838F',
+                            700: '#006064',
+                            800: '#004D40',
+                            900: '#003330',
+                        },
+                        steel: {
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                            800: '#1f2937',
+                            900: '#111827',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body.loading-auth { visibility: hidden; }
+        
+        /* Layout Fixos (Sidebar) */
+        aside { transition: width 0.3s ease; }
+        body.sidebar-collapsed aside { width: 5rem !important; } /* w-20 */
+        body.sidebar-collapsed .sidebar-text { display: none; }
+        body.sidebar-collapsed .logo-full { display: none; }
+        body.sidebar-collapsed .logo-mini { display: block; }
+        
+        .logo-mini { display: none; }
+        
+        /* Estilos específicos para a tabela grande */
+        .table-container {
+            max-height: calc(100vh - 210px);
+        }
+        
+        /* Custom Scrollbar para a tabela */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.02);
+            border-radius: 8px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+        
+        /* Fixar colunas importantes na esquerda para rolagem horizontal suave */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
+    </style>
+    <!-- Aplicar tema antes de renderizar (evita flash) -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</head>
+<body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
+        <div class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0">
+            <img src="/assets/images/logo.png" alt="Nexomed" class="h-7 logo-full">
+            <span class="text-white font-bold text-xl logo-mini">NX</span>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
+            <a href="/dashboard.html" class="flex items-center gap-3 px-4 py-2.5 text-steel-400 hover:bg-steel-800 hover:text-white rounded-lg text-sm font-medium transition-colors" title="Dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                <span class="sidebar-text truncate">Dashboard</span>
+            </a>
+            <a href="/contas_a_receber" class="flex items-center gap-3 px-4 py-2.5 bg-nexo-600/90 text-white rounded-lg text-sm font-medium transition-colors" title="Contas a Receber">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                </svg>
+                <span class="sidebar-text truncate">Contas a Receber</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <!-- Header -->
+        <header class="h-14 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-10 transition-colors duration-200 shrink-0">
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggleBtn" class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Contas a Receber</h2>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- Dark Mode Toggle -->
+                <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
+                    <svg id="sunIcon" class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                    <svg id="moonIcon" class="h-5 w-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                </button>
+
+                <!-- Profile Dropdown -->
+                <div class="relative">
+                    <button id="profileDropdownBtn" class="flex items-center gap-2 focus:outline-none">
+                        <div class="w-8 h-8 rounded-full bg-nexo-600 flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm">U</div>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-steel-700 mb-1">
+                            <p class="text-sm font-medium text-steel-800 dark:text-gray-100 truncate">Usuário Logado</p>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 truncate">usuario@nexomed.com</p>
+                        </div>
+                        <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver Perfil</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Cadastrar Usuário</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Ver Usuários</a>
+                        <div class="border-t border-gray-100 dark:border-steel-700 mt-1"></div>
+                        <a href="#" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-steel-700 transition-colors font-medium">Sair</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 p-6 overflow-hidden flex flex-col">
+            
+            <!-- Ferramentas e Filtros -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <div class="flex items-center gap-2">
+                    <input type="text" placeholder="Buscar por cliente, nota ou empresa..." class="px-4 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-64 md:w-80 transition-all shadow-sm">
+                    <button class="px-4 py-2 bg-steel-100 dark:bg-steel-700 text-steel-700 dark:text-gray-200 border border-gray-200 dark:border-steel-600 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button class="px-4 py-2 flex items-center gap-2 bg-white dark:bg-steel-800 text-steel-700 dark:text-gray-200 border border-gray-200 dark:border-steel-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Exportar
+                    </button>
+                    <button class="px-4 py-2 bg-nexo-600 text-white rounded-lg text-sm font-medium hover:bg-nexo-700 transition-colors shadow-sm">
+                        + Novo Registro
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela Super Larga -->
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative">
+                
+                <!-- Container com overflow -->
+                <div class="table-container custom-scrollbar overflow-auto flex-1">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead id="contasTableHeader" class="sticky top-0 z-20 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)]">
+                            <!-- Headers will be generated by JS -->
+                        </thead>
+                        <tbody id="contasTableBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm text-steel-700 dark:text-gray-300">
+                            <tr><td colspan="22" class="p-6 text-center text-steel-400">Iniciando o Data Grid...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginação -->
+                <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-white dark:bg-steel-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-steel-500 dark:text-steel-400">Registros por página:</span>
+                        <select id="itemsPerPage" class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-700 dark:text-gray-200 text-xs rounded px-2 py-1 outline-none focus:ring-1 focus:ring-nexo-500 transition-colors">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span id="paginationInfo" class="text-xs text-steel-500 dark:text-steel-400 ml-2">Mostrando 0 de 0 registros</span>
+                    </div>
+                    <div class="flex items-center gap-1" id="paginationControls">
+                        <!-- Botões de paginação injetados via JS -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 mt-auto">
+            <p class="text-xs text-steel-400">
+                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
+            </p>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('footerYear').textContent = new Date().getFullYear();
+        
+        // Simulação de carregamento do auth (para manter o padrão do template)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.remove('loading-auth');
+        });
+    </script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/contas_a_receber.js"></script>
+</body>
+</html>
