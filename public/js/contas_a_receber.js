@@ -349,9 +349,19 @@ const ContasGrid = (function () {
             }
         }
 
+        // Estado de expansão do modal (árvore de datas)
+        let expandedState = {};
+
         function renderCheckboxes(searchTerm = '') {
             listContainer.innerHTML = '';
-            const filteredVals = uniqueValues.filter(v => String(v).toLowerCase().includes(searchTerm.toLowerCase()));
+            
+            const filteredVals = uniqueValues.filter(v => {
+                if (!searchTerm) return true;
+                let displayVal = v;
+                if (col.type === 'currency') displayVal = formatCurrency(v);
+                if (col.type === 'date') displayVal = formatDate(v);
+                return String(displayVal).toLowerCase().includes(searchTerm.toLowerCase());
+            });
 
             if (filteredVals.length === 0) {
                 listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
@@ -376,36 +386,183 @@ const ContasGrid = (function () {
             };
             listContainer.appendChild(selectAllDiv);
 
-            filteredVals.forEach(val => {
-                const isChecked = tempSelected.has(val);
-
-                const div = document.createElement('div');
-                div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-
-                let displayVal = val;
-                if (col.type === 'currency') displayVal = formatCurrency(val);
-                if (col.type === 'date') displayVal = formatDate(val);
-
-                div.innerHTML = `
-                    <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                    <span class="truncate text-steel-600 dark:text-gray-400" title="${displayVal}">${displayVal}</span>
-                `;
-
-                const checkbox = div.querySelector('input');
-                div.onclick = (e) => {
-                    if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
-
-                    if (checkbox.checked) {
-                        tempSelected.add(val);
-                    } else {
-                        tempSelected.delete(val);
+            if (col.type === 'date' && !searchTerm) {
+                // Renderização hierárquica (Ano > Mês > Dia)
+                const tree = {};
+                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                
+                filteredVals.forEach(val => {
+                    if (val === '-' || !val) {
+                        if (!tree['-']) tree['-'] = {};
+                        if (!tree['-']['-']) tree['-']['-'] = [];
+                        tree['-']['-'].push(val);
+                        return;
                     }
-                    // Atualiza o "Select All" se precisar
-                    renderCheckboxes(searchTerm);
-                };
+                    const [y, m, d] = val.split('-');
+                    if (!y || !m || !d) {
+                        if (!tree['Outros']) tree['Outros'] = {};
+                        if (!tree['Outros']['-']) tree['Outros']['-'] = [];
+                        tree['Outros']['-'].push(val);
+                        return;
+                    }
+                    if (!tree[y]) tree[y] = {};
+                    if (!tree[y][m]) tree[y][m] = [];
+                    tree[y][m].push(val);
+                });
 
-                listContainer.appendChild(div);
-            });
+                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
+                    const yearDiv = document.createElement('div');
+                    yearDiv.className = 'pl-1';
+                    
+                    let yearAllChecked = true;
+                    let yearAnyChecked = false;
+                    const yearVals = [];
+                    Object.keys(tree[year]).forEach(m => tree[year][m].forEach(v => {
+                        yearVals.push(v);
+                        if (tempSelected.has(v)) yearAnyChecked = true;
+                        else yearAllChecked = false;
+                    }));
+
+                    const yHeader = document.createElement('div');
+                    yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
+                    yHeader.innerHTML = `
+                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                        <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
+                        <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
+                    `;
+                    
+                    const yCb = yHeader.querySelector('input');
+                    yCb.indeterminate = yearAnyChecked && !yearAllChecked;
+                    
+                    const mContainer = document.createElement('div');
+                    mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
+                    
+                    yHeader.onclick = (e) => {
+                        if (e.target === yCb) return;
+                        const isHidden = mContainer.classList.contains('hidden');
+                        expandedState[year] = isHidden;
+                        mContainer.classList.toggle('hidden');
+                        yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
+                    };
+                    
+                    if (expandedState[year]) {
+                        mContainer.classList.remove('hidden');
+                        yHeader.querySelector('span').textContent = '-';
+                    }
+
+                    yCb.onclick = (e) => {
+                        e.stopPropagation();
+                        const isChecked = e.target.checked;
+                        yearVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
+                        renderCheckboxes(searchTerm);
+                    };
+
+                    Object.keys(tree[year]).sort((a,b) => b.localeCompare(a)).forEach(month => {
+                        const monthVals = tree[year][month];
+                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
+                        
+                        let monthAllChecked = true;
+                        let monthAnyChecked = false;
+                        monthVals.forEach(v => {
+                            if (tempSelected.has(v)) monthAnyChecked = true;
+                            else monthAllChecked = false;
+                        });
+
+                        const mHeader = document.createElement('div');
+                        mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+                        mHeader.innerHTML = `
+                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                            <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
+                            <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
+                        `;
+
+                        const mCb = mHeader.querySelector('input');
+                        mCb.indeterminate = monthAnyChecked && !monthAllChecked;
+
+                        const dContainer = document.createElement('div');
+                        dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
+                        
+                        const monthKey = `${year}-${month}`;
+                        mHeader.onclick = (e) => {
+                            if (e.target === mCb) return;
+                            const isHidden = dContainer.classList.contains('hidden');
+                            expandedState[monthKey] = isHidden;
+                            dContainer.classList.toggle('hidden');
+                            mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
+                        };
+                        
+                        if (expandedState[monthKey]) {
+                            dContainer.classList.remove('hidden');
+                            mHeader.querySelector('span').textContent = '-';
+                        }
+
+                        mCb.onclick = (e) => {
+                            e.stopPropagation();
+                            const isChecked = e.target.checked;
+                            monthVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
+                            renderCheckboxes(searchTerm);
+                        };
+
+                        monthVals.forEach(val => {
+                            const isChecked = tempSelected.has(val);
+                            const dHeader = document.createElement('div');
+                            dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+                            let displayVal = formatDate(val);
+                            dHeader.innerHTML = `
+                                <div class="w-3"></div>
+                                <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                                <span class="truncate text-steel-500 dark:text-gray-500 text-[11px]">${displayVal}</span>
+                            `;
+                            const dCb = dHeader.querySelector('input');
+                            dHeader.onclick = (e) => {
+                                if (e.target !== dCb) dCb.checked = !dCb.checked;
+                                if (dCb.checked) tempSelected.add(val);
+                                else tempSelected.delete(val);
+                                renderCheckboxes(searchTerm);
+                            };
+                            dContainer.appendChild(dHeader);
+                        });
+
+                        mContainer.appendChild(mHeader);
+                        mContainer.appendChild(dContainer);
+                    });
+
+                    yearDiv.appendChild(yHeader);
+                    yearDiv.appendChild(mContainer);
+                    listContainer.appendChild(yearDiv);
+                });
+            } else {
+                // Flat rendering (lista simples) para outros tipos de dados ou durante pesquisa
+                filteredVals.forEach(val => {
+                    const isChecked = tempSelected.has(val);
+
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+
+                    let displayVal = val;
+                    if (col.type === 'currency') displayVal = formatCurrency(val);
+                    if (col.type === 'date') displayVal = formatDate(val);
+
+                    div.innerHTML = `
+                        <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                        <span class="truncate text-steel-600 dark:text-gray-400" title="${displayVal}">${displayVal}</span>
+                    `;
+
+                    const checkbox = div.querySelector('input');
+                    div.onclick = (e) => {
+                        if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
+
+                        if (checkbox.checked) {
+                            tempSelected.add(val);
+                        } else {
+                            tempSelected.delete(val);
+                        }
+                        renderCheckboxes(searchTerm);
+                    };
+
+                    listContainer.appendChild(div);
+                });
+            }
         }
 
         renderCheckboxes();
