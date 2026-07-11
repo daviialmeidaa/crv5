@@ -183,7 +183,13 @@
                 </div>
                 
                 <div class="flex items-center gap-3">
-                    <button class="px-4 py-2 flex items-center gap-2 bg-white dark:bg-steel-800 text-steel-700 dark:text-gray-200 border border-gray-200 dark:border-steel-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors shadow-sm">
+                    <button id="btnClearAllFilters" class="hidden px-4 py-2 flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Remover Filtros
+                    </button>
+                    <button id="btnExport" class="px-4 py-2 flex items-center gap-2 bg-white dark:bg-steel-800 text-steel-700 dark:text-gray-200 border border-gray-200 dark:border-steel-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
@@ -325,6 +331,7 @@
             document.body.classList.remove('loading-auth');
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/js/theme.js"></script>
     <script src="/js/layout.js"></script>
     <script src="/js/contas_a_receber.js"></script>

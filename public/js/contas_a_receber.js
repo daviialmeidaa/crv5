@@ -159,6 +159,23 @@ const ContasGrid = (function () {
         // Atualiza a tela
         renderTableBody();
         renderPagination();
+
+        // Controlar visibilidade do botão Remover Filtros
+        const btnClearAll = document.getElementById('btnClearAllFilters');
+        if (btnClearAll) {
+            let hasAnyFilter = false;
+            for (let key in state.filters) {
+                if (state.filters[key] && state.filters[key].size > 0 && !state.filters[key].has('__NONE__')) {
+                    hasAnyFilter = true;
+                    break;
+                }
+            }
+            if (hasAnyFilter) {
+                btnClearAll.classList.remove('hidden');
+            } else {
+                btnClearAll.classList.add('hidden');
+            }
+        }
     }
 
     // 5. Renderização (DOM)
@@ -623,6 +640,24 @@ const ContasGrid = (function () {
                 });
             }
 
+            // Botão de Exportar
+            const btnExport = document.getElementById('btnExport');
+            if (btnExport) {
+                btnExport.addEventListener('click', () => {
+                    ContasGrid.exportToExcel();
+                });
+            }
+
+            // Botão Remover Filtros
+            const btnClearAll = document.getElementById('btnClearAllFilters');
+            if (btnClearAll) {
+                btnClearAll.addEventListener('click', () => {
+                    state.filters = {};
+                    state.pagination.current = 1;
+                    processData();
+                });
+            }
+
             // Botão de Sincronização com Modal
             const btnSync = document.getElementById('btnSyncSupra');
             if (btnSync) {
@@ -799,7 +834,44 @@ const ContasGrid = (function () {
             state.pagination.current = page;
             processData();
         },
-        openFilter: openFilter
+        openFilter: openFilter,
+        exportToExcel: function () {
+            if (state.filteredData.length === 0) {
+                alert("Nenhum dado para exportar com os filtros atuais.");
+                return;
+            }
+
+            // Mapeia usando os labels corretos das colunas
+            const exportData = state.filteredData.map(row => {
+                const rowObj = {};
+                columns.forEach(col => {
+                    let val = row[col.key];
+                    
+                    // Formatações nativas para o Excel aceitar melhor os dados
+                    if (col.type === 'currency' && val !== '-' && val !== null) {
+                        val = parseFloat(val) || 0;
+                    } else if (col.type === 'date' && val !== '-' && val !== null) {
+                        const parts = val.split('-');
+                        if (parts.length === 3) {
+                            val = `${parts[2]}/${parts[1]}/${parts[0]}`; // Formato BR (DD/MM/YYYY)
+                        }
+                    }
+                    
+                    rowObj[col.label] = val;
+                });
+                return rowObj;
+            });
+
+            // Cria a planilha em memória usando a lib XLSX (SheetJS)
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Contas_a_Receber");
+
+            // Gera o arquivo
+            const today = new Date();
+            const dateStr = today.toISOString().split('T')[0];
+            XLSX.writeFile(workbook, `Contas_Receber_Export_${dateStr}.xlsx`);
+        }
     };
 
 })();
