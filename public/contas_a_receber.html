@@ -188,8 +188,11 @@
                         </svg>
                         Exportar
                     </button>
-                    <button class="px-4 py-2 bg-nexo-600 text-white rounded-lg text-sm font-medium hover:bg-nexo-700 transition-colors shadow-sm">
-                        + Novo Registro
+                    <button id="btnSyncSupra" class="px-4 py-2 flex items-center gap-2 bg-nexo-600 text-white rounded-lg text-sm font-medium hover:bg-nexo-700 transition-colors shadow-sm">
+                        <svg id="syncIcon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span id="syncText">Sincronizar Supra</span>
                     </button>
                 </div>
             </div>
@@ -215,9 +218,12 @@
                         <span class="text-xs text-steel-500 dark:text-steel-400">Registros por página:</span>
                         <select id="itemsPerPage" class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-700 dark:text-gray-200 text-xs rounded px-2 py-1 outline-none focus:ring-1 focus:ring-nexo-500 transition-colors">
                             <option value="10">10</option>
-                            <option value="25">25</option>
+                            <option value="25" selected>25</option>
                             <option value="50">50</option>
                             <option value="100">100</option>
+                            <option value="250">250</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
                         </select>
                         <span id="paginationInfo" class="text-xs text-steel-500 dark:text-steel-400 ml-2">Mostrando 0 de 0 registros</span>
                     </div>
@@ -236,6 +242,79 @@
             </p>
         </footer>
     </main>
+
+    <!-- Modal de Sincronização -->
+    <div id="syncModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-300" style="opacity:0;">
+        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden transform transition-all duration-300 scale-95" id="syncModalContent">
+            <!-- Header do Modal -->
+            <div class="px-6 pt-6 pb-4 border-b border-gray-100 dark:border-steel-700">
+                <div class="flex items-center gap-3">
+                    <div id="syncModalIcon" class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: linear-gradient(135deg, #0097A7, #00838F);">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </div>
+                    <div>
+                        <h3 id="syncModalTitle" class="text-lg font-semibold text-steel-800 dark:text-gray-100">Sincronizando com o Supra</h3>
+                        <p id="syncModalSubtitle" class="text-xs text-steel-500 dark:text-steel-400">Conectando ao servidor...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Body do Modal -->
+            <div class="px-6 py-5">
+                <!-- Estado: Loading -->
+                <div id="syncStateLoading" class="flex flex-col items-center gap-4">
+                    <div class="relative">
+                        <div class="w-16 h-16 border-4 border-gray-200 dark:border-steel-700 rounded-full"></div>
+                        <div class="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-nexo-500 rounded-full animate-spin"></div>
+                    </div>
+                    <div class="text-center">
+                        <p id="syncStepText" class="text-sm font-medium text-steel-700 dark:text-gray-300">Estabelecendo conexão...</p>
+                        <div class="flex items-center justify-center gap-1.5 mt-2">
+                            <span class="w-1.5 h-1.5 bg-nexo-500 rounded-full animate-bounce" style="animation-delay:0ms;"></span>
+                            <span class="w-1.5 h-1.5 bg-nexo-500 rounded-full animate-bounce" style="animation-delay:150ms;"></span>
+                            <span class="w-1.5 h-1.5 bg-nexo-500 rounded-full animate-bounce" style="animation-delay:300ms;"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado: Sucesso -->
+                <div id="syncStateSuccess" class="hidden">
+                    <div class="flex flex-col items-center gap-3 mb-4">
+                        <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #1cc88a, #17a673);">
+                            <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        </div>
+                        <p class="text-sm font-semibold text-steel-800 dark:text-gray-100">Sincronização concluída!</p>
+                    </div>
+                    <div id="syncResultsContainer" class="space-y-2 text-sm"></div>
+                </div>
+
+                <!-- Estado: Sem Mudanças -->
+                <div id="syncStateNoChanges" class="hidden flex-col items-center gap-3">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center bg-blue-100 dark:bg-blue-500/15">
+                        <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <p class="text-sm font-semibold text-steel-800 dark:text-gray-100">Tudo em dia!</p>
+                    <p class="text-xs text-steel-500 dark:text-steel-400 text-center">Nenhum registro novo ou alteração encontrada no Supra.</p>
+                </div>
+
+                <!-- Estado: Erro -->
+                <div id="syncStateError" class="hidden flex-col items-center gap-3">
+                    <div class="w-14 h-14 rounded-full flex items-center justify-center" style="background: linear-gradient(135deg, #e74a3b, #c0392b);">
+                        <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </div>
+                    <p class="text-sm font-semibold text-steel-800 dark:text-gray-100">Falha na sincronização</p>
+                    <p id="syncErrorMessage" class="text-xs text-rose-500 dark:text-rose-400 text-center bg-rose-50 dark:bg-rose-500/10 px-3 py-2 rounded-lg w-full"></p>
+                </div>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div id="syncModalFooter" class="hidden px-6 py-4 border-t border-gray-100 dark:border-steel-700 flex justify-end">
+                <button id="syncModalClose" class="px-5 py-2 text-sm font-medium rounded-lg bg-nexo-500 hover:bg-nexo-600 text-white transition-colors duration-200">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script>
         document.getElementById('footerYear').textContent = new Date().getFullYear();

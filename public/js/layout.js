@@ -56,6 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileMenu.classList.add('hidden');
             }
         });
+        
+        // Lógica de Logout
+        const logoutBtn = profileMenu.querySelector('a.text-red-600');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/';
+            });
+        }
     }
 
 });

@@ -12,7 +12,7 @@ const dbConfig = {
         trustServerCertificate: true 
     },
     connectionTimeout: 15000,
-    requestTimeout: 30000,
+    requestTimeout: 300000, // 5 minutos para queries pesadas
 };
 
 let poolPromise;

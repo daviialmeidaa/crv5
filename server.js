@@ -17,6 +17,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Rotas da API
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/titulos', require('./routes/titulos'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
@@ -28,8 +29,21 @@ app.get('/contas_a_receber', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'contas_a_receber.html'));
 });
 
+const cron = require('node-cron');
+const { runSync } = require('./services/syncService');
+
 // Iniciando o servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`🔗 Acesse: http://localhost:${PORT}`);
+    
+    // Configura o Cron Job para rodar a cada 15 minutos
+    cron.schedule('*/15 * * * *', async () => {
+        console.log('⏰ Executando Sincronização Automática via Cron...');
+        try {
+            await runSync();
+        } catch (err) {
+            console.error('❌ Falha no Cron Job de Sincronização:', err.message);
+        }
+    });
 });

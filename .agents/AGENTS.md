@@ -46,3 +46,9 @@ Sempre que um agente criar ou modificar uma página web, ele deve inspecionar `p
 Quando o projeto exigir tabelas complexas (com paginação, ordenação multifacetada e filtros dinâmicos com checkboxes):
 - **Estágio Atual (Mock/Protótipo):** A arquitetura é implementada em **Client-Side**. Isso significa que todo o gerenciamento de estado (Array de dados brutos, filtragem, interseção, ordenação e corte de paginação) ocorre inteiramente no JavaScript do navegador em memória, utilizando Vanilla JS puro.
 - **Transição Futura (Produção em Larga Escala):** Quando a base de dados crescer consideravelmente, os agentes de IA devem auxiliar a migrar essa lógica para **Server-Side**. Ou seja, as interações de filtro, ordenação e paginação no frontend passarão a enviar parâmetros (query strings) nas requisições para a API Node.js. O backend será o responsável por executar a lógica usando SQL dinâmico (`LIMIT`/`OFFSET` e condições de `WHERE`).
+
+## Segurança de Dados (Integração com Supra ERP)
+> [!CAUTION]
+> **REGRA DE SEGURANÇA MÁXIMA (READ-ONLY NO SUPRA)**
+> Sob **NENHUMA HIPÓTESE** os agentes (backend Node.js ou qualquer script) poderão executar comandos como `INSERT`, `UPDATE`, `DELETE`, `DROP` ou `ALTER` no banco de dados do Supra (SQL Server SGC/SGC2). A integração com o Supra é **ESTRITAMENTE SOMENTE LEITURA (`SELECT`)**. O banco do Supra é de Produção e a sua integridade é inegociável. Todas as mutações e atualizações do sistema ocorrerão EXCLUSIVAMENTE no banco de dados local da aplicação (PostgreSQL).
+

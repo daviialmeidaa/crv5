@@ -1,36 +1,37 @@
-const ContasGrid = (function() {
-    
+const ContasGrid = (function () {
+
     // 1. Definição das Colunas
     const columns = [
-        { key: 'cliente', label: 'Cliente', sticky: true },
-        { key: 'empresa', label: 'Empresa' },
-        { key: 'nota', label: 'Nota' },
+        { key: 'empresa', label: 'Empresa Vendedora', sticky: true },
+        { key: 'nota', label: 'Nota', sticky: true },
         { key: 'codCliente', label: 'Cód. Cliente' },
+        { key: 'cliente', label: 'Cliente' },
         { key: 'esfera', label: 'Esfera' },
         { key: 'uf', label: 'UF' },
         { key: 'contrato', label: 'Contrato' },
-        { key: 'marcador', label: 'Marcador' },
+        { key: 'marcador', label: 'Marcador Contrato' },
         { key: 'pregao', label: 'Nº Pregão' },
         { key: 'classificacao', label: 'Classificação' },
         { key: 'empenho', label: 'Nº Empenho' },
-        { key: 'documento', label: 'Documento' },
-        { key: 'valor', label: 'Valor (R$)', type: 'currency' },
+        { key: 'documento', label: 'Nº Documento' },
+        { key: 'valor', label: 'Valor Nota', type: 'currency' },
         { key: 'boletoEmitido', label: 'Boleto Emitido' },
-        { key: 'valorRecebido', label: 'Valor Recebido (R$)', type: 'currency' },
-        { key: 'dataEmissao', label: 'Data Emissão', type: 'date' },
-        { key: 'dataVencimento', label: 'Data Vencimento', type: 'date' },
-        { key: 'dataPagamento', label: 'Data Pagamento', type: 'date' },
-        { key: 'status', label: 'Status', render: v => {
-            const colors = {
-                'Pendente': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-                'Pago': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                'Atrasado': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-            };
-            const c = colors[v] || 'bg-gray-100 text-gray-700';
-            return `<span class="px-2.5 py-1 rounded-full text-xs font-medium ${c}">${v}</span>`;
-        }},
-        { key: 'conta', label: 'Conta' },
-        { key: 'atraso', label: 'Atraso?' },
+        { key: 'valorRecebido', label: 'Valor Depósito', type: 'currency' },
+        { key: 'dataEmissao', label: 'Data de Emissão', type: 'date' },
+        { key: 'dataVencimento', label: 'Data de Vencimento', type: 'date' },
+        { key: 'dataPagamento', label: 'Data de Pagamento', type: 'date' },
+        {
+            key: 'status', label: 'Status do Pagamento', render: v => {
+                const badges = {
+                    'Pago': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
+                    'Atrasado': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
+                    'Pendente': { grad: 'linear-gradient(135deg, #f6c23e, #dda520)', color: '#fff' }
+                };
+                const s = badges[v] || { grad: 'linear-gradient(135deg, #858796, #6c6d7e)', color: '#fff' };
+                return `<span style="background:${s.grad};color:${s.color};padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
+            }
+        },
+        { key: 'conta', label: 'Banco' },
         { key: 'retemIr', label: 'Retém IR?' }
     ];
 
@@ -40,47 +41,64 @@ const ContasGrid = (function() {
         filteredData: [],
         viewData: [],
         filters: {}, // { columnKey: Set(['Val1', 'Val2']) }
-        sort: { key: null, dir: 'asc' }, // dir: 'asc' | 'desc'
-        pagination: { current: 1, limit: 10, total: 0 }
+        sort: { key: 'dataEmissao', dir: 'desc' }, // Default order
+        pagination: { current: 1, limit: 25, total: 0 }
     };
 
-    // 3. Mock Data Generator (Para testes do protótipo)
-    function generateMockData() {
-        const empresas = ['Nexomed Ltda', 'Nexomed Filial RJ', 'SupraSoft'];
-        const clientes = ['Prefeitura de SP', 'Hospital das Clínicas', 'Secretaria de Saúde MG', 'UPA Zona Sul', 'Hospital Unimed'];
-        const esferas = ['Municipal', 'Estadual', 'Federal', 'Privada'];
-        const ufs = ['SP', 'RJ', 'MG', 'PR', 'SC'];
-        const statusList = ['Pendente', 'Pago', 'Atrasado'];
-
-        const data = [];
-        for(let i=1; i<=150; i++) {
-            const status = statusList[Math.floor(Math.random() * statusList.length)];
-            data.push({
-                cliente: clientes[Math.floor(Math.random() * clientes.length)],
-                empresa: empresas[Math.floor(Math.random() * empresas.length)],
-                nota: `NF-${10000 + i}`,
-                codCliente: `C-${1000 + Math.floor(Math.random() * 900)}`,
-                esfera: esferas[Math.floor(Math.random() * esferas.length)],
-                uf: ufs[Math.floor(Math.random() * ufs.length)],
-                contrato: `CT-202${Math.floor(Math.random() * 5)}/${Math.floor(Math.random() * 12)+1}`,
-                marcador: i % 3 === 0 ? 'Licitação' : 'Direta',
-                pregao: i % 3 === 0 ? `PG-0${Math.floor(Math.random() * 50)}/2023` : '-',
-                classificacao: 'Material Médico',
-                empenho: `EMP-${2024000 + i}`,
-                documento: `${Math.floor(Math.random() * 99)}.345.678/0001-90`,
-                valor: (Math.random() * 50000).toFixed(2),
-                boletoEmitido: Math.random() > 0.5 ? 'Sim' : 'Não',
-                valorRecebido: status === 'Pago' ? (Math.random() * 50000).toFixed(2) : '0.00',
-                dataEmissao: `2026-0${Math.floor(Math.random()*6)+1}-${Math.floor(Math.random()*28)+1}`,
-                dataVencimento: `2026-0${Math.floor(Math.random()*6)+4}-${Math.floor(Math.random()*28)+1}`,
-                dataPagamento: status === 'Pago' ? `2026-06-${Math.floor(Math.random()*28)+1}` : '-',
-                status: status,
-                conta: 'Itaú C/C',
-                atraso: status === 'Atrasado' ? 'Sim' : 'Não',
-                retemIr: Math.random() > 0.8 ? 'Sim' : 'Não'
+    // 3. Integração com Banco de Dados PostgreSQL
+    async function fetchData() {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/titulos', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
+            if (!res.ok) throw new Error('Falha ao buscar dados');
+
+            const data = await res.json();
+
+            // Mapeando do DB (snake_case) para a grid (camelCase)
+            state.rawData = data.map(row => ({
+                cliente: row.cliente || '-',
+                empresa: row.empresa || '-',
+                nota: row.nota || '-',
+                codCliente: row.cod_cliente || '-',
+                esfera: row.esfera || '-',
+                uf: row.uf || '-',
+                contrato: row.contrato || '-',
+                marcador: '-', // Futuro access
+                pregao: '-',   // Futuro access
+                classificacao: '-', // Futuro access
+                empenho: row.empenho || '-',
+                documento: row.documento || '-',
+                valor: row.valor_nota ? row.valor_nota.toString() : '0.00',
+                boletoEmitido: row.boleto_emitido || 'Não',
+                valorRecebido: row.valor_deposito ? row.valor_deposito.toString() : '0.00',
+                dataEmissao: row.data_emissao ? row.data_emissao.split('T')[0] : '-',
+                dataVencimento: row.data_vencimento ? row.data_vencimento.split('T')[0] : '-',
+                dataPagamento: row.data_pagamento ? row.data_pagamento.split('T')[0] : '-',
+                status: (() => {
+                    const raw = row.status ? row.status.trim() : '';
+                    if (raw.toUpperCase() === 'PAGO') return 'Pago';
+                    // Pendente ou vazio: checar se está atrasado
+                    if (row.data_vencimento) {
+                        const venc = new Date(row.data_vencimento.split('T')[0]);
+                        const hoje = new Date();
+                        hoje.setHours(0, 0, 0, 0);
+                        if (venc < hoje && (!row.data_pagamento)) return 'Atrasado';
+                    }
+                    return 'Pendente';
+                })(),
+                conta: row.banco || '-',
+                retemIr: row.retem_ir || 'Não'
+            }));
+
+            processData();
+        } catch (err) {
+            console.error(err);
+            document.getElementById('contasTableBody').innerHTML = `<tr><td colspan="22" class="px-6 py-12 text-center text-red-500">Erro ao carregar dados do servidor. O banco local está rodando?</td></tr>`;
         }
-        return data;
     }
 
     // 4. Lógica de Pipeline (Filtro -> Ordenação -> Paginação)
@@ -102,7 +120,7 @@ const ContasGrid = (function() {
         if (state.sort.key) {
             const col = columns.find(c => c.key === state.sort.key);
             const dir = state.sort.dir === 'asc' ? 1 : -1;
-            
+
             state.filteredData.sort((a, b) => {
                 let valA = a[state.sort.key];
                 let valB = b[state.sort.key];
@@ -110,7 +128,15 @@ const ContasGrid = (function() {
                 if (col.type === 'currency') {
                     valA = parseFloat(valA) || 0;
                     valB = parseFloat(valB) || 0;
-                } else if (col.type === 'date' && valA !== '-' && valB !== '-') {
+                } else if (col.type === 'date') {
+                    // Trata as datas e joga vazios ('-') sempre para o final
+                    const isValAEmpty = !valA || valA === '-';
+                    const isValBEmpty = !valB || valB === '-';
+                    
+                    if (isValAEmpty && isValBEmpty) return 0;
+                    if (isValAEmpty) return 1; // Joga vazio pro final independente da direção
+                    if (isValBEmpty) return -1;
+                    
                     valA = new Date(valA).getTime();
                     valB = new Date(valB).getTime();
                 }
@@ -137,31 +163,33 @@ const ContasGrid = (function() {
 
     // 5. Renderização (DOM)
     function formatCurrency(val) {
-        if(val === '-' || !val) return '-';
+        if (val === '-' || !val) return '-';
         return parseFloat(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
     function formatDate(val) {
-        if(val === '-' || !val) return '-';
+        if (val === '-' || !val) return '-';
         const parts = val.split('-');
-        if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
         return val;
     }
 
     function renderHeaders() {
         const thead = document.getElementById('contasTableHeader');
-        let html = '<tr class="text-steel-500 dark:text-steel-400 text-xs font-semibold uppercase tracking-wider">';
-        
+        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
+
         columns.forEach(col => {
             const isSticky = col.sticky ? 'sticky-col bg-gray-50 dark:bg-steel-900 border-r shadow-[1px_0_0_rgba(229,231,235,1)] dark:shadow-[1px_0_0_rgba(55,65,81,1)]' : '';
-            const sortIcon = state.sort.key === col.key 
-                ? (state.sort.dir === 'asc' ? '↑' : '↓') 
+            const sortIcon = state.sort.key === col.key
+                ? (state.sort.dir === 'asc' ? '↑' : '↓')
                 : '↕';
-            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0;
-            const filterColor = hasFilter ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
+            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
+            const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
+            const isFiltered = hasFilter || hasNoneFilter;
+            const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
             html += `
-                <th class="px-5 py-3 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none ${isSticky}">
+                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none ${isSticky}">
                     <div class="flex items-center justify-between gap-3">
                         <div class="cursor-pointer flex-1 hover:text-nexo-600 transition-colors" onclick="ContasGrid.toggleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
@@ -181,7 +209,7 @@ const ContasGrid = (function() {
 
     function renderTableBody() {
         const tbody = document.getElementById('contasTableBody');
-        
+
         if (state.viewData.length === 0) {
             tbody.innerHTML = `<tr><td colspan="${columns.length}" class="px-6 py-12 text-center text-steel-500">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
             return;
@@ -189,20 +217,20 @@ const ContasGrid = (function() {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += '<tr class="hover:bg-gray-50/50 dark:hover:bg-steel-800/50 transition-colors group">';
+            html += '<tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 transition-all duration-200 group cursor-default">';
             columns.forEach(col => {
                 let val = row[col.key];
-                
+
                 // Formatação
                 if (col.type === 'currency') val = formatCurrency(val);
                 else if (col.type === 'date') val = formatDate(val);
-                
+
                 // Custom render?
                 if (col.render) val = col.render(val);
 
-                const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-gray-50 dark:group-hover:bg-steel-800 border-r border-gray-100 dark:border-steel-700 font-medium' : '';
-                
-                html += `<td class="px-5 py-3 whitespace-nowrap ${isSticky}">${val}</td>`;
+                const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
+
+                html += `<td class="px-3 py-1.5 text-[12px] whitespace-nowrap ${isSticky}">${val}</td>`;
             });
             html += '</tr>';
         });
@@ -213,17 +241,22 @@ const ContasGrid = (function() {
     function renderPagination() {
         const info = document.getElementById('paginationInfo');
         const controls = document.getElementById('paginationControls');
-        
+
         const start = state.pagination.total === 0 ? 0 : ((state.pagination.current - 1) * state.pagination.limit) + 1;
         const end = Math.min(state.pagination.current * state.pagination.limit, state.pagination.total);
         info.textContent = `Mostrando ${start} a ${end} de ${state.pagination.total} registros`;
 
         const totalPages = Math.ceil(state.pagination.total / state.pagination.limit);
-        
+
         let html = '';
-        
+
+        // First button
+        html += `<button onclick="ContasGrid.setPage(1)" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === 1 ? 'disabled' : ''} title="Primeira Página">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
+                 </button>`;
+
         // Prev button
-        html += `<button onclick="ContasGrid.setPage(${state.pagination.current - 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === 1 ? 'disabled' : ''}>
+        html += `<button onclick="ContasGrid.setPage(${state.pagination.current - 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === 1 ? 'disabled' : ''} title="Anterior">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                  </button>`;
 
@@ -241,8 +274,13 @@ const ContasGrid = (function() {
         }
 
         // Next button
-        html += `<button onclick="ContasGrid.setPage(${state.pagination.current + 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === totalPages || totalPages === 0 ? 'disabled' : ''}>
+        html += `<button onclick="ContasGrid.setPage(${state.pagination.current + 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === totalPages || totalPages === 0 ? 'disabled' : ''} title="Próxima">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                 </button>`;
+
+        // Last button
+        html += `<button onclick="ContasGrid.setPage(${totalPages})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === totalPages || totalPages === 0 ? 'disabled' : ''} title="Última Página">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zm6 0a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                  </button>`;
 
         controls.innerHTML = html;
@@ -256,8 +294,8 @@ const ContasGrid = (function() {
         closeFilter(); // Fecha anterior se existir
 
         const col = columns.find(c => c.key === colKey);
-        
-        // Coleta valores únicos para essa coluna ignorando os filtros atuais (para mostrar todas opções sempre, ou mostrar apenas opções compatíveis? Padrão Excel: Mostrar todas)
+
+        // Coleta valores únicos para essa coluna
         const uniqueValues = [...new Set(state.rawData.map(row => row[colKey]))].sort();
 
         // Inicializa o state do filtro se não existir
@@ -269,13 +307,15 @@ const ContasGrid = (function() {
         const modal = document.createElement('div');
         modal.id = 'filterModal';
         modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm animate-fade-in-up';
-        
+
+        // Evita que cliques dentro do modal propaguem para o document e fechem o filtro
+        modal.addEventListener('click', (e) => e.stopPropagation());
+
         // Posicionamento abaixo do ícone clicado
         const rect = event.currentTarget.getBoundingClientRect();
-        // Evita sair da tela pela direita
         let left = rect.left;
         if (left + 256 > window.innerWidth) left = window.innerWidth - 266;
-        
+
         modal.style.top = `${rect.bottom + window.scrollY + 8}px`;
         modal.style.left = `${left}px`;
 
@@ -288,7 +328,7 @@ const ContasGrid = (function() {
             </div>
             <div class="p-3 border-t border-gray-100 dark:border-steel-700 flex justify-between bg-gray-50 dark:bg-steel-800/50 rounded-b-lg">
                 <button id="btnClearFilter" class="text-xs text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 font-medium">Limpar</button>
-                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium">Aplicar</button>
+                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium shadow-sm">Aplicar</button>
             </div>
         `;
 
@@ -298,20 +338,28 @@ const ContasGrid = (function() {
         const listContainer = modal.querySelector('#filterCheckboxList');
         const searchInput = modal.querySelector('#filterSearchInput');
 
-        // Estado temporário para as seleções no modal (só aplica ao clicar em Aplicar)
+        // Estado temporário para as seleções no modal explícito:
         const tempSelected = new Set(state.filters[colKey]);
+        // Se filtro global estiver limpo, significa que tudo está visivel
+        if (tempSelected.size === 0 || tempSelected.has('__NONE__')) {
+            if (!tempSelected.has('__NONE__')) {
+                uniqueValues.forEach(v => tempSelected.add(v));
+            } else {
+                tempSelected.clear();
+            }
+        }
 
         function renderCheckboxes(searchTerm = '') {
             listContainer.innerHTML = '';
             const filteredVals = uniqueValues.filter(v => String(v).toLowerCase().includes(searchTerm.toLowerCase()));
-            
+
             if (filteredVals.length === 0) {
                 listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
                 return;
             }
 
             // Botão "Selecionar Tudo"
-            const allChecked = tempSelected.size === 0 || tempSelected.size === uniqueValues.length;
+            const allChecked = tempSelected.size === uniqueValues.length;
             const selectAllDiv = document.createElement('div');
             selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
             selectAllDiv.innerHTML = `
@@ -329,35 +377,33 @@ const ContasGrid = (function() {
             listContainer.appendChild(selectAllDiv);
 
             filteredVals.forEach(val => {
-                const isChecked = tempSelected.has(val) || tempSelected.size === 0; // se 0, significa que tudo tá visível
-                
+                const isChecked = tempSelected.has(val);
+
                 const div = document.createElement('div');
                 div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                
+
                 let displayVal = val;
-                if(col.type === 'currency') displayVal = formatCurrency(val);
-                if(col.type === 'date') displayVal = formatDate(val);
+                if (col.type === 'currency') displayVal = formatCurrency(val);
+                if (col.type === 'date') displayVal = formatDate(val);
 
                 div.innerHTML = `
                     <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
                     <span class="truncate text-steel-600 dark:text-gray-400" title="${displayVal}">${displayVal}</span>
                 `;
-                
+
                 const checkbox = div.querySelector('input');
                 div.onclick = (e) => {
-                    if(e.target !== checkbox) checkbox.checked = !checkbox.checked;
-                    
+                    if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
+
                     if (checkbox.checked) {
                         tempSelected.add(val);
                     } else {
-                        // Se tava "Selecionar Tudo", populamos o set e excluímos o atual
-                        if (tempSelected.size === 0) {
-                            uniqueValues.forEach(v => tempSelected.add(v));
-                        }
                         tempSelected.delete(val);
                     }
+                    // Atualiza o "Select All" se precisar
+                    renderCheckboxes(searchTerm);
                 };
-                
+
                 listContainer.appendChild(div);
             });
         }
@@ -370,13 +416,14 @@ const ContasGrid = (function() {
         });
 
         modal.querySelector('#btnApplyFilter').onclick = () => {
-            // Se todas estiverem selecionadas, a gente limpa o filtro pra otimizar
             if (tempSelected.size === uniqueValues.length) {
                 state.filters[colKey].clear();
+            } else if (tempSelected.size === 0) {
+                state.filters[colKey] = new Set(['__NONE__']);
             } else {
                 state.filters[colKey] = new Set(tempSelected);
             }
-            state.pagination.current = 1; // Reseta paginação
+            state.pagination.current = 1;
             processData();
             closeFilter();
         };
@@ -405,12 +452,13 @@ const ContasGrid = (function() {
 
     // 7. API Exposta Globalmente
     return {
-        init: function() {
-            state.rawData = generateMockData();
-            
+        init: function () {
+            // Busca dados do backend
+            fetchData();
+
             // Listeners da interface (Ex: Items per page)
             const selectLimit = document.getElementById('itemsPerPage');
-            if(selectLimit) {
+            if (selectLimit) {
                 selectLimit.addEventListener('change', (e) => {
                     state.pagination.limit = parseInt(e.target.value);
                     state.pagination.current = 1;
@@ -418,9 +466,170 @@ const ContasGrid = (function() {
                 });
             }
 
-            processData(); // Start
+            // Botão de Sincronização com Modal
+            const btnSync = document.getElementById('btnSyncSupra');
+            if (btnSync) {
+                btnSync.addEventListener('click', async () => {
+                    btnSync.disabled = true;
+                    btnSync.classList.add('opacity-70', 'cursor-not-allowed');
+
+                    // Helpers do Modal
+                    const modal = document.getElementById('syncModal');
+                    const modalContent = document.getElementById('syncModalContent');
+                    const stateLoading = document.getElementById('syncStateLoading');
+                    const stateSuccess = document.getElementById('syncStateSuccess');
+                    const stateNoChanges = document.getElementById('syncStateNoChanges');
+                    const stateError = document.getElementById('syncStateError');
+                    const footer = document.getElementById('syncModalFooter');
+                    const stepText = document.getElementById('syncStepText');
+                    const subtitle = document.getElementById('syncModalSubtitle');
+                    const title = document.getElementById('syncModalTitle');
+
+                    function resetModal() {
+                        stateLoading.classList.remove('hidden');
+                        stateSuccess.classList.add('hidden');
+                        stateNoChanges.classList.remove('flex'); stateNoChanges.classList.add('hidden');
+                        stateError.classList.remove('flex'); stateError.classList.add('hidden');
+                        footer.classList.add('hidden'); footer.classList.remove('flex');
+                        title.textContent = 'Sincronizando com o Supra';
+                        subtitle.textContent = 'Conectando ao servidor...';
+                        stepText.textContent = 'Estabelecendo conexão...';
+                        modalContent.classList.remove('scale-100'); modalContent.classList.add('scale-95');
+                    }
+
+                    function openModal() {
+                        resetModal();
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                        requestAnimationFrame(() => {
+                            modal.style.opacity = '1';
+                            modalContent.classList.remove('scale-95');
+                            modalContent.classList.add('scale-100');
+                        });
+                    }
+
+                    function showFooter() {
+                        footer.classList.remove('hidden');
+                        footer.classList.add('flex');
+                    }
+
+                    function closeModal() {
+                        modal.style.opacity = '0';
+                        modalContent.classList.remove('scale-100');
+                        modalContent.classList.add('scale-95');
+                        setTimeout(() => {
+                            modal.classList.remove('flex');
+                            modal.classList.add('hidden');
+                        }, 300);
+                        btnSync.disabled = false;
+                        btnSync.classList.remove('opacity-70', 'cursor-not-allowed');
+                    }
+
+                    document.getElementById('syncModalClose').onclick = closeModal;
+
+                    // Abrir modal e iniciar
+                    openModal();
+
+                    // Simular passos dinâmicos do loading
+                    const steps = [
+                        'Conectando ao SQL Server do Supra...',
+                        'Buscando registros da Nexomed...',
+                        'Atualizando dados locais da Nexomed...',
+                        'Buscando registros da BML...',
+                        'Atualizando dados locais da BML...',
+                        'Verificando novos lançamentos...',
+                        'Finalizando sincronização...'
+                    ];
+                    let stepIdx = 0;
+                    const stepInterval = setInterval(() => {
+                        stepIdx++;
+                        if (stepIdx < steps.length) {
+                            stepText.textContent = steps[stepIdx];
+                            subtitle.textContent = `Etapa ${stepIdx + 1} de ${steps.length}`;
+                        }
+                    }, 3000);
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        const res = await fetch('/api/titulos/sync', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        clearInterval(stepInterval);
+
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            throw new Error(errData.error || 'Erro desconhecido no servidor.');
+                        }
+
+                        const data = await res.json();
+                        const d = data.details;
+                        const totalChanges = d.totalUpdated + d.totalNew + d.totalDeleted;
+
+                        // Esconder Loading
+                        stateLoading.classList.add('hidden');
+
+                        if (totalChanges === 0) {
+                            // Estado: Sem Mudanças
+                            title.textContent = 'Sincronização Completa';
+                            subtitle.textContent = `${data.details.totalAnalyzed} registro(s) analisado(s). Nenhuma alteração detectada.`;
+                            stateNoChanges.classList.remove('hidden');
+                            stateNoChanges.classList.add('flex');
+                        } else {
+                            // Estado: Sucesso com detalhes
+                            title.textContent = 'Sincronização Completa';
+                            subtitle.textContent = `${data.details.totalAnalyzed} registro(s) analisado(s). ${totalChanges} alteração(ões) processada(s).`;
+
+                            let resultsHtml = '';
+                            d.empresas.forEach(emp => {
+                                resultsHtml += `
+                                    <div class="bg-gray-50 dark:bg-steel-700/50 rounded-lg p-3">
+                                        <p class="font-semibold text-steel-800 dark:text-gray-200 mb-1.5">${emp.empresa}</p>
+                                        <div class="grid grid-cols-4 gap-2 text-xs">
+                                            <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
+                                                <span class="text-lg font-bold" style="color:#007BFF;">${emp.analyzed}</span>
+                                                <span class="text-steel-500 dark:text-steel-400">Analisados</span>
+                                            </div>
+                                            <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
+                                                <span class="text-lg font-bold" style="color:#0097A7;">${emp.updated}</span>
+                                                <span class="text-steel-500 dark:text-steel-400">Atualizados</span>
+                                            </div>
+                                            <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
+                                                <span class="text-lg font-bold" style="color:#1cc88a;">${emp.new}</span>
+                                                <span class="text-steel-500 dark:text-steel-400">Novos</span>
+                                            </div>
+                                            <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
+                                                <span class="text-lg font-bold" style="color:#e74a3b;">${emp.deleted}</span>
+                                                <span class="text-steel-500 dark:text-steel-400">Excluídos</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            document.getElementById('syncResultsContainer').innerHTML = resultsHtml;
+                            stateSuccess.classList.remove('hidden');
+
+                            // Recarregar dados da tabela
+                            fetchData();
+                        }
+                        showFooter();
+
+                    } catch (err) {
+                        clearInterval(stepInterval);
+                        console.error(err);
+
+                        stateLoading.classList.add('hidden');
+                        title.textContent = 'Erro na Sincronização';
+                        subtitle.textContent = 'Não foi possível completar';
+                        document.getElementById('syncErrorMessage').textContent = err.message || 'Verifique a conexão com o servidor do Supra.';
+                        stateError.classList.remove('hidden');
+                        stateError.classList.add('flex');
+                        showFooter();
+                    }
+                });
+            }
         },
-        toggleSort: function(key) {
+        toggleSort: function (key) {
             if (state.sort.key === key) {
                 state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
             } else {
@@ -429,7 +638,7 @@ const ContasGrid = (function() {
             }
             processData();
         },
-        setPage: function(page) {
+        setPage: function (page) {
             state.pagination.current = page;
             processData();
         },
