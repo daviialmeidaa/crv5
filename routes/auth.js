@@ -15,7 +15,7 @@ router.post('/login', async (req, res) => {
     try {
         // Buscar usuário no PostgreSQL
         const result = await pgPool.query(
-            'SELECT id, nome, email, password_hash, is_admin, first_access, is_active FROM users WHERE email = $1',
+            'SELECT id, nome, email, password_hash, is_admin, first_access, is_active, avatar_url FROM users WHERE email = $1',
             [email]
         );
 
@@ -57,7 +57,8 @@ router.post('/login', async (req, res) => {
                 nome: user.nome, 
                 email: user.email, 
                 is_admin: user.is_admin,
-                first_access: user.first_access
+                first_access: user.first_access,
+                avatar_url: user.avatar_url
             }
         });
 

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil | Nexomed</title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        nexo: {
+                            50:  '#e0f7fa',
+                            100: '#b2ebf2',
+                            200: '#80deea',
+                            300: '#4dd0e1',
+                            400: '#26c6da',
+                            500: '#0097A7',
+                            600: '#00838F',
+                            700: '#006064',
+                            800: '#004D40',
+                            900: '#003330',
+                        },
+                        steel: {
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                            800: '#1f2937',
+                            900: '#111827',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body.loading-auth { visibility: hidden; }
+        
+        /* Layout Fixos (Sidebar) */
+        aside { transition: width 0.3s ease; }
+        body.sidebar-collapsed aside { width: 5rem !important; } /* w-20 */
+        body.sidebar-collapsed .sidebar-text { display: none; }
+        body.sidebar-collapsed .logo-full { display: none; }
+        body.sidebar-collapsed .logo-mini { display: block; }
+        
+        .logo-mini { display: none; }
+    </style>
+    <!-- Aplicar tema antes de renderizar (evita flash) -->
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+</head>
+<body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
+        <a href="/dashboard.html" class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
+            <img src="/assets/images/logo.png" alt="Nexomed" class="h-7 logo-full">
+            <img src="/assets/images/simbolo.png" alt="NX" class="h-8 logo-mini mx-auto">
+        </a>
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
+            <a href="/dashboard.html" class="flex items-center gap-3 px-4 py-2.5 text-steel-400 hover:bg-steel-800 hover:text-white rounded-lg text-sm font-medium transition-colors" title="Dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+                </svg>
+                <span class="sidebar-text truncate">Dashboard</span>
+            </a>
+            <a href="/contas_a_receber" class="flex items-center gap-3 px-4 py-2.5 text-steel-400 hover:bg-steel-800 hover:text-white rounded-lg text-sm font-medium transition-colors" title="Contas a Receber">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                </svg>
+                <span class="sidebar-text truncate">Contas a Receber</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <!-- Header -->
+        <header class="h-16 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-40 transition-colors duration-200 shrink-0">
+            <div class="flex items-center gap-4">
+                <button id="sidebarToggleBtn" class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Meu Perfil</h2>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- Dark Mode Toggle -->
+                <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
+                    <svg id="sunIcon" class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                    </svg>
+                    <svg id="moonIcon" class="h-5 w-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    </svg>
+                </button>
+
+                <!-- Profile Dropdown -->
+                <div class="relative">
+                    <button id="profileDropdownBtn" class="flex items-center gap-2 focus:outline-none">
+                        <div class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">U</div>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100 dark:border-steel-700 mb-1">
+                            <p class="text-sm font-medium text-steel-800 dark:text-gray-100 truncate">Usuário Logado</p>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 truncate">usuario@nexomed.com</p>
+                        </div>
+                        <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver Perfil</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Cadastrar Usuário</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Ver Usuários</a>
+                        <div class="border-t border-gray-100 dark:border-steel-700 mt-1"></div>
+                        <a href="#" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-steel-700 transition-colors font-medium">Sair</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-auto p-6">
+            <div class="max-w-3xl mx-auto bg-white dark:bg-steel-800 rounded-xl shadow-sm border border-gray-200 dark:border-steel-700 overflow-hidden">
+                <div class="px-8 py-6 border-b border-gray-100 dark:border-steel-700 bg-gray-50 dark:bg-steel-800/50">
+                    <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Informações Pessoais</h3>
+                    <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Gerencie os detalhes do seu perfil e preferências de conta.</p>
+                </div>
+                
+                <div class="p-8">
+                    <form id="profileForm" class="space-y-6">
+                        <!-- Avatar Section -->
+                        <div class="flex items-center gap-6">
+                            <div class="relative group cursor-pointer" onclick="document.getElementById('avatarUpload').click()">
+                                <div id="profileAvatarDisplay" class="w-24 h-24 rounded-full bg-nexo-600 flex items-center justify-center text-3xl font-bold text-white shadow-md overflow-hidden">
+                                    <span id="profileInitials">U</span>
+                                </div>
+                                <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
+                                <input type="file" id="avatarUpload" class="hidden" accept="image/*">
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-200">Foto de Perfil</h4>
+                                <p class="text-xs text-steel-500 dark:text-steel-400 mt-1">JPG, GIF ou PNG. Máximo de 2MB.</p>
+                                <button type="button" onclick="document.getElementById('avatarUpload').click()" class="mt-3 px-4 py-1.5 border border-gray-300 dark:border-steel-600 rounded-lg text-sm font-medium text-steel-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Alterar foto</button>
+                            </div>
+                        </div>
+
+                        <hr class="border-gray-100 dark:border-steel-700">
+
+                        <!-- Campos -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="col-span-1 md:col-span-2">
+                                <label for="profileName" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Nome Completo</label>
+                                <input type="text" id="profileName" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all shadow-sm">
+                            </div>
+
+                            <div class="col-span-1 md:col-span-2">
+                                <label for="profileEmail" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Endereço de E-mail</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <svg class="h-5 w-5 text-steel-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                                        </svg>
+                                    </div>
+                                    <input type="email" id="profileEmail" disabled class="w-full pl-10 px-4 py-2.5 bg-gray-100 dark:bg-steel-800 border border-gray-200 dark:border-steel-700 rounded-lg text-steel-500 dark:text-steel-400 cursor-not-allowed shadow-sm focus:outline-none">
+                                </div>
+                                <p class="text-xs text-steel-400 mt-1.5">Seu e-mail é sua chave de acesso e não pode ser alterado.</p>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="px-6 py-2.5 bg-nexo-600 hover:bg-nexo-700 text-white font-medium rounded-lg shadow-sm shadow-nexo-500/30 transition-all active:scale-95 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Salvar Alterações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200">
+            <p class="text-xs text-steel-400">
+                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
+            </p>
+        </footer>
+    </main>
+
+    <script>
+        document.getElementById('footerYear').textContent = new Date().getFullYear();
+        
+        // Simulação de carregamento do auth (para manter o padrão do template)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.remove('loading-auth');
+        });
+    </script>
+    <!-- Modal de Crop de Imagem -->
+    <div id="cropModal" class="fixed inset-0 z-[70] flex items-center justify-center hidden">
+        <div class="fixed inset-0 bg-steel-900/60 backdrop-blur-sm transition-opacity" id="cropModalOverlay"></div>
+        <div class="relative bg-white dark:bg-steel-800 rounded-xl shadow-2xl max-w-lg w-full p-6 transform transition-all scale-95 opacity-0 mx-4 border border-gray-100 dark:border-steel-700 flex flex-col h-[500px]" id="cropModalContent">
+            
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-steel-800 dark:text-gray-100">Ajustar Foto</h3>
+                <button type="button" id="cropCancelBtn" class="text-steel-400 hover:text-steel-600 dark:hover:text-gray-200 transition-colors focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="flex-1 bg-black/10 dark:bg-black/40 rounded-lg overflow-hidden flex items-center justify-center relative">
+                <img id="imageToCrop" src="" alt="Ajuste a imagem" class="max-w-full max-h-full block">
+            </div>
+
+            <div class="mt-4 flex items-center justify-between">
+                <div class="flex gap-2">
+                    <button type="button" id="cropZoomIn" class="p-2 rounded-lg bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors focus:outline-none" title="Aumentar Zoom">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
+                    </button>
+                    <button type="button" id="cropZoomOut" class="p-2 rounded-lg bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors focus:outline-none" title="Diminuir Zoom">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path></svg>
+                    </button>
+                </div>
+                
+                <button type="button" id="cropApplyBtn" class="px-5 py-2 bg-nexo-600 hover:bg-nexo-700 text-white rounded-lg font-medium shadow-sm transition-colors focus:outline-none">
+                    Aplicar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script src="/js/theme.js"></script>
+    <script src="/js/layout.js"></script>
+    <script src="/js/perfil.js"></script>
+</body>
+</html>

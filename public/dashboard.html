@@ -6,6 +6,9 @@
     <title>Dashboard | Nexomed - Contas a Receber</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <!-- Google Charts para o Mapa do Brasil -->
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -66,10 +69,10 @@
     
     <!-- Sidebar -->
     <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
-        <div class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0">
+        <a href="/dashboard.html" class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
             <img src="/assets/images/logo.png" alt="Nexomed" class="h-7 logo-full">
             <img src="/assets/images/simbolo.png" alt="NX" class="h-8 logo-mini mx-auto">
-        </div>
+        </a>
         <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
             <a href="/dashboard.html" class="flex items-center gap-3 px-4 py-2.5 bg-nexo-600/90 text-white rounded-lg text-sm font-medium transition-colors" title="Dashboard">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -89,7 +92,7 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
         <!-- Header -->
-        <header class="h-16 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-10 transition-colors duration-200 shrink-0">
+        <header class="h-16 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-40 transition-colors duration-200 shrink-0">
             <div class="flex items-center gap-4">
                 <button id="sidebarToggleBtn" class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -113,7 +116,7 @@
                 <!-- Profile Dropdown -->
                 <div class="relative">
                     <button id="profileDropdownBtn" class="flex items-center gap-2 focus:outline-none">
-                        <div class="w-8 h-8 rounded-full bg-nexo-600 flex items-center justify-center text-xs font-bold text-white uppercase shadow-sm">U</div>
+                        <div class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">U</div>
                     </button>
                     <!-- Dropdown Menu -->
                     <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
@@ -121,7 +124,7 @@
                             <p class="text-sm font-medium text-steel-800 dark:text-gray-100 truncate">Usuário Logado</p>
                             <p class="text-xs text-steel-500 dark:text-steel-400 truncate">usuario@nexomed.com</p>
                         </div>
-                        <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver Perfil</a>
+                        <a href="/perfil.html" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver Perfil</a>
                         <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Cadastrar Usuário</a>
                         <a href="#" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Ver Usuários</a>
                         <div class="border-t border-gray-100 dark:border-steel-700 mt-1"></div>
@@ -132,86 +135,150 @@
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-auto p-6">
+        <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-steel-900/50 p-6 space-y-6">
             
-            <!-- Cards de Resumo -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 hover:shadow-md transition-all">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-steel-500 dark:text-steel-400 text-sm font-medium">Total a Receber</h3>
-                        <div class="p-2 bg-nexo-50 dark:bg-nexo-900/30 text-nexo-600 dark:text-nexo-400 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                    <p class="text-2xl font-bold text-steel-800 dark:text-gray-100">R$ 0,00</p>
-                </div>
-                
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 hover:shadow-md transition-all">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-steel-500 dark:text-steel-400 text-sm font-medium">Títulos Vencidos</h3>
-                        <div class="p-2 bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                            </svg>
-                        </div>
-                    </div>
-                    <p class="text-2xl font-bold text-steel-800 dark:text-gray-100">0</p>
+            <!-- Title Bar with Refresh -->
+            <div class="flex items-center justify-between">
+                <h1 class="text-xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Painel Contas a Receber</h1>
+                <button id="btnRefresh" class="flex items-center gap-2 px-4 py-2 bg-nexo-500 hover:bg-nexo-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm" title="Atualizar Dados">
+                    <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Atualizar Dados
+                </button>
+            </div>
+
+            <!-- ═══════════ FILTER PILLS (Slicer-style) ═══════════ -->
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-4 h-4 text-nexo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                        Filtros
+                    </h2>
+                    <button id="btnClearFilters" class="hidden text-xs font-medium text-rose-500 hover:text-rose-600 dark:text-rose-400 transition-colors px-3 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20">
+                        ✕ Limpar Filtros
+                    </button>
                 </div>
 
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 hover:shadow-md transition-all">
-                    <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-steel-500 dark:text-steel-400 text-sm font-medium">Vencendo Hoje</h3>
-                        <div class="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-500 dark:text-amber-400 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                            </svg>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <!-- Empresa -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-1 uppercase tracking-wider">Empresa</label>
+                        <div id="filterEmpresa" class="flex flex-wrap gap-1.5 min-h-[32px]">
+                            <!-- Pills rendered by JS -->
                         </div>
                     </div>
-                    <p class="text-2xl font-bold text-steel-800 dark:text-gray-100">0</p>
+                    <!-- Status Pagamento -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-1 uppercase tracking-wider">Status</label>
+                        <div id="filterStatus" class="flex flex-wrap gap-1.5 min-h-[32px]">
+                        </div>
+                    </div>
+                    <!-- Esfera -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-1 uppercase tracking-wider">Esfera</label>
+                        <div id="filterEsfera" class="flex flex-wrap gap-1.5 min-h-[32px]">
+                        </div>
+                    </div>
+                    <!-- UF -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-1 uppercase tracking-wider">UF</label>
+                        <div id="filterUf" class="flex flex-wrap gap-1.5 min-h-[32px]">
+                        </div>
+                    </div>
+                    <!-- Ano -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-1 uppercase tracking-wider">Ano</label>
+                        <div id="filterAno" class="flex flex-wrap gap-1.5 min-h-[32px]">
+                        </div>
+                    </div>
+                    <!-- Mês -->
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-1 uppercase tracking-wider">Mês</label>
+                        <div id="filterMes" class="flex flex-wrap gap-1.5 min-h-[32px]">
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tabela Principal -->
-            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 dark:border-steel-700 flex justify-between items-center">
-                    <h3 class="text-sm font-semibold text-steel-800 dark:text-gray-100">Listagem de Contas</h3>
-                    <div class="flex gap-2">
-                        <input type="text" placeholder="Buscar cliente..." class="px-3 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-56 transition-all">
-                        <button class="px-4 py-2 bg-nexo-500 text-white rounded-lg text-sm font-medium hover:bg-nexo-600 transition-colors">
-                            Filtrar
-                        </button>
+            <!-- ═══════════ TOP ROW: MAP + KPI TOTAIS ═══════════ -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Mapa do Brasil -->
+                <div class="lg:col-span-5 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 flex flex-col">
+                    <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-3">Distribuição por UF</h3>
+                    <div id="brazilMapContainer" class="flex-1 w-full min-h-[320px] rounded-lg overflow-hidden">
+                        <div class="w-full h-full flex items-center justify-center">
+                            <svg class="w-8 h-8 animate-spin text-nexo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="bg-gray-50 dark:bg-steel-700/50 text-steel-500 dark:text-steel-400 text-xs uppercase tracking-wider">
-                                <th class="px-6 py-3 font-medium">Documento</th>
-                                <th class="px-6 py-3 font-medium">Cliente</th>
-                                <th class="px-6 py-3 font-medium">Emissão</th>
-                                <th class="px-6 py-3 font-medium">Vencimento</th>
-                                <th class="px-6 py-3 font-medium">Valor (R$)</th>
-                                <th class="px-6 py-3 font-medium">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody id="titulosTableBody" class="divide-y divide-gray-50 dark:divide-steel-700">
-                            <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-steel-400 text-sm">
-                                    Carregando dados...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                <!-- Totais KPI -->
+                <div class="lg:col-span-7 flex flex-col gap-5">
+                    <!-- Total Vendido -->
+                    <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Total Vendido</h3>
+                            <span class="text-2xl font-bold font-mono text-steel-800 dark:text-gray-100" id="kpiTotalVendido">R$ 0,00</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
+                            <div id="barTotalVendido" class="h-full bg-gradient-to-r from-nexo-500 to-nexo-400 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <!-- Total Recebido -->
+                    <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Total Recebido</h3>
+                            <span class="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400" id="kpiTotalRecebido">R$ 0,00</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
+                            <div id="barTotalRecebido" class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <!-- Total em Aberto -->
+                    <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Total em Aberto</h3>
+                            <span class="text-2xl font-bold font-mono text-rose-600 dark:text-rose-400" id="kpiTotalAberto">R$ 0,00</span>
+                        </div>
+                        <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
+                            <div id="barTotalAberto" class="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <!-- ═══════════ MIDDLE ROW: 3 Charts ═══════════ -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Bar Chart: Recebimento por Banco -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 flex flex-col" style="min-height: 350px;">
+                    <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-3">Recebimento por Banco</h3>
+                    <div id="chartBancos" class="flex-1 w-full"></div>
+                </div>
+                
+                <!-- Gauge: Desempenho Recebimento -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 flex flex-col items-center" style="min-height: 350px;">
+                    <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-1">Desempenho Recebimento</h3>
+                    <p class="text-[11px] text-steel-400 mb-2">Recebido vs Vendido</p>
+                    <div id="chartGauge" class="flex-1 w-full flex items-center justify-center"></div>
+                </div>
+
+                <!-- Donut: Recebimento por Esfera -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 flex flex-col" style="min-height: 350px;">
+                    <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-3">Recebimento por Esfera</h3>
+                    <div id="chartEsfera" class="flex-1 w-full"></div>
+                </div>
+            </div>
+
+            <!-- ═══════════ BOTTOM: Evolução Mensal ═══════════ -->
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 flex flex-col" style="min-height: 380px;">
+                <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-3">Recebimento por Mês</h3>
+                <div id="chartEvolucao" class="flex-1 w-full"></div>
             </div>
 
         </div>
 
         <!-- Footer -->
-        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200">
+        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 shrink-0">
             <p class="text-xs text-steel-400">
                 &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
             </p>
@@ -220,13 +287,12 @@
 
     <script>
         document.getElementById('footerYear').textContent = new Date().getFullYear();
-        
-        // Simulação de carregamento do auth (para manter o padrão do template)
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('loading-auth');
         });
     </script>
     <script src="/js/theme.js"></script>
     <script src="/js/layout.js"></script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>
