@@ -155,6 +155,32 @@ async function saveMeta() {
     }
 }
 
+async function deleteMeta() {
+    try {
+        const token = localStorage.getItem('token');
+        const mes = document.getElementById('metaMes')?.value;
+        const ano = document.getElementById('metaAno')?.value;
+        if (!token || !mes || !ano) return;
+
+        // Ao invés de deletar, atualizamos para valor 0
+        const res = await fetch('/api/metas', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ ano: parseInt(ano), mes: parseInt(mes), valor_meta: 0 })
+        });
+
+        if (res.ok) {
+            currentMeta = null;
+            const input = document.getElementById('metaValorInput');
+            if (input) input.value = '';
+            updateGaugeWithMeta();
+            if (window.showModal) window.showModal('Sucesso', 'Meta removida com sucesso.', 'success');
+        }
+    } catch (err) {
+        console.error('Erro ao deletar meta:', err);
+    }
+}
+
 function updateGaugeWithMeta() {
     const mes = document.getElementById('metaMes')?.value;
     const ano = document.getElementById('metaAno')?.value;
@@ -208,8 +234,20 @@ function setupEventListeners() {
     });
 
     document.getElementById('btnSalvarMeta')?.addEventListener('click', saveMeta);
+    document.getElementById('btnLimparMeta')?.addEventListener('click', deleteMeta);
     document.getElementById('metaMes')?.addEventListener('change', loadMeta);
     document.getElementById('metaAno')?.addEventListener('change', loadMeta);
+
+    // Re-renderizar gráficos ao mudar de tema (light/dark)
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class') {
+                updateDashboard();
+                if (typeof drawMap === 'function') drawMap();
+            }
+        });
+    });
+    observer.observe(document.documentElement, { attributes: true });
 }
 
 // ═══════════ PILL SYSTEM (Slicer-style toggle buttons) ═══════════
@@ -222,10 +260,10 @@ function populateFilterPills() {
     renderPillGroup('filterEsfera', getUnique('esfera'), 'esfera');
     renderPillGroup('filterUf', getUnique('uf'), 'uf');
 
-    // Anos extraídos da data de vencimento
+    // Anos extraídos da data de emissão
     const anos = [...new Set(rawData.map(t => {
-        if (!t.data_vencimento) return null;
-        return new Date(t.data_vencimento).getFullYear().toString();
+        if (!t.data_emissao) return null;
+        return new Date(t.data_emissao).getFullYear().toString();
     }).filter(Boolean))].sort();
     renderPillGroup('filterAno', anos, 'ano');
 
@@ -314,7 +352,7 @@ function applyFilters() {
         if (activeFilters.uf.length && !activeFilters.uf.includes(t.uf)) return false;
 
         if (activeFilters.ano.length || activeFilters.mes.length) {
-            const dt = t.data_vencimento ? new Date(t.data_vencimento) : null;
+            const dt = t.data_emissao ? new Date(t.data_emissao) : null;
             if (!dt) return false;
             if (activeFilters.ano.length && !activeFilters.ano.includes(dt.getFullYear().toString())) return false;
             if (activeFilters.mes.length && !activeFilters.mes.includes((dt.getMonth() + 1).toString())) return false;
@@ -331,17 +369,19 @@ function applyFilters() {
 function updateDashboard() {
     let totalVendido = 0;
     let totalRecebido = 0;
+    let totalAberto = 0;
 
     filteredData.forEach(t => {
         const valorNota = parseFloat(t.valor_nota) || 0;
         const valorDep = parseFloat(t.valor_deposito) || 0;
+        
         totalVendido += valorNota;
-        if (t.status === 'PAGO') {
-            totalRecebido += (valorDep > 0 ? valorDep : valorNota);
+        totalRecebido += valorDep;
+        
+        if ((t.status || '').toUpperCase() === 'PENDENTE' || !valorDep) {
+            totalAberto += valorNota;
         }
     });
-
-    const totalAberto = totalVendido - totalRecebido;
 
     // KPI text
     document.getElementById('kpiTotalVendido').textContent = fmt(totalVendido);
@@ -378,11 +418,10 @@ function renderChartBancos() {
     BANCOS_VALIDOS.forEach(b => group[b] = 0);
 
     filteredData.forEach(t => {
-        if (t.status !== 'PAGO') return;
         const b = (t.banco || '').trim().toUpperCase();
         if (!BANCOS_VALIDOS.includes(b)) return; // Ignorar bancos fora da lista
-        const val = parseFloat(t.valor_deposito) || parseFloat(t.valor_nota) || 0;
-        group[b] += val;
+        const val = parseFloat(t.valor_deposito) || 0;
+        if (val > 0) group[b] += val;
     });
 
     // Ordenar por valor desc — mostrar TODOS os bancos válidos inclusive com 0
@@ -465,10 +504,9 @@ function renderChartGauge(metaValor, recebidoNoMes) {
 function renderChartEsfera() {
     const group = {};
     filteredData.forEach(t => {
-        if (t.status !== 'PAGO') return;
         const e = (t.esfera || 'N/I').trim();
-        const val = parseFloat(t.valor_deposito) || parseFloat(t.valor_nota) || 0;
-        group[e] = (group[e] || 0) + val;
+        const val = parseFloat(t.valor_deposito) || 0;
+        if (val > 0) group[e] = (group[e] || 0) + val;
     });
 
     const labels = Object.keys(group);
@@ -479,8 +517,9 @@ function renderChartEsfera() {
         labels: labels.length ? labels : ['Sem dados'],
         chart: { type: 'donut', height: 240, fontFamily: 'Inter, sans-serif', background: 'transparent' },
         colors: ['#0097A7', '#f43f5e', '#f59e0b', '#8b5cf6', '#10b981', '#6366f1'],
+        stroke: { show: false },
         legend: { position: 'bottom', fontSize: '11px', labels: { colors: getTextColor() } },
-        dataLabels: { enabled: true, style: { fontSize: '11px' } },
+        dataLabels: { enabled: true, style: { fontSize: '11px' }, dropShadow: { enabled: false } },
         tooltip: { y: { formatter: (val) => fmt(val) } },
         plotOptions: { pie: { donut: { size: '55%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '12px', formatter: (w) => fmt(w.globals.seriesTotals.reduce((a,b) => a+b, 0)) } } } } },
         theme: { mode: getTheme() }
@@ -499,18 +538,17 @@ function renderChartEsfera() {
 function renderChartEvolucao() {
     const temporal = {};
     filteredData.forEach(t => {
-        if (!t.data_vencimento) return;
-        const dt = new Date(t.data_vencimento);
+        if (!t.data_emissao) return;
+        const dt = new Date(t.data_emissao);
         const key = `${dt.getFullYear()}-${(dt.getMonth()+1).toString().padStart(2,'0')}`;
 
         if (!temporal[key]) temporal[key] = { recebido: 0, aberto: 0 };
-        const valor = parseFloat(t.valor_nota) || 0;
-        const dep = parseFloat(t.valor_deposito) || 0;
+        const valorNota = parseFloat(t.valor_nota) || 0;
+        const valorDep = parseFloat(t.valor_deposito) || 0;
 
-        if (t.status === 'PAGO') {
-            temporal[key].recebido += (dep > 0 ? dep : valor);
-        } else {
-            temporal[key].aberto += valor;
+        temporal[key].recebido += valorDep;
+        if ((t.status || '').toUpperCase() === 'PENDENTE' || !valorDep) {
+            temporal[key].aberto += valorNota;
         }
     });
 
@@ -573,7 +611,11 @@ function drawMap() {
     const mapArr = [['Estado', 'Total (R$)']];
     const allUFs = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
     allUFs.forEach(uf => {
-        mapArr.push([{ v: `BR-${uf}`, f: uf }, ufGroup[uf] || 0]);
+        if (activeFilters.uf.length > 0 && !activeFilters.uf.includes(uf)) {
+            mapArr.push([{ v: `BR-${uf}`, f: uf }, null]);
+        } else {
+            mapArr.push([{ v: `BR-${uf}`, f: uf }, ufGroup[uf] || 0]);
+        }
     });
 
     const data = google.visualization.arrayToDataTable(mapArr);
@@ -583,7 +625,7 @@ function drawMap() {
         region: 'BR',
         resolution: 'provinces',
         colorAxis: { colors: [isDark ? '#374151' : '#e0f7fa', '#0097A7', '#004D40'] },
-        backgroundColor: 'transparent',
+        backgroundColor: isDark ? '#1f2937' : '#ffffff',
         datalessRegionColor: isDark ? '#4b5563' : '#e5e7eb',
         defaultColor: isDark ? '#4b5563' : '#e5e7eb',
         legend: 'none',
