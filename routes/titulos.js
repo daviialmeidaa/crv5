@@ -8,8 +8,14 @@ const { authMiddleware } = require('../middleware/authMiddleware');
 router.get('/', authMiddleware, async (req, res) => {
     try {
         const result = await pgPool.query(`
-            SELECT * FROM titulos 
-            ORDER BY data_vencimento ASC
+            SELECT 
+                t.*, 
+                c.edital, 
+                c.tipo_contrato, 
+                c.classificacao 
+            FROM titulos t
+            LEFT JOIN contratos c ON t.contrato = c.codigo_contrato
+            ORDER BY t.data_vencimento ASC
         `);
         res.json(result.rows);
     } catch (err) {

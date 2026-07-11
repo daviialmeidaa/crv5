@@ -9,8 +9,8 @@ const ContasGrid = (function () {
         { key: 'esfera', label: 'Esfera' },
         { key: 'uf', label: 'UF' },
         { key: 'contrato', label: 'Contrato' },
-        { key: 'marcador', label: 'Marcador Contrato' },
-        { key: 'pregao', label: 'Nº Pregão' },
+        { key: 'tipoContrato', label: 'Tipo Contrato' },
+        { key: 'edital', label: 'Edital' },
         { key: 'classificacao', label: 'Classificação' },
         { key: 'empenho', label: 'Nº Empenho' },
         { key: 'documento', label: 'Nº Documento' },
@@ -67,9 +67,9 @@ const ContasGrid = (function () {
                 esfera: row.esfera || '-',
                 uf: row.uf || '-',
                 contrato: row.contrato || '-',
-                marcador: '-', // Futuro access
-                pregao: '-',   // Futuro access
-                classificacao: '-', // Futuro access
+                tipoContrato: row.tipo_contrato || '-',
+                edital: row.edital || '-',
+                classificacao: row.classificacao || '-',
                 empenho: row.empenho || '-',
                 documento: row.documento || '-',
                 valor: row.valor_nota ? row.valor_nota.toString() : '0.00',

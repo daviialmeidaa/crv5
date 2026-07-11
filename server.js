@@ -18,6 +18,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 // Rotas da API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/titulos', require('./routes/titulos'));
+app.use('/api/contratos', require('./routes/contratos'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
