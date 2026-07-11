@@ -20,6 +20,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/titulos', require('./routes/titulos'));
 app.use('/api/contratos', require('./routes/contratos'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/metas', require('./routes/metas'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {

@@ -3,6 +3,11 @@
 let rawData = [];
 let filteredData = [];
 let charts = {};
+let currentMeta = null; // { ano, mes, valor_meta }
+
+// ═══════════ CONSTANTES DE NEGÓCIO ═══════════
+const BANCOS_VALIDOS = ['BB', 'BB_BML', 'BRADESCO', 'BRADESCO_BML', 'CEF', 'CEF_BOL', 'ITAU', 'ITAU_BML', 'ITAU_BOL', 'SANTANDER', 'SANTANDER_BML'];
+const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 // ═══════════ FILTER STATE (multi-select, pill-based) ═══════════
 const activeFilters = {
@@ -13,8 +18,6 @@ const activeFilters = {
     ano: [],
     mes: []
 };
-
-const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
 // Formatação Monetária
 const fmt = (val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
@@ -49,8 +52,12 @@ async function fetchDashboardData() {
         rawData = Array.isArray(data) ? data : (data.titulos || []);
 
         populateFilterPills();
+        populateMetaSelectors();
         applyFilters();
         initMap();
+
+        // Carregar meta do mês/ano selecionado
+        await loadMeta();
 
         if (icon) icon.classList.remove('animate-spin');
     } catch (err) {
@@ -60,20 +67,149 @@ async function fetchDashboardData() {
     }
 }
 
+// ═══════════ META DE RECEBIMENTO ═══════════
+
+function populateMetaSelectors() {
+    const now = new Date();
+    
+    // Mês: selecionar o mês atual
+    const metaMes = document.getElementById('metaMes');
+    if (metaMes) metaMes.value = (now.getMonth() + 1).toString();
+
+    // Ano: preencher com anos disponíveis nos dados + ano atual
+    const anosSet = new Set();
+    anosSet.add(now.getFullYear().toString());
+    rawData.forEach(t => {
+        if (t.data_pagamento) anosSet.add(new Date(t.data_pagamento).getFullYear().toString());
+        if (t.data_vencimento) anosSet.add(new Date(t.data_vencimento).getFullYear().toString());
+    });
+    const anos = [...anosSet].sort();
+    
+    const metaAno = document.getElementById('metaAno');
+    if (metaAno) {
+        metaAno.innerHTML = anos.map(a => `<option value="${a}">${a}</option>`).join('');
+        metaAno.value = now.getFullYear().toString();
+    }
+}
+
+async function loadMeta() {
+    try {
+        const token = localStorage.getItem('token');
+        const mes = document.getElementById('metaMes')?.value;
+        const ano = document.getElementById('metaAno')?.value;
+        if (!token || !mes || !ano) return;
+
+        const res = await fetch(`/api/metas?ano=${ano}&mes=${mes}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.length > 0) {
+            currentMeta = data[0];
+            const input = document.getElementById('metaValorInput');
+            if (input) input.value = parseFloat(currentMeta.valor_meta).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        } else {
+            currentMeta = null;
+            const input = document.getElementById('metaValorInput');
+            if (input) input.value = '';
+        }
+
+        // Re-render gauge com a meta
+        updateGaugeWithMeta();
+    } catch (err) {
+        console.error('Erro ao carregar meta:', err);
+    }
+}
+
+async function saveMeta() {
+    try {
+        const token = localStorage.getItem('token');
+        const mes = document.getElementById('metaMes')?.value;
+        const ano = document.getElementById('metaAno')?.value;
+        const rawValue = document.getElementById('metaValorInput')?.value;
+        
+        if (!token || !mes || !ano || !rawValue) return;
+
+        // Parse valor: aceitar "1.560.480,32" ou "1560480.32"
+        const cleanValue = rawValue.replace(/\./g, '').replace(',', '.');
+        const valorMeta = parseFloat(cleanValue);
+        if (isNaN(valorMeta) || valorMeta <= 0) {
+            if (window.showModal) window.showModal('Atenção', 'Digite um valor numérico válido para a meta.', 'error');
+            return;
+        }
+
+        const res = await fetch('/api/metas', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ ano: parseInt(ano), mes: parseInt(mes), valor_meta: valorMeta })
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+            currentMeta = result;
+            updateGaugeWithMeta();
+            if (window.showModal) window.showModal('Sucesso', `Meta de ${MONTH_NAMES[parseInt(mes)-1]}/${ano} salva: ${fmt(valorMeta)}`, 'success');
+        }
+    } catch (err) {
+        console.error('Erro ao salvar meta:', err);
+    }
+}
+
+function updateGaugeWithMeta() {
+    const mes = document.getElementById('metaMes')?.value;
+    const ano = document.getElementById('metaAno')?.value;
+    const subtitle = document.getElementById('gaugeSubtitle');
+
+    if (!mes || !ano) return;
+
+    // Calcular total recebido NO MÊS SELECIONADO (baseado em data_pagamento)
+    let recebidoNoMes = 0;
+    rawData.forEach(t => {
+        if (t.status !== 'PAGO' || !t.data_pagamento) return;
+        const dt = new Date(t.data_pagamento);
+        if (dt.getFullYear().toString() === ano && (dt.getMonth() + 1).toString() === mes) {
+            const dep = parseFloat(t.valor_deposito) || 0;
+            const nota = parseFloat(t.valor_nota) || 0;
+            recebidoNoMes += (dep > 0 ? dep : nota);
+        }
+    });
+
+    const metaVal = currentMeta ? parseFloat(currentMeta.valor_meta) : 0;
+
+    if (subtitle) {
+        if (metaVal > 0) {
+            subtitle.textContent = `Meta: ${fmt(metaVal)} | Recebido: ${fmt(recebidoNoMes)}`;
+        } else {
+            subtitle.textContent = `Sem meta definida | Recebido: ${fmt(recebidoNoMes)}`;
+        }
+    }
+
+    renderChartGauge(metaVal, recebidoNoMes);
+}
+
 // ═══════════ EVENTS ═══════════
 function setupEventListeners() {
     document.getElementById('btnRefresh')?.addEventListener('click', async () => {
-        // Destroy all charts so they re-render cleanly
         Object.keys(charts).forEach(k => { if (charts[k]) { charts[k].destroy(); charts[k] = null; } });
         await fetchDashboardData();
     });
 
     document.getElementById('btnClearFilters')?.addEventListener('click', () => {
         Object.keys(activeFilters).forEach(k => activeFilters[k] = []);
-        populateFilterPills(); // re-render all pills as inactive
+        populateFilterPills();
         applyFilters();
         document.getElementById('btnClearFilters').classList.add('hidden');
     });
+
+    // Meta controls toggle
+    document.getElementById('btnEditMeta')?.addEventListener('click', () => {
+        const panel = document.getElementById('metaControls');
+        if (panel) panel.classList.toggle('hidden');
+    });
+
+    document.getElementById('btnSalvarMeta')?.addEventListener('click', saveMeta);
+    document.getElementById('metaMes')?.addEventListener('change', loadMeta);
+    document.getElementById('metaAno')?.addEventListener('change', loadMeta);
 }
 
 // ═══════════ PILL SYSTEM (Slicer-style toggle buttons) ═══════════
@@ -220,7 +356,7 @@ function updateDashboard() {
 
     // Charts
     renderChartBancos();
-    renderChartGauge(totalVendido, totalRecebido);
+    updateGaugeWithMeta(); // O gauge usa a meta, não totalVendido
     renderChartEsfera();
     renderChartEvolucao();
 }
@@ -234,24 +370,32 @@ function getTextColor() {
     return getTheme() === 'dark' ? '#d1d5db' : '#374151';
 }
 
-// --- Recebimento por Banco (Horizontal Bar) ---
+// --- Recebimento por Banco (Horizontal Bar) - APENAS bancos válidos ---
 function renderChartBancos() {
     const group = {};
+
+    // Inicializar todos os bancos válidos com 0
+    BANCOS_VALIDOS.forEach(b => group[b] = 0);
+
     filteredData.forEach(t => {
         if (t.status !== 'PAGO') return;
-        const b = (t.banco || 'NÃO INFORMADO').trim();
+        const b = (t.banco || '').trim().toUpperCase();
+        if (!BANCOS_VALIDOS.includes(b)) return; // Ignorar bancos fora da lista
         const val = parseFloat(t.valor_deposito) || parseFloat(t.valor_nota) || 0;
-        group[b] = (group[b] || 0) + val;
+        group[b] += val;
     });
 
-    const sorted = Object.entries(group).sort((a, b) => b[1] - a[1]).slice(0, 8);
+    // Ordenar por valor desc — mostrar TODOS os bancos válidos inclusive com 0
+    const sorted = Object.entries(group)
+        .sort((a, b) => b[1] - a[1]);
+
     const seriesData = sorted.map(i => parseFloat(i[1].toFixed(2)));
-    const categories = sorted.map(i => i[0].length > 18 ? i[0].substring(0, 18) + '…' : i[0]);
+    const categories = sorted.map(i => i[0]);
 
     const opts = {
         series: [{ name: 'Recebido', data: seriesData }],
-        chart: { type: 'bar', height: '100%', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent' },
-        plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
+        chart: { type: 'bar', height: 240, fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent' },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '55%' } },
         dataLabels: {
             enabled: true,
             formatter: (val) => fmt(val),
@@ -259,7 +403,7 @@ function renderChartBancos() {
             offsetX: 5
         },
         xaxis: { categories, labels: { show: false }, axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { fontSize: '11px', colors: [getTextColor()] } } },
+        yaxis: { labels: { style: { fontSize: '10px', colors: [getTextColor()] } } },
         grid: { show: false },
         colors: ['#0097A7'],
         tooltip: { y: { formatter: (val) => fmt(val) } },
@@ -275,22 +419,27 @@ function renderChartBancos() {
     }
 }
 
-// --- Gauge (Radial Bar) ---
-function renderChartGauge(vendido, recebido) {
-    let perc = vendido > 0 ? Math.min((recebido / vendido) * 100, 100) : 0;
+// --- Gauge: Meta do Mês vs Recebido ---
+function renderChartGauge(metaValor, recebidoNoMes) {
+    let perc = 0;
+    if (metaValor > 0) {
+        perc = Math.min((recebidoNoMes / metaValor) * 100, 100);
+    } else if (recebidoNoMes > 0) {
+        perc = 100; // sem meta definida, mas recebeu algo
+    }
 
     const opts = {
         series: [parseFloat(perc.toFixed(1))],
-        chart: { type: 'radialBar', height: '100%', fontFamily: 'Inter, sans-serif', background: 'transparent' },
+        chart: { type: 'radialBar', height: 220, fontFamily: 'Inter, sans-serif', background: 'transparent' },
         plotOptions: {
             radialBar: {
                 startAngle: -135,
                 endAngle: 135,
-                hollow: { size: '60%' },
+                hollow: { size: '55%' },
                 track: { background: getTheme() === 'dark' ? '#374151' : '#e5e7eb', strokeWidth: '100%' },
                 dataLabels: {
-                    name: { show: true, fontSize: '13px', color: getTextColor(), offsetY: -10 },
-                    value: { fontSize: '28px', fontWeight: 'bold', color: getTextColor(), offsetY: 5, formatter: (val) => val + '%' }
+                    name: { show: true, fontSize: '12px', color: getTextColor(), offsetY: -8 },
+                    value: { fontSize: '26px', fontWeight: 'bold', color: getTextColor(), offsetY: 4, formatter: (val) => val + '%' }
                 }
             }
         },
@@ -299,14 +448,15 @@ function renderChartGauge(vendido, recebido) {
             gradient: { shade: 'dark', type: 'horizontal', shadeIntensity: 0.5, gradientToColors: ['#10b981'], stops: [0, 100] }
         },
         stroke: { lineCap: 'round' },
-        labels: ['Recebido'],
-        colors: ['#0097A7']
+        labels: ['da Meta'],
+        colors: perc < 30 ? ['#f43f5e'] : perc < 70 ? ['#f59e0b'] : ['#0097A7']
     };
 
     if (!charts.gauge) {
         charts.gauge = new ApexCharts(document.querySelector("#chartGauge"), opts);
         charts.gauge.render();
     } else {
+        charts.gauge.updateOptions({ colors: perc < 30 ? ['#f43f5e'] : perc < 70 ? ['#f59e0b'] : ['#0097A7'] });
         charts.gauge.updateSeries([parseFloat(perc.toFixed(1))]);
     }
 }
@@ -327,12 +477,12 @@ function renderChartEsfera() {
     const opts = {
         series: seriesData.length ? seriesData : [1],
         labels: labels.length ? labels : ['Sem dados'],
-        chart: { type: 'donut', height: '100%', fontFamily: 'Inter, sans-serif', background: 'transparent' },
+        chart: { type: 'donut', height: 240, fontFamily: 'Inter, sans-serif', background: 'transparent' },
         colors: ['#0097A7', '#f43f5e', '#f59e0b', '#8b5cf6', '#10b981', '#6366f1'],
-        legend: { position: 'bottom', fontSize: '12px', labels: { colors: getTextColor() } },
+        legend: { position: 'bottom', fontSize: '11px', labels: { colors: getTextColor() } },
         dataLabels: { enabled: true, style: { fontSize: '11px' } },
         tooltip: { y: { formatter: (val) => fmt(val) } },
-        plotOptions: { pie: { donut: { size: '55%', labels: { show: true, total: { show: true, label: 'Total', formatter: (w) => fmt(w.globals.seriesTotals.reduce((a,b) => a+b, 0)) } } } } },
+        plotOptions: { pie: { donut: { size: '55%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '12px', formatter: (w) => fmt(w.globals.seriesTotals.reduce((a,b) => a+b, 0)) } } } } },
         theme: { mode: getTheme() }
     };
 
@@ -345,7 +495,7 @@ function renderChartEsfera() {
     }
 }
 
-// --- Evolução Mensal (Area + Line) ---
+// --- Evolução Mensal (Area + Column) ---
 function renderChartEvolucao() {
     const temporal = {};
     filteredData.forEach(t => {
@@ -377,7 +527,7 @@ function renderChartEvolucao() {
             { name: 'Recebido', type: 'area', data: dataRec },
             { name: 'Em Aberto', type: 'column', data: dataAb }
         ],
-        chart: { height: '100%', type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent', stacked: false },
+        chart: { height: 240, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent', stacked: false },
         stroke: { curve: 'smooth', width: [3, 0] },
         fill: { type: ['gradient', 'solid'], opacity: [0.25, 0.85] },
         xaxis: { categories: labels, labels: { style: { fontSize: '10px', colors: getTextColor() }, rotate: -45, rotateAlways: keys.length > 10 } },
@@ -432,10 +582,10 @@ function drawMap() {
     const options = {
         region: 'BR',
         resolution: 'provinces',
-        colorAxis: { colors: [isDark ? '#1f2937' : '#e0f7fa', '#0097A7', '#004D40'] },
-        backgroundColor: isDark ? '#1f2937' : '#ffffff',
-        datalessRegionColor: isDark ? '#374151' : '#f3f4f6',
-        defaultColor: isDark ? '#374151' : '#f3f4f6',
+        colorAxis: { colors: [isDark ? '#374151' : '#e0f7fa', '#0097A7', '#004D40'] },
+        backgroundColor: 'transparent',
+        datalessRegionColor: isDark ? '#4b5563' : '#e5e7eb',
+        defaultColor: isDark ? '#4b5563' : '#e5e7eb',
         legend: 'none',
         tooltip: { trigger: 'focus', textStyle: { fontSize: 12 } },
         keepAspectRatio: true
