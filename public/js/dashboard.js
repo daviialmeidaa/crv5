@@ -333,9 +333,9 @@ function renderPillGroupCustom(containerId, items, filterKey) {
 
 function getPillClass(active) {
     if (active) {
-        return 'px-2.5 py-1 text-[11px] font-semibold rounded-md cursor-pointer transition-all duration-200 bg-nexo-500 text-white shadow-sm hover:bg-nexo-600';
+        return 'shrink-0 whitespace-nowrap px-2.5 py-1 text-[11px] font-semibold rounded-md cursor-pointer transition-all duration-200 bg-nexo-500 text-white shadow-sm hover:bg-nexo-600';
     }
-    return 'px-2.5 py-1 text-[11px] font-medium rounded-md cursor-pointer transition-all duration-200 bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-steel-400 hover:bg-nexo-100 dark:hover:bg-steel-600 hover:text-nexo-700 dark:hover:text-nexo-300';
+    return 'shrink-0 whitespace-nowrap px-2.5 py-1 text-[11px] font-medium rounded-md cursor-pointer transition-all duration-200 bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-steel-400 hover:bg-nexo-100 dark:hover:bg-steel-600 hover:text-nexo-700 dark:hover:text-nexo-300';
 }
 
 function toggleFilter(filterKey, value, containerId, label) {
