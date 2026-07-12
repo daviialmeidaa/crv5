@@ -143,6 +143,21 @@ const ContasGrid = (function () {
 
                 if (valA < valB) return -1 * dir;
                 if (valA > valB) return 1 * dir;
+                
+                // Empate no critério principal! Desempate (Tie-breaker)
+                
+                // 1º Desempate: Agrupar pela mesma Nota (Ordem Decrescente, notas mais novas primeiro)
+                const notaA = a.nota || '';
+                const notaB = b.nota || '';
+                if (notaA > notaB) return -1;
+                if (notaA < notaB) return 1;
+
+                // 2º Desempate: Se for a mesma nota (ex: parcelamentos), ordenar pelo Documento Crescente (ex: -1 vem antes do -2)
+                const docA = a.documento || '';
+                const docB = b.documento || '';
+                if (docA < docB) return -1;
+                if (docA > docB) return 1;
+
                 return 0;
             });
         }
