@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
     secure: true,
     auth: {
         user: 'ti@nexomed.com.br',
-        pass: 'nexo123' // Senha realocada conforme instrução
+        pass: '3&#AhEeBChh#'
     }
 });
 
@@ -139,29 +139,56 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
             to: email,
             subject: 'Bem-vindo à Nexomed - Suas credenciais de acesso',
             html: `
-            <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 30px; border-radius: 12px; border: 1px solid #e5e7eb;">
-                <div style="text-align: center; margin-bottom: 24px;">
-                    <h1 style="color: #00838F; margin: 0; font-size: 24px;">NEXOMED</h1>
-                    <p style="color: #6b7280; font-size: 14px; margin-top: 4px;">Contas a Receber</p>
-                </div>
-                <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                    <h2 style="color: #1f2937; font-size: 18px; margin-top: 0;">Olá, ${nome}!</h2>
-                    <p style="color: #4b5563; font-size: 15px; line-height: 1.5;">
-                        Sua conta no sistema <strong>Contas a Receber v5</strong> da Nexomed foi criada com sucesso pelo administrador.
-                    </p>
-                    <div style="margin: 24px 0; padding: 16px; background-color: #f3f4f6; border-radius: 6px; border-left: 4px solid #0097A7;">
-                        <p style="margin: 0 0 8px 0; color: #374151; font-size: 14px;">Seu E-mail (Login):</p>
-                        <p style="margin: 0 0 16px 0; color: #111827; font-weight: bold; font-size: 16px;">${email}</p>
-                        
-                        <p style="margin: 0 0 8px 0; color: #374151; font-size: 14px;">Sua Senha Provisória:</p>
-                        <p style="margin: 0; color: #0097A7; font-weight: bold; font-size: 18px; letter-spacing: 1px;">${generatedPassword}</p>
+            <div style="font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; margin: 0; padding: 40px 20px;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+                    
+                    <!-- Header with Gradient -->
+                    <div style="background: linear-gradient(135deg, #00838F 0%, #0097A7 100%); padding: 40px 30px; text-align: center;">
+                        <h1 style="color: #ffffff; font-size: 28px; font-weight: 800; margin: 0; letter-spacing: 2px;">NEXOMED</h1>
+                        <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 8px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">Contas a Receber v5</p>
                     </div>
-                    <p style="color: #4b5563; font-size: 14px; line-height: 1.5;">
-                        Por questões de segurança, no seu <strong>primeiro acesso</strong> você será solicitado a criar uma nova senha pessoal definitiva.
-                    </p>
-                </div>
-                <div style="text-align: center; margin-top: 24px; color: #9ca3af; font-size: 12px;">
-                    <p>Este é um e-mail automático enviado pelo sistema interno Nexomed. Por favor, não responda.</p>
+
+                    <!-- Body -->
+                    <div style="padding: 40px 30px;">
+                        <h2 style="color: #111827; font-size: 22px; font-weight: 700; margin: 0 0 20px 0;">Olá, ${nome}!</h2>
+                        <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                            Sua conta de acesso ao nosso sistema financeiro foi gerada com sucesso. Preparamos um ambiente seguro e de alta performance para você.
+                        </p>
+
+                        <!-- Credenciais Card -->
+                        <div style="background-color: #1f2937; border-radius: 12px; padding: 30px; position: relative; overflow: hidden;">
+                            <!-- Decorative element -->
+                            <div style="position: absolute; top: 0; left: 0; width: 4px; height: 100%; background-color: #0097A7;"></div>
+                            
+                            <p style="margin: 0 0 8px 0; color: #9ca3af; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">Credenciais de Acesso</p>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">Usuário / E-mail</p>
+                                <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 600;">${email}</p>
+                            </div>
+
+                            <div>
+                                <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 14px;">Senha Provisória</p>
+                                <p style="margin: 0; color: #00E5FF; font-size: 24px; font-weight: 700; letter-spacing: 2px;">${generatedPassword}</p>
+                            </div>
+                        </div>
+
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 30px 0 0 0; padding-left: 15px; border-left: 3px solid #e5e7eb;">
+                            ⚠️ <strong>Atenção:</strong> Por razões de segurança corporativa, no seu primeiro login será exigido que você cadastre uma nova senha pessoal definitiva.
+                        </p>
+
+                        <!-- Acesso Button -->
+                        <div style="text-align: center; margin-top: 40px;">
+                            <span style="display: inline-block; background-color: #0097A7; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(0, 151, 167, 0.25);">Acesse pelo Servidor Local</span>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center;">
+                        <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5;">
+                            Este é um e-mail automático gerado pelo sistema interno Nexomed.<br>Por favor, não responda a esta mensagem.
+                        </p>
+                    </div>
                 </div>
             </div>
             `

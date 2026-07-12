@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
     secure: true,
     auth: {
         user: 'ti@nexomed.com.br',
-        pass: 'nexo123'
+        pass: '3&#AhEeBChh#'
     },
     debug: true, // show debug output
     logger: true // log information in console
