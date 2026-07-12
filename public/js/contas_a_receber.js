@@ -64,7 +64,7 @@ const ContasGrid = (function () {
                 empresa: row.empresa || '-',
                 nota: row.nota || '-',
                 codCliente: row.cod_cliente || '-',
-                esfera: row.esfera || '-',
+                esfera: row.esfera ? row.esfera.replace(/\s+/g, ' ').trim().toUpperCase() : '-',
                 uf: row.uf || '-',
                 contrato: row.contrato || '-',
                 tipoContrato: row.tipo_contrato || '-',

@@ -51,6 +51,26 @@ async function fetchDashboardData() {
         // A API retorna um array direto (result.rows)
         rawData = Array.isArray(data) ? data : (data.titulos || []);
 
+        const hoje = new Date();
+        hoje.setHours(0,0,0,0);
+
+        // Normalização de dados para os filtros e gráficos
+        rawData.forEach(t => {
+            if (t.esfera) {
+                t.esfera = t.esfera.replace(/\s+/g, ' ').trim().toUpperCase();
+            }
+            if (t.status) {
+                t.status = t.status.trim().toUpperCase();
+                if (t.status === 'PENDENTE' && t.data_vencimento) {
+                    const venc = new Date(t.data_vencimento);
+                    venc.setHours(0,0,0,0);
+                    if (venc < hoje && (!t.data_pagamento)) {
+                        t.status = 'ATRASADO';
+                    }
+                }
+            }
+        });
+
         populateFilterPills();
         populateMetaSelectors();
         applyFilters();
