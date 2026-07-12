@@ -3,14 +3,11 @@ const pool = require('./pgConnection');
 async function createMetasTable() {
     const query = `
         CREATE TABLE IF NOT EXISTS metas_recebimento (
-            id SERIAL PRIMARY KEY,
-            ano INTEGER NOT NULL,
-            mes INTEGER NOT NULL,
+            id INT PRIMARY KEY,
             valor_meta NUMERIC(15, 2) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(ano, mes)
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+        INSERT INTO metas_recebimento (id, valor_meta) VALUES (1, 0) ON CONFLICT DO NOTHING;
     `;
 
     try {

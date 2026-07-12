@@ -3,49 +3,36 @@ const router = express.Router();
 const pgPool = require('../db/pgConnection');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
-// GET /api/metas - Buscar todas as metas ou de um ano/mês específico
+// GET /api/metas - Buscar a meta atual
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        const { ano, mes } = req.query;
-        let query = 'SELECT * FROM metas_recebimento';
-        const params = [];
-
-        if (ano && mes) {
-            query += ' WHERE ano = $1 AND mes = $2';
-            params.push(parseInt(ano), parseInt(mes));
-        } else if (ano) {
-            query += ' WHERE ano = $1';
-            params.push(parseInt(ano));
+        const result = await pgPool.query('SELECT valor_meta FROM metas_recebimento WHERE id = 1');
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.json({ valor_meta: 0 });
         }
-
-        query += ' ORDER BY ano DESC, mes DESC';
-
-        const result = await pgPool.query(query, params);
-        res.json(result.rows);
     } catch (err) {
         console.error('Erro ao buscar metas:', err);
         res.status(500).json({ error: 'Erro ao buscar metas.' });
     }
 });
 
-// PUT /api/metas - Criar ou atualizar uma meta (UPSERT)
+// PUT /api/metas - Atualizar a meta (única)
 router.put('/', authMiddleware, async (req, res) => {
     try {
-        const { ano, mes, valor_meta } = req.body;
+        const { valor_meta } = req.body;
 
-        if (!ano || !mes || valor_meta === undefined || valor_meta === null) {
-            return res.status(400).json({ error: 'Campos ano, mes e valor_meta são obrigatórios.' });
+        if (valor_meta === undefined || valor_meta === null) {
+            return res.status(400).json({ error: 'O campo valor_meta é obrigatório.' });
         }
 
         const result = await pgPool.query(
-            `INSERT INTO metas_recebimento (ano, mes, valor_meta, updated_at)
-             VALUES ($1, $2, $3, NOW())
-             ON CONFLICT (ano, mes) DO UPDATE SET valor_meta = $3, updated_at = NOW()
-             RETURNING *`,
-            [parseInt(ano), parseInt(mes), parseFloat(valor_meta)]
+            `UPDATE metas_recebimento SET valor_meta = $1, updated_at = NOW() WHERE id = 1 RETURNING *`,
+            [parseFloat(valor_meta)]
         );
 
-        res.json(result.rows[0]);
+        res.json(result.rows[0] || { valor_meta: parseFloat(valor_meta) });
     } catch (err) {
         console.error('Erro ao salvar meta:', err);
         res.status(500).json({ error: 'Erro ao salvar meta.' });

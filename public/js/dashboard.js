@@ -80,8 +80,8 @@ function populateMetaSelectors() {
     const anosSet = new Set();
     anosSet.add(now.getFullYear().toString());
     rawData.forEach(t => {
-        if (t.data_pagamento) anosSet.add(new Date(t.data_pagamento).getFullYear().toString());
-        if (t.data_vencimento) anosSet.add(new Date(t.data_vencimento).getFullYear().toString());
+        if (t.data_pagamento) anosSet.add(t.data_pagamento.substring(0, 4));
+        if (t.data_vencimento) anosSet.add(t.data_vencimento.substring(0, 4));
     });
     const anos = [...anosSet].sort();
     
@@ -90,22 +90,24 @@ function populateMetaSelectors() {
         metaAno.innerHTML = anos.map(a => `<option value="${a}">${a}</option>`).join('');
         metaAno.value = now.getFullYear().toString();
     }
+
+    // Attach listeners so the chart updates when month/year changes
+    if (metaMes) metaMes.addEventListener('change', updateGaugeWithMeta);
+    if (metaAno) metaAno.addEventListener('change', updateGaugeWithMeta);
 }
 
 async function loadMeta() {
     try {
         const token = localStorage.getItem('token');
-        const mes = document.getElementById('metaMes')?.value;
-        const ano = document.getElementById('metaAno')?.value;
-        if (!token || !mes || !ano) return;
+        if (!token) return;
 
-        const res = await fetch(`/api/metas?ano=${ano}&mes=${mes}`, {
+        const res = await fetch(`/api/metas`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
         
-        if (data.length > 0) {
-            currentMeta = data[0];
+        if (data && typeof data.valor_meta !== 'undefined') {
+            currentMeta = data;
             const input = document.getElementById('metaValorInput');
             if (input) input.value = parseFloat(currentMeta.valor_meta).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
         } else {
@@ -124,16 +126,14 @@ async function loadMeta() {
 async function saveMeta() {
     try {
         const token = localStorage.getItem('token');
-        const mes = document.getElementById('metaMes')?.value;
-        const ano = document.getElementById('metaAno')?.value;
         const rawValue = document.getElementById('metaValorInput')?.value;
         
-        if (!token || !mes || !ano || !rawValue) return;
+        if (!token || !rawValue) return;
 
         // Parse valor: aceitar "1.560.480,32" ou "1560480.32"
         const cleanValue = rawValue.replace(/\./g, '').replace(',', '.');
         const valorMeta = parseFloat(cleanValue);
-        if (isNaN(valorMeta) || valorMeta <= 0) {
+        if (isNaN(valorMeta) || valorMeta < 0) {
             if (window.showModal) window.showModal('Atenção', 'Digite um valor numérico válido para a meta.', 'error');
             return;
         }
@@ -141,7 +141,7 @@ async function saveMeta() {
         const res = await fetch('/api/metas', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ ano: parseInt(ano), mes: parseInt(mes), valor_meta: valorMeta })
+            body: JSON.stringify({ valor_meta: valorMeta })
         });
 
         const result = await res.json();
@@ -166,7 +166,7 @@ async function deleteMeta() {
         const res = await fetch('/api/metas', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ ano: parseInt(ano), mes: parseInt(mes), valor_meta: 0 })
+            body: JSON.stringify({ valor_meta: 0 })
         });
 
         if (res.ok) {
@@ -184,33 +184,34 @@ async function deleteMeta() {
 function updateGaugeWithMeta() {
     const mes = document.getElementById('metaMes')?.value;
     const ano = document.getElementById('metaAno')?.value;
-    const subtitle = document.getElementById('gaugeSubtitle');
-
-    if (!mes || !ano) return;
-
-    // Calcular total recebido NO MÊS SELECIONADO (baseado em data_pagamento)
     let recebidoNoMes = 0;
-    rawData.forEach(t => {
-        if (t.status !== 'PAGO' || !t.data_pagamento) return;
-        const dt = new Date(t.data_pagamento);
-        if (dt.getFullYear().toString() === ano && (dt.getMonth() + 1).toString() === mes) {
-            const dep = parseFloat(t.valor_deposito) || 0;
-            const nota = parseFloat(t.valor_nota) || 0;
-            recebidoNoMes += (dep > 0 ? dep : nota);
-        }
-    });
 
-    const metaVal = currentMeta ? parseFloat(currentMeta.valor_meta) : 0;
-
-    if (subtitle) {
-        if (metaVal > 0) {
-            subtitle.textContent = `Meta: ${fmt(metaVal)} | Recebido: ${fmt(recebidoNoMes)}`;
-        } else {
-            subtitle.textContent = `Sem meta definida | Recebido: ${fmt(recebidoNoMes)}`;
-        }
+    if (mes && ano) {
+        filteredData.forEach(t => {
+            if (!t.data_pagamento) return;
+            
+            const y = t.data_pagamento.substring(0, 4);
+            const m = parseInt(t.data_pagamento.substring(5, 7)).toString();
+            
+            if (y === ano && m === mes) {
+                const dep = parseFloat(t.valor_deposito) || 0;
+                recebidoNoMes += dep;
+            }
+        });
     }
 
-    renderChartGauge(metaVal, recebidoNoMes);
+    const refStr = (mes && ano) ? ` (${mes.padStart(2,'0')}/${ano})` : '';
+
+    if (currentMeta && currentMeta.valor_meta > 0) {
+        const mv = parseFloat(currentMeta.valor_meta);
+        const subtitle = document.getElementById('gaugeSubtitle');
+        if (subtitle) subtitle.textContent = `Meta: ${fmt(mv)} | Recebido${refStr}: ${fmt(recebidoNoMes)}`;
+        renderChartGauge(mv, recebidoNoMes);
+    } else {
+        const subtitle = document.getElementById('gaugeSubtitle');
+        if (subtitle) subtitle.textContent = `Sem meta | Recebido${refStr}: ${fmt(recebidoNoMes)}`;
+        renderChartGauge(0, recebidoNoMes);
+    }
 }
 
 // ═══════════ EVENTS ═══════════
@@ -235,8 +236,8 @@ function setupEventListeners() {
 
     document.getElementById('btnSalvarMeta')?.addEventListener('click', saveMeta);
     document.getElementById('btnLimparMeta')?.addEventListener('click', deleteMeta);
-    document.getElementById('metaMes')?.addEventListener('change', loadMeta);
-    document.getElementById('metaAno')?.addEventListener('change', loadMeta);
+    document.getElementById('metaMes')?.addEventListener('change', updateGaugeWithMeta);
+    document.getElementById('metaAno')?.addEventListener('change', updateGaugeWithMeta);
 
     // Re-renderizar gráficos ao mudar de tema (light/dark)
     const observer = new MutationObserver((mutations) => {
@@ -407,7 +408,7 @@ function getTheme() {
     return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 }
 function getTextColor() {
-    return getTheme() === 'dark' ? '#d1d5db' : '#374151';
+    return getTheme() === 'dark' ? '#f3f4f6' : '#374151';
 }
 
 // --- Recebimento por Banco (Horizontal Bar) - APENAS bancos válidos ---
@@ -445,7 +446,7 @@ function renderChartBancos() {
         yaxis: { labels: { style: { fontSize: '10px', colors: [getTextColor()] } } },
         grid: { show: false },
         colors: ['#0097A7'],
-        tooltip: { y: { formatter: (val) => fmt(val) } },
+        tooltip: { y: { formatter: (val) => fmt(val) }, theme: getTheme() },
         theme: { mode: getTheme() }
     };
 
@@ -453,8 +454,7 @@ function renderChartBancos() {
         charts.bancos = new ApexCharts(document.querySelector("#chartBancos"), opts);
         charts.bancos.render();
     } else {
-        charts.bancos.updateOptions({ xaxis: { categories } });
-        charts.bancos.updateSeries([{ data: seriesData }]);
+        charts.bancos.updateOptions(opts, false, false);
     }
 }
 
@@ -495,8 +495,7 @@ function renderChartGauge(metaValor, recebidoNoMes) {
         charts.gauge = new ApexCharts(document.querySelector("#chartGauge"), opts);
         charts.gauge.render();
     } else {
-        charts.gauge.updateOptions({ colors: perc < 30 ? ['#f43f5e'] : perc < 70 ? ['#f59e0b'] : ['#0097A7'] });
-        charts.gauge.updateSeries([parseFloat(perc.toFixed(1))]);
+        charts.gauge.updateOptions(opts, false, false);
     }
 }
 
@@ -520,8 +519,26 @@ function renderChartEsfera() {
         stroke: { show: false },
         legend: { position: 'bottom', fontSize: '11px', labels: { colors: getTextColor() } },
         dataLabels: { enabled: true, style: { fontSize: '11px' }, dropShadow: { enabled: false } },
-        tooltip: { y: { formatter: (val) => fmt(val) } },
-        plotOptions: { pie: { donut: { size: '55%', labels: { show: true, total: { show: true, label: 'Total', fontSize: '12px', formatter: (w) => fmt(w.globals.seriesTotals.reduce((a,b) => a+b, 0)) } } } } },
+        tooltip: { y: { formatter: (val) => fmt(val) }, theme: getTheme() },
+        plotOptions: {
+            pie: {
+                donut: {
+                    size: '55%',
+                    labels: {
+                        show: true,
+                        name: { fontSize: '12px', color: getTextColor() },
+                        value: { fontSize: '16px', color: getTextColor(), formatter: (val) => fmt(val) },
+                        total: {
+                            show: true,
+                            label: 'Total',
+                            color: getTextColor(),
+                            fontSize: '12px',
+                            formatter: (w) => fmt(w.globals.seriesTotals.reduce((a, b) => a + b, 0))
+                        }
+                    }
+                }
+            }
+        },
         theme: { mode: getTheme() }
     };
 
@@ -529,8 +546,7 @@ function renderChartEsfera() {
         charts.esfera = new ApexCharts(document.querySelector("#chartEsfera"), opts);
         charts.esfera.render();
     } else {
-        charts.esfera.updateOptions({ labels: labels.length ? labels : ['Sem dados'] });
-        charts.esfera.updateSeries(seriesData.length ? seriesData : [1]);
+        charts.esfera.updateOptions(opts, false, false);
     }
 }
 
@@ -562,15 +578,14 @@ function renderChartEvolucao() {
 
     const opts = {
         series: [
-            { name: 'Recebido', type: 'area', data: dataRec },
-            { name: 'Em Aberto', type: 'column', data: dataAb }
+            { name: 'Recebido', data: dataRec },
+            { name: 'Em Aberto', data: dataAb }
         ],
-        chart: { height: 240, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent', stacked: false },
-        stroke: { curve: 'smooth', width: [3, 0] },
-        fill: { type: ['gradient', 'solid'], opacity: [0.25, 0.85] },
+        chart: { height: 240, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent' },
+        stroke: { curve: 'smooth', width: 3 },
         xaxis: { categories: labels, labels: { style: { fontSize: '10px', colors: getTextColor() }, rotate: -45, rotateAlways: keys.length > 10 } },
-        yaxis: { labels: { formatter: (val) => { if (val >= 1e6) return 'R$ ' + (val/1e6).toFixed(1) + 'M'; if (val >= 1e3) return 'R$ ' + (val/1e3).toFixed(0) + 'k'; return 'R$ ' + val; }, style: { colors: [getTextColor()] } } },
-        tooltip: { y: { formatter: (val) => fmt(val) } },
+        yaxis: { labels: { formatter: (val) => { if (val >= 1e6) return 'R$ ' + (val/1e6).toFixed(1) + 'M'; if (val >= 1e3) return 'R$ ' + (val/1e3).toFixed(0) + 'k'; return 'R$ ' + val; }, style: { colors: getTextColor() } } },
+        tooltip: { y: { formatter: (val) => fmt(val) }, theme: getTheme() },
         colors: ['#0097A7', '#f43f5e'],
         legend: { position: 'top', fontSize: '12px', labels: { colors: getTextColor() } },
         theme: { mode: getTheme() }
@@ -580,11 +595,7 @@ function renderChartEvolucao() {
         charts.evolucao = new ApexCharts(document.querySelector("#chartEvolucao"), opts);
         charts.evolucao.render();
     } else {
-        charts.evolucao.updateOptions({ xaxis: { categories: labels } });
-        charts.evolucao.updateSeries([
-            { name: 'Recebido', data: dataRec },
-            { name: 'Em Aberto', data: dataAb }
-        ]);
+        charts.evolucao.updateOptions(opts, false, false);
     }
 }
 
