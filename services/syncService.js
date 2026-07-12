@@ -108,30 +108,38 @@ async function runSync(onProgress = () => {}) {
                     empResult.new++;
                 } else {
                     const localRecord = localDocsMap.get(numDoc);
-                    
+                    const formatDateStr = (dateObj) => {
+                        if (!dateObj) return '';
+                        const d = new Date(dateObj);
+                        return isNaN(d) ? '' : d.toISOString().split('T')[0];
+                    };
+
                     const oldValor = parseFloat(localRecord.valor_deposito) || 0;
                     const newValor = parseFloat(row.Valor_recebido) || 0;
                     
-                    const oldPag = localRecord.data_pagamento ? new Date(localRecord.data_pagamento).getTime() : 0;
-                    const newPag = row.Data_quitação ? new Date(row.Data_quitação).getTime() : 0;
+                    const oldPag = formatDateStr(localRecord.data_pagamento);
+                    const newPag = formatDateStr(row.Data_quitação);
                     
-                    const oldCliente = (localRecord.cliente || '').trim();
-                    const newCliente = (row.Nome_Fornecedor || '').trim();
+                    const oldCliente = (localRecord.cliente || '').trim().toUpperCase();
+                    const newCliente = (row.Nome_Fornecedor || '').trim().toUpperCase();
                     
-                    const oldEsfera = (localRecord.esfera || '').trim();
-                    const newEsfera = (row.Esfera || '').trim();
+                    const oldEsfera = (localRecord.esfera || '').trim().toUpperCase();
+                    const newEsfera = (row.Esfera || '').trim().toUpperCase();
                     
-                    const oldContrato = (localRecord.contrato || '').trim();
-                    const newContrato = (row.Contrato || '').trim();
+                    const oldContrato = (localRecord.contrato || '').trim().toUpperCase();
+                    const newContrato = (row.Contrato || '').trim().toUpperCase();
                     
-                    const oldEmpenho = (localRecord.empenho || '').trim();
-                    const newEmpenho = (row.Numero_Empenho_publico || '').trim();
+                    const oldEmpenho = (localRecord.empenho || '').trim().toUpperCase();
+                    const newEmpenho = (row.Numero_Empenho_publico || '').trim().toUpperCase();
                     
-                    const oldBanco = (localRecord.banco || '').trim();
-                    const newBanco = (row.Nome_cta_débito || '').trim();
+                    const oldBanco = (localRecord.banco || '').trim().toUpperCase();
+                    const newBanco = (row.Nome_cta_débito || '').trim().toUpperCase();
+
+                    const oldStatus = (localRecord.status || '').trim().toUpperCase();
+                    const newStatus = (status || '').trim().toUpperCase();
 
                     if (
-                        localRecord.status !== status || 
+                        oldStatus !== newStatus || 
                         oldValor !== newValor || 
                         oldPag !== newPag ||
                         oldCliente !== newCliente ||
