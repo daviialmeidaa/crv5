@@ -56,6 +56,9 @@ async function fetchDashboardData() {
 
         // Normalização de dados para os filtros e gráficos
         rawData.forEach(t => {
+            if (t.empresa) {
+                t.empresa = t.empresa.trim().toUpperCase();
+            }
             if (t.esfera) {
                 t.esfera = t.esfera.replace(/\s+/g, ' ').trim().toUpperCase();
             }
@@ -294,7 +297,29 @@ function setupEventListeners() {
 // ═══════════ PILL SYSTEM (Slicer-style toggle buttons) ═══════════
 
 function populateFilterPills() {
-    const getUnique = (key) => [...new Set(rawData.map(t => t[key]).filter(Boolean))].sort();
+    const getUnique = (key) => {
+        let values = [...new Set(rawData.map(t => t[key]).filter(Boolean))];
+        
+        const customOrder = {
+            empresa: ['NEXOMED', 'BML', 'MEDICAL LIFE'],
+            status: ['PAGO', 'PENDENTE', 'ATRASADO'],
+            esfera: ['MUNICIPAL', 'ESTADUAL', 'FEDERAL', 'PARTICULAR']
+        };
+
+        if (customOrder[key]) {
+            return values.sort((a, b) => {
+                const indexA = customOrder[key].indexOf(a.toUpperCase());
+                const indexB = customOrder[key].indexOf(b.toUpperCase());
+                
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+                return a.localeCompare(b);
+            });
+        }
+        
+        return values.sort();
+    };
 
     renderPillGroup('filterEmpresa', getUnique('empresa'), 'empresa');
     renderPillGroup('filterStatus', getUnique('status'), 'status');
