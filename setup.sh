@@ -37,11 +37,11 @@ sleep 10
 
 echo ""
 echo "[4/4] Criando tabelas no banco de dados (Seed)..."
-if [ -f db/seed.sql ]; then
-    cat db/seed.sql | docker exec -i nexomed_db psql -U nexomed -d nexomed_auth
+if [ -f db/seed.js ]; then
+    docker exec -it nexomed_app node db/seed.js
     echo "✅ Tabelas criadas e usuário Admin inserido!"
 else
-    echo "❌ Arquivo db/seed.sql não encontrado. Não foi possível criar as tabelas."
+    echo "❌ Arquivo db/seed.js não encontrado. Não foi possível criar as tabelas."
 fi
 
 echo ""
