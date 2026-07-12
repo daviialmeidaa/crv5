@@ -20,10 +20,12 @@ async function runSeed() {
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     
-    // Parse com nomes exatos dos cabeçalhos na primeira linha
-    const data = xlsx.utils.sheet_to_json(worksheet);
+    // Parse com raw: true para manter as datas como objetos/números seriais
+    const rawData = xlsx.utils.sheet_to_json(worksheet, { defval: "" });
+    // Parse com raw: false para pegar os textos exatamente como aparecem (ex: custom formats como "040352-1")
+    const formattedData = xlsx.utils.sheet_to_json(worksheet, { defval: "", raw: false });
     
-    console.log(`📊 Encontrados ${data.length} registros no Excel.`);
+    console.log(`📊 Encontrados ${rawData.length} registros no Excel.`);
     
     // 3. Mapear e preparar para inserção
     const upsertQuery = `
@@ -41,15 +43,17 @@ async function runSeed() {
     let errorCount = 0;
 
     let promises = [];
-    for (let i = 0; i < data.length; i++) {
-        const row = data[i];
+    for (let i = 0; i < rawData.length; i++) {
+        const row = rawData[i];
+        const formattedRow = formattedData[i];
         
         // Skip se não tiver documento (coluna obrigatória)
-        if (!row['Nº Documento']) continue;
+        if (!formattedRow['Nº Documento']) continue;
 
         // Limpeza de campos
         const empresa = row['Empresa Vendedora'] ? row['Empresa Vendedora'].toString().trim() : '';
-        const documento = row['Nº Documento'].toString().trim();
+        // Pega o documento exatamente como formatado (evita que o Excel engula o "-1" ou zeros à esquerda)
+        const documento = formattedRow['Nº Documento'].toString().trim();
         
         // Conversor de data do Excel (serial number ou string/Date)
         const formatDt = (dt) => {
