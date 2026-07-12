@@ -44,12 +44,12 @@ router.put('/profile', authMiddleware, async (req, res) => {
         // Se a imagem for enviada em base64
         if (avatarBase64 && avatarBase64.startsWith('data:image')) {
             const matches = avatarBase64.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-            
+
             if (matches && matches.length === 3) {
                 const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
                 const base64Data = matches[2];
                 const buffer = Buffer.from(base64Data, 'base64');
-                
+
                 // Define o caminho físico (public/uploads/avatars/1.jpg)
                 const fileName = `${userId}-${Date.now()}.${ext}`;
                 const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
@@ -74,7 +74,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
         }
 
         const result = await pgPool.query(query, values);
-        
+
         res.json({
             message: 'Perfil atualizado com sucesso!',
             user: result.rows[0]
@@ -135,7 +135,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 
         // Dispara o e-mail em background
         const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
-        const host = req.headers.host || 'localhost:3000';
+        const host = req.headers.host || 'painel.nexomed.com.br:3000';
         const appUrl = `${protocol}://${host}`;
 
         const mailOptions = {
@@ -243,7 +243,7 @@ router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
 
     try {
         const result = await pgPool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
-        
+
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Usuário não encontrado.' });
         }
