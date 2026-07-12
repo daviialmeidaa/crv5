@@ -524,6 +524,7 @@ function renderChartEsfera() {
     const group = {};
     filteredData.forEach(t => {
         const e = (t.esfera || 'N/I').trim();
+        if (e === 'N/I' || e === '-') return;
         const val = parseFloat(t.valor_deposito) || 0;
         if (val > 0) group[e] = (group[e] || 0) + val;
     });
