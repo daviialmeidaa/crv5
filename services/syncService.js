@@ -43,27 +43,20 @@ async function runSync() {
                 $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
             )
             ON CONFLICT (empresa, documento) DO UPDATE SET
-                nota = EXCLUDED.nota,
-                cod_cliente = EXCLUDED.cod_cliente,
                 cliente = EXCLUDED.cliente,
                 esfera = EXCLUDED.esfera,
-                uf = EXCLUDED.uf,
                 contrato = EXCLUDED.contrato,
                 empenho = EXCLUDED.empenho,
-                valor_nota = EXCLUDED.valor_nota,
                 valor_deposito = EXCLUDED.valor_deposito,
-                data_emissao = EXCLUDED.data_emissao,
-                data_vencimento = EXCLUDED.data_vencimento,
                 data_pagamento = EXCLUDED.data_pagamento,
                 status = EXCLUDED.status,
                 banco = EXCLUDED.banco,
-                retem_ir = EXCLUDED.retem_ir,
                 updated_at = CURRENT_TIMESTAMP;
         `;
 
         const selectFields = `
             Núm_NF, Cód_Fornecedor, Nome_Fornecedor, Esfera, UF, Contrato,
-            Numero_Empenho_publico, Núm_documento, Valor_parcela, Valor_recebido,
+            Numero_Empenho_publico, Núm_documento, Parcela, Valor_parcela, Valor_recebido,
             Data_emissão, Data_vencimento, Data_quitação, Nome_cta_débito, retem_imposto_renda
         `;
 
@@ -103,7 +96,7 @@ async function runSync() {
             const upsertPromises = [];
 
             for (const row of supraRecords.recordset) {
-                const numDoc = row.Núm_documento;
+                const numDoc = row.Parcela ? `${row.Núm_documento}-${row.Parcela}` : row.Núm_documento.toString();
                 supraDocsSet.add(numDoc);
 
                 const status = calcularStatus(row.Data_vencimento, row.Data_quitação, row.Valor_recebido);
