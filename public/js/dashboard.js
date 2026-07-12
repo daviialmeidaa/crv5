@@ -248,6 +248,26 @@ function setupEventListeners() {
         document.getElementById('btnClearFilters').classList.add('hidden');
     });
 
+    // Advanced filters toggle
+    document.getElementById('btnToggleAdvancedFilters')?.addEventListener('click', () => {
+        const container = document.getElementById('advancedFiltersContainer');
+        const text = document.getElementById('advancedFiltersText');
+        const icon = document.getElementById('advancedFiltersIcon');
+        
+        if (container) {
+            container.classList.toggle('hidden');
+            container.classList.toggle('grid');
+            
+            if (container.classList.contains('hidden')) {
+                text.textContent = 'Mostrar mais filtros';
+                icon.classList.remove('rotate-180');
+            } else {
+                text.textContent = 'Ocultar filtros';
+                icon.classList.add('rotate-180');
+            }
+        }
+    });
+
     // Meta controls toggle
     document.getElementById('btnEditMeta')?.addEventListener('click', () => {
         const panel = document.getElementById('metaControls');
