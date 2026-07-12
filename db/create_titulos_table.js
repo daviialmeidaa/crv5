@@ -19,7 +19,7 @@ async function createTable() {
             data_emissao DATE,
             data_vencimento DATE,
             data_pagamento DATE,
-            status VARCHAR(50) DEFAULT 'Pendente',
+            status VARCHAR(50) DEFAULT 'PENDENTE',
             banco VARCHAR(255),
             retem_ir VARCHAR(5) DEFAULT 'Não',
             origem VARCHAR(20) DEFAULT 'supra',

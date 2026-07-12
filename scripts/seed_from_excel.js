@@ -86,7 +86,7 @@ async function runSeed() {
             formatDt(row['Data Emissao']),
             formatDt(row['Data Vencimento']),
             formatDt(row['Data Pagamento']),
-            row['Status Pagamento'] ? row['Status Pagamento'].toString().trim() : 'Pendente',
+            row['Status Pagamento'] ? row['Status Pagamento'].toString().trim().toUpperCase() : 'PENDENTE',
             row['Banco'] ? row['Banco'].toString() : null,
             row['Retém IR?'] ? row['Retém IR?'].toString() : 'Não'
         ];

@@ -2,16 +2,16 @@ const { sql, getPool } = require('../db/connection');
 const pgPool = require('../db/pgConnection');
 
 function calcularStatus(vencimento, quitacao, valorRecebido) {
-    if (quitacao || valorRecebido > 0) return 'Pago';
-    if (!vencimento) return 'Pendente';
+    if (quitacao || valorRecebido > 0) return 'PAGO';
+    if (!vencimento) return 'PENDENTE';
     
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
     const dataVenc = new Date(vencimento);
     dataVenc.setHours(0, 0, 0, 0);
     
-    if (dataVenc < hoje) return 'Atrasado';
-    return 'Pendente';
+    if (dataVenc < hoje) return 'ATRASADO';
+    return 'PENDENTE';
 }
 
 async function runSync(onProgress = () => {}) {

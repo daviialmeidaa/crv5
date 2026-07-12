@@ -22,12 +22,12 @@ const ContasGrid = (function () {
         { key: 'dataPagamento', label: 'Data de Pagamento', type: 'date' },
         {
             key: 'status', label: 'Status do Pagamento', render: v => {
-                const badges = {
-                    'Pago': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
-                    'Atrasado': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
-                    'Pendente': { grad: 'linear-gradient(135deg, #f6c23e, #dda520)', color: '#fff' }
+                const styles = {
+                    'PAGO': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
+                    'ATRASADO': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
+                    'PENDENTE': { grad: 'linear-gradient(135deg, #f6c23e, #dda520)', color: '#fff' }
                 };
-                const s = badges[v] || { grad: 'linear-gradient(135deg, #858796, #6c6d7e)', color: '#fff' };
+                const s = styles[v] || { grad: 'linear-gradient(135deg, #858796, #6c6d7e)', color: '#fff' };
                 return `<span style="background:${s.grad};color:${s.color};padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
             }
         },
@@ -80,15 +80,15 @@ const ContasGrid = (function () {
                 dataPagamento: row.data_pagamento ? row.data_pagamento.split('T')[0] : '-',
                 status: (() => {
                     const raw = row.status ? row.status.trim() : '';
-                    if (raw.toUpperCase() === 'PAGO') return 'Pago';
+                    if (raw.toUpperCase() === 'PAGO') return 'PAGO';
                     // Pendente ou vazio: checar se está atrasado
                     if (row.data_vencimento) {
                         const venc = new Date(row.data_vencimento.split('T')[0]);
                         const hoje = new Date();
                         hoje.setHours(0, 0, 0, 0);
-                        if (venc < hoje && (!row.data_pagamento)) return 'Atrasado';
+                        if (venc < hoje && (!row.data_pagamento)) return 'ATRASADO';
                     }
-                    return 'Pendente';
+                    return 'PENDENTE';
                 })(),
                 conta: row.banco || '-',
                 retemIr: row.retem_ir || 'Não'
