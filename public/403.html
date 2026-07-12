@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 - Acesso Negado | Nexomed</title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        nexo: {
+                            50:  '#e0f7fa',
+                            400: '#26c6da',
+                            500: '#0097A7',
+                            600: '#00838F',
+                        },
+                        steel: {
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            800: '#1f2937',
+                            900: '#111827',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="h-full bg-gray-50 flex items-center justify-center p-6">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 p-10 text-center animate-fade-in-up relative overflow-hidden">
+        
+        <!-- Detalhe superior -->
+        <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-nexo-600 to-nexo-400"></div>
+
+        <!-- Logo -->
+        <div class="mb-8 flex justify-center">
+            <img src="/assets/images/logo.png" alt="Nexomed" class="h-10">
+        </div>
+
+        <!-- Ícone -->
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-red-50 text-red-500 rounded-full mb-6 border-8 border-red-50/50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        </div>
+
+        <h1 class="text-2xl font-bold text-steel-900 tracking-tight mb-2">Acesso Restrito</h1>
+        
+        <p class="text-steel-500 mb-8 text-sm leading-relaxed">
+            Sua conta não possui permissões administrativas para acessar esta página.
+        </p>
+        
+        <div class="bg-gray-50 border border-gray-200 rounded-xl py-4 px-4 text-sm text-steel-600 font-medium">
+            Você será redirecionado em <span id="countdown" class="text-nexo-600 font-bold mx-1 text-lg">5</span> segundos...
+        </div>
+
+        <div class="mt-8">
+            <a href="/dashboard" class="inline-flex items-center justify-center text-sm font-semibold text-nexo-600 hover:text-nexo-700 transition-colors">
+                Voltar agora
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let counter = 5;
+        const countdownEl = document.getElementById('countdown');
+        const interval = setInterval(() => {
+            counter--;
+            countdownEl.textContent = counter;
+            if (counter <= 0) {
+                clearInterval(interval);
+                window.location.href = '/dashboard';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

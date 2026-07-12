@@ -57,6 +57,10 @@ app.get('/perfil', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'perfil.html'));
 });
 
+app.get('/403', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', '403.html'));
+});
+
 const cron = require('node-cron');
 const { runSync } = require('./services/syncService');
 

@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Verificar se há solicitação de logout forçado (ex: clique no link do email)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('force_logout') === '1') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        // Limpar o parâmetro da URL para não poluir
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     // Se o usuário já estiver logado, redirecionar para o dashboard
     const token = localStorage.getItem('token');
     if (token) {
