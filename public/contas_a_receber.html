@@ -271,18 +271,13 @@
             <!-- Body do Modal -->
             <div class="px-6 py-5">
                 <!-- Estado: Loading -->
-                <div id="syncStateLoading" class="flex flex-col items-center gap-4">
-                    <div class="relative">
-                        <div class="w-16 h-16 border-4 border-gray-200 dark:border-steel-700 rounded-full"></div>
-                        <div class="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-nexo-500 rounded-full animate-spin"></div>
-                    </div>
-                    <div class="text-center">
+                <div id="syncStateLoading" class="flex flex-col gap-3 w-full px-2 py-2">
+                    <div class="flex justify-between items-end">
                         <p id="syncStepText" class="text-sm font-medium text-steel-700 dark:text-gray-300">Estabelecendo conexão...</p>
-                        <div class="flex items-center justify-center gap-1.5 mt-2">
-                            <span class="w-1.5 h-1.5 bg-nexo-500 rounded-full animate-bounce" style="animation-delay:0ms;"></span>
-                            <span class="w-1.5 h-1.5 bg-nexo-500 rounded-full animate-bounce" style="animation-delay:150ms;"></span>
-                            <span class="w-1.5 h-1.5 bg-nexo-500 rounded-full animate-bounce" style="animation-delay:300ms;"></span>
-                        </div>
+                        <span id="syncProgressText" class="text-xs font-bold text-nexo-500">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 dark:bg-steel-700 rounded-full h-2.5 overflow-hidden shadow-inner">
+                        <div id="syncProgressBar" class="bg-gradient-to-r from-nexo-600 to-nexo-400 h-full rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
                     </div>
                 </div>
 

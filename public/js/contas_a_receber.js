@@ -737,24 +737,10 @@ const ContasGrid = (function () {
                     // Abrir modal e iniciar
                     openModal();
 
-                    // Simular passos dinâmicos do loading
-                    const steps = [
-                        'Conectando ao SQL Server do Supra...',
-                        'Buscando registros da Nexomed...',
-                        'Atualizando dados locais da Nexomed...',
-                        'Buscando registros da BML...',
-                        'Atualizando dados locais da BML...',
-                        'Verificando novos lançamentos...',
-                        'Finalizando sincronização...'
-                    ];
-                    let stepIdx = 0;
-                    const stepInterval = setInterval(() => {
-                        stepIdx++;
-                        if (stepIdx < steps.length) {
-                            stepText.textContent = steps[stepIdx];
-                            subtitle.textContent = `Etapa ${stepIdx + 1} de ${steps.length}`;
-                        }
-                    }, 3000);
+                    const progressText = document.getElementById('syncProgressText');
+                    const progressBar = document.getElementById('syncProgressBar');
+                    if (progressText) progressText.textContent = '0%';
+                    if (progressBar) progressBar.style.width = '0%';
 
                     try {
                         const token = localStorage.getItem('token');
@@ -762,14 +748,47 @@ const ContasGrid = (function () {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
-                        clearInterval(stepInterval);
 
                         if (!res.ok) {
                             const errData = await res.json().catch(() => ({}));
                             throw new Error(errData.error || 'Erro desconhecido no servidor.');
                         }
 
-                        const data = await res.json();
+                        const reader = res.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        let done = false;
+                        let finalData = null;
+
+                        while (!done) {
+                            const { value, done: readerDone } = await reader.read();
+                            done = readerDone;
+                            
+                            if (value) {
+                                const chunk = decoder.decode(value, { stream: true });
+                                const lines = chunk.split('\n').filter(l => l.trim());
+                                
+                                for (const line of lines) {
+                                    try {
+                                        const parsed = JSON.parse(line);
+                                        if (parsed.type === 'progress') {
+                                            stepText.textContent = parsed.data.message;
+                                            if (progressText) progressText.textContent = `${parsed.data.progress}%`;
+                                            if (progressBar) progressBar.style.width = `${parsed.data.progress}%`;
+                                        } else if (parsed.type === 'complete') {
+                                            finalData = parsed.data;
+                                        } else if (parsed.type === 'error') {
+                                            throw new Error(parsed.error);
+                                        }
+                                    } catch(e) {
+                                        // Ignore parse errors on partial chunks if any
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!finalData) throw new Error('Falha ao receber a resposta final da sincronização.');
+
+                        const data = finalData;
                         const d = data.details;
                         const totalChanges = d.totalUpdated + d.totalNew + d.totalDeleted;
 

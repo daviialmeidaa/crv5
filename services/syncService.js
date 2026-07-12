@@ -14,8 +14,9 @@ function calcularStatus(vencimento, quitacao, valorRecebido) {
     return 'Pendente';
 }
 
-async function runSync() {
+async function runSync(onProgress = () => {}) {
     console.log("🔄 Iniciando Sincronização com o Supra...");
+    onProgress({ step: 'start', message: 'Iniciando Sincronização com o Supra...', progress: 0 });
     
     const empresasConfig = [
         { id: 'Nexomed', db: 'SGC', view: 'bio_contas_a_receber', cutoff: 688 },
@@ -107,16 +108,38 @@ async function runSync() {
                     empResult.new++;
                 } else {
                     const localRecord = localDocsMap.get(numDoc);
+                    
                     const oldValor = parseFloat(localRecord.valor_deposito) || 0;
                     const newValor = parseFloat(row.Valor_recebido) || 0;
                     
-                    const oldVenc = localRecord.data_vencimento ? new Date(localRecord.data_vencimento).getTime() : 0;
-                    const newVenc = row.Data_vencimento ? new Date(row.Data_vencimento).getTime() : 0;
-                    
                     const oldPag = localRecord.data_pagamento ? new Date(localRecord.data_pagamento).getTime() : 0;
                     const newPag = row.Data_quitação ? new Date(row.Data_quitação).getTime() : 0;
+                    
+                    const oldCliente = (localRecord.cliente || '').trim();
+                    const newCliente = (row.Nome_Fornecedor || '').trim();
+                    
+                    const oldEsfera = (localRecord.esfera || '').trim();
+                    const newEsfera = (row.Esfera || '').trim();
+                    
+                    const oldContrato = (localRecord.contrato || '').trim();
+                    const newContrato = (row.Contrato || '').trim();
+                    
+                    const oldEmpenho = (localRecord.empenho || '').trim();
+                    const newEmpenho = (row.Numero_Empenho_publico || '').trim();
+                    
+                    const oldBanco = (localRecord.banco || '').trim();
+                    const newBanco = (row.Nome_cta_débito || '').trim();
 
-                    if (localRecord.status !== status || oldValor !== newValor || oldVenc !== newVenc || oldPag !== newPag) {
+                    if (
+                        localRecord.status !== status || 
+                        oldValor !== newValor || 
+                        oldPag !== newPag ||
+                        oldCliente !== newCliente ||
+                        oldEsfera !== newEsfera ||
+                        oldContrato !== newContrato ||
+                        oldEmpenho !== newEmpenho ||
+                        oldBanco !== newBanco
+                    ) {
                         empResult.updated++;
                     }
                 }
@@ -133,12 +156,17 @@ async function runSync() {
             }
 
             console.log(`   📥 Registros obtidos do Supra: ${supraRecords.recordset.length}. Salvando no PostgreSQL...`);
+            onProgress({ step: 'process', message: `Processando ${supraRecords.recordset.length} registros da ${emp.id}...`, progress: 30 });
 
             // Executar inserts/updates em lotes de 1000 para não estourar conexões do PG
             const BATCH_SIZE = 1000;
+            const totalBatches = Math.ceil(upsertPromises.length/BATCH_SIZE);
             for (let i = 0; i < upsertPromises.length; i += BATCH_SIZE) {
                 await Promise.all(upsertPromises.slice(i, i + BATCH_SIZE));
-                console.log(`   ⏳ Lote ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(upsertPromises.length/BATCH_SIZE)} salvo localmente...`);
+                const currentBatch = Math.floor(i/BATCH_SIZE) + 1;
+                const batchProgress = 30 + Math.floor((currentBatch / totalBatches) * 50); // Progress from 30% to 80%
+                console.log(`   ⏳ Lote ${currentBatch}/${totalBatches} salvo localmente...`);
+                onProgress({ step: 'save', message: `Gravando lote ${currentBatch} de ${totalBatches}...`, progress: batchProgress });
             }
 
             // Verificar exclusões (registros que sumiram do Supra)
@@ -160,9 +188,12 @@ async function runSync() {
             syncResults.totalUpdated += empResult.updated;
             syncResults.totalNew += empResult.new;
             syncResults.totalDeleted += empResult.deleted;
+            
+            onProgress({ step: 'empresa_done', message: `Concluída ${emp.id}`, progress: 90 });
         }
 
         console.log("🎉 Sincronização concluída com sucesso!");
+        onProgress({ step: 'done', message: "Sincronização concluída com sucesso!", progress: 100 });
         return { success: true, message: "Sincronização concluída!", details: syncResults };
 
     } catch (error) {
