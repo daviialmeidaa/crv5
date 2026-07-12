@@ -32,6 +32,31 @@ app.get('/contas_a_receber', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'contas_a_receber.html'));
 });
 
+// Nova rota para Dashboard
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+
+// Nova rota para Usuários
+app.get('/usuarios', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'usuarios.html'));
+});
+
+// Nova rota para Cadastro de Usuário
+app.get('/cadastro_usuario', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'cadastro_usuario.html'));
+});
+
+// Nova rota para Primeiro Acesso
+app.get('/primeiro_acesso', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'primeiro_acesso.html'));
+});
+
+// Nova rota para Perfil
+app.get('/perfil', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'perfil.html'));
+});
+
 const cron = require('node-cron');
 const { runSync } = require('./services/syncService');
 

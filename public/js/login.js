@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Se o usuário já estiver logado, redirecionar para o dashboard
     const token = localStorage.getItem('token');
     if (token) {
-        window.location.href = '/dashboard.html';
+        window.location.href = '/dashboard';
         return;
     }
 
@@ -59,8 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
 
-            // Redirecionar para o painel principal
-            window.location.href = '/dashboard.html';
+            // Redirecionar para o painel principal ou para o primeiro acesso
+            if (data.user.first_access) {
+                window.location.href = '/primeiro_acesso';
+            } else {
+                window.location.href = '/dashboard';
+            }
 
         } catch (error) {
             errorText.textContent = error.message;

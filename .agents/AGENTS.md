@@ -68,3 +68,17 @@ Durante o desenvolvimento do MVP, algumas decisões e práticas essenciais foram
 3. **UX de Filtros e Ordenação na Data Grid:**
    - **Filtros de Datas Hierárquicos:** Colunas do tipo `date` possuem um filtro customizado que agrupa opções no estilo Excel (Ano > Mês > Dia). Ao alterar o componente de filtro (ex: `contas_a_receber.js`), deve-se preservar a capacidade de reter o estado de expansão/colapso (`expandedState`) da árvore de datas.
    - **Ordenação Segura:** Valores `null` ou vazios (`-`) devem ser tratados de forma resiliente na ordenação client-side, sendo jogados para o **final da tabela**, independentemente da direção do sort (ASC ou DESC), para não "poluir" a primeira página de dados que o usuário quer ver.
+
+4. **Padronização de URLs (Rotas Frontend):**
+   - **NENHUMA URL deve conter a extensão `.html` para os usuários.** 
+   - A configuração de rotas estáticas no Express (em `server.js`) deve mapear nomes limpos (ex: `app.get('/dashboard', ...)` ou `app.get('/perfil', ...)`) para os seus respectivos arquivos `.html`.
+   - Links no frontend (tag `<a>` ou `window.location.href`) sempre devem apontar para a rota limpa: `/dashboard`, `/perfil`, `/contas_a_receber`, etc.
+
+## Regras de Negócio do Dashboard (KPIs e Gráficos)
+As métricas do Dashboard obedecem a uma matemática estrita baseada na tabela de títulos:
+1. **Filtro de Data (Motor do Dashboard):** Os seletores globais de "Ano" e "Mês" operam **exclusivamente** sobre o campo `data_emissao` para delimitar o universo de dados (`filteredData`).
+2. **Total Vendido:** Soma simples e incondicional do campo `valor_nota`.
+3. **Total Recebido:** Soma simples e incondicional do campo `valor_deposito` (independentemente do status pago ou pendente — se houve depósito, é somado).
+4. **Total em Aberto:** Soma do campo `valor_nota`, mas aplicando um filtro rígido: APENAS se o `status` for igual a `PENDENTE` **OU** se o `valor_deposito` for 0/Nulo/Vazio.
+5. **Meta de Recebimento:** É mantida em banco (`metas_recebimento`) através de um **ÚNICO** registro global (`id = 1`). Os selects de mês/ano do painel de meta apenas filtram localmente o gráfico velocímetro verificando se a data real de recebimento (`data_pagamento`) está dentro do período visualizado contra o valor global da meta.
+6. **Gráficos e Dark Mode:** Componentes como ApexCharts sofrem cache das cores no navegador (ex: Legend e DataLabels). Quando a classe `dark` do Tailwind muda, o Javascript DEVE atualizar forçadamente todas as propriedades visuais (`updateOptions(opts, false, false)` passando o objeto completo) para garantir legibilidade nos dois temas.

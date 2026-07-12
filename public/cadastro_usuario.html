@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil | Nexomed</title>
+    <title>Cadastrar Usuário - Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <script src="/js/auth.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -97,7 +98,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
-                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Meu Perfil</h2>
+                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Cadastrar Usuário</h2>
             </div>
             
             <div class="flex items-center gap-4">
@@ -133,67 +134,48 @@
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-auto p-6">
-            <div class="max-w-3xl mx-auto bg-white dark:bg-steel-800 rounded-xl shadow-sm border border-gray-200 dark:border-steel-700 overflow-hidden">
+        <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-steel-900 transition-colors duration-200 p-6 md:p-8">
+            <div class="max-w-2xl mx-auto bg-white dark:bg-steel-800 rounded-2xl shadow-sm border border-gray-100 dark:border-steel-700 overflow-hidden transition-colors">
+                <!-- Header -->
                 <div class="px-8 py-6 border-b border-gray-100 dark:border-steel-700 bg-gray-50 dark:bg-steel-800/50">
-                    <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Informações Pessoais</h3>
-                    <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Gerencie os detalhes do seu perfil e preferências de conta.</p>
+                    <h3 class="text-xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Novo Usuário</h3>
+                    <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Preencha os dados abaixo para cadastrar um novo membro da equipe.</p>
                 </div>
                 
                 <div class="p-8">
-                    <form id="profileForm" class="space-y-6">
-                        <!-- Avatar Section -->
-                        <div class="flex items-center gap-6">
-                            <div class="relative group cursor-pointer" onclick="document.getElementById('avatarUpload').click()">
-                                <div id="profileAvatarDisplay" class="w-24 h-24 rounded-full bg-nexo-600 flex items-center justify-center text-3xl font-bold text-white shadow-md overflow-hidden">
-                                    <span id="profileInitials">U</span>
-                                </div>
-                                <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                </div>
-                                <input type="file" id="avatarUpload" class="hidden" accept="image/*">
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-200">Foto de Perfil</h4>
-                                <p class="text-xs text-steel-500 dark:text-steel-400 mt-1">JPG, GIF ou PNG. Máximo de 2MB.</p>
-                                <button type="button" onclick="document.getElementById('avatarUpload').click()" class="mt-3 px-4 py-1.5 border border-gray-300 dark:border-steel-600 rounded-lg text-sm font-medium text-steel-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Alterar foto</button>
-                            </div>
-                        </div>
-
-                        <hr class="border-gray-100 dark:border-steel-700">
-
+                    <form id="cadastroForm" class="space-y-6">
                         <!-- Campos -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="col-span-1 md:col-span-2">
-                                <label for="profileName" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Nome Completo</label>
-                                <input type="text" id="profileName" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all shadow-sm">
+                        <div class="grid grid-cols-1 gap-6">
+                            <div>
+                                <label for="userName" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Nome Completo</label>
+                                <input type="text" id="userName" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all shadow-sm">
                             </div>
 
-                            <div class="col-span-1 md:col-span-2">
-                                <label for="profileEmail" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Endereço de E-mail</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-steel-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                                        </svg>
-                                    </div>
-                                    <input type="email" id="profileEmail" disabled class="w-full pl-10 px-4 py-2.5 bg-gray-100 dark:bg-steel-800 border border-gray-200 dark:border-steel-700 rounded-lg text-steel-500 dark:text-steel-400 cursor-not-allowed shadow-sm focus:outline-none">
-                                </div>
-                                <p class="text-xs text-steel-400 mt-1.5">Seu e-mail é sua chave de acesso e não pode ser alterado.</p>
+                            <div>
+                                <label for="userEmail" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Endereço de E-mail</label>
+                                <input type="email" id="userEmail" required class="w-full px-4 py-2.5 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all shadow-sm">
+                                <p class="text-xs text-steel-500 dark:text-steel-400 mt-2 flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-nexo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Uma senha temporária será gerada e enviada automaticamente para este e-mail.
+                                </p>
+                            </div>
+                            
+                            <div class="pt-2" id="adminToggleContainer">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="userIsAdmin" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-steel-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-nexo-500"></div>
+                                    <span class="ml-3 text-sm font-medium text-steel-700 dark:text-gray-300">É Administrador?</span>
+                                </label>
                             </div>
                         </div>
 
                         <!-- Submit Button -->
-                        <div class="flex justify-end pt-4">
-                            <button type="submit" class="px-6 py-2.5 bg-nexo-600 hover:bg-nexo-700 text-white font-medium rounded-lg shadow-sm shadow-nexo-500/30 transition-all active:scale-95 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        <div class="flex justify-end pt-4 border-t border-gray-100 dark:border-steel-700 mt-6">
+                            <button type="submit" id="submitBtn" class="px-6 py-2.5 bg-nexo-600 hover:bg-nexo-700 text-white font-medium rounded-lg shadow-sm shadow-nexo-500/30 transition-all active:scale-95 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                                 </svg>
-                                Salvar Alterações
+                                Criar Usuário
                             </button>
                         </div>
                     </form>
@@ -217,42 +199,10 @@
             document.body.classList.remove('loading-auth');
         });
     </script>
-    <!-- Modal de Crop de Imagem -->
-    <div id="cropModal" class="fixed inset-0 z-[70] flex items-center justify-center hidden">
-        <div class="fixed inset-0 bg-steel-900/60 backdrop-blur-sm transition-opacity" id="cropModalOverlay"></div>
-        <div class="relative bg-white dark:bg-steel-800 rounded-xl shadow-2xl max-w-lg w-full p-6 transform transition-all scale-95 opacity-0 mx-4 border border-gray-100 dark:border-steel-700 flex flex-col h-[500px]" id="cropModalContent">
-            
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-steel-800 dark:text-gray-100">Ajustar Foto</h3>
-                <button type="button" id="cropCancelBtn" class="text-steel-400 hover:text-steel-600 dark:hover:text-gray-200 transition-colors focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            
-            <div class="flex-1 bg-black/10 dark:bg-black/40 rounded-lg overflow-hidden flex items-center justify-center relative">
-                <img id="imageToCrop" src="" alt="Ajuste a imagem" class="max-w-full max-h-full block">
-            </div>
-
-            <div class="mt-4 flex items-center justify-between">
-                <div class="flex gap-2">
-                    <button type="button" id="cropZoomIn" class="p-2 rounded-lg bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors focus:outline-none" title="Aumentar Zoom">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
-                    </button>
-                    <button type="button" id="cropZoomOut" class="p-2 rounded-lg bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors focus:outline-none" title="Diminuir Zoom">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path></svg>
-                    </button>
-                </div>
-                
-                <button type="button" id="cropApplyBtn" class="px-5 py-2 bg-nexo-600 hover:bg-nexo-700 text-white rounded-lg font-medium shadow-sm transition-colors focus:outline-none">
-                    Aplicar
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="/js/theme.js"></script>
     <script src="/js/layout.js"></script>
-    <script src="/js/perfil.js"></script>
+    <script src="/js/cadastro_usuario.js" type="module"></script>
 </body>
 </html>

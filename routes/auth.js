@@ -76,4 +76,29 @@ router.get('/me', authMiddleware, (req, res) => {
     });
 });
 
+// POST /api/auth/first_access - Alterar senha inicial
+router.post('/first_access', authMiddleware, async (req, res) => {
+    const { new_password } = req.body;
+    const userId = req.user.id;
+
+    if (!new_password) {
+        return res.status(400).json({ error: 'A nova senha é obrigatória.' });
+    }
+
+    try {
+        const salt = await bcrypt.genSalt(10);
+        const passwordHash = await bcrypt.hash(new_password, salt);
+
+        await pgPool.query(
+            'UPDATE users SET password_hash = $1, first_access = false WHERE id = $2',
+            [passwordHash, userId]
+        );
+
+        res.json({ message: 'Senha atualizada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao atualizar senha no primeiro acesso:', error);
+        res.status(500).json({ error: 'Erro interno ao atualizar a senha.' });
+    }
+});
+
 module.exports = router;
