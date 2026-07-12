@@ -134,7 +134,9 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
         );
 
         // Dispara o e-mail em background
-        const appUrl = process.env.APP_URL || 'http://localhost:3000';
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
+        const host = req.headers.host || 'localhost:3000';
+        const appUrl = `${protocol}://${host}`;
 
         const mailOptions = {
             from: '"Nexomed Sistemas" <ti@nexomed.com.br>',
