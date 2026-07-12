@@ -134,6 +134,8 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
         );
 
         // Dispara o e-mail em background
+        const appUrl = process.env.APP_URL || 'http://localhost:3000';
+
         const mailOptions = {
             from: '"Nexomed Sistemas" <ti@nexomed.com.br>',
             to: email,
@@ -176,7 +178,7 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
                         </div>
                         
                         <div style="margin-top: 32px; text-align: center;">
-                            <a href="http://localhost:3000/?force_logout=1" style="display: inline-block; background-color: #0097A7; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Acessar o Sistema</a>
+                            <a href="${appUrl}/?force_logout=1" style="display: inline-block; background-color: #0097A7; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Acessar o Sistema</a>
                         </div>
                     </div>
 

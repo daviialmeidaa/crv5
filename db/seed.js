@@ -21,6 +21,7 @@ async function seed() {
                 is_admin    BOOLEAN DEFAULT FALSE,
                 first_access BOOLEAN DEFAULT TRUE,
                 is_active   BOOLEAN DEFAULT TRUE,
+                avatar_url  VARCHAR(255),
                 created_at  TIMESTAMP DEFAULT NOW()
             );
         `);

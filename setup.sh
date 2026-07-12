@@ -15,6 +15,9 @@ PG_USER=nexomed
 PG_PASSWORD=nexomed123
 PG_DATABASE=nexomed_auth
 
+# URL da Aplicação (Para os e-mails apontarem para o IP correto da rede)
+APP_URL=http://10.0.0.2:3000
+
 # Configurações de Conexão com o Supra ERP (Acesso Apenas Leitura!)
 SUPRA_USER=sa
 SUPRA_PASSWORD=sua_senha_do_supra
