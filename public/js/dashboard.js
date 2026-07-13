@@ -620,11 +620,10 @@ function renderChartTopClientes() {
             labels: {
                 align: 'right',
                 style: { colors: textColor },
-                minWidth: 360,
-                maxWidth: 450,
+                maxWidth: 400,
                 formatter: function (value) {
-                    if (value && value.length > 55) {
-                        return value.substring(0, 55) + '...';
+                    if (value && value.length > 50) {
+                        return value.substring(0, 50) + '...';
                     }
                     return value;
                 }
