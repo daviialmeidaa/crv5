@@ -604,9 +604,14 @@ function renderChartTopClientes() {
         },
         xaxis: {
             categories: labels,
+            tickAmount: 5,
             labels: {
                 style: { colors: textColor },
-                formatter: function(val) { return fmt(val); }
+                formatter: function(val) { 
+                    if (val >= 1000000) return 'R$ ' + (val / 1000000).toFixed(1) + 'M';
+                    if (val >= 1000) return 'R$ ' + (val / 1000).toFixed(1) + 'K';
+                    return fmt(val);
+                }
             },
             axisBorder: { show: false },
             axisTicks: { show: false }
@@ -615,10 +620,11 @@ function renderChartTopClientes() {
             labels: {
                 align: 'right',
                 style: { colors: textColor },
-                maxWidth: 350,
+                minWidth: 360,
+                maxWidth: 450,
                 formatter: function (value) {
-                    if (value && value.length > 40) {
-                        return value.substring(0, 40) + '...';
+                    if (value && value.length > 55) {
+                        return value.substring(0, 55) + '...';
                     }
                     return value;
                 }
