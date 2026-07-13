@@ -254,6 +254,21 @@
                 </div>
             </div>
 
+            <!-- ═══════════ NEW ROW: TOP PAGADORES ═══════════ -->
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <!-- Donut: Top 5 Contratos -->
+                <div class="lg:col-span-1 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col" style="min-height: 320px;">
+                    <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 5 Contratos</h3>
+                    <div id="chartTopContratos" class="flex-1 w-full"></div>
+                </div>
+
+                <!-- Bar: Top 10 Clientes -->
+                <div class="lg:col-span-4 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col" style="min-height: 320px;">
+                    <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 10 Clientes</h3>
+                    <div id="chartTopClientes" class="flex-1 w-full"></div>
+                </div>
+            </div>
+
             <!-- ═══════════ MIDDLE ROW: 3 Charts ═══════════ -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Bar Chart: Recebimento por Banco -->

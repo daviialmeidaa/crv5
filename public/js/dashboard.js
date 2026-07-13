@@ -465,6 +465,8 @@ function updateDashboard() {
     updateGaugeWithMeta(); // O gauge usa a meta, não totalVendido
     renderChartEsfera();
     renderChartEvolucao();
+    renderChartTopContratos();
+    renderChartTopClientes();
 }
 
 // ═══════════ CHARTS ═══════════
@@ -474,6 +476,173 @@ function getTheme() {
 }
 function getTextColor() {
     return getTheme() === 'dark' ? '#f3f4f6' : '#374151';
+}
+
+// --- Top 5 Contratos (Donut) ---
+function renderChartTopContratos() {
+    const dataMap = {};
+    filteredData.forEach(t => {
+        const val = parseFloat(t.valor_deposito) || 0;
+        if (val > 0) {
+            const key = (t.contrato && t.contrato.trim() !== '') ? t.contrato.trim() : 'Não Informado';
+            if (key !== 'Não Informado') {
+                dataMap[key] = (dataMap[key] || 0) + val;
+            }
+        }
+    });
+
+    const sorted = Object.entries(dataMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+
+    const labels = sorted.map(x => x[0]);
+    const series = sorted.map(x => x[1]);
+
+    const isDark = getTheme() === 'dark';
+    const textColor = getTextColor();
+    
+    if (series.length === 0) {
+        labels.push('Sem Dados');
+        series.push(1);
+    }
+
+    const opts = {
+        series: series,
+        labels: labels,
+        chart: {
+            type: 'donut',
+            height: '100%',
+            fontFamily: 'Inter, sans-serif',
+            background: 'transparent'
+        },
+        theme: { mode: isDark ? 'dark' : 'light' },
+        colors: ['#0097A7', '#00838F', '#00ACC1', '#4DD0E1', '#B2EBF2'],
+        stroke: { show: true, colors: isDark ? ['#1f2937'] : ['#fff'] },
+        plotOptions: {
+            pie: {
+                donut: { size: '65%' }
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        legend: {
+            position: 'bottom',
+            labels: { colors: textColor }
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            y: {
+                formatter: function (val) {
+                    if (labels[0] === 'Sem Dados') return 'R$ 0,00';
+                    return fmt(val);
+                }
+            }
+        }
+    };
+
+    if (charts.topContratos) {
+        charts.topContratos.updateOptions(opts, false, false);
+        charts.topContratos.updateSeries(series);
+    } else {
+        const ctx = document.getElementById('chartTopContratos');
+        if (ctx) {
+            charts.topContratos = new ApexCharts(ctx, opts);
+            charts.topContratos.render();
+        }
+    }
+}
+
+// --- Top 10 Clientes (Bar Horizontal) ---
+function renderChartTopClientes() {
+    const dataMap = {};
+    filteredData.forEach(t => {
+        const val = parseFloat(t.valor_deposito) || 0;
+        if (val > 0) {
+            const key = (t.cliente && t.cliente.trim() !== '') ? t.cliente.trim() : 'Não Informado';
+            if (key !== 'Não Informado') {
+                dataMap[key] = (dataMap[key] || 0) + val;
+            }
+        }
+    });
+
+    const sorted = Object.entries(dataMap)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+    const labels = sorted.map(x => x[0]);
+    const series = [{
+        name: 'Total Recebido',
+        data: sorted.map(x => x[1])
+    }];
+
+    const isDark = getTheme() === 'dark';
+    const textColor = getTextColor();
+
+    const opts = {
+        series: series,
+        chart: {
+            type: 'bar',
+            height: '100%',
+            fontFamily: 'Inter, sans-serif',
+            background: 'transparent',
+            toolbar: { show: false }
+        },
+        theme: { mode: isDark ? 'dark' : 'light' },
+        plotOptions: {
+            bar: {
+                borderRadius: 4,
+                horizontal: true,
+                barHeight: '60%'
+            }
+        },
+        colors: ['#10b981'],
+        dataLabels: {
+            enabled: false
+        },
+        xaxis: {
+            categories: labels,
+            labels: {
+                style: { colors: textColor },
+                formatter: function(val) { return fmt(val); }
+            },
+            axisBorder: { show: false },
+            axisTicks: { show: false }
+        },
+        yaxis: {
+            labels: {
+                style: { colors: textColor },
+                maxWidth: 200,
+                formatter: function (value) {
+                    if (value && value.length > 25) {
+                        return value.substring(0, 25) + '...';
+                    }
+                    return value;
+                }
+            }
+        },
+        grid: {
+            borderColor: isDark ? '#374151' : '#f3f4f6',
+            strokeDashArray: 4,
+            xaxis: { lines: { show: true } },
+            yaxis: { lines: { show: false } }
+        },
+        tooltip: {
+            theme: isDark ? 'dark' : 'light',
+            y: { formatter: function (val) { return fmt(val); } }
+        }
+    };
+
+    if (charts.topClientes) {
+        charts.topClientes.updateOptions(opts, false, false);
+        charts.topClientes.updateSeries(series);
+    } else {
+        const ctx = document.getElementById('chartTopClientes');
+        if (ctx) {
+            charts.topClientes = new ApexCharts(ctx, opts);
+            charts.topClientes.render();
+        }
+    }
 }
 
 // --- Recebimento por Banco (Horizontal Bar) - APENAS bancos válidos ---
