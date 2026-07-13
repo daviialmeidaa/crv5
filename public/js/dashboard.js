@@ -619,12 +619,9 @@ function renderChartTopClientes() {
         yaxis: {
             labels: {
                 style: { colors: textColor },
-                minWidth: 350,
-                maxWidth: 350,
+                minWidth: 450,
+                maxWidth: 450,
                 formatter: function (value) {
-                    if (value && value.length > 50) {
-                        return value.substring(0, 50) + '...';
-                    }
                     return value;
                 }
             }
