@@ -9,6 +9,8 @@ const nodemailer = require('nodemailer');
 const { authMiddleware } = require('../middleware/authMiddleware');
 
 // Configuração do Nodemailer
+/* 
+// Histórico: Configuração anterior (HostGator)
 const transporter = nodemailer.createTransport({
     host: 'mail.nexomed.com.br',
     port: 465,
@@ -16,6 +18,18 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: 'ti@nexomed.com.br',
         pass: '3&#AhEeBChh#'
+    }
+});
+*/
+
+// Nova Configuração: Google Workspace (Gmail)
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+        user: 'davi.almeida@iebtinnovation.com',
+        pass: process.env.GMAIL_APP_PASSWORD
     }
 });
 
@@ -139,7 +153,8 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
         const appUrl = `${protocol}://${host}`;
 
         const mailOptions = {
-            from: '"Nexomed Sistemas" <ti@nexomed.com.br>',
+            // from: '"Nexomed Sistemas" <ti@nexomed.com.br>', // Histórico
+            from: '"Nexomed Sistemas" <davi.almeida@iebtinnovation.com>',
             to: email,
             subject: 'Bem vindo ao Contas a Receber - Nexomed',
             html: `
