@@ -111,7 +111,7 @@ const adminMiddleware = (req, res, next) => {
 // GET /api/users - Listar todos os usuários (apenas admin)
 router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
     try {
-        const result = await pgPool.query('SELECT id, nome, email, is_admin, avatar_url, first_access FROM users ORDER BY nome ASC');
+        const result = await pgPool.query('SELECT id, nome, email, is_admin, avatar_url, first_access FROM users ORDER BY is_admin DESC, nome ASC');
         res.json(result.rows);
     } catch (error) {
         console.error('Erro ao listar usuários:', error);
