@@ -484,8 +484,10 @@ function renderChartTopContratos() {
     filteredData.forEach(t => {
         const val = parseFloat(t.valor_deposito) || 0;
         if (val > 0) {
-            const key = (t.contrato && t.contrato.trim() !== '') ? t.contrato.trim() : 'Não Informado';
-            if (key !== 'Não Informado') {
+            let contrato = t.contrato ? t.contrato.trim() : '';
+            if (contrato) {
+                let uf = (t.uf && t.uf.trim() !== '') ? ` - ${t.uf.trim()}` : '';
+                const key = contrato + uf;
                 dataMap[key] = (dataMap[key] || 0) + val;
             }
         }
@@ -511,7 +513,7 @@ function renderChartTopContratos() {
         labels: labels,
         chart: {
             type: 'donut',
-            height: '100%',
+            height: 320,
             fontFamily: 'Inter, sans-serif',
             background: 'transparent'
         },
@@ -583,7 +585,7 @@ function renderChartTopClientes() {
         series: series,
         chart: {
             type: 'bar',
-            height: '100%',
+            height: 320,
             fontFamily: 'Inter, sans-serif',
             background: 'transparent',
             toolbar: { show: false }
@@ -611,11 +613,12 @@ function renderChartTopClientes() {
         },
         yaxis: {
             labels: {
+                align: 'right',
                 style: { colors: textColor },
-                maxWidth: 200,
+                maxWidth: 350,
                 formatter: function (value) {
-                    if (value && value.length > 25) {
-                        return value.substring(0, 25) + '...';
+                    if (value && value.length > 40) {
+                        return value.substring(0, 40) + '...';
                     }
                     return value;
                 }
