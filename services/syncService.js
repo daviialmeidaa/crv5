@@ -57,7 +57,7 @@ async function runSync(onProgress = () => {}) {
 
         const selectFields = `
             Núm_NF, Cód_Fornecedor, Nome_Fornecedor, Esfera, UF, Contrato,
-            Numero_Empenho_publico, Núm_documento, Parcela, Valor_parcela, Valor_recebido,
+            Numero_Empenho_publico, Documento, Parcela, Valor_parcela, Valor_recebido,
             Data_emissão, Data_vencimento, Data_quitação, Nome_cta_débito, retem_imposto_renda
         `;
 
@@ -97,7 +97,7 @@ async function runSync(onProgress = () => {}) {
             const upsertPromises = [];
 
             for (const row of supraRecords.recordset) {
-                const numDoc = row.Parcela ? `${row.Núm_documento}-${row.Parcela}` : row.Núm_documento.toString();
+                const numDoc = row.Documento ? row.Documento.toString() : (row.Parcela ? `${row.Núm_documento}-${row.Parcela}` : row.Núm_documento.toString());
                 supraDocsSet.add(numDoc);
 
                 const status = calcularStatus(row.Data_vencimento, row.Data_quitação, row.Valor_recebido);
