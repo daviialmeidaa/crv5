@@ -94,7 +94,7 @@ async function runSync(onProgress = () => {}) {
             
             const supraRecords = await supraPool.request().query(queryStr);
             const supraDocsSet = new Set();
-            const upsertPromises = [];
+            const upsertValues = [];
 
             for (const row of supraRecords.recordset) {
                 const numDoc = row.Documento ? row.Documento.toString() : (row.Parcela ? `${row.Núm_documento}-${row.Parcela}` : row.Núm_documento.toString());
@@ -165,7 +165,7 @@ async function runSync(onProgress = () => {}) {
                     row.retem_imposto_renda == 1 ? 'Sim' : 'Não'
                 ];
                 
-                upsertPromises.push(pgPool.query(upsertQuery, values));
+                upsertValues.push(values);
             }
 
             console.log(`   📥 Registros obtidos do Supra: ${supraRecords.recordset.length}. Salvando no PostgreSQL...`);
@@ -173,9 +173,10 @@ async function runSync(onProgress = () => {}) {
 
             // Executar inserts/updates em lotes de 1000 para não estourar conexões do PG
             const BATCH_SIZE = 1000;
-            const totalBatches = Math.ceil(upsertPromises.length/BATCH_SIZE);
-            for (let i = 0; i < upsertPromises.length; i += BATCH_SIZE) {
-                await Promise.all(upsertPromises.slice(i, i + BATCH_SIZE));
+            const totalBatches = Math.ceil(upsertValues.length/BATCH_SIZE);
+            for (let i = 0; i < upsertValues.length; i += BATCH_SIZE) {
+                const batch = upsertValues.slice(i, i + BATCH_SIZE);
+                await Promise.all(batch.map(vals => pgPool.query(upsertQuery, vals)));
                 const currentBatch = Math.floor(i/BATCH_SIZE) + 1;
                 const batchProgress = 30 + Math.floor((currentBatch / totalBatches) * 50); // Progress from 30% to 80%
                 console.log(`   ⏳ Lote ${currentBatch}/${totalBatches} salvo localmente...`);
