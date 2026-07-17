@@ -480,9 +480,34 @@ function getTextColor() {
 
 // --- Top 5 Contratos (Donut) ---
 function renderChartTopContratos() {
+    let statusFilter = activeFilters.status || [];
+    let titleSuffix = '';
+    let isAberto = false;
+
+    if (statusFilter.includes('PENDENTE') && !statusFilter.includes('ATRASADO') && !statusFilter.includes('PAGO')) {
+        titleSuffix = ' - PENDENTES';
+        isAberto = true;
+    } else if (statusFilter.includes('ATRASADO') && !statusFilter.includes('PENDENTE') && !statusFilter.includes('PAGO')) {
+        titleSuffix = ' - ATRASADOS';
+        isAberto = true;
+    } else if (statusFilter.includes('PENDENTE') && statusFilter.includes('ATRASADO') && !statusFilter.includes('PAGO')) {
+        titleSuffix = ' - EM ABERTO';
+        isAberto = true;
+    }
+
+    const titleEl = document.getElementById('titleTopContratos');
+    if (titleEl) {
+        titleEl.textContent = 'Top 5 Contratos' + titleSuffix;
+    }
+
     const dataMap = {};
     filteredData.forEach(t => {
-        const val = parseFloat(t.valor_deposito) || 0;
+        let val = 0;
+        if (isAberto) {
+            val = parseFloat(t.valor_nota) || 0;
+        } else {
+            val = parseFloat(t.valor_deposito) || 0;
+        }
         if (val > 0) {
             let contrato = t.contrato ? t.contrato.trim() : '';
             if (contrato) {
@@ -557,9 +582,34 @@ function renderChartTopContratos() {
 
 // --- Top 10 Clientes (Bar Horizontal) ---
 function renderChartTopClientes() {
+    let statusFilter = activeFilters.status || [];
+    let titleSuffix = '';
+    let isAberto = false;
+
+    if (statusFilter.includes('PENDENTE') && !statusFilter.includes('ATRASADO') && !statusFilter.includes('PAGO')) {
+        titleSuffix = ' - PENDENTES';
+        isAberto = true;
+    } else if (statusFilter.includes('ATRASADO') && !statusFilter.includes('PENDENTE') && !statusFilter.includes('PAGO')) {
+        titleSuffix = ' - ATRASADOS';
+        isAberto = true;
+    } else if (statusFilter.includes('PENDENTE') && statusFilter.includes('ATRASADO') && !statusFilter.includes('PAGO')) {
+        titleSuffix = ' - EM ABERTO';
+        isAberto = true;
+    }
+
+    const titleEl = document.getElementById('titleTopClientes');
+    if (titleEl) {
+        titleEl.textContent = 'Top 10 Clientes' + titleSuffix;
+    }
+
     const dataMap = {};
     filteredData.forEach(t => {
-        const val = parseFloat(t.valor_deposito) || 0;
+        let val = 0;
+        if (isAberto) {
+            val = parseFloat(t.valor_nota) || 0;
+        } else {
+            val = parseFloat(t.valor_deposito) || 0;
+        }
         if (val > 0) {
             const key = (t.cliente && t.cliente.trim() !== '') ? t.cliente.trim() : 'Não Informado';
             if (key !== 'Não Informado') {
@@ -573,8 +623,9 @@ function renderChartTopClientes() {
         .slice(0, 10);
 
     const labels = sorted.map(x => x[0]);
+    let seriesName = isAberto ? 'Valor em Aberto' : 'Total Recebido';
     const series = [{
-        name: 'Total Recebido',
+        name: seriesName,
         data: sorted.map(x => x[1])
     }];
 
