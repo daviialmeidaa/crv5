@@ -623,7 +623,12 @@ function renderChartTopClientes() {
         .slice(0, 10);
 
     const labels = sorted.map(x => x[0]);
-    let seriesName = isAberto ? 'Valor em Aberto' : 'Total Recebido';
+    let seriesName = 'Total Recebido';
+    if (isAberto) {
+        if (titleSuffix === ' - PENDENTES') seriesName = 'Valor Pendente';
+        else if (titleSuffix === ' - ATRASADOS') seriesName = 'Valor Atrasado';
+        else seriesName = 'Valor em Aberto';
+    }
     const series = [{
         name: seriesName,
         data: sorted.map(x => x[1])
