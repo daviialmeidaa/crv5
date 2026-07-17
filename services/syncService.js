@@ -101,6 +101,11 @@ async function runSync(onProgress = () => {}) {
                 supraDocsSet.add(numDoc);
 
                 const status = calcularStatus(row.Data_vencimento, row.Data_quitação, row.Valor_recebido);
+                
+                // Normalização: Remover TODOS os espaços e forçar maiúsculas
+                const normContrato = (row.Contrato || '').replace(/\s+/g, '').toUpperCase();
+                const normEsfera = (row.Esfera || '').replace(/\s+/g, '').toUpperCase();
+
                 empResult.analyzed++;
 
                 const isNew = !localDocsSet.has(numDoc);
@@ -123,11 +128,11 @@ async function runSync(onProgress = () => {}) {
                     const oldCliente = (localRecord.cliente || '').trim().toUpperCase();
                     const newCliente = (row.Nome_Fornecedor || '').trim().toUpperCase();
                     
-                    const oldEsfera = (localRecord.esfera || '').trim().toUpperCase();
-                    const newEsfera = (row.Esfera || '').trim().toUpperCase();
+                    const oldEsfera = (localRecord.esfera || '').replace(/\s+/g, '').toUpperCase();
+                    const newEsfera = normEsfera;
                     
-                    const oldContrato = (localRecord.contrato || '').trim().toUpperCase();
-                    const newContrato = (row.Contrato || '').trim().toUpperCase();
+                    const oldContrato = (localRecord.contrato || '').replace(/\s+/g, '').toUpperCase();
+                    const newContrato = normContrato;
                     
                     const oldEmpenho = (localRecord.empenho || '').trim().toUpperCase();
                     const newEmpenho = (row.Numero_Empenho_publico || '').trim().toUpperCase();
@@ -153,7 +158,7 @@ async function runSync(onProgress = () => {}) {
                 }
                 const values = [
                     emp.id, row.Núm_NF, numDoc, row.Cód_Fornecedor,
-                    row.Nome_Fornecedor, row.Esfera, row.UF, row.Contrato,
+                    row.Nome_Fornecedor, normEsfera, row.UF, normContrato,
                     row.Numero_Empenho_publico, row.Valor_parcela || 0, row.Valor_recebido || 0,
                     row.Data_emissão, row.Data_vencimento, row.Data_quitação,
                     status, row.Nome_cta_débito,
