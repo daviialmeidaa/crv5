@@ -327,8 +327,20 @@ const ContasGrid = (function () {
 
         const col = columns.find(c => c.key === colKey);
 
-        // Coleta valores únicos para essa coluna
-        const uniqueValues = [...new Set(state.rawData.map(row => row[colKey]))].sort();
+        // Coleta valores únicos para essa coluna respeitando os filtros já aplicados em outras colunas (Filtro em cascata)
+        const preFilteredData = state.rawData.filter(row => {
+            for (let key in state.filters) {
+                if (key === colKey) continue; // Ignora o filtro da própria coluna que estamos abrindo
+                const selectedValues = state.filters[key];
+                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
+                    if (!selectedValues.has(row[key])) {
+                        return false; 
+                    }
+                }
+            }
+            return true;
+        });
+        const uniqueValues = [...new Set(preFilteredData.map(row => row[colKey]))].sort();
 
         // Inicializa o state do filtro se não existir
         if (!state.filters[colKey]) {
@@ -400,8 +412,8 @@ const ContasGrid = (function () {
                 return;
             }
 
-            // Botão "Selecionar Tudo"
-            const allChecked = tempSelected.size === uniqueValues.length;
+            // Botão "Selecionar Tudo" (agora inteligente, considera apenas os itens filtrados na busca)
+            const allChecked = filteredVals.length > 0 && filteredVals.every(v => tempSelected.has(v));
             const selectAllDiv = document.createElement('div');
             selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
             selectAllDiv.innerHTML = `
@@ -410,9 +422,9 @@ const ContasGrid = (function () {
             `;
             selectAllDiv.querySelector('input').onclick = (e) => {
                 if (e.target.checked) {
-                    uniqueValues.forEach(v => tempSelected.add(v));
+                    filteredVals.forEach(v => tempSelected.add(v));
                 } else {
-                    tempSelected.clear();
+                    filteredVals.forEach(v => tempSelected.delete(v));
                 }
                 renderCheckboxes(searchTerm);
             };
@@ -600,7 +612,13 @@ const ContasGrid = (function () {
         renderCheckboxes();
         searchInput.focus();
 
+        let hasTyped = false;
         searchInput.addEventListener('input', (e) => {
+            // Limpa tudo apenas no PRIMEIRO caractere digitado na busca, permitindo acúmulo de buscas manuais depois
+            if (!hasTyped && e.target.value.length > 0) {
+                tempSelected.clear();
+                hasTyped = true;
+            }
             renderCheckboxes(e.target.value);
         });
 
