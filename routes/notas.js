@@ -53,6 +53,8 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
 
         let cabecalho = null;
         let itensResult = { recordset: [] };
+        let debugCols = null;
+        let linkColumn = null;
 
         if (cabecalhoResult.recordset.length > 0) {
             cabecalho = cabecalhoResult.recordset[0];
@@ -65,8 +67,8 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
                 WHERE TABLE_NAME = 'nota_fiscal_venda_item'
             `);
             const cols = colResult.recordset.map(r => r.COLUMN_NAME.toLowerCase());
+            debugCols = cols;
             
-            let linkColumn = null;
             if (cols.includes('nf_codigo')) linkColumn = 'nf_codigo';
             else if (cols.includes('codigo_nf')) linkColumn = 'codigo_nf';
             else if (cols.includes('id_nota')) linkColumn = 'id_nota';
@@ -122,7 +124,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
         const data = {
             cabecalho: cabecalho,
             itens: itensResult.recordset || [],
-            debug_colunas: !linkColumn ? cols : undefined
+            debug_colunas: !linkColumn ? debugCols : undefined
         };
 
         if (!data.cabecalho) {
