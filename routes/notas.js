@@ -62,8 +62,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
             const colResult = await pool.request().query(`
                 SELECT COLUMN_NAME 
                 FROM ${dbName}.INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_NAME = 'nota_fiscal_venda_item' 
-                AND COLUMN_NAME LIKE '%codigo%'
+                WHERE TABLE_NAME = 'nota_fiscal_venda_item'
             `);
             const cols = colResult.recordset.map(r => r.COLUMN_NAME.toLowerCase());
             
@@ -122,7 +121,8 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
 
         const data = {
             cabecalho: cabecalho,
-            itens: itensResult.recordset || []
+            itens: itensResult.recordset || [],
+            debug_colunas: !linkColumn ? cols : undefined
         };
 
         if (!data.cabecalho) {
