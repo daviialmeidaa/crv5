@@ -60,16 +60,8 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
             cabecalho = cabecalhoResult.recordset[0];
             const codigoNota = cabecalho.codigo;
 
-            // Busca as colunas da tabela de itens dinamicamente para saber qual é a Foreign Key
-            const colResult = await pool.request().query(`
-                SELECT COLUMN_NAME 
-                FROM ${dbName}.INFORMATION_SCHEMA.COLUMNS 
-                WHERE TABLE_NAME = 'nota_fiscal_venda_item'
-            `);
-            const cols = colResult.recordset.map(r => r.COLUMN_NAME.toLowerCase());
-            debugCols = cols;
-            
-            // Tenta buscar os itens usando a coluna 'codigo' como Chave Estrangeira
+            // O usuário descobriu via query manual que a coluna 'nf_numero' na tabela de itens
+            // não armazena o número da nota, mas sim o 'codigo' (ID interno) do cabeçalho!
             itensResult = await pool.request()
                 .input('codigoNota', sql.Int, codigoNota)
                 .query(`
@@ -86,38 +78,13 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
                     i.valor_unitario, 
                     i.valor_total 
                 FROM ${dbName}.dbo.nota_fiscal_venda_item i
-                WHERE i.codigo = @codigoNota
+                WHERE i.nf_numero = @codigoNota
             `);
-
-            // Se não encontrou itens com 'codigo', faz o fallback legado por 'nf_numero' E formata com zeros à esquerda
-            if (itensResult.recordset.length === 0) {
-                const notaFormatada = numero.padStart(6, '0');
-                itensResult = await pool.request()
-                    .input('nota', sql.VarChar, numero)
-                    .input('notaFmt', sql.VarChar, notaFormatada)
-                    .query(`
-                    SELECT 
-                        i.prod_codigo,
-                        (SELECT TOP 1 nome FROM ${dbName}.dbo.produto WHERE codigo = i.prod_codigo) AS produto_nome,
-                        (SELECT TOP 1 f.nome 
-                         FROM ${dbName}.dbo.produto p 
-                         INNER JOIN ${dbName}.dbo.fabricante f ON p.fabr_codigo = f.codigo 
-                         WHERE p.codigo = i.prod_codigo) AS fabricante_nome,
-                        i.classificacao_fiscal, 
-                        i.quantidade, 
-                        i.Unidade, 
-                        i.valor_unitario, 
-                        i.valor_total 
-                    FROM ${dbName}.dbo.nota_fiscal_venda_item i
-                    WHERE i.nf_numero = @nota OR i.nf_numero = @notaFmt
-                `);
-            }
         }
 
         const data = {
             cabecalho: cabecalho,
-            itens: itensResult.recordset || [],
-            debug_colunas: !linkColumn ? debugCols : undefined
+            itens: itensResult.recordset || []
         };
 
         if (!data.cabecalho) {
