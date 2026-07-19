@@ -129,15 +129,19 @@ router.put('/:empresa/:codigo_nota/contrato', authMiddleware, async (req, res) =
             `);
 
         // 2. Update Postgres
-        await pgPool.query(
-            `UPDATE titulos SET contrato = $1 WHERE empresa = $2 AND documento = $3`,
-            [contrato, empresa.toUpperCase(), numero_nota]
+        const pgRes = await pgPool.query(
+            `UPDATE titulos SET contrato = $1 WHERE empresa = $2 AND nota = $3`,
+            [contrato, empresa.toUpperCase(), numero_nota.toString()]
         );
+
+        if (pgRes.rowCount === 0) {
+            console.warn(`Nota ${numero_nota} não encontrada no banco local PostgreSQL.`);
+        }
 
         res.json({ success: true, message: 'Contrato atualizado com sucesso.' });
     } catch (err) {
         console.error('Erro ao atualizar contrato:', err);
-        res.status(500).json({ error: 'Erro interno ao atualizar contrato.' });
+        res.status(500).json({ error: `Erro ao atualizar contrato: ${err.message}` });
     }
 });
 
@@ -185,15 +189,19 @@ router.put('/:empresa/:codigo_cliente/esfera', authMiddleware, async (req, res) 
             `);
 
         // 2. Update Postgres (todas as notas desse cliente na empresa atual)
-        await pgPool.query(
+        const pgRes = await pgPool.query(
             `UPDATE titulos SET esfera = $1 WHERE empresa = $2 AND cod_cliente = $3`,
             [esferaUpper, empresa.toUpperCase(), codigo_cliente.toString()]
         );
 
+        if (pgRes.rowCount === 0) {
+            console.warn(`Cliente ${codigo_cliente} não encontrado no banco local PostgreSQL.`);
+        }
+
         res.json({ success: true, message: 'Esfera atualizada com sucesso.' });
     } catch (err) {
         console.error('Erro ao atualizar esfera:', err);
-        res.status(500).json({ error: 'Erro interno ao atualizar esfera.' });
+        res.status(500).json({ error: `Erro ao atualizar esfera: ${err.message}` });
     }
 });
 
