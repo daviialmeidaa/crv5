@@ -930,6 +930,25 @@ const ContasGrid = (function () {
             XLSX.writeFile(workbook, `Contas_Receber_Export_${dateStr}.xlsx`);
         },
         
+        switchNotaTab(tab) {
+            const btnProd = document.getElementById('tabBtnProdutos');
+            const btnObs = document.getElementById('tabBtnObservacoes');
+            const contentProd = document.getElementById('tabContentProdutos');
+            const contentObs = document.getElementById('tabContentObservacoes');
+
+            if (tab === 'produtos') {
+                btnProd.className = 'pb-3 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 font-medium text-sm transition-colors';
+                btnObs.className = 'pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors';
+                contentProd.classList.remove('hidden');
+                contentObs.classList.add('hidden');
+            } else {
+                btnObs.className = 'pb-3 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 font-medium text-sm transition-colors';
+                btnProd.className = 'pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors';
+                contentObs.classList.remove('hidden');
+                contentProd.classList.add('hidden');
+            }
+        },
+
         async openNotaModal(empresa, numero_nota, cliente, esfera) {
             const modal = document.getElementById('notaModal');
             const loading = document.getElementById('notaModalLoading');
@@ -940,6 +959,7 @@ const ContasGrid = (function () {
             
             // Reset fields
             document.getElementById('modalNotaTitulo').textContent = numero_nota;
+            this.switchNotaTab('produtos'); // Default to products tab
             document.getElementById('modalEmpresa').textContent = '---';
             document.getElementById('modalEsfera').textContent = '---';
             document.getElementById('modalCliente').textContent = '---';
