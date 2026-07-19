@@ -21,6 +21,7 @@ app.use('/api/titulos', require('./routes/titulos'));
 app.use('/api/contratos', require('./routes/contratos'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/metas', require('./routes/metas'));
+app.use('/api/notas', require('./routes/notas'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {

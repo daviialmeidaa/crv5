@@ -259,6 +259,11 @@ const ContasGrid = (function () {
 
                 // Custom render?
                 if (col.render) val = col.render(val);
+                
+                // Formatação especial de Link para a Nota
+                if (col.key === 'nota' && val && val !== '-') {
+                    val = `<a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}'); return false;" title="Ver Nota" class="text-nexo-600 hover:text-nexo-700 dark:text-nexo-500 dark:hover:text-nexo-400 font-semibold underline decoration-nexo-500/30 underline-offset-2 transition-colors">${val}</a>`;
+                }
 
                 const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
 
@@ -923,6 +928,111 @@ const ContasGrid = (function () {
             const today = new Date();
             const dateStr = today.toISOString().split('T')[0];
             XLSX.writeFile(workbook, `Contas_Receber_Export_${dateStr}.xlsx`);
+        },
+        
+        async openNotaModal(empresa, numero_nota) {
+            const modal = document.getElementById('notaModal');
+            const loading = document.getElementById('notaModalLoading');
+            
+            // Show modal and loading state
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            
+            // Reset fields
+            document.getElementById('modalNotaTitulo').textContent = numero_nota;
+            document.getElementById('modalEmpresa').textContent = '---';
+            document.getElementById('modalNatureza').textContent = '---';
+            document.getElementById('modalDataEmissao').textContent = '---';
+            document.getElementById('modalValorTotal').textContent = '---';
+            document.getElementById('modalContato').textContent = '---';
+            document.getElementById('modalObservacoes').textContent = '---';
+            document.getElementById('modalItensCount').textContent = '0 itens';
+            document.getElementById('modalItensBody').innerHTML = '';
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`/api/notas/${empresa}/${numero_nota}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Falha ao buscar dados da nota fiscal no Supra.');
+                }
+                
+                const data = await response.json();
+                
+                // Populate Header
+                if (data.cabecalho) {
+                    document.getElementById('modalEmpresa').textContent = empresa;
+                    document.getElementById('modalNatureza').textContent = data.cabecalho.nome_natureza_operacao || '---';
+                    document.getElementById('modalNatureza').title = data.cabecalho.nome_natureza_operacao || '';
+                    
+                    if (data.cabecalho.data) {
+                        const dateObj = new Date(data.cabecalho.data);
+                        document.getElementById('modalDataEmissao').textContent = !isNaN(dateObj) ? dateObj.toLocaleDateString('pt-BR') : '---';
+                    }
+                    
+                    document.getElementById('modalValorTotal').textContent = data.cabecalho.valor_total ? 
+                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.cabecalho.valor_total) : '---';
+                        
+                    document.getElementById('modalContato').textContent = data.cabecalho.nome_contato || '---';
+                    
+                    const obs = data.cabecalho.informacao_complementar;
+                    document.getElementById('modalObservacoes').textContent = (obs && obs.trim() !== '') ? obs : 'Nenhuma observação informada.';
+                }
+                
+                // Populate Items
+                if (data.itens && data.itens.length > 0) {
+                    document.getElementById('modalItensCount').textContent = `${data.itens.length} itens`;
+                    
+                    let itensHtml = '';
+                    data.itens.forEach(item => {
+                        // Formatação de quantidade e valores com 2 casas decimais (sem R$)
+                        const qtd = (item.quantidade !== null && item.quantidade !== undefined) ? Number(item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+                        const vUnit = (item.valor_unitario !== null && item.valor_unitario !== undefined) ? Number(item.valor_unitario).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+                        const vTotal = (item.valor_total !== null && item.valor_total !== undefined) ? Number(item.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+                        
+                        // Proteção simples contra XSS ao usar templates literais para campos string
+                        const escapeHtml = (unsafe) => {
+                            return (unsafe || '').toString()
+                                 .replace(/&/g, "&amp;")
+                                 .replace(/</g, "&lt;")
+                                 .replace(/>/g, "&gt;")
+                                 .replace(/"/g, "&quot;")
+                                 .replace(/'/g, "&#039;");
+                        };
+
+                        itensHtml += `
+                            <tr class="hover:bg-gray-50/50 dark:hover:bg-steel-700/50 transition-colors">
+                                <td class="px-4 py-2 font-mono text-steel-600 dark:text-gray-400">${escapeHtml(item.prod_codigo)}</td>
+                                <td class="px-4 py-2 truncate max-w-[200px]" title="${escapeHtml(item.classificacao_fiscal)}">${escapeHtml(item.classificacao_fiscal)}</td>
+                                <td class="px-4 py-2 text-right font-medium">${qtd}</td>
+                                <td class="px-4 py-2 text-center text-steel-500 dark:text-steel-400">${escapeHtml(item.Unidade)}</td>
+                                <td class="px-4 py-2 text-right">${vUnit}</td>
+                                <td class="px-4 py-2 text-right font-medium text-steel-800 dark:text-gray-200">${vTotal}</td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById('modalItensBody').innerHTML = itensHtml;
+                } else {
+                    document.getElementById('modalItensCount').textContent = `0 itens`;
+                    document.getElementById('modalItensBody').innerHTML = `
+                        <tr>
+                            <td colspan="6" class="px-4 py-8 text-center text-steel-500 dark:text-steel-400">Nenhum item encontrado para esta nota.</td>
+                        </tr>
+                    `;
+                }
+                
+            } catch (err) {
+                console.error(err);
+                alert('Ocorreu um erro ao buscar os dados da nota. Verifique a conexão com o Supra.');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        },
+        
+        closeNotaModal() {
+            document.getElementById('notaModal').classList.add('hidden');
         }
     };
 
