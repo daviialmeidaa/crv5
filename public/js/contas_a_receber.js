@@ -262,7 +262,15 @@ const ContasGrid = (function () {
                 
                 // Formatação especial de Link para a Nota
                 if (col.key === 'nota' && val && val !== '-') {
-                    val = `<a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}', '${row.cliente ? row.cliente.replace(/'/g, "\\'") : ''}', '${row.esfera || ''}'); return false;" title="Ver Nota" class="hover:text-nexo-600 dark:hover:text-nexo-400 font-medium transition-colors">${val}</a>`;
+                    val = `<div class="relative group inline-block">
+                             <a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}', '${row.cliente ? row.cliente.replace(/'/g, "\\'") : ''}', '${row.esfera || ''}', '${row.uf || ''}'); return false;" class="text-steel-800 dark:text-gray-100 group-hover:text-nexo-600 dark:group-hover:text-nexo-400 transition-colors">${val}</a>
+                             <!-- Tooltip minimalista -->
+                             <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 whitespace-nowrap bg-steel-800 dark:bg-gray-100 text-white dark:text-steel-900 text-[10px] font-medium py-1 px-2 rounded shadow-sm pointer-events-none">
+                                Ver Nota
+                                <!-- Seta do tooltip -->
+                                <svg class="absolute text-steel-800 dark:text-gray-100 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
+                             </div>
+                           </div>`;
                 }
 
                 const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
@@ -949,7 +957,7 @@ const ContasGrid = (function () {
             }
         },
 
-        async openNotaModal(empresa, numero_nota, cliente, esfera) {
+        async openNotaModal(empresa, numero_nota, cliente, esfera, uf) {
             const modal = document.getElementById('notaModal');
             const loading = document.getElementById('notaModalLoading');
             
@@ -962,6 +970,7 @@ const ContasGrid = (function () {
             this.switchNotaTab('produtos'); // Default to products tab
             document.getElementById('modalEmpresa').textContent = '---';
             document.getElementById('modalEsfera').textContent = '---';
+            document.getElementById('modalUF').textContent = '---';
             document.getElementById('modalCliente').textContent = '---';
             document.getElementById('modalNatureza').textContent = '---';
             document.getElementById('modalDataEmissao').textContent = '---';
@@ -996,6 +1005,7 @@ const ContasGrid = (function () {
                 if (data.cabecalho) {
                     document.getElementById('modalEmpresa').textContent = toTitleCase(empresa);
                     document.getElementById('modalEsfera').textContent = toTitleCase(esfera) || '---';
+                    document.getElementById('modalUF').textContent = uf ? uf.toUpperCase() : '---';
                     document.getElementById('modalCliente').textContent = toTitleCase(cliente) || '---';
                     document.getElementById('modalNatureza').textContent = toTitleCase(data.cabecalho.nome_natureza_operacao) || '---';
                     document.getElementById('modalNatureza').title = toTitleCase(data.cabecalho.nome_natureza_operacao) || '';
@@ -1010,8 +1020,12 @@ const ContasGrid = (function () {
                         
                     document.getElementById('modalContato').textContent = data.cabecalho.nome_contato || '---';
                     
-                    const obs = data.cabecalho.informacao_complementar;
-                    document.getElementById('modalObservacoes').textContent = (obs && obs.trim() !== '') ? obs : 'Nenhuma observação informada.';
+                    let obs = data.cabecalho.informacao_complementar;
+                    if (obs) {
+                        // Limpa caracteres especiais nulos e espaços de preenchimento (trailing) causados por colunas CHAR no banco
+                        obs = obs.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/g, '').replace(/\s+$/g, '');
+                    }
+                    document.getElementById('modalObservacoes').textContent = (obs && obs !== '') ? obs : 'Nenhuma observação informada.';
                 }
                 
                 // Populate Items
