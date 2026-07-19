@@ -259,11 +259,11 @@
 
                 <!-- Header do Modal -->
                 <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
-                    <h3 class="text-lg font-bold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <h3 class="text-lg text-steel-800 dark:text-gray-100 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        Detalhes da Nota Fiscal: <span id="modalNotaTitulo" class="text-nexo-600 dark:text-nexo-400">---</span>
+                        Detalhes da Nota Fiscal: <span id="modalNotaTitulo" class="text-nexo-600 dark:text-nexo-400 font-medium">---</span>
                     </h3>
                     <button onclick="ContasGrid.closeNotaModal()" class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -276,42 +276,42 @@
                 <div class="flex-1 overflow-y-auto p-6 custom-scrollbar text-sm text-steel-700 dark:text-gray-300">
                     <!-- Seção 1: Dados Gerais -->
                     <div class="mb-6">
-                        <h4 class="text-xs uppercase tracking-wider font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">1. Informações Gerais</h4>
+                        <h4 class="text-sm text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">1. Informações Gerais</h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-gray-50 dark:bg-steel-900/30 p-4 rounded-xl border border-gray-100 dark:border-steel-700/50">
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Empresa Vendedora</p>
-                                <p class="font-medium text-steel-800 dark:text-gray-100" id="modalEmpresa">---</p>
+                                <p class="text-steel-800 dark:text-gray-100" id="modalEmpresa">---</p>
                             </div>
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Esfera</p>
-                                <p class="font-medium text-steel-800 dark:text-gray-100" id="modalEsfera">---</p>
+                                <p class="text-steel-800 dark:text-gray-100" id="modalEsfera">---</p>
                             </div>
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Data da Emissão</p>
-                                <p class="font-medium text-steel-800 dark:text-gray-100" id="modalDataEmissao">---</p>
+                                <p class="text-steel-800 dark:text-gray-100" id="modalDataEmissao">---</p>
                             </div>
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Valor Total</p>
-                                <p class="font-bold text-nexo-600 dark:text-nexo-400 text-base" id="modalValorTotal">---</p>
+                                <p class="text-nexo-600 dark:text-nexo-400 text-base" id="modalValorTotal">---</p>
                             </div>
                             <div class="lg:col-span-2">
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Cliente</p>
-                                <p class="font-medium text-steel-800 dark:text-gray-100" id="modalCliente">---</p>
+                                <p class="text-steel-800 dark:text-gray-100" id="modalCliente">---</p>
                             </div>
                             <div class="lg:col-span-2">
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Natureza da Operação</p>
-                                <p class="font-medium text-steel-800 dark:text-gray-100 truncate" title="" id="modalNatureza">---</p>
+                                <p class="text-steel-800 dark:text-gray-100" id="modalNatureza">---</p>
                             </div>
                             <div class="lg:col-span-4 hidden">
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Contato (DB)</p>
-                                <p class="font-medium text-steel-800 dark:text-gray-100" id="modalContato">---</p>
+                                <p class="text-steel-800 dark:text-gray-100" id="modalContato">---</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Seção 2: Observações -->
                     <div class="mb-6">
-                        <h4 class="text-xs uppercase tracking-wider font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">2. Observações (Informação Complementar)</h4>
+                        <h4 class="text-sm text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">2. Observações (Informação Complementar)</h4>
                         <div class="bg-gray-50 dark:bg-steel-900/30 p-4 rounded-xl border border-gray-100 dark:border-steel-700/50">
                             <p class="whitespace-pre-wrap font-mono text-[13px] text-steel-800 dark:text-gray-200" id="modalObservacoes">---</p>
                         </div>
@@ -319,23 +319,23 @@
 
                     <!-- Seção 3: Itens -->
                     <div>
-                        <h4 class="text-xs uppercase tracking-wider font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1 flex items-center justify-between">
+                        <h4 class="text-sm text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1 flex items-center justify-between">
                             <span>3. Itens Vendidos</span>
                             <span class="bg-nexo-100 text-nexo-700 dark:bg-nexo-900/30 dark:text-nexo-300 py-0.5 px-2 rounded-full text-[10px]" id="modalItensCount">0 itens</span>
                         </h4>
                         <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
                             <div class="table-container custom-scrollbar overflow-y-auto max-h-[400px]">
                                 <table class="w-full text-left border-collapse">
-                                    <thead class="sticky top-0 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)] text-xs uppercase tracking-wider text-steel-500 dark:text-steel-400">
+                                    <thead class="sticky top-0 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)] text-xs text-steel-500 dark:text-steel-400">
                                         <tr>
-                                            <th class="px-4 py-2 font-medium">Cód. Produto</th>
-                                            <th class="px-4 py-2 font-medium">Produto</th>
-                                            <th class="px-4 py-2 font-medium">Fabricante</th>
-                                            <th class="px-4 py-2 font-medium">NCM</th>
-                                            <th class="px-4 py-2 font-medium text-right">Qtd</th>
-                                            <th class="px-4 py-2 font-medium text-center">Unid</th>
-                                            <th class="px-4 py-2 font-medium text-right">Valor Unit.</th>
-                                            <th class="px-4 py-2 font-medium text-right">Valor Total</th>
+                                            <th class="px-4 py-2">Cód. Produto</th>
+                                            <th class="px-4 py-2">Produto</th>
+                                            <th class="px-4 py-2">Fabricante</th>
+                                            <th class="px-4 py-2">NCM</th>
+                                            <th class="px-4 py-2 text-right">Qtd</th>
+                                            <th class="px-4 py-2 text-center">Unid</th>
+                                            <th class="px-4 py-2 text-right">Valor Unit.</th>
+                                            <th class="px-4 py-2 text-right">Valor Total</th>
                                         </tr>
                                     </thead>
                                     <tbody id="modalItensBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-[13px]">

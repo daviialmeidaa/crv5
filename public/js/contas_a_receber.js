@@ -965,11 +965,11 @@ const ContasGrid = (function () {
                 
                 // Populate Header
                 if (data.cabecalho) {
-                    document.getElementById('modalEmpresa').textContent = empresa;
-                    document.getElementById('modalEsfera').textContent = esfera || '---';
-                    document.getElementById('modalCliente').textContent = cliente || '---';
-                    document.getElementById('modalNatureza').textContent = data.cabecalho.nome_natureza_operacao || '---';
-                    document.getElementById('modalNatureza').title = data.cabecalho.nome_natureza_operacao || '';
+                    document.getElementById('modalEmpresa').textContent = toTitleCase(empresa);
+                    document.getElementById('modalEsfera').textContent = toTitleCase(esfera) || '---';
+                    document.getElementById('modalCliente').textContent = toTitleCase(cliente) || '---';
+                    document.getElementById('modalNatureza').textContent = toTitleCase(data.cabecalho.nome_natureza_operacao) || '---';
+                    document.getElementById('modalNatureza').title = toTitleCase(data.cabecalho.nome_natureza_operacao) || '';
                     
                     if (data.cabecalho.data) {
                         const dateObj = new Date(data.cabecalho.data);
@@ -1007,15 +1007,15 @@ const ContasGrid = (function () {
                         };
 
                         itensHtml += `
-                            <tr class="hover:bg-gray-50/50 dark:hover:bg-steel-700/50 transition-colors">
+                            <tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors">
                                 <td class="px-4 py-2 font-mono text-steel-600 dark:text-gray-400">${escapeHtml(item.prod_codigo)}</td>
-                                <td class="px-4 py-2 font-medium text-steel-800 dark:text-gray-200 truncate max-w-[200px]" title="${escapeHtml(item.produto_nome)}">${escapeHtml(item.produto_nome)}</td>
-                                <td class="px-4 py-2 text-steel-600 dark:text-gray-400 truncate max-w-[150px]" title="${escapeHtml(item.fabricante_nome)}">${escapeHtml(item.fabricante_nome)}</td>
-                                <td class="px-4 py-2 truncate max-w-[100px]" title="${escapeHtml(item.classificacao_fiscal)}">${escapeHtml(item.classificacao_fiscal)}</td>
-                                <td class="px-4 py-2 text-right font-medium">${qtd}</td>
+                                <td class="px-4 py-2 text-steel-800 dark:text-gray-200">${escapeHtml(toTitleCase(item.produto_nome))}</td>
+                                <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(toTitleCase(item.fabricante_nome))}</td>
+                                <td class="px-4 py-2">${escapeHtml(item.classificacao_fiscal)}</td>
+                                <td class="px-4 py-2 text-right">${qtd}</td>
                                 <td class="px-4 py-2 text-center text-steel-500 dark:text-steel-400">${escapeHtml(item.Unidade)}</td>
                                 <td class="px-4 py-2 text-right">${vUnit}</td>
-                                <td class="px-4 py-2 text-right font-medium text-nexo-700 dark:text-nexo-400">${vTotal}</td>
+                                <td class="px-4 py-2 text-right text-nexo-700 dark:text-nexo-400">${vTotal}</td>
                             </tr>
                         `;
                     });
