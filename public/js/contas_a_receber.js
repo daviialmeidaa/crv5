@@ -957,6 +957,91 @@ const ContasGrid = (function () {
             }
         },
 
+        renderModalItens() {
+            const tbody = document.getElementById('modalItensBody');
+            if (!this.modalItens || this.modalItens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-steel-500">Nenhum item encontrado.</td></tr>';
+                document.getElementById('modalPaginationInfo').textContent = 'Nenhum item';
+                document.getElementById('modalPaginationControls').innerHTML = '';
+                return;
+            }
+
+            const totalItems = this.modalItens.length;
+            const totalPages = Math.ceil(totalItems / this.modalItemsPerPage);
+            const startIdx = (this.modalCurrentPage - 1) * this.modalItemsPerPage;
+            const endIdx = Math.min(startIdx + this.modalItemsPerPage, totalItems);
+
+            const pageItens = this.modalItens.slice(startIdx, endIdx);
+
+            const toTitleCase = (str) => {
+                if (!str) return '';
+                return str.toString().toLowerCase().split(' ').map(word => {
+                    const preps = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'com', 'por', 'para'];
+                    if (preps.includes(word)) return word;
+                    return word.charAt(0).toUpperCase() + word.slice(1);
+                }).join(' ');
+            };
+
+            const escapeHtml = (unsafe) => {
+                return (unsafe || '').toString()
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            };
+
+            let itensHtml = '';
+            pageItens.forEach(item => {
+                const qtd = (item.quantidade !== null && item.quantidade !== undefined) ? Number(item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+                const vUnit = (item.valor_unitario !== null && item.valor_unitario !== undefined) ? Number(item.valor_unitario).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+                const vTotal = (item.valor_total !== null && item.valor_total !== undefined) ? Number(item.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+
+                itensHtml += `<tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors">
+                    <td class="px-4 py-2 font-mono text-steel-600 dark:text-steel-400">${escapeHtml(item.prod_codigo)}</td>
+                    <td class="px-4 py-2 text-steel-800 dark:text-gray-200">${escapeHtml(toTitleCase(item.produto_nome))}</td>
+                    <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(toTitleCase(item.fabricante_nome))}</td>
+                    <td class="px-4 py-2 font-mono text-steel-500">${escapeHtml(item.classificacao_fiscal)}</td>
+                    <td class="px-4 py-2 text-right font-medium text-steel-700 dark:text-gray-300">${qtd}</td>
+                    <td class="px-4 py-2 text-center text-steel-500">${escapeHtml(item.Unidade)}</td>
+                    <td class="px-4 py-2 text-right text-steel-600 dark:text-gray-400">${vUnit}</td>
+                    <td class="px-4 py-2 text-right font-medium text-nexo-600 dark:text-nexo-400">${vTotal}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = itensHtml;
+
+            // Info Paginação
+            document.getElementById('modalPaginationInfo').textContent = `Mostrando ${startIdx + 1} a ${endIdx} de ${totalItems} itens`;
+
+            // Controles
+            let paginationHtml = '';
+            
+            const prevDisabled = this.modalCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
+            paginationHtml += `
+                <button onclick="ContasGrid.changeModalPage(${this.modalCurrentPage - 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${prevDisabled}" ${this.modalCurrentPage === 1 ? 'disabled' : ''}>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+            `;
+
+            const nextDisabled = this.modalCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
+            paginationHtml += `
+                <button onclick="ContasGrid.changeModalPage(${this.modalCurrentPage + 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${nextDisabled}" ${this.modalCurrentPage === totalPages ? 'disabled' : ''}>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            `;
+
+            document.getElementById('modalPaginationControls').innerHTML = paginationHtml;
+        },
+
+        changeModalPage(page) {
+            const totalPages = Math.ceil(this.modalItens.length / this.modalItemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                this.modalCurrentPage = page;
+                this.renderModalItens();
+            }
+        },
+
         async openNotaModal(empresa, numero_nota, cliente, esfera, uf) {
             const modal = document.getElementById('notaModal');
             const loading = document.getElementById('notaModalLoading');
@@ -1031,45 +1116,13 @@ const ContasGrid = (function () {
                 // Populate Items
                 if (data.itens && data.itens.length > 0) {
                     document.getElementById('modalItensCount').textContent = `${data.itens.length} itens`;
-                    
-                    let itensHtml = '';
-                    data.itens.forEach(item => {
-                        // Formatação de quantidade e valores com 2 casas decimais (sem R$)
-                        const qtd = (item.quantidade !== null && item.quantidade !== undefined) ? Number(item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-                        const vUnit = (item.valor_unitario !== null && item.valor_unitario !== undefined) ? Number(item.valor_unitario).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-                        const vTotal = (item.valor_total !== null && item.valor_total !== undefined) ? Number(item.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-                        
-                        // Proteção simples contra XSS ao usar templates literais para campos string
-                        const escapeHtml = (unsafe) => {
-                            return (unsafe || '').toString()
-                                 .replace(/&/g, "&amp;")
-                                 .replace(/</g, "&lt;")
-                                 .replace(/>/g, "&gt;")
-                                 .replace(/"/g, "&quot;")
-                                 .replace(/'/g, "&#039;");
-                        };
-
-                        itensHtml += `
-                            <tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors">
-                                <td class="px-4 py-2 font-mono text-steel-600 dark:text-gray-400">${escapeHtml(item.prod_codigo)}</td>
-                                <td class="px-4 py-2 text-steel-800 dark:text-gray-200">${escapeHtml(toTitleCase(item.produto_nome))}</td>
-                                <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(toTitleCase(item.fabricante_nome))}</td>
-                                <td class="px-4 py-2">${escapeHtml(item.classificacao_fiscal)}</td>
-                                <td class="px-4 py-2 text-right">${qtd}</td>
-                                <td class="px-4 py-2 text-center text-steel-500 dark:text-steel-400">${escapeHtml(item.Unidade)}</td>
-                                <td class="px-4 py-2 text-right">${vUnit}</td>
-                                <td class="px-4 py-2 text-right text-nexo-700 dark:text-nexo-400">${vTotal}</td>
-                            </tr>
-                        `;
-                    });
-                    document.getElementById('modalItensBody').innerHTML = itensHtml;
+                    this.modalItens = data.itens;
+                    this.modalCurrentPage = 1;
+                    this.renderModalItens();
                 } else {
                     document.getElementById('modalItensCount').textContent = `0 itens`;
-                    document.getElementById('modalItensBody').innerHTML = `
-                        <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-steel-500 dark:text-steel-400">Nenhum item encontrado para esta nota.</td>
-                        </tr>
-                    `;
+                    this.modalItens = [];
+                    this.renderModalItens();
                 }
                 
             } catch (err) {
