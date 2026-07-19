@@ -38,7 +38,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
             WHERE numero_nota = @nota
         `;
 
-        const requestCabecalho = pool.request().input('nota', sql.VarChar, numero_nota);
+        const requestCabecalho = pool.request().input('nota', sql.VarChar, numero);
         
         if (valorFiltro) {
             // Converte o valor recebido do front (ex: "1669.6") para float, ou tenta match exato se a conversão do BD permitir
@@ -100,7 +100,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
             } else {
                 // Fallback legado caso não ache a coluna FK
                 itensResult = await pool.request()
-                    .input('nota', sql.VarChar, numero_nota)
+                    .input('nota', sql.VarChar, numero)
                     .query(`
                     SELECT 
                         i.prod_codigo,
