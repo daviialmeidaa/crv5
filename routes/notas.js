@@ -38,22 +38,23 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
                 WHERE numero_nota = @nota
             `);
 
-        // Busca dos itens
+        // Busca dos itens com subqueries para evitar duplicação de linhas (caso haja múltiplos produtos/fabricantes com o mesmo código)
         const itensResult = await pool.request()
             .input('nota', sql.VarChar, numero)
             .query(`
                 SELECT 
                     i.prod_codigo,
-                    p.nome AS produto_nome,
-                    f.nome AS fabricante_nome,
+                    (SELECT TOP 1 nome FROM ${dbName}.dbo.produto WHERE codigo = i.prod_codigo) AS produto_nome,
+                    (SELECT TOP 1 f.nome 
+                     FROM ${dbName}.dbo.produto p 
+                     INNER JOIN ${dbName}.dbo.fabricante f ON p.fabr_codigo = f.codigo 
+                     WHERE p.codigo = i.prod_codigo) AS fabricante_nome,
                     i.classificacao_fiscal, 
                     i.quantidade, 
                     i.Unidade, 
                     i.valor_unitario, 
                     i.valor_total 
                 FROM ${dbName}.dbo.nota_fiscal_venda_item i
-                LEFT JOIN ${dbName}.dbo.produto p ON i.prod_codigo = p.codigo
-                LEFT JOIN ${dbName}.dbo.fabricante f ON p.fabr_codigo = f.codigo
                 WHERE i.nf_numero = @nota
             `);
 
