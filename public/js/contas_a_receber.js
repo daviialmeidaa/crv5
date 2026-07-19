@@ -1009,9 +1009,9 @@ const ContasGrid = (function () {
                         itensHtml += `
                             <tr class="hover:bg-gray-50/50 dark:hover:bg-steel-700/50 transition-colors">
                                 <td class="px-4 py-2 font-mono text-steel-600 dark:text-gray-400">${escapeHtml(item.prod_codigo)}</td>
-                                <td class="px-4 py-2 font-medium text-steel-800 dark:text-gray-200">${escapeHtml(item.produto_nome)}</td>
-                                <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(item.fabricante_nome)}</td>
-                                <td class="px-4 py-2 truncate max-w-[150px]" title="${escapeHtml(item.classificacao_fiscal)}">${escapeHtml(item.classificacao_fiscal)}</td>
+                                <td class="px-4 py-2 font-medium text-steel-800 dark:text-gray-200 truncate max-w-[200px]" title="${escapeHtml(item.produto_nome)}">${escapeHtml(item.produto_nome)}</td>
+                                <td class="px-4 py-2 text-steel-600 dark:text-gray-400 truncate max-w-[150px]" title="${escapeHtml(item.fabricante_nome)}">${escapeHtml(item.fabricante_nome)}</td>
+                                <td class="px-4 py-2 truncate max-w-[100px]" title="${escapeHtml(item.classificacao_fiscal)}">${escapeHtml(item.classificacao_fiscal)}</td>
                                 <td class="px-4 py-2 text-right font-medium">${qtd}</td>
                                 <td class="px-4 py-2 text-center text-steel-500 dark:text-steel-400">${escapeHtml(item.Unidade)}</td>
                                 <td class="px-4 py-2 text-right">${vUnit}</td>
