@@ -48,6 +48,13 @@ const ContasGrid = (function () {
     let modalItens = [];
     let modalCurrentPage = 1;
     const modalItemsPerPage = 10;
+    
+    let currentModalContext = {
+        empresa: null,
+        numero_nota: null,
+        codigo_nota: null,
+        clifor_codigo: null
+    };
 
     // 3. Integração com Banco de Dados PostgreSQL
     async function fetchData() {
@@ -1056,6 +1063,15 @@ const ContasGrid = (function () {
             // Reset fields
             document.getElementById('modalNotaTitulo').textContent = numero_nota;
             this.switchNotaTab('produtos'); // Default to products tab
+            
+            // Reset edit states
+            if (document.getElementById('editEsferaContainer') && !document.getElementById('editEsferaContainer').classList.contains('hidden')) {
+                this.toggleEditEsfera(false);
+            }
+            if (document.getElementById('editContratoContainer') && !document.getElementById('editContratoContainer').classList.contains('hidden')) {
+                this.toggleEditContrato(false);
+            }
+
             document.getElementById('modalEmpresa').textContent = '---';
             document.getElementById('modalEsfera').textContent = '---';
             document.getElementById('modalUF').textContent = '---';
@@ -1095,6 +1111,11 @@ const ContasGrid = (function () {
 
                 // Populate Header
                 if (data.cabecalho) {
+                    currentModalContext.empresa = empresa;
+                    currentModalContext.numero_nota = numero_nota;
+                    currentModalContext.codigo_nota = data.cabecalho.codigo;
+                    currentModalContext.clifor_codigo = data.cabecalho.clifor_codigo;
+
                     document.getElementById('modalEmpresa').textContent = toTitleCase(empresa);
                     document.getElementById('modalEsfera').textContent = toTitleCase(esfera) || '---';
                     document.getElementById('modalUF').textContent = uf ? uf.toUpperCase() : '---';
@@ -1146,6 +1167,125 @@ const ContasGrid = (function () {
         
         closeNotaModal() {
             document.getElementById('notaModal').classList.add('hidden');
+        },
+
+        toggleEditEsfera(show) {
+            if (show) {
+                document.getElementById('displayEsferaContainer').classList.add('hidden');
+                document.getElementById('btnEditEsfera').classList.add('hidden');
+                document.getElementById('editEsferaContainer').classList.remove('hidden');
+                document.getElementById('editEsferaContainer').classList.add('flex');
+                
+                let currentVal = document.getElementById('modalEsfera').textContent.trim().toUpperCase();
+                const select = document.getElementById('editEsferaSelect');
+                if (['PARTICULAR', 'MUNICIPAL', 'ESTADUAL', 'FEDERAL'].includes(currentVal)) {
+                    select.value = currentVal;
+                }
+            } else {
+                document.getElementById('displayEsferaContainer').classList.remove('hidden');
+                document.getElementById('btnEditEsfera').classList.remove('hidden');
+                document.getElementById('editEsferaContainer').classList.add('hidden');
+                document.getElementById('editEsferaContainer').classList.remove('flex');
+            }
+        },
+
+        async saveEsfera() {
+            const select = document.getElementById('editEsferaSelect');
+            const newValue = select.value;
+            const token = localStorage.getItem('token');
+
+            if (!currentModalContext.empresa || !currentModalContext.clifor_codigo) {
+                alert('Erro interno: Faltam dados do cliente para atualização.');
+                return;
+            }
+
+            try {
+                select.disabled = true;
+                const res = await fetch(`/api/notas/${currentModalContext.empresa}/${currentModalContext.clifor_codigo}/esfera`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ esfera: newValue })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Falha ao atualizar esfera.');
+                }
+
+                // Update UI
+                const toTitleCase = (str) => {
+                    return str.toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase());
+                };
+                document.getElementById('modalEsfera').textContent = toTitleCase(newValue);
+                this.toggleEditEsfera(false);
+                
+                // Background refresh grid
+                fetchData(); 
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                select.disabled = false;
+            }
+        },
+
+        toggleEditContrato(show) {
+            if (show) {
+                document.getElementById('displayContratoContainer').classList.add('hidden');
+                document.getElementById('btnEditContrato').classList.add('hidden');
+                document.getElementById('editContratoContainer').classList.remove('hidden');
+                document.getElementById('editContratoContainer').classList.add('flex');
+                
+                let currentVal = document.getElementById('modalContato').textContent.trim();
+                if (currentVal === '---') currentVal = '';
+                document.getElementById('editContratoInput').value = currentVal;
+            } else {
+                document.getElementById('displayContratoContainer').classList.remove('hidden');
+                document.getElementById('btnEditContrato').classList.remove('hidden');
+                document.getElementById('editContratoContainer').classList.add('hidden');
+                document.getElementById('editContratoContainer').classList.remove('flex');
+            }
+        },
+
+        async saveContrato() {
+            const input = document.getElementById('editContratoInput');
+            const newValue = input.value.trim();
+            const token = localStorage.getItem('token');
+
+            if (!currentModalContext.empresa || !currentModalContext.codigo_nota) {
+                alert('Erro interno: Faltam dados da nota para atualização.');
+                return;
+            }
+
+            try {
+                input.disabled = true;
+                const res = await fetch(`/api/notas/${currentModalContext.empresa}/${currentModalContext.codigo_nota}/contrato`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ contrato: newValue, numero_nota: currentModalContext.numero_nota })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Falha ao atualizar contrato.');
+                }
+
+                // Update UI
+                document.getElementById('modalContato').textContent = newValue || '---';
+                this.toggleEditContrato(false);
+                
+                // Background refresh grid
+                fetchData();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                input.disabled = false;
+            }
         }
     };
 
