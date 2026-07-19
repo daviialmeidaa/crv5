@@ -267,7 +267,7 @@ const ContasGrid = (function () {
                 // Formatação especial de Link para a Nota
                 if (col.key === 'nota' && val && val !== '-') {
                     val = `<div class="relative group inline-block">
-                             <a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}', '${row.cliente ? row.cliente.replace(/'/g, "\\'") : ''}', '${row.esfera || ''}', '${row.uf || ''}'); return false;" class="text-steel-800 dark:text-gray-100 group-hover:text-nexo-600 dark:group-hover:text-nexo-400 transition-colors">${val}</a>
+                             <a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}', '${row.cliente ? row.cliente.replace(/'/g, "\\'") : ''}', '${row.esfera || ''}', '${row.uf || ''}', '${row.valor || '0'}'); return false;" class="text-steel-800 dark:text-gray-100 group-hover:text-nexo-600 dark:group-hover:text-nexo-400 transition-colors">${val}</a>
                              <!-- Tooltip minimalista -->
                              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 whitespace-nowrap bg-steel-800 dark:bg-gray-100 text-white dark:text-steel-900 text-[10px] font-medium py-1 px-2 rounded shadow-sm pointer-events-none">
                                 Ver Nota
@@ -1045,7 +1045,7 @@ const ContasGrid = (function () {
             }
         },
 
-        async openNotaModal(empresa, numero_nota, cliente, esfera, uf) {
+        async openNotaModal(empresa, numero_nota, cliente, esfera, uf, valorTotal) {
             const modal = document.getElementById('notaModal');
             const loading = document.getElementById('notaModalLoading');
             
@@ -1070,7 +1070,11 @@ const ContasGrid = (function () {
             
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`/api/notas/${empresa}/${numero_nota}`, {
+                let url = `/api/notas/${empresa}/${numero_nota}`;
+                if (valorTotal) {
+                    url += `?valor=${valorTotal}`;
+                }
+                const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
