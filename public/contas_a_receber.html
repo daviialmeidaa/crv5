@@ -283,8 +283,8 @@
                                 <p class="font-medium text-steel-800 dark:text-gray-100" id="modalEmpresa">---</p>
                             </div>
                             <div>
-                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Natureza da Operação</p>
-                                <p class="font-medium text-steel-800 dark:text-gray-100 truncate" title="" id="modalNatureza">---</p>
+                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Esfera</p>
+                                <p class="font-medium text-steel-800 dark:text-gray-100" id="modalEsfera">---</p>
                             </div>
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Data da Emissão</p>
@@ -294,18 +294,26 @@
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Valor Total</p>
                                 <p class="font-bold text-nexo-600 dark:text-nexo-400 text-base" id="modalValorTotal">---</p>
                             </div>
-                            <div class="lg:col-span-4">
-                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Contato / Cliente</p>
+                            <div class="lg:col-span-2">
+                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Cliente</p>
+                                <p class="font-medium text-steel-800 dark:text-gray-100" id="modalCliente">---</p>
+                            </div>
+                            <div class="lg:col-span-2">
+                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Natureza da Operação</p>
+                                <p class="font-medium text-steel-800 dark:text-gray-100 truncate" title="" id="modalNatureza">---</p>
+                            </div>
+                            <div class="lg:col-span-4 hidden">
+                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Contato (DB)</p>
                                 <p class="font-medium text-steel-800 dark:text-gray-100" id="modalContato">---</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Seção 2: Observações -->
-                    <div class="mb-6">
-                        <h4 class="text-xs uppercase tracking-wider font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">2. Observações (Informação Complementar)</h4>
-                        <div class="bg-yellow-50/50 dark:bg-[#3f3b25]/30 p-4 rounded-xl border border-yellow-100 dark:border-yellow-900/30">
-                            <p class="whitespace-pre-wrap font-mono text-[13px] text-steel-800 dark:text-gray-200" id="modalObservacoes">---</p>
+                    <div class="mb-4">
+                        <h4 class="text-xs uppercase tracking-wider font-semibold text-steel-500 dark:text-steel-400 mb-2 border-b border-gray-100 dark:border-steel-700 pb-1">2. Observações (Informação Complementar)</h4>
+                        <div class="bg-yellow-50/50 dark:bg-[#3f3b25]/30 p-2.5 rounded-lg border border-yellow-100 dark:border-yellow-900/30 max-h-24 overflow-y-auto custom-scrollbar">
+                            <p class="whitespace-pre-wrap font-mono text-[12px] text-steel-800 dark:text-gray-200" id="modalObservacoes">---</p>
                         </div>
                     </div>
 
@@ -316,14 +324,16 @@
                             <span class="bg-nexo-100 text-nexo-700 dark:bg-nexo-900/30 dark:text-nexo-300 py-0.5 px-2 rounded-full text-[10px]" id="modalItensCount">0 itens</span>
                         </h4>
                         <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
-                            <div class="table-container custom-scrollbar overflow-x-auto max-h-[300px]">
+                            <div class="table-container custom-scrollbar overflow-x-auto max-h-[400px]">
                                 <table class="w-full text-left border-collapse min-w-max">
                                     <thead class="sticky top-0 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)] text-xs uppercase tracking-wider text-steel-500 dark:text-steel-400">
                                         <tr>
                                             <th class="px-4 py-2 font-medium">Cód. Produto</th>
-                                            <th class="px-4 py-2 font-medium">Classificação Fiscal (NCM)</th>
+                                            <th class="px-4 py-2 font-medium">Produto</th>
+                                            <th class="px-4 py-2 font-medium">Fabricante</th>
+                                            <th class="px-4 py-2 font-medium">NCM</th>
                                             <th class="px-4 py-2 font-medium text-right">Qtd</th>
-                                            <th class="px-4 py-2 font-medium text-center">Unidade</th>
+                                            <th class="px-4 py-2 font-medium text-center">Unid</th>
                                             <th class="px-4 py-2 font-medium text-right">Valor Unit.</th>
                                             <th class="px-4 py-2 font-medium text-right">Valor Total</th>
                                         </tr>

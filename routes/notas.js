@@ -43,14 +43,18 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
             .input('nota', sql.VarChar, numero)
             .query(`
                 SELECT 
-                    prod_codigo, 
-                    classificacao_fiscal, 
-                    quantidade, 
-                    Unidade, 
-                    valor_unitario, 
-                    valor_total 
-                FROM ${dbName}.dbo.nota_fiscal_venda_item 
-                WHERE nf_numero = @nota
+                    i.prod_codigo,
+                    p.nome AS produto_nome,
+                    f.nome AS fabricante_nome,
+                    i.classificacao_fiscal, 
+                    i.quantidade, 
+                    i.Unidade, 
+                    i.valor_unitario, 
+                    i.valor_total 
+                FROM ${dbName}.dbo.nota_fiscal_venda_item i
+                LEFT JOIN ${dbName}.dbo.produto p ON i.prod_codigo = p.codigo
+                LEFT JOIN ${dbName}.dbo.fabricante f ON p.fabr_codigo = f.codigo
+                WHERE i.nf_numero = @nota
             `);
 
         const data = {

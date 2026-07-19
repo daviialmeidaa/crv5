@@ -262,7 +262,7 @@ const ContasGrid = (function () {
                 
                 // Formatação especial de Link para a Nota
                 if (col.key === 'nota' && val && val !== '-') {
-                    val = `<a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}'); return false;" title="Ver Nota" class="text-nexo-600 hover:text-nexo-700 dark:text-nexo-500 dark:hover:text-nexo-400 font-semibold underline decoration-nexo-500/30 underline-offset-2 transition-colors">${val}</a>`;
+                    val = `<a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}', '${row.cliente ? row.cliente.replace(/'/g, "\\'") : ''}', '${row.esfera || ''}'); return false;" title="Ver Nota" class="hover:text-nexo-600 dark:hover:text-nexo-400 font-medium transition-colors">${val}</a>`;
                 }
 
                 const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
@@ -930,7 +930,7 @@ const ContasGrid = (function () {
             XLSX.writeFile(workbook, `Contas_Receber_Export_${dateStr}.xlsx`);
         },
         
-        async openNotaModal(empresa, numero_nota) {
+        async openNotaModal(empresa, numero_nota, cliente, esfera) {
             const modal = document.getElementById('notaModal');
             const loading = document.getElementById('notaModalLoading');
             
@@ -941,6 +941,8 @@ const ContasGrid = (function () {
             // Reset fields
             document.getElementById('modalNotaTitulo').textContent = numero_nota;
             document.getElementById('modalEmpresa').textContent = '---';
+            document.getElementById('modalEsfera').textContent = '---';
+            document.getElementById('modalCliente').textContent = '---';
             document.getElementById('modalNatureza').textContent = '---';
             document.getElementById('modalDataEmissao').textContent = '---';
             document.getElementById('modalValorTotal').textContent = '---';
@@ -964,6 +966,8 @@ const ContasGrid = (function () {
                 // Populate Header
                 if (data.cabecalho) {
                     document.getElementById('modalEmpresa').textContent = empresa;
+                    document.getElementById('modalEsfera').textContent = esfera || '---';
+                    document.getElementById('modalCliente').textContent = cliente || '---';
                     document.getElementById('modalNatureza').textContent = data.cabecalho.nome_natureza_operacao || '---';
                     document.getElementById('modalNatureza').title = data.cabecalho.nome_natureza_operacao || '';
                     
@@ -1005,11 +1009,13 @@ const ContasGrid = (function () {
                         itensHtml += `
                             <tr class="hover:bg-gray-50/50 dark:hover:bg-steel-700/50 transition-colors">
                                 <td class="px-4 py-2 font-mono text-steel-600 dark:text-gray-400">${escapeHtml(item.prod_codigo)}</td>
-                                <td class="px-4 py-2 truncate max-w-[200px]" title="${escapeHtml(item.classificacao_fiscal)}">${escapeHtml(item.classificacao_fiscal)}</td>
+                                <td class="px-4 py-2 font-medium text-steel-800 dark:text-gray-200">${escapeHtml(item.produto_nome)}</td>
+                                <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(item.fabricante_nome)}</td>
+                                <td class="px-4 py-2 truncate max-w-[150px]" title="${escapeHtml(item.classificacao_fiscal)}">${escapeHtml(item.classificacao_fiscal)}</td>
                                 <td class="px-4 py-2 text-right font-medium">${qtd}</td>
                                 <td class="px-4 py-2 text-center text-steel-500 dark:text-steel-400">${escapeHtml(item.Unidade)}</td>
                                 <td class="px-4 py-2 text-right">${vUnit}</td>
-                                <td class="px-4 py-2 text-right font-medium text-steel-800 dark:text-gray-200">${vTotal}</td>
+                                <td class="px-4 py-2 text-right font-medium text-nexo-700 dark:text-nexo-400">${vTotal}</td>
                             </tr>
                         `;
                     });
@@ -1018,7 +1024,7 @@ const ContasGrid = (function () {
                     document.getElementById('modalItensCount').textContent = `0 itens`;
                     document.getElementById('modalItensBody').innerHTML = `
                         <tr>
-                            <td colspan="6" class="px-4 py-8 text-center text-steel-500 dark:text-steel-400">Nenhum item encontrado para esta nota.</td>
+                            <td colspan="8" class="px-4 py-8 text-center text-steel-500 dark:text-steel-400">Nenhum item encontrado para esta nota.</td>
                         </tr>
                     `;
                 }
