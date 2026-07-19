@@ -963,6 +963,15 @@ const ContasGrid = (function () {
                 
                 const data = await response.json();
                 
+                const toTitleCase = (str) => {
+                    if (!str) return '';
+                    return str.toString().toLowerCase().split(' ').map(word => {
+                        const preps = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'com', 'por', 'para'];
+                        if (preps.includes(word)) return word;
+                        return word.charAt(0).toUpperCase() + word.slice(1);
+                    }).join(' ');
+                };
+
                 // Populate Header
                 if (data.cabecalho) {
                     document.getElementById('modalEmpresa').textContent = toTitleCase(empresa);
