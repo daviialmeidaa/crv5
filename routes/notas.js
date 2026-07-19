@@ -69,39 +69,32 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
             const cols = colResult.recordset.map(r => r.COLUMN_NAME.toLowerCase());
             debugCols = cols;
             
-            if (cols.includes('nf_codigo')) linkColumn = 'nf_codigo';
-            else if (cols.includes('codigo_nf')) linkColumn = 'codigo_nf';
-            else if (cols.includes('id_nota')) linkColumn = 'id_nota';
-            else if (cols.includes('nota_codigo')) linkColumn = 'nota_codigo';
-            else if (cols.includes('cod_nota')) linkColumn = 'cod_nota';
-            else if (cols.includes('id_nota_fiscal')) linkColumn = 'id_nota_fiscal';
-            else if (cols.includes('nfv_codigo')) linkColumn = 'nfv_codigo';
-            else if (cols.includes('nota_fiscal_venda_codigo')) linkColumn = 'nota_fiscal_venda_codigo';
-            
-            // Se encontrou a coluna de link exata (FK), usamos ela. Senão, faz fallback pro numero_nota (menos preciso)
-            if (linkColumn && codigoNota) {
-                itensResult = await pool.request()
-                    .input('codigoNota', sql.Int, codigoNota)
-                    .query(`
-                    SELECT 
-                        i.prod_codigo,
-                        (SELECT TOP 1 nome FROM ${dbName}.dbo.produto WHERE codigo = i.prod_codigo) AS produto_nome,
-                        (SELECT TOP 1 f.nome 
-                         FROM ${dbName}.dbo.produto p 
-                         INNER JOIN ${dbName}.dbo.fabricante f ON p.fabr_codigo = f.codigo 
-                         WHERE p.codigo = i.prod_codigo) AS fabricante_nome,
-                        i.classificacao_fiscal, 
-                        i.quantidade, 
-                        i.Unidade, 
-                        i.valor_unitario, 
-                        i.valor_total 
-                    FROM ${dbName}.dbo.nota_fiscal_venda_item i
-                    WHERE i.${linkColumn} = @codigoNota
-                `);
-            } else {
-                // Fallback legado caso não ache a coluna FK
+            // Tenta buscar os itens usando a coluna 'codigo' como Chave Estrangeira
+            itensResult = await pool.request()
+                .input('codigoNota', sql.Int, codigoNota)
+                .query(`
+                SELECT 
+                    i.prod_codigo,
+                    (SELECT TOP 1 nome FROM ${dbName}.dbo.produto WHERE codigo = i.prod_codigo) AS produto_nome,
+                    (SELECT TOP 1 f.nome 
+                     FROM ${dbName}.dbo.produto p 
+                     INNER JOIN ${dbName}.dbo.fabricante f ON p.fabr_codigo = f.codigo 
+                     WHERE p.codigo = i.prod_codigo) AS fabricante_nome,
+                    i.classificacao_fiscal, 
+                    i.quantidade, 
+                    i.Unidade, 
+                    i.valor_unitario, 
+                    i.valor_total 
+                FROM ${dbName}.dbo.nota_fiscal_venda_item i
+                WHERE i.codigo = @codigoNota
+            `);
+
+            // Se não encontrou itens com 'codigo', faz o fallback legado por 'nf_numero' E formata com zeros à esquerda
+            if (itensResult.recordset.length === 0) {
+                const notaFormatada = numero.padStart(6, '0');
                 itensResult = await pool.request()
                     .input('nota', sql.VarChar, numero)
+                    .input('notaFmt', sql.VarChar, notaFormatada)
                     .query(`
                     SELECT 
                         i.prod_codigo,
@@ -116,7 +109,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
                         i.valor_unitario, 
                         i.valor_total 
                     FROM ${dbName}.dbo.nota_fiscal_venda_item i
-                    WHERE i.nf_numero = @nota
+                    WHERE i.nf_numero = @nota OR i.nf_numero = @notaFmt
                 `);
             }
         }
