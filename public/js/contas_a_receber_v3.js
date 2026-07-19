@@ -1099,8 +1099,12 @@ const ContasGrid = (function () {
                     document.getElementById('modalNatureza').title = toTitleCase(data.cabecalho.nome_natureza_operacao) || '';
                     
                     if (data.cabecalho.data) {
-                        const dateObj = new Date(data.cabecalho.data);
-                        document.getElementById('modalDataEmissao').textContent = !isNaN(dateObj) ? dateObj.toLocaleDateString('pt-BR') : '---';
+                        // Trata o timezone para evitar que a data volte um dia (ex: 15/07 virar 14/07)
+                        const dateString = data.cabecalho.data;
+                        const dateObj = new Date(dateString);
+                        const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
+                        const correctedDate = new Date(dateObj.getTime() + userTimezoneOffset);
+                        document.getElementById('modalDataEmissao').textContent = !isNaN(correctedDate) ? correctedDate.toLocaleDateString('pt-BR') : '---';
                     }
                     
                     document.getElementById('modalValorTotal').textContent = data.cabecalho.valor_total ? 
