@@ -111,8 +111,15 @@ router.put('/:empresa/:codigo_nota/contrato', authMiddleware, async (req, res) =
         }
 
         let dbName = '';
-        if (empresa.toUpperCase() === 'NEXOMED') dbName = 'SGC';
-        else if (empresa.toUpperCase() === 'BML') dbName = 'SGC2';
+        let empresaPg = '';
+        if (empresa.toUpperCase() === 'NEXOMED') {
+            dbName = 'SGC';
+            empresaPg = 'Nexomed';
+        }
+        else if (empresa.toUpperCase() === 'BML') {
+            dbName = 'SGC2';
+            empresaPg = 'BML';
+        }
         else return res.status(400).json({ error: 'Empresa inválida.' });
 
         const pool = await getPool();
@@ -131,7 +138,7 @@ router.put('/:empresa/:codigo_nota/contrato', authMiddleware, async (req, res) =
         // 2. Update Postgres
         const pgRes = await pgPool.query(
             `UPDATE titulos SET contrato = $1 WHERE empresa = $2 AND documento = $3`,
-            [contrato, empresa.toUpperCase(), documento]
+            [contrato, empresaPg, documento]
         );
 
         if (pgRes.rowCount === 0) {
@@ -156,8 +163,15 @@ router.put('/:empresa/:codigo_cliente/esfera', authMiddleware, async (req, res) 
         }
 
         let dbName = '';
-        if (empresa.toUpperCase() === 'NEXOMED') dbName = 'SGC';
-        else if (empresa.toUpperCase() === 'BML') dbName = 'SGC2';
+        let empresaPg = '';
+        if (empresa.toUpperCase() === 'NEXOMED') {
+            dbName = 'SGC';
+            empresaPg = 'Nexomed';
+        }
+        else if (empresa.toUpperCase() === 'BML') {
+            dbName = 'SGC2';
+            empresaPg = 'BML';
+        }
         else return res.status(400).json({ error: 'Empresa inválida.' });
 
         // Mapeamento de texto para ID
@@ -191,7 +205,7 @@ router.put('/:empresa/:codigo_cliente/esfera', authMiddleware, async (req, res) 
         // 2. Update Postgres (apenas para a parcela sendo visualizada para dar feedback imediato)
         const pgRes = await pgPool.query(
             `UPDATE titulos SET esfera = $1 WHERE empresa = $2 AND documento = $3`,
-            [esferaUpper, empresa.toUpperCase(), documento]
+            [esferaUpper, empresaPg, documento]
         );
 
         if (pgRes.rowCount === 0) {
