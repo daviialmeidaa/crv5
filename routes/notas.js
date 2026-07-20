@@ -91,7 +91,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
                 .query(`
                 SELECT 
                     f.data,
-                    u.nome AS usuario,
+                    COALESCE(u.usuario, u.login, u.nome) AS usuario,
                     f.historico AS observacao
                 FROM ${dbName}.dbo.nota_fiscal_venda_follow_up f
                 LEFT JOIN ${dbName}.dbo.t_usuario u ON f.usu_codigo = u.codigo
