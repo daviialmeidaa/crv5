@@ -1194,8 +1194,12 @@ const ContasGrid = (function () {
             if (!tbody) return;
             if (!followups || followups.length === 0) return;
 
+            const sortedFollowups = [...followups].sort((a, b) => {
+                return new Date(b.data || 0) - new Date(a.data || 0);
+            });
+
             let html = '';
-            followups.forEach(f => {
+            sortedFollowups.forEach(f => {
                 let dateStr = '---';
                 if (f.data) {
                     const d = new Date(f.data);
