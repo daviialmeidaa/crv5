@@ -104,10 +104,10 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
 router.put('/:empresa/:codigo_nota/contrato', authMiddleware, async (req, res) => {
     try {
         const { empresa, codigo_nota } = req.params;
-        const { contrato, numero_nota } = req.body;
+        const { contrato, numero_nota, documento } = req.body;
 
-        if (!contrato || !numero_nota) {
-            return res.status(400).json({ error: 'Campos contrato e numero_nota são obrigatórios.' });
+        if (!contrato || !numero_nota || !documento) {
+            return res.status(400).json({ error: 'Campos contrato, numero_nota e documento são obrigatórios.' });
         }
 
         let dbName = '';
@@ -130,12 +130,12 @@ router.put('/:empresa/:codigo_nota/contrato', authMiddleware, async (req, res) =
 
         // 2. Update Postgres
         const pgRes = await pgPool.query(
-            `UPDATE titulos SET contrato = $1 WHERE empresa = $2 AND nota = $3`,
-            [contrato, empresa.toUpperCase(), numero_nota.toString()]
+            `UPDATE titulos SET contrato = $1 WHERE empresa = $2 AND documento = $3`,
+            [contrato, empresa.toUpperCase(), documento]
         );
 
         if (pgRes.rowCount === 0) {
-            console.warn(`Nota ${numero_nota} não encontrada no banco local PostgreSQL.`);
+            console.warn(`Documento ${documento} não encontrado no banco local PostgreSQL.`);
         }
 
         res.json({ success: true, message: 'Contrato atualizado com sucesso.' });
@@ -149,10 +149,10 @@ router.put('/:empresa/:codigo_nota/contrato', authMiddleware, async (req, res) =
 router.put('/:empresa/:codigo_cliente/esfera', authMiddleware, async (req, res) => {
     try {
         const { empresa, codigo_cliente } = req.params;
-        const { esfera } = req.body; // MUNICIPAL, ESTADUAL, FEDERAL, PARTICULAR
+        const { esfera, documento } = req.body; // MUNICIPAL, ESTADUAL, FEDERAL, PARTICULAR
 
-        if (!esfera) {
-            return res.status(400).json({ error: 'Campo esfera é obrigatório.' });
+        if (!esfera || !documento) {
+            return res.status(400).json({ error: 'Campos esfera e documento são obrigatórios.' });
         }
 
         let dbName = '';
@@ -188,14 +188,14 @@ router.put('/:empresa/:codigo_cliente/esfera', authMiddleware, async (req, res) 
                 WHERE codigo = @codigo_cliente
             `);
 
-        // 2. Update Postgres (todas as notas desse cliente na empresa atual)
+        // 2. Update Postgres (apenas para a parcela sendo visualizada para dar feedback imediato)
         const pgRes = await pgPool.query(
-            `UPDATE titulos SET esfera = $1 WHERE empresa = $2 AND cod_cliente = $3`,
-            [esferaUpper, empresa.toUpperCase(), codigo_cliente.toString()]
+            `UPDATE titulos SET esfera = $1 WHERE empresa = $2 AND documento = $3`,
+            [esferaUpper, empresa.toUpperCase(), documento]
         );
 
         if (pgRes.rowCount === 0) {
-            console.warn(`Cliente ${codigo_cliente} não encontrado no banco local PostgreSQL.`);
+            console.warn(`Documento ${documento} não encontrado no banco local PostgreSQL.`);
         }
 
         res.json({ success: true, message: 'Esfera atualizada com sucesso.' });
