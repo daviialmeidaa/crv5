@@ -952,20 +952,21 @@ const ContasGrid = (function () {
         switchNotaTab(tab) {
             const btnProd = document.getElementById('tabBtnProdutos');
             const btnObs = document.getElementById('tabBtnObservacoes');
+            const btnFollowUp = document.getElementById('tabBtnFollowUp');
             const contentProd = document.getElementById('tabContentProdutos');
             const contentObs = document.getElementById('tabContentObservacoes');
+            const contentFollowUp = document.getElementById('tabContentFollowUp');
 
-            if (tab === 'produtos') {
-                btnProd.className = 'pb-3 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 font-medium text-sm transition-colors';
-                btnObs.className = 'pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors';
-                contentProd.classList.remove('hidden');
-                contentObs.classList.add('hidden');
-            } else {
-                btnObs.className = 'pb-3 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 font-medium text-sm transition-colors';
-                btnProd.className = 'pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors';
-                contentObs.classList.remove('hidden');
-                contentProd.classList.add('hidden');
-            }
+            const activeClass = 'pb-3 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 font-medium text-sm transition-colors';
+            const inactiveClass = 'pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors';
+
+            if (btnProd) btnProd.className = tab === 'produtos' ? activeClass : inactiveClass;
+            if (btnObs) btnObs.className = tab === 'observacoes' ? activeClass : inactiveClass;
+            if (btnFollowUp) btnFollowUp.className = tab === 'followup' ? activeClass : inactiveClass;
+
+            if (contentProd) contentProd.classList.toggle('hidden', tab !== 'produtos');
+            if (contentObs) contentObs.classList.toggle('hidden', tab !== 'observacoes');
+            if (contentFollowUp) contentFollowUp.classList.toggle('hidden', tab !== 'followup');
         },
 
         renderModalItens() {
@@ -1083,7 +1084,9 @@ const ContasGrid = (function () {
             document.getElementById('modalContato').textContent = '---';
             document.getElementById('modalObservacoes').textContent = '---';
             document.getElementById('modalItensCount').textContent = '0 itens';
+            if (document.getElementById('modalFollowUpCount')) document.getElementById('modalFollowUpCount').textContent = '0 reg';
             document.getElementById('modalItensBody').innerHTML = '';
+            if (document.getElementById('modalFollowUpBody')) document.getElementById('modalFollowUpBody').innerHTML = '';
             
             try {
                 const token = localStorage.getItem('token');
@@ -1159,6 +1162,21 @@ const ContasGrid = (function () {
                     this.renderModalItens();
                 }
                 
+                // Populate Follow-Up
+                if (data.followup && data.followup.length > 0) {
+                    if (document.getElementById('modalFollowUpCount')) {
+                        document.getElementById('modalFollowUpCount').textContent = `${data.followup.length} reg`;
+                    }
+                    this.renderModalFollowUp(data.followup);
+                } else {
+                    if (document.getElementById('modalFollowUpCount')) {
+                        document.getElementById('modalFollowUpCount').textContent = `0 reg`;
+                    }
+                    if (document.getElementById('modalFollowUpBody')) {
+                        document.getElementById('modalFollowUpBody').innerHTML = '<tr><td colspan="3" class="text-center py-8 text-steel-500">Nenhum follow-up registrado.</td></tr>';
+                    }
+                }
+                
             } catch (err) {
                 console.error(err);
                 alert('Ocorreu um erro ao buscar os dados da nota. Verifique a conexão com o Supra.');
@@ -1169,6 +1187,44 @@ const ContasGrid = (function () {
         
         closeNotaModal() {
             document.getElementById('notaModal').classList.add('hidden');
+        },
+
+        renderModalFollowUp(followups) {
+            const tbody = document.getElementById('modalFollowUpBody');
+            if (!tbody) return;
+            if (!followups || followups.length === 0) return;
+
+            let html = '';
+            followups.forEach(f => {
+                let dateStr = '---';
+                if (f.data) {
+                    const d = new Date(f.data);
+                    // Não adicionar userTimezoneOffset pois essa hora pode vir UTC puro e acabar avançando ou recuando se errarmos o offset de datas com timestamp (Diferente da emissão que era dia zerado). 
+                    // No sql server geralmente vem localtime, então no javascript new Date(string_sem_z) ele assume local.
+                    // Para garantir consistência vamos tentar formatar o mais simples.
+                    if (!isNaN(d)) {
+                        const day = String(d.getDate()).padStart(2, '0');
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const year = d.getFullYear();
+                        const h = String(d.getHours()).padStart(2, '0');
+                        const m = String(d.getMinutes()).padStart(2, '0');
+                        const s = String(d.getSeconds()).padStart(2, '0');
+                        dateStr = `${day}/${month}/${year} ${h}:${m}:${s}`;
+                    } else {
+                        // fallback to string direct print if it was an ISO or something that can't be parsed
+                        dateStr = f.data;
+                    }
+                }
+
+                html += `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-steel-800/50 transition-colors">
+                        <td class="px-4 py-2 text-steel-600 dark:text-gray-300 font-medium whitespace-nowrap align-top border-l-2 border-transparent group-hover:border-nexo-500 transition-colors">${dateStr}</td>
+                        <td class="px-4 py-2 text-steel-800 dark:text-gray-200 whitespace-nowrap align-top">${f.usuario || 'SISTEMA'}</td>
+                        <td class="px-4 py-2 text-steel-600 dark:text-gray-300 break-words align-top">${f.observacao || '---'}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
         },
 
         showToast(message, type = 'success') {

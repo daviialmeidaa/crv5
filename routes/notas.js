@@ -58,6 +58,8 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
         let debugCols = null;
         let linkColumn = null;
 
+        let followUpResult = { recordset: [] };
+
         if (cabecalhoResult.recordset.length > 0) {
             cabecalho = cabecalhoResult.recordset[0];
             const codigoNota = cabecalho.codigo;
@@ -82,11 +84,26 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
                 FROM ${dbName}.dbo.nota_fiscal_venda_item i
                 WHERE i.nf_numero = @codigoNota
             `);
+
+            // Fetch Follow-Up
+            followUpResult = await pool.request()
+                .input('codigoNota', sql.Int, codigoNota)
+                .query(`
+                SELECT 
+                    f.data,
+                    u.nome AS usuario,
+                    f.observacao
+                FROM ${dbName}.dbo.nota_fiscal_venda_follow_up f
+                LEFT JOIN ${dbName}.dbo.t_usuario u ON f.usu_codigo = u.codigo
+                WHERE f.nf_codigo = @codigoNota
+                ORDER BY f.data DESC
+            `);
         }
 
         const data = {
             cabecalho: cabecalho,
-            itens: itensResult.recordset || []
+            itens: itensResult.recordset || [],
+            followup: followUpResult.recordset || []
         };
 
         if (!data.cabecalho) {
