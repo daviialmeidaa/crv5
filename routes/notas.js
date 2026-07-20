@@ -113,7 +113,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
         res.json(data);
     } catch (err) {
         console.error('Erro ao buscar detalhes da nota:', err);
-        res.status(500).json({ error: 'Erro interno ao buscar detalhes da nota fiscal.' });
+        res.status(500).json({ error: 'Erro interno ao buscar detalhes da nota fiscal.', details: err.message });
     }
 });
 
