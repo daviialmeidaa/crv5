@@ -94,7 +94,7 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
                     u.nome AS usuario,
                     f.historico AS observacao
                 FROM ${dbName}.dbo.nota_fiscal_venda_follow_up f
-                LEFT JOIN ${dbName}.dbo.t_usuario u ON f.usu_codigo = u.codigo
+                LEFT JOIN ${dbName}.dbo.usuario u ON f.usu_codigo = u.codigo
                 WHERE f.nf_codigo = @codigoNota
                 ORDER BY f.data DESC
             `);
