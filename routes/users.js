@@ -121,7 +121,7 @@ router.post('/', authMiddleware, requirePermission('canManageUsers'), async (req
     }
 
     // Regra de segurança: Apenas ADMIN pode criar ADMIN
-    if (role === 'ADMIN' && req.user.role !== 'ADMIN') {
+    if (role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
         return res.status(403).json({ error: 'Apenas usuários ADMIN podem criar outros administradores.' });
     }
 
@@ -229,14 +229,14 @@ router.put('/:id', authMiddleware, requirePermission('canManageUsers'), async (r
     }
 
     // Regra de segurança: Apenas ADMIN pode dar perfil ADMIN a alguém
-    if (role === 'ADMIN' && req.user.role !== 'ADMIN') {
+    if (role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
         return res.status(403).json({ error: 'Apenas usuários ADMIN podem promover outros a administrador.' });
     }
 
     try {
         // Verifica se está tentando alterar um usuário que já é ADMIN
         const targetUser = await pgPool.query('SELECT role FROM users WHERE id = $1', [id]);
-        if (targetUser.rows.length > 0 && targetUser.rows[0].role === 'ADMIN' && req.user.role !== 'ADMIN') {
+        if (targetUser.rows.length > 0 && targetUser.rows[0].role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
             return res.status(403).json({ error: 'Você não tem permissão para alterar os dados de um administrador.' });
         }
 
@@ -268,7 +268,7 @@ router.delete('/:id', authMiddleware, requirePermission('canManageUsers'), async
     try {
         // Verifica se está tentando excluir um ADMIN
         const targetUser = await pgPool.query('SELECT role FROM users WHERE id = $1', [id]);
-        if (targetUser.rows.length > 0 && targetUser.rows[0].role === 'ADMIN' && req.user.role !== 'ADMIN') {
+        if (targetUser.rows.length > 0 && targetUser.rows[0].role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
             return res.status(403).json({ error: 'Você não tem permissão para excluir um administrador.' });
         }
 

@@ -50,14 +50,51 @@
         
         /* Layout Fixos (Sidebar) */
         aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; } /* w-20 */
+        body.sidebar-collapsed aside { width: 5rem !important; }
         body.sidebar-collapsed .sidebar-text { display: none; }
         body.sidebar-collapsed .logo-full { display: none; }
         body.sidebar-collapsed .logo-mini { display: block; }
-        
         .logo-mini { display: none; }
+        
+        /* Tabela */
+        .table-container { max-height: calc(100vh - 260px); }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); border-radius: 8px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        
+        /* Animações */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-up { animation: fadeInUp 0.3s ease-out; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        .slide-in { animation: slideIn 0.2s ease-out; }
+        
+        /* Status badges */
+        .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.3px; white-space: nowrap; }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .dark .badge-success { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+        .dark .badge-warning { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .badge-info { background: #dbeafe; color: #1e40af; }
+        .dark .badge-info { background: rgba(59,130,246,0.15); color: #93c5fd; }
+        .badge-danger { background: #fee2e2; color: #991b1b; }
+        .dark .badge-danger { background: rgba(239,68,68,0.15); color: #fca5a5; }
+        .badge-neutral { background: #f3f4f6; color: #4b5563; }
+        .dark .badge-neutral { background: rgba(107,114,128,0.15); color: #d1d5db; }
+        
+        /* Glow focus em inputs do modal */
+        .input-glow:focus { box-shadow: 0 0 0 3px rgba(0,151,167,0.15); }
+        
+        /* Toast notification */
+        .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 200; padding: 12px 20px; border-radius: 12px; font-size: 0.85rem; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.15); transform: translateY(100px); opacity: 0; transition: all 0.3s ease; }
+        .toast.show { transform: translateY(0); opacity: 1; }
     </style>
-    <!-- Aplicar tema antes de renderizar (evita flash) -->
+    <!-- Aplicar tema antes de renderizar -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -144,7 +181,6 @@
                     <button id="profileDropdownBtn" class="flex items-center gap-2 focus:outline-none">
                         <div class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">U</div>
                     </button>
-                    <!-- Dropdown Menu -->
                     <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
                         <div class="px-4 py-2 border-b border-gray-100 dark:border-steel-700 mb-1">
                             <p class="text-sm font-medium text-steel-800 dark:text-gray-100 truncate">Usuário Logado</p>
@@ -161,29 +197,497 @@
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-steel-900/50 p-6 space-y-6">
+        <div class="flex-1 p-6 overflow-hidden flex flex-col">
             
-            <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Itens Arrematados</h1>
+            <!-- KPI Cards Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5 fade-in-up">
+                <!-- Total Contratos -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Contratos</span>
+                        <div class="w-8 h-8 rounded-lg bg-nexo-50 dark:bg-nexo-900/30 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-nexo-600 dark:text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                        </div>
+                    </div>
+                    <p id="kpiContratos" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
+                    <p class="text-xs text-steel-400 mt-1">Contratos únicos</p>
+                </div>
+                <!-- Total Itens -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Itens</span>
+                        <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                        </div>
+                    </div>
+                    <p id="kpiItens" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
+                    <p class="text-xs text-steel-400 mt-1">Linhas de itens</p>
+                </div>
+                <!-- Valor Total -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Valor Total</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                    </div>
+                    <p id="kpiValor" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
+                    <p class="text-xs text-steel-400 mt-1">Somatório valor total</p>
+                </div>
+                <!-- Ativos -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Ativos</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                    </div>
+                    <p id="kpiAtivos" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
+                    <p class="text-xs text-steel-400 mt-1">Com ata/contrato assinado</p>
+                </div>
             </div>
 
-            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-8 flex flex-col items-center justify-center text-center min-h-[400px]">
-                <svg class="w-16 h-16 text-steel-300 dark:text-steel-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
-                </svg>
-                <h3 class="text-lg font-medium text-steel-800 dark:text-gray-200 mb-2">Em Construção</h3>
-                <p class="text-sm text-steel-500 dark:text-steel-400 max-w-md mx-auto">A página de Itens Arrematados está sendo desenvolvida. Em breve você poderá acessar esta funcionalidade.</p>
+            <!-- Ferramentas e Filtros -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 fade-in-up" style="animation-delay: 0.1s">
+                <div class="flex items-center gap-2">
+                    <!-- Tabs: Participante -->
+                    <div class="flex bg-gray-100 dark:bg-steel-700 rounded-lg p-0.5">
+                        <button id="tabNexomed" onclick="IA.switchTab('NEXOMED')" class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all bg-white dark:bg-steel-600 text-steel-800 dark:text-white shadow-sm">NEXOMED</button>
+                        <button id="tabBml" onclick="IA.switchTab('BML')" class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all text-steel-500 dark:text-steel-400 hover:text-steel-700 dark:hover:text-gray-200">BML</button>
+                    </div>
+                    <!-- Search -->
+                    <input id="searchInput" type="text" placeholder="Buscar por órgão, edital, material..." class="px-4 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-64 md:w-80 transition-all shadow-sm">
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button id="btnClearFilters" class="hidden px-4 py-2 flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        Limpar Filtros
+                    </button>
+                    <button id="btnExport" onclick="IA.exportXLS()" class="px-4 py-2 flex items-center gap-2 bg-white dark:bg-steel-800 text-steel-700 dark:text-gray-200 border border-gray-200 dark:border-steel-600 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Exportar
+                    </button>
+                    <button id="btnNovoItem" onclick="IA.openModal()" class="px-4 py-2 flex items-center gap-2 bg-nexo-600 text-white rounded-lg text-sm font-medium hover:bg-nexo-700 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                        Novo Item
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabela -->
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up" style="animation-delay: 0.15s">
+                
+                <!-- Loading overlay -->
+                <div id="tableLoading" class="absolute inset-0 bg-white/80 dark:bg-steel-800/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center rounded-xl">
+                    <svg class="animate-spin h-8 w-8 text-nexo-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="text-sm text-steel-500 dark:text-steel-400">Carregando itens arrematados...</p>
+                </div>
+
+                <!-- Container com overflow -->
+                <div class="table-container custom-scrollbar overflow-auto flex-1">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead id="iaTableHeader" class="sticky top-0 z-20 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)]">
+                            <!-- Headers gerados pelo JS -->
+                        </thead>
+                        <tbody id="iaTableBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm text-steel-700 dark:text-gray-300">
+                            <tr><td colspan="15" class="p-6 text-center text-steel-400">Iniciando o Data Grid...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginação -->
+                <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-white dark:bg-steel-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-steel-500 dark:text-steel-400">Registros por página:</span>
+                        <select id="itemsPerPage" class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-700 dark:text-gray-200 text-xs rounded px-2 py-1 outline-none focus:ring-1 focus:ring-nexo-500 transition-colors">
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="250">250</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                        </select>
+                        <span id="paginationInfo" class="text-xs text-steel-500 dark:text-steel-400 ml-2">Mostrando 0 de 0 registros</span>
+                    </div>
+                    <div class="flex items-center gap-1" id="paginationControls">
+                        <!-- Botões de paginação injetados via JS -->
+                    </div>
+                </div>
             </div>
 
         </div>
 
         <!-- Footer -->
-        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 shrink-0">
-            <p class="text-xs text-steel-400">
-                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
-            </p>
+        <footer class="py-3 text-center text-xs text-steel-400 dark:text-steel-500 border-t border-gray-100 dark:border-steel-700 shrink-0">
+            Nexomed © <span id="footerYear">2024</span>. Todos os direitos reservados.
         </footer>
     </main>
+
+    <!-- ========================================== -->
+    <!-- Modal CRUD (Criar / Editar Item) -->
+    <!-- ========================================== -->
+    <div id="itemModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity" onclick="IA.closeModal()"></div>
+        
+        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[92vh] flex flex-col relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700">
+            <!-- Header do Modal -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
+                <h3 id="modalTitle" class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                    Novo Item Arrematado
+                </h3>
+                <button onclick="IA.closeModal()" class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Body do Modal -->
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <form id="itemForm" onsubmit="IA.saveItem(event)">
+                    <input type="hidden" id="formChave" value="">
+                    
+                    <!-- Seção: Identificação -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">Identificação do Contrato</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato</label>
+                                <input type="number" id="formCodContrato" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato Concat</label>
+                                <input type="text" id="formCodContratoConcat" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Edital</label>
+                                <input type="text" id="formEdital" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Participante</label>
+                                <select id="formParticipante" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    <option value="NEXOMED">NEXOMED</option>
+                                    <option value="BML HOSPITALAR">BML HOSPITALAR</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Localização -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">Órgão e Localização</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Órgão</label>
+                                <input type="text" id="formOrgao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Município</label>
+                                    <input type="text" id="formMunicipio" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">UF</label>
+                                    <input type="text" id="formUF" maxlength="2" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Produto -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">Produto / Item</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote / Item</label>
+                                <input type="text" id="formLoteItem" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Material</label>
+                                <input type="text" id="formMaterial" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Classificação</label>
+                                <input type="text" id="formClassificacao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Qtde</label>
+                                <input type="number" id="formQtde" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Unidade</label>
+                                <input type="text" id="formUnidade" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Fornecedor</label>
+                                <input type="text" id="formFornecedor" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Tipo Contrato</label>
+                                <input type="text" id="formTipoContrato" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Valores -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">Valores e Referência Supra</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
+                                <input type="number" step="0.01" id="formValorUnitario" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
+                                <input type="number" step="0.01" id="formValorTotal" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Supra</label>
+                                <input type="number" id="formCodSupra" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nome Supra</label>
+                                <input type="text" id="formNomeSupra" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Datas e Status -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">Datas e Status</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Pregão</label>
+                                <input type="date" id="formDataPregao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Proposta</label>
+                                <input type="date" id="formDataProposta" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Situação / Status</label>
+                                <input type="text" id="formSituacaoStatus" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vigência</label>
+                                <input type="text" id="formVigencia" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Início</label>
+                                <input type="text" id="formDataInicio" placeholder="DD/MM/YYYY" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Término</label>
+                                <input type="text" id="formDataTermino" placeholder="DD/MM/YYYY" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Empenho</label>
+                                <input type="text" id="formDataEmpenho" placeholder="DD/MM/YYYY" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Adjudicação</label>
+                                <input type="text" id="formDataAdjudicacao" placeholder="DD/MM/YYYY" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Logística -->
+                    <div class="mb-6">
+                        <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">Logística e Observações</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Instrumental</label>
+                                <select id="formInstrumental" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    <option value="">--</option>
+                                    <option value="SIM">SIM</option>
+                                    <option value="NÃO">NÃO</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Instrumentador</label>
+                                <select id="formInstrumentador" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    <option value="">--</option>
+                                    <option value="SIM">SIM</option>
+                                    <option value="NÃO">NÃO</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Local de Entrega</label>
+                                <input type="text" id="formLocalEntrega" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Prazo de Entrega</label>
+                                <input type="text" id="formPrazoEntrega" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Detalhamento</label>
+                            <textarea id="formDetalhamento" rows="3" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none"></textarea>
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Descrição Database</label>
+                            <textarea id="formDescricaoDatabase" rows="2" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 flex items-center justify-between bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl">
+                <button id="btnDeleteFromModal" onclick="IA.deleteFromModal()" class="hidden px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 border border-red-200 dark:border-red-800/30 rounded-lg transition-colors">
+                    Excluir Item
+                </button>
+                <div class="flex items-center gap-3 ml-auto">
+                    <button onclick="IA.closeModal()" class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">
+                        Cancelar
+                    </button>
+                    <button onclick="IA.saveItem()" class="px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-colors shadow-sm">
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Confirmação de Exclusão -->
+    <!-- ========================================== -->
+    <div id="deleteModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="IA.closeDeleteModal()"></div>
+        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
+            <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </div>
+            <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Confirmar Exclusão</h3>
+            <p id="deleteModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="IA.closeDeleteModal()" class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="IA.confirmDelete()" class="px-5 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Contrato (Agrupa todos os itens) -->
+    <!-- ========================================== -->
+    <div id="contratoModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity" onclick="IA.closeContratoModal()"></div>
+        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
+                <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <span id="contratoModalTitle">Contrato: ---</span>
+                </h3>
+                <button onclick="IA.closeContratoModal()" class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <!-- Dados do Contrato (cabeçalho) -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">Informações do Contrato</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-steel-900/30 p-4 rounded-xl border border-gray-100 dark:border-steel-700/50">
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Órgão</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100 font-medium" id="cmOrgao">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Município / UF</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100"><span id="cmMunicipio">-</span> / <span id="cmUF">-</span></p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Edital</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmEdital">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Participante</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmParticipante">-</p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Tipo de Contrato</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmTipoContrato">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Status</p>
+                            <div id="cmStatus" class="text-sm">-</div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Vigência</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmVigencia">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Instrumental / Instrumentador</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100"><span id="cmInstrumental">-</span> / <span id="cmInstrumentador">-</span></p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Data Início</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmDataInicio">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Data Término</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmDataTermino">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Local de Entrega</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmLocalEntrega">-</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Prazo de Entrega</p>
+                            <p class="text-sm text-steel-800 dark:text-gray-100" id="cmPrazoEntrega">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Itens do Contrato (tabela interna 1..N) -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-steel-500 dark:text-steel-400">Itens do Contrato</h4>
+                        <div class="flex items-center gap-3">
+                            <span id="cmTotalItens" class="text-xs text-steel-400">0 itens</span>
+                            <span class="text-xs font-semibold text-nexo-600 dark:text-nexo-400">Total: <span id="cmTotalValor">R$ 0,00</span></span>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 overflow-hidden">
+                        <div class="overflow-x-auto custom-scrollbar">
+                            <table class="w-full text-left border-collapse min-w-max">
+                                <thead class="bg-gray-50 dark:bg-steel-900">
+                                    <tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Lote/Item</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Material</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-right">Qtde</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Unidade</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Fornecedor</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-right">Vlr. Unit.</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-right">Vlr. Total</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center">Editar</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cmItensBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 flex justify-end bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl">
+                <button onclick="IA.closeContratoModal()" class="px-5 py-2 text-sm font-medium rounded-lg bg-nexo-500 hover:bg-nexo-600 text-white transition-colors duration-200">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast bg-emerald-600 text-white"></div>
 
     <script>
         document.getElementById('footerYear').textContent = new Date().getFullYear();
@@ -191,7 +695,9 @@
             document.body.classList.remove('loading-auth');
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/js/theme.js"></script>
     <script src="/js/layout.js"></script>
+    <script src="/js/itens_arrematados.js"></script>
 </body>
 </html>
