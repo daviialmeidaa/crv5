@@ -7,7 +7,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { authMiddleware } = require('../middleware/authMiddleware');
-const { requirePermission } = require('../middleware/rbac');
+const { requirePermission, getRoleLevel, canInteractWithRole } = require('../middleware/rbac');
 
 // Configuração do Nodemailer
 /* 
@@ -120,9 +120,9 @@ router.post('/', authMiddleware, requirePermission('canManageUsers'), async (req
         return res.status(400).json({ error: 'Nome, e-mail e perfil são obrigatórios.' });
     }
 
-    // Regra de segurança: Apenas ADMIN pode criar ADMIN
-    if (role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
-        return res.status(403).json({ error: 'Apenas usuários ADMIN podem criar outros administradores.' });
+    // Regra de segurança hierárquica e departamental
+    if (!canInteractWithRole(req.user.role, role)) {
+        return res.status(403).json({ error: 'Você não tem permissão para criar um usuário com este perfil (nível superior ou departamento diferente).' });
     }
 
     try {
@@ -228,16 +228,18 @@ router.put('/:id', authMiddleware, requirePermission('canManageUsers'), async (r
         return res.status(400).json({ error: 'Nome, e-mail e perfil são obrigatórios.' });
     }
 
-    // Regra de segurança: Apenas ADMIN pode dar perfil ADMIN a alguém
-    if (role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
-        return res.status(403).json({ error: 'Apenas usuários ADMIN podem promover outros a administrador.' });
+    // Regra de segurança hierárquica e departamental: Não pode promover alguém para nível/departamento não permitido
+    if (!canInteractWithRole(req.user.role, role)) {
+        return res.status(403).json({ error: 'Você não pode alterar o perfil deste usuário para um perfil não permitido pelo seu nível/departamento.' });
     }
 
     try {
-        // Verifica se está tentando alterar um usuário que já é ADMIN
+        // Verifica se está tentando alterar um usuário que tem perfil maior/diferente
         const targetUser = await pgPool.query('SELECT role FROM users WHERE id = $1', [id]);
-        if (targetUser.rows.length > 0 && targetUser.rows[0].role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
-            return res.status(403).json({ error: 'Você não tem permissão para alterar os dados de um administrador.' });
+        if (targetUser.rows.length > 0) {
+            if (!canInteractWithRole(req.user.role, targetUser.rows[0].role)) {
+                return res.status(403).json({ error: 'Você não tem permissão para alterar os dados deste perfil (nível superior ou departamento diferente).' });
+            }
         }
 
         const result = await pgPool.query(
@@ -266,10 +268,13 @@ router.delete('/:id', authMiddleware, requirePermission('canManageUsers'), async
     }
 
     try {
-        // Verifica se está tentando excluir um ADMIN
+        // Verifica se está tentando excluir um perfil restrito
         const targetUser = await pgPool.query('SELECT role FROM users WHERE id = $1', [id]);
-        if (targetUser.rows.length > 0 && targetUser.rows[0].role.trim().toUpperCase() === 'ADMIN' && req.user.role.trim().toUpperCase() !== 'ADMIN') {
-            return res.status(403).json({ error: 'Você não tem permissão para excluir um administrador.' });
+        
+        if (targetUser.rows.length > 0) {
+            if (!canInteractWithRole(req.user.role, targetUser.rows[0].role)) {
+                return res.status(403).json({ error: 'Você não tem permissão para excluir este usuário (nível superior ou departamento diferente).' });
+            }
         }
 
         const result = await pgPool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);

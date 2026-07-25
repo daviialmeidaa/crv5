@@ -6,11 +6,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
     const isSuperAdmin = currentUser.role === 'ADMIN';
 
-    // Desabilitar a opção ADMIN se o usuário não for ADMIN
+    const getRoleLevel = (role) => {
+        if (!role) return 0;
+        const upper = role.trim().toUpperCase();
+        if (upper === 'ADMIN') return 5;
+        if (upper.startsWith('CR') || upper.startsWith('LC')) {
+            const num = parseInt(upper.replace(/\D/g, ''));
+            return isNaN(num) ? 0 : num;
+        }
+        return 0;
+    };
+    const myLevel = getRoleLevel(currentUser.role);
+
+    const canInteractWithRole = (myRole, targetRole) => {
+        if (!myRole || !targetRole) return false;
+        const myLvl = getRoleLevel(myRole);
+        const targetLvl = getRoleLevel(targetRole);
+        if (targetLvl > myLvl) return false;
+        if (myLvl < 4 && myRole.trim().toUpperCase() !== 'ADMIN') {
+            const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
+            const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
+            if (myPrefix !== targetPrefix) return false;
+        }
+        return true;
+    };
+
+    // Ocultar as opções maiores do que o nível do usuário
     const userRoleSelect = document.getElementById('userRole');
     if (userRoleSelect && !isSuperAdmin) {
         Array.from(userRoleSelect.options).forEach(opt => {
-            opt.disabled = opt.value === 'ADMIN';
+            const isRestricted = !canInteractWithRole(currentUser.role, opt.value);
+            opt.disabled = isRestricted;
+            opt.hidden = isRestricted;
         });
     }
 

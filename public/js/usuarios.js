@@ -10,6 +10,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     const canManageUsers = currentUser.permissions?.canManageUsers === true;
     const isSuperAdmin = currentUser.role && currentUser.role.trim().toUpperCase() === 'ADMIN';
 
+    const getRoleLevel = (role) => {
+        if (!role) return 0;
+        const upper = role.trim().toUpperCase();
+        if (upper === 'ADMIN') return 5;
+        if (upper.startsWith('CR') || upper.startsWith('LC')) {
+            const num = parseInt(upper.replace(/\D/g, ''));
+            return isNaN(num) ? 0 : num;
+        }
+        return 0;
+    };
+    const myLevel = getRoleLevel(currentUser.role);
+
+    const canInteractWithRole = (myRole, targetRole) => {
+        if (!myRole || !targetRole) return false;
+        const myLvl = getRoleLevel(myRole);
+        const targetLvl = getRoleLevel(targetRole);
+        if (targetLvl > myLvl) return false;
+        if (myLvl < 4 && myRole.trim().toUpperCase() !== 'ADMIN') {
+            const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
+            const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
+            if (myPrefix !== targetPrefix) return false;
+        }
+        return true;
+    };
+
     // Fechar modal
     const closeModal = () => {
         modalContent.classList.remove('scale-100', 'opacity-100');
@@ -65,7 +90,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </span>
                 </td>
                 <td class="px-6 py-4 text-right">
-                    ${(canManageUsers && (isSuperAdmin || user.role.trim().toUpperCase() !== 'ADMIN')) ? `
+                    ${(canManageUsers && canInteractWithRole(currentUser.role, user.role)) ? `
                     <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onclick="window.openEditModal(${user.id})" class="p-1.5 text-steel-400 hover:text-nexo-600 hover:bg-nexo-50 dark:hover:bg-steel-700 rounded transition-colors" title="Editar Usuário">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -91,7 +116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const editRoleSelect = document.getElementById('editRole');
         if (!isSuperAdmin) {
             Array.from(editRoleSelect.options).forEach(opt => {
-                opt.disabled = opt.value.trim().toUpperCase() === 'ADMIN';
+                const isRestricted = !canInteractWithRole(currentUser.role, opt.value);
+                opt.disabled = isRestricted;
+                opt.hidden = isRestricted;
             });
         }
         
