@@ -85,9 +85,19 @@ As métricas do Dashboard obedecem a uma matemática estrita baseada na tabela d
 
 ## Autenticação, Onboarding e Proteção de Rotas (Auth Guard)
 - **Criação de Usuários e SMTP:** A criação de contas não exige digitação de senha pelo Admin. O backend gera uma senha forte, a encripta e utiliza o `nodemailer` para enviar as credenciais para o e-mail do usuário usando um template HTML responsivo estilizado com estética Tailwind (inline-styles). O e-mail contém um link com o parâmetro `?force_logout=1` para garantir que o cache de sessão seja limpo.
-- **Proteção Global (auth_guard.js):** Para evitar flashes de conteúdo não autorizado, o controle de acesso é implementado injetando a tag `<script src="/js/auth_guard.js"></script>` no topo do `<head>` das páginas HTML protegidas.
-- **Redirecionamento Rígido:** O `auth_guard.js` é implacável: se não houver token, envia para `/`. Se houver token mas `first_access === true`, tranca o usuário em `/primeiro_acesso`. Se não for admin e tentar entrar em `/usuarios` ou `/cadastro_usuario`, despacha o usuário imediatamente para a rota `/403`.
+- **Proteção Global (auth_guard.js):** Para evitar flashes de conteúdo não autorizado, o controle de acesso é implementado injetando a tag `<script src="/js/auth_guard.js"></script>` no topo do `<head>` das páginas HTML protegidas. A lógica não usa mais um campo booleano genérico, mas lê o objeto de permissões explícitas no JWT.
+- **Redirecionamento Rígido:** O `auth_guard.js` é implacável: se não houver token, envia para `/`. Se houver token mas `first_access === true`, tranca o usuário em `/primeiro_acesso`. Se tentar entrar em uma rota sem a permissão específica (`canViewUsers`, `canViewLC`, etc.), despacha o usuário imediatamente para a rota `/403`.
 - **Estética de Telas 403 e Login:** Páginas externas ao layout do painel (como Login, Primeiro Acesso e Acesso Restrito 403) devem obrigatoriamente herdar a paleta suave de "Soft UI" da marca Nexomed (tons de `steel` para fundo e `nexo` para destaque), centralizadas na tela com leves sombras (`shadow-xl`).
+
+## Controle de Acesso Baseado em Papéis (RBAC)
+- O sistema abandonou flags booleanas para administradores. Agora, existe a coluna `role` na tabela `users` do PostgreSQL, mapeada para um modelo estrito de níveis de permissão no backend (`middleware/rbac.js`).
+- **Nomenclatura de Níveis:** Os papéis atuais são `ADMIN`, `CR1` a `CR4` e `LC1` a `LC4`. As regras são definidas de forma explícita por flags booleanas no payload do token: `canViewCR`, `canViewLC`, `canViewUsers`, `canManageUsers`.
+- Os agentes e o frontend nunca devem referenciar "se o usuário é admin", mas sim verificar a permissão específica exigida para o contexto de exibição ou ação (ex: ocultar um link via JS lendo `user.permissions.canViewCR`).
+
+## Navegação Lateral (Sidebar e Submenus)
+- **Estrutura Expandível:** Os links no menu lateral (Sidebar) agora estão agrupados sob blocos lógicos principais (Ex: `Financeiro` e `Licitações`).
+- A visibilidade de blocos completos é gerenciada dinamicamente pelo `public/js/layout.js`, que utiliza os IDs dos grupos (como `menu-group-financeiro` ou `menu-group-licitacoes`) para omitir itens da tela caso o usuário não possua permissão (RBAC) para ver qualquer item interno do bloco.
+- A mecânica de expansão/colapso (`sidebar-submenu`, `.hidden`) é tratada globalmente via JS, evitando dependências ou comportamentos hard-coded de CSS.
 
 ## Peculiaridades do Banco de Dados Legado (Supra ERP)
 - **Cruzamento de Tabelas de Itens da Nota:** A arquitetura original do banco de dados do Supra possui um relacionamento anti-intuitivo para o cruzamento entre cabeçalho (`nota_fiscal_venda`) e itens (`nota_fiscal_venda_item`). A coluna `nf_numero` na tabela de itens **NÃO** armazena o número da nota fiscal (`numero_nota`). Ela armazena o ID Primário Interno da tabela pai (`codigo`).

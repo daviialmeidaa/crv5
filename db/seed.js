@@ -18,7 +18,7 @@ async function seed() {
                 nome        VARCHAR(255) NOT NULL,
                 email       VARCHAR(255) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
-                is_admin    BOOLEAN DEFAULT FALSE,
+                role        VARCHAR(50) NOT NULL DEFAULT 'CR1',
                 first_access BOOLEAN DEFAULT TRUE,
                 is_active   BOOLEAN DEFAULT TRUE,
                 avatar_url  VARCHAR(255),
@@ -99,9 +99,9 @@ async function seed() {
             const passwordHash = await bcrypt.hash('Shot5565*', salt);
 
             await client.query(
-                `INSERT INTO users (nome, email, password_hash, is_admin, first_access, is_active)
+                `INSERT INTO users (nome, email, password_hash, role, first_access, is_active)
                  VALUES ($1, $2, $3, $4, $5, $6)`,
-                ['Davi Almeida', 'davi.almeida@iebtinnovation.com', passwordHash, true, false, true]
+                ['Davi Almeida', 'davi.almeida@iebtinnovation.com', passwordHash, 'ADMIN', false, true]
             );
 
             console.log('✅ Usuário admin criado com sucesso!');

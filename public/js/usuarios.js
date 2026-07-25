@@ -5,9 +5,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modalContent = editModal.querySelector('div:nth-child(2)');
     let usersList = [];
 
-    // Verifica se o usuário atual é admin
+    // Permissões do usuário atual
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    const isAdmin = currentUser.is_admin === true;
+    const canManageUsers = currentUser.permissions?.canManageUsers === true;
+    const isSuperAdmin = currentUser.role === 'ADMIN';
 
     // Fechar modal
     const closeModal = () => {
@@ -54,13 +55,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </td>
                 <td class="px-6 py-4 text-steel-600 dark:text-steel-400">${user.email}</td>
                 <td class="px-6 py-4">
-                    ${user.is_admin 
-                        ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800/50 shadow-sm">Admin</span>` 
-                        : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-steel-600 dark:bg-steel-800 dark:text-steel-400 border border-gray-200 dark:border-steel-700 shadow-sm">Comum</span>`
-                    }
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                        user.role === 'ADMIN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' :
+                        user.role.startsWith('CR') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' :
+                        user.role.startsWith('LC') ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' :
+                        'bg-gray-100 text-steel-600 dark:bg-steel-800 dark:text-steel-400 border-gray-200 dark:border-steel-700'
+                    } border shadow-sm">
+                        ${user.role}
+                    </span>
                 </td>
                 <td class="px-6 py-4 text-right">
-                    ${isAdmin ? `
+                    ${(canManageUsers && (isSuperAdmin || user.role !== 'ADMIN')) ? `
                     <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onclick="window.openEditModal(${user.id})" class="p-1.5 text-steel-400 hover:text-nexo-600 hover:bg-nexo-50 dark:hover:bg-steel-700 rounded transition-colors" title="Editar Usuário">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -81,7 +86,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('editUserId').value = user.id;
         document.getElementById('editName').value = user.nome;
         document.getElementById('editEmail').value = user.email;
-        document.getElementById('editIsAdmin').checked = user.is_admin;
+        document.getElementById('editRole').value = user.role;
+        // Se o usuário logado não for ADMIN, não pode setar outro como ADMIN
+        const editRoleSelect = document.getElementById('editRole');
+        if (!isSuperAdmin) {
+            Array.from(editRoleSelect.options).forEach(opt => {
+                opt.disabled = opt.value === 'ADMIN';
+            });
+        }
         
         editModal.classList.remove('hidden');
         setTimeout(() => {
@@ -112,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const id = document.getElementById('editUserId').value;
         const nome = document.getElementById('editName').value;
         const email = document.getElementById('editEmail').value;
-        const is_admin = document.getElementById('editIsAdmin').checked;
+        const role = document.getElementById('editRole').value;
 
         const submitBtn = editForm.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
@@ -126,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ nome, email, is_admin })
+                body: JSON.stringify({ nome, email, role })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);

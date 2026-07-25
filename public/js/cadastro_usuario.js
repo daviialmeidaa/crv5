@@ -2,12 +2,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('cadastroForm');
     const adminToggleContainer = document.getElementById('adminToggleContainer');
     
-    // Verifica se o usuário atual é admin para exibir o toggle
+    // Verifica permissões do usuário
     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (currentUser.is_admin !== true) {
-        if (adminToggleContainer) {
-            adminToggleContainer.style.display = 'none';
-        }
+    const isSuperAdmin = currentUser.role === 'ADMIN';
+
+    // Desabilitar a opção ADMIN se o usuário não for ADMIN
+    const userRoleSelect = document.getElementById('userRole');
+    if (userRoleSelect && !isSuperAdmin) {
+        Array.from(userRoleSelect.options).forEach(opt => {
+            opt.disabled = opt.value === 'ADMIN';
+        });
     }
 
     form.addEventListener('submit', async (e) => {
@@ -15,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const nome = document.getElementById('userName').value.trim();
         const email = document.getElementById('userEmail').value.trim();
-        const is_admin = document.getElementById('userIsAdmin').checked;
+        const role = document.getElementById('userRole').value;
 
         const submitBtn = document.getElementById('submitBtn');
         const originalText = submitBtn.innerHTML;
@@ -29,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
-                body: JSON.stringify({ nome, email, is_admin })
+                body: JSON.stringify({ nome, email, role })
             });
 
             const data = await response.json();

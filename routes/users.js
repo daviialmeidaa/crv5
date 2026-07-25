@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { authMiddleware } = require('../middleware/authMiddleware');
+const { requirePermission } = require('../middleware/rbac');
 
 // Configuração do Nodemailer
 /* 
@@ -79,11 +80,11 @@ router.put('/profile', authMiddleware, async (req, res) => {
             }
         }
 
-        let query = 'UPDATE users SET nome = $1 WHERE id = $2 RETURNING id, nome, email, is_admin, first_access, avatar_url';
+        let query = 'UPDATE users SET nome = $1 WHERE id = $2 RETURNING id, nome, email, role, first_access, avatar_url';
         let values = [nome, userId];
 
         if (avatarUrl) {
-            query = 'UPDATE users SET nome = $1, avatar_url = $2 WHERE id = $3 RETURNING id, nome, email, is_admin, first_access, avatar_url';
+            query = 'UPDATE users SET nome = $1, avatar_url = $2 WHERE id = $3 RETURNING id, nome, email, role, first_access, avatar_url';
             values = [nome, avatarUrl, userId];
         }
 
@@ -100,18 +101,10 @@ router.put('/profile', authMiddleware, async (req, res) => {
     }
 });
 
-// Middleware auxiliar para verificar se é admin
-const adminMiddleware = (req, res, next) => {
-    if (!req.user || !req.user.is_admin) {
-        return res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
-    }
-    next();
-};
-
-// GET /api/users - Listar todos os usuários (apenas admin)
-router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
+// GET /api/users - Listar todos os usuários (requer canViewUsers)
+router.get('/', authMiddleware, requirePermission('canViewUsers'), async (req, res) => {
     try {
-        const result = await pgPool.query('SELECT id, nome, email, is_admin, avatar_url, first_access FROM users ORDER BY is_admin DESC, nome ASC');
+        const result = await pgPool.query('SELECT id, nome, email, role, avatar_url, first_access FROM users ORDER BY role ASC, nome ASC');
         res.json(result.rows);
     } catch (error) {
         console.error('Erro ao listar usuários:', error);
@@ -119,12 +112,17 @@ router.get('/', authMiddleware, adminMiddleware, async (req, res) => {
     }
 });
 
-// POST /api/users - Cadastrar um novo usuário (apenas admin)
-router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
-    const { nome, email, is_admin } = req.body;
+// POST /api/users - Cadastrar um novo usuário (requer canManageUsers)
+router.post('/', authMiddleware, requirePermission('canManageUsers'), async (req, res) => {
+    const { nome, email, role } = req.body;
 
-    if (!nome || !email) {
-        return res.status(400).json({ error: 'Nome e e-mail são obrigatórios.' });
+    if (!nome || !email || !role) {
+        return res.status(400).json({ error: 'Nome, e-mail e perfil são obrigatórios.' });
+    }
+
+    // Regra de segurança: Apenas ADMIN pode criar ADMIN
+    if (role === 'ADMIN' && req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Apenas usuários ADMIN podem criar outros administradores.' });
     }
 
     try {
@@ -141,10 +139,10 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
 
         // Insere no banco
         const result = await pgPool.query(
-            `INSERT INTO users (nome, email, password_hash, is_admin, first_access, is_active)
+            `INSERT INTO users (nome, email, password_hash, role, first_access, is_active)
              VALUES ($1, $2, $3, $4, true, true)
-             RETURNING id, nome, email, is_admin`,
-            [nome, email, passwordHash, is_admin === true || is_admin === 'true']
+             RETURNING id, nome, email, role`,
+            [nome, email, passwordHash, role]
         );
 
         // Dispara o e-mail em background
@@ -221,19 +219,30 @@ router.post('/', authMiddleware, adminMiddleware, async (req, res) => {
     }
 });
 
-// PUT /api/users/:id - Atualizar um usuário específico (apenas admin)
-router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+// PUT /api/users/:id - Atualizar um usuário específico (requer canManageUsers)
+router.put('/:id', authMiddleware, requirePermission('canManageUsers'), async (req, res) => {
     const { id } = req.params;
-    const { nome, email, is_admin } = req.body;
+    const { nome, email, role } = req.body;
 
-    if (!nome || !email) {
-        return res.status(400).json({ error: 'Nome e e-mail são obrigatórios.' });
+    if (!nome || !email || !role) {
+        return res.status(400).json({ error: 'Nome, e-mail e perfil são obrigatórios.' });
+    }
+
+    // Regra de segurança: Apenas ADMIN pode dar perfil ADMIN a alguém
+    if (role === 'ADMIN' && req.user.role !== 'ADMIN') {
+        return res.status(403).json({ error: 'Apenas usuários ADMIN podem promover outros a administrador.' });
     }
 
     try {
+        // Verifica se está tentando alterar um usuário que já é ADMIN
+        const targetUser = await pgPool.query('SELECT role FROM users WHERE id = $1', [id]);
+        if (targetUser.rows.length > 0 && targetUser.rows[0].role === 'ADMIN' && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Você não tem permissão para alterar os dados de um administrador.' });
+        }
+
         const result = await pgPool.query(
-            'UPDATE users SET nome = $1, email = $2, is_admin = $3 WHERE id = $4 RETURNING id, nome, email, is_admin, avatar_url',
-            [nome, email, is_admin === true || is_admin === 'true', id]
+            'UPDATE users SET nome = $1, email = $2, role = $3 WHERE id = $4 RETURNING id, nome, email, role, avatar_url',
+            [nome, email, role, id]
         );
 
         if (result.rows.length === 0) {
@@ -247,16 +256,22 @@ router.put('/:id', authMiddleware, adminMiddleware, async (req, res) => {
     }
 });
 
-// DELETE /api/users/:id - Excluir um usuário (apenas admin)
-router.delete('/:id', authMiddleware, adminMiddleware, async (req, res) => {
+// DELETE /api/users/:id - Excluir um usuário
+router.delete('/:id', authMiddleware, requirePermission('canManageUsers'), async (req, res) => {
     const { id } = req.params;
 
-    // Prevenir que o admin se exclua
+    // Prevenir que o usuário se exclua
     if (parseInt(id) === req.user.id) {
         return res.status(400).json({ error: 'Você não pode excluir a si mesmo.' });
     }
 
     try {
+        // Verifica se está tentando excluir um ADMIN
+        const targetUser = await pgPool.query('SELECT role FROM users WHERE id = $1', [id]);
+        if (targetUser.rows.length > 0 && targetUser.rows[0].role === 'ADMIN' && req.user.role !== 'ADMIN') {
+            return res.status(403).json({ error: 'Você não tem permissão para excluir um administrador.' });
+        }
+
         const result = await pgPool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
 
         if (result.rows.length === 0) {

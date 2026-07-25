@@ -30,9 +30,25 @@
         return;
     }
 
-    // Se não for admin e tentar acessar páginas exclusivas de admin
-    const adminRoutes = ['/usuarios', '/cadastro_usuario'];
-    if (adminRoutes.includes(currentPath) && user.is_admin !== true) {
+    // Controle de Acesso Baseado em Permissões (RBAC)
+    const permissions = user.permissions || {};
+    
+    if (currentPath === '/contas_a_receber' && !permissions.canViewCR) {
+        window.location.replace('/403');
+        return;
+    }
+    
+    if (currentPath === '/itens_arrematados' && !permissions.canViewLC) {
+        window.location.replace('/403');
+        return;
+    }
+    
+    if (currentPath === '/usuarios' && !permissions.canViewUsers) {
+        window.location.replace('/403');
+        return;
+    }
+
+    if (currentPath === '/cadastro_usuario' && !permissions.canManageUsers) {
         window.location.replace('/403');
         return;
     }
