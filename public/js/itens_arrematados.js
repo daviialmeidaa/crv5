@@ -60,14 +60,8 @@ const IA = (() => {
     }
 
     function getStatusBadge(v) {
-        if (!v || v === '-') return '<span style="background:linear-gradient(135deg,#858796,#6c6d7e);color:#fff;padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">-</span>';
-        const s = v.toUpperCase();
-        let grad = 'linear-gradient(135deg,#858796,#6c6d7e)';
-        if (s.includes('CONCLUÍ') || s.includes('CONCLUIDO')) grad = 'linear-gradient(135deg,#858796,#6c6d7e)';
-        else if (s.includes('ASSINADO') || s.includes('ATA')) grad = 'linear-gradient(135deg,#1cc88a,#17a673)';
-        else if (s.includes('ANDAMENTO') || s.includes('HOMOLOG') || s.includes('AGUARD')) grad = 'linear-gradient(135deg,#f6c23e,#dda520)';
-        else if (s.includes('CANCEL') || s.includes('REVOG') || s.includes('DESERT')) grad = 'linear-gradient(135deg,#e74a3b,#c0392b)';
-        return `<span style="background:${grad};color:#fff;padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
+        if (!v || v === '-') return '-';
+        return String(v).toUpperCase();
     }
 
     function showToast(message, type = 'success') {
@@ -238,10 +232,12 @@ const IA = (() => {
             const isFiltered = hasFilter || hasNoneFilter;
             const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
+            const alignClass = (col.key === 'ORGAO' || col.key === 'MATERIAL') ? 'text-left' : 'text-center';
+
             html += `
                 <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none">
                     <div class="flex items-center justify-between gap-3">
-                        <div class="cursor-pointer flex-1 hover:text-nexo-600 transition-colors" onclick="IA.toggleSort('${col.key}')">
+                        <div class="cursor-pointer flex-1 hover:text-nexo-600 transition-colors ${alignClass}" onclick="IA.toggleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
                         <button onclick="IA.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none ${filterColor}">
@@ -269,7 +265,7 @@ const IA = (() => {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += '<tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-default">';
+            html += '<tr class="h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-default">';
             columns.forEach(col => {
                 let val = row[col.key];
                 let displayVal;
@@ -284,6 +280,10 @@ const IA = (() => {
                     displayVal = (val !== null && val !== undefined && val !== '') ? val : '-';
                 }
 
+                if (['ORGAO', 'MUNICIPIO', 'UF', 'CLASSIFICACAO', 'MATERIAL'].includes(col.key) && displayVal !== '-') {
+                    displayVal = String(displayVal).toUpperCase();
+                }
+
                 // Link clicável no contrato
                 if (col.link && displayVal !== '-') {
                     const safeContrato = String(val).replace(/'/g, "\\'");
@@ -296,11 +296,18 @@ const IA = (() => {
                     </div>`;
                 }
 
-                html += `<td class="px-3 py-1.5 text-[12px] whitespace-nowrap" title="${String(row[col.key] || '').replace(/"/g, '&quot;')}">${displayVal}</td>`;
+                let alignClass = 'text-center whitespace-nowrap';
+                if (col.key === 'ORGAO' || col.key === 'MATERIAL') {
+                    alignClass = 'text-left whitespace-normal break-words min-w-[250px] max-w-[350px]';
+                } else if (col.key === 'SITUACAO_STATUS') {
+                    alignClass = 'text-center whitespace-normal break-words min-w-[120px] max-w-[200px]';
+                }
+
+                html += `<td class="px-3 py-1.5 text-[12px] align-middle ${alignClass}" title="${String(row[col.key] || '').replace(/"/g, '&quot;')}">${displayVal}</td>`;
             });
 
             // Ações
-            html += `<td class="px-3 py-1.5 text-[12px] text-center whitespace-nowrap">
+            html += `<td class="px-3 py-1.5 text-[12px] align-middle text-center whitespace-nowrap">
                 <div class="flex items-center justify-center gap-1">
                     <button onclick="IA.editItem(${row.CHAVE})" class="p-1.5 text-steel-400 hover:text-nexo-500 hover:bg-nexo-50 dark:hover:bg-nexo-900/20 rounded-lg transition-all" title="Editar">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -497,13 +504,13 @@ const IA = (() => {
         document.getElementById('contratoModalTitle').textContent = `Contrato: ${contratoConcat}`;
 
         // Dados do cabeçalho (comuns)
-        document.getElementById('cmOrgao').textContent = ref.ORGAO || '-';
-        document.getElementById('cmMunicipio').textContent = ref.MUNICIPIO || '-';
-        document.getElementById('cmUF').textContent = ref.UF || '-';
+        document.getElementById('cmOrgao').textContent = (ref.ORGAO || '-').toUpperCase();
+        document.getElementById('cmMunicipio').textContent = (ref.MUNICIPIO || '-').toUpperCase();
+        document.getElementById('cmUF').textContent = (ref.UF || '-').toUpperCase();
         document.getElementById('cmEdital').textContent = ref.EDITAL || '-';
         document.getElementById('cmParticipante').textContent = ref.PARTICIPANTE || '-';
         document.getElementById('cmTipoContrato').textContent = ref.TIPO_CONTRATO || '-';
-        document.getElementById('cmStatus').innerHTML = getStatusBadge(ref.SITUACAO_STATUS);
+        document.getElementById('cmStatus').textContent = getStatusBadge(ref.SITUACAO_STATUS);
         document.getElementById('cmVigencia').textContent = ref.VIGENCIA || '-';
         document.getElementById('cmDataInicio').textContent = ref.DATA_INICIO || '-';
         document.getElementById('cmDataTermino').textContent = ref.DATA_TERMINO || '-';
@@ -521,7 +528,7 @@ const IA = (() => {
             total += vt;
             html += `<tr class="hover:bg-nexo-50/50 dark:hover:bg-nexo-500/5 transition-colors">
                 <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300">${item.LOTE_ITEM || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300 max-w-[300px] truncate" title="${(item.MATERIAL || '').replace(/"/g, '&quot;')}">${item.MATERIAL || '-'}</td>
+                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300 max-w-[300px] truncate" title="${(item.MATERIAL || '').replace(/"/g, '&quot;')}">${(item.MATERIAL || '-').toUpperCase()}</td>
                 <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300 text-right">${item.QTDE || '-'}</td>
                 <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300">${item.UNIDADE || '-'}</td>
                 <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300">${item.FORNECEDOR || '-'}</td>
