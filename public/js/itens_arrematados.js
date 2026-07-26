@@ -42,8 +42,15 @@ const IA = (() => {
     let activeFilterModal = null;
 
     // ==========================================
-    // 3. Helpers
+    // 3. Helpers e Permissões
     // ==========================================
+    let userRole = '';
+    try {
+        const u = JSON.parse(localStorage.getItem('user'));
+        if (u && u.role) userRole = u.role;
+    } catch(e) {}
+    const canDelete = ['ADMIN', 'LC3', 'LC4'].includes(userRole);
+
     function formatCurrency(val) {
         if (val === null || val === undefined || val === '' || val === '-') return '-';
         const num = parseFloat(val);
@@ -278,12 +285,16 @@ const IA = (() => {
             });
 
             // Ações (apenas excluir)
-            html += `<td class="px-3 py-1.5 text-[12px] align-middle text-center whitespace-nowrap">
+            html += `<td class="px-3 py-1.5 text-[12px] align-middle text-center whitespace-nowrap">`;
+            if (canDelete) {
+                html += `
                 <button onclick="event.stopPropagation(); IA.requestDelete(${row.CHAVE})" class="p-1.5 text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Excluir">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-            </td>`;
-            html += '</tr>';
+                </button>`;
+            } else {
+                html += `-`;
+            }
+            html += `</td></tr>`;
         });
         tbody.innerHTML = html;
     }
@@ -592,12 +603,13 @@ const IA = (() => {
                         </svg>
                         Aplicar aos Demais
                     </button>
+                    ${canDelete ? `
                     <button type="button" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
                         </svg>
                         Remover
-                    </button>
+                    </button>` : ''}
                 </div>
             </div>
 
@@ -744,22 +756,25 @@ const IA = (() => {
         });
 
         // Remove button handler
-        div.querySelector('.btn-remove-produto').addEventListener('click', () => {
-            if (document.querySelectorAll('.produto-box').length > 1) {
-                div.style.maxHeight = div.scrollHeight + 'px';
-                requestAnimationFrame(() => {
-                    div.style.transition = 'max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease';
-                    div.style.maxHeight = '0';
-                    div.style.opacity = '0';
-                    div.style.marginTop = '0';
-                    div.style.marginBottom = '0';
-                    div.style.overflow = 'hidden';
-                });
-                setTimeout(() => { div.remove(); renumberProdutoBoxes(); }, 320);
-            } else {
-                showToast('O contrato precisa ter pelo menos um produto.', 'error');
-            }
-        });
+        const btnRemove = div.querySelector('.btn-remove-produto');
+        if (btnRemove) {
+            btnRemove.addEventListener('click', () => {
+                if (document.querySelectorAll('.produto-box').length > 1) {
+                    div.style.maxHeight = div.scrollHeight + 'px';
+                    requestAnimationFrame(() => {
+                        div.style.transition = 'max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease';
+                        div.style.maxHeight = '0';
+                        div.style.opacity = '0';
+                        div.style.marginTop = '0';
+                        div.style.marginBottom = '0';
+                        div.style.overflow = 'hidden';
+                    });
+                    setTimeout(() => { div.remove(); renumberProdutoBoxes(); }, 320);
+                } else {
+                    showToast('O contrato deve ter no mínimo 1 produto.', 'warning');
+                }
+            });
+        }
 
         // Supra toggle handler
         const toggleBtn = div.querySelector('.toggle-supra');

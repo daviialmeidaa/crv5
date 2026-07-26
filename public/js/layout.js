@@ -224,4 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Injetar o sistema de notificações modularmente
+    const notifScript = document.createElement('script');
+    notifScript.src = '/js/notifications.js';
+    document.body.appendChild(notifScript);
 });

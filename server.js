@@ -23,6 +23,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/metas', require('./routes/metas'));
 app.use('/api/notas', require('./routes/notas'));
 app.use('/api/itens_arrematados', require('./routes/itens_arrematados'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {

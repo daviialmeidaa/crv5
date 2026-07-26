@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supaPool = require('../db/supabaseConnection');
+const pgPool = require('../db/pgConnection');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { requirePermission } = require('../middleware/rbac');
 
@@ -133,7 +134,21 @@ router.post('/', async (req, res) => {
             values
         );
 
-        res.status(201).json(result.rows[0]);
+        const saved = result.rows[0];
+
+        // Disparar Notificação
+        try {
+            const userName = req.user && req.user.nome ? req.user.nome : 'Usuário';
+            const userId = req.user ? req.user.id : null;
+            const empresa = participante ? (participante.toUpperCase().includes('BML') ? 'BML' : 'Nexomed') : 'Nexomed';
+            
+            const msg = `${userName} acaba de inserir um novo contrato na ${empresa}, Codigo ${saved.COD_CONTRATO_CONCAT || '-'}, Orgão ${saved.ORGAO || '-'}, UF ${saved.UF || '-'}, Edital ${saved.EDITAL || '-'}, Tipo de Contrato ${saved.TIPO_CONTRATO || '-'} e Classificação ${saved.CLASSIFICACAO || '-'}.`;
+            await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'INSERT', msg, userId]);
+        } catch (e) {
+            console.error('Erro ao gerar notificação de INSERT:', e);
+        }
+
+        res.status(201).json(saved);
     } catch (error) {
         console.error('Erro na API Itens Arrematados (POST /):', error);
         res.status(500).json({ error: 'Erro ao criar item: ' + error.message });
@@ -154,6 +169,10 @@ router.put('/:chave', async (req, res) => {
         if (participante.toUpperCase().includes('BML')) {
             table = 'itens_arrematados."IA_BML"';
         }
+
+        // Buscar dados antigos para comparar (diff)
+        const oldResult = await supaPool.query(`SELECT * FROM ${table} WHERE "CHAVE" = $1`, [chave]);
+        const oldData = oldResult.rows[0];
 
         const columns = [
             'COD_CONTRATO_CONCAT', 'COD_CONTRATO', 'ORGAO', 'MUNICIPIO', 'UF',
@@ -179,7 +198,59 @@ router.put('/:chave', async (req, res) => {
             return res.status(404).json({ error: 'Item não encontrado' });
         }
 
-        res.json(result.rows[0]);
+        const saved = result.rows[0];
+
+        // Disparar Notificação
+        try {
+            if (oldData) {
+                const columnNamesMap = {
+                    'COD_CONTRATO_CONCAT': 'Cód. Contrato', 'COD_CONTRATO': 'Cód. Interno',
+                    'ORGAO': 'Órgão', 'MUNICIPIO': 'Município', 'UF': 'UF',
+                    'PARTICIPANTE': 'Participante', 'EDITAL': 'Edital', 'DATA_PREGAO': 'Data Pregão',
+                    'TIPO_CONTRATO': 'Tipo de Contrato', 'CLASSIFICACAO': 'Classificação',
+                    'LOTE_ITEM': 'Lote/Item', 'MATERIAL': 'Material', 'QTDE': 'Quantidade',
+                    'UNIDADE': 'Unidade', 'FORNECEDOR': 'Fornecedor',
+                    'DESCRICAO_DATABASE': 'Descrição Sistema Legado', 'COD_SUPRA': 'Cód. Supra',
+                    'NOME_SUPRA': 'Nome Supra', 'VALOR_UNITARIO': 'Valor Unitário',
+                    'VALOR_TOTAL': 'Valor Total', 'TOTAL_NORMALIZADO': 'Total Normalizado',
+                    'DATA_PROPOSTA': 'Data Proposta', 'CODIGO_STATUS': 'Código Status',
+                    'SITUACAO_STATUS': 'Situação / Status', 'DATA_ADJUDICACAO': 'Data Adjudicação',
+                    'DATA_INICIO': 'Data Início', 'DATA_TERMINO': 'Data Término',
+                    'VIGENCIA': 'Vigência', 'DATA_EMPENHO': 'Data Empenho',
+                    'INSTRUMENTAL': 'Instrumental', 'INSTRUMENTADOR': 'Instrumentador',
+                    'LOCAL_ENTREGA': 'Local Entrega', 'PRAZO_ENTREGA': 'Prazo Entrega',
+                    'DETALHAMENTO': 'Detalhamento'
+                };
+
+                const changes = [];
+                columns.forEach(col => {
+                    let oldVal = oldData[col] === null ? '' : String(oldData[col]);
+                    let newVal = saved[col] === null ? '' : String(saved[col]);
+                    
+                    // Normalizar datas para evitar diffs falsos
+                    if (col.startsWith('DATA_') || col === 'VIGENCIA') {
+                        if (oldVal.includes('T')) oldVal = oldVal.split('T')[0];
+                        if (newVal.includes('T')) newVal = newVal.split('T')[0];
+                    }
+
+                    if (oldVal !== newVal) {
+                        const colName = columnNamesMap[col] || col;
+                        changes.push(`${colName} de '${oldVal || '-'}' para '${newVal || '-'}'`);
+                    }
+                });
+
+                if (changes.length > 0) {
+                    const userName = req.user && req.user.nome ? req.user.nome : 'Usuário';
+                    const userId = req.user ? req.user.id : null;
+                    const msg = `O ${userName} acaba de alterar ${changes.join(', ')} no contrato ${saved.COD_CONTRATO_CONCAT || '-'}.`;
+                    await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'UPDATE', msg, userId]);
+                }
+            }
+        } catch (e) {
+            console.error('Erro ao gerar notificação de UPDATE:', e);
+        }
+
+        res.json(saved);
     } catch (error) {
         console.error('Erro na API Itens Arrematados (PUT /:chave):', error);
         res.status(500).json({ error: 'Erro ao atualizar item: ' + error.message });
@@ -200,6 +271,10 @@ router.delete('/:chave', async (req, res) => {
             table = 'itens_arrematados."IA_BML"';
         }
 
+        // Buscar os dados do contrato antes de excluir para notificar corretamente
+        const oldResult = await supaPool.query(`SELECT * FROM ${table} WHERE "CHAVE" = $1`, [chave]);
+        const oldData = oldResult.rows[0];
+
         const result = await supaPool.query(
             `DELETE FROM ${table} WHERE "CHAVE" = $1 RETURNING "CHAVE"`,
             [chave]
@@ -207,6 +282,18 @@ router.delete('/:chave', async (req, res) => {
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Item não encontrado' });
+        }
+
+        // Disparar Notificação
+        try {
+            if (oldData) {
+                const userName = req.user && req.user.nome ? req.user.nome : 'Usuário';
+                const userId = req.user ? req.user.id : null;
+                const msg = `${userName} deletou o contrato ${oldData.COD_CONTRATO_CONCAT || '-'} do Órgão ${oldData.ORGAO || '-'}.`;
+                await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'DELETE', msg, userId]);
+            }
+        } catch (e) {
+            console.error('Erro ao gerar notificação de DELETE:', e);
         }
 
         res.json({ message: 'Item excluído com sucesso', chave: result.rows[0].CHAVE });

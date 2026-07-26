@@ -117,3 +117,10 @@ As seguintes regras definem o comportamento e design consolidados para o grid de
    - Deve existir um recurso de "Aplicar aos Demais" para clonar os campos de Datas e Status do primeiro produto para os subsequentes da interface.
    - Na inserção (POST), o backend deve gerar *N* registros independentes no banco de dados, onde cada um representa um produto, mas que compartilham as mesmas informações globais (Cód. Contrato, Órgão, Edital).
    - A geração da chave primária (`CHAVE`) ocorre automaticamente pela *Identity Sequence* do PostgreSQL. É proibido passar o ID no corpo da requisição POST. Em caso de dessincronização de *sequence* (ex: após seeding manual), deve-se usar `setval(pg_get_serial_sequence(...), MAX("CHAVE"))` diretamente no PostgreSQL para realinhar.
+
+## Sistema de Notificações
+O sistema possui uma central de notificações injetada globalmente, com as seguintes regras de desenvolvimento:
+1. **Frontend Modular:** A UI (`public/js/notifications.js`) é carregada dinamicamente via `layout.js` e não deve ser copiada/colada em arquivos HTML. O estilo do "custom-scrollbar" também é injetado programaticamente por este script para garantir visualização consistente.
+2. **Armazenamento:** As notificações utilizam duas tabelas no PostgreSQL: `notifications` (log central) e `notification_reads` (controle de leitura atrelado ao usuário, garantindo que o estado de leitura seja individual).
+3. **Geração Inteligente (Diff):** Durante uma ação de `UPDATE` (PUT), o sistema realiza a comparação de campos (Diff) verificando os dados antigos contra os novos. Apenas colunas que **realmente sofreram mutação** geram log. Além disso, existe um dicionário de mapeamento (`columnNamesMap`) na rota backend para que nomes de colunas de banco de dados sejam convertidos para rótulos amigáveis (UX) na notificação.
+4. **Proteção de Acesso (RBAC):** Somente perfis `ADMIN, LC1, LC2, LC3, LC4` podem visualizar a UI do sino e consumir a API `/api/notifications`. A interface sequer é renderizada para usuários de outros perfis.
