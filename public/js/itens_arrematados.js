@@ -533,7 +533,6 @@ const IA = (() => {
         document.getElementById('itemForm').reset();
         document.getElementById('formChave').value = '';
         document.getElementById('produtosContainer').innerHTML = ''; // Limpa os produtos
-        document.getElementById('formMunicipio').placeholder = 'Selecione a UF...'; // Reseta placeholder
 
         if (chave) {
             title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg> Editar Item Arrematado`;
@@ -576,12 +575,21 @@ const IA = (() => {
             <!-- Header do Card -->
             <div class="flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600">
                 <span class="produto-number text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">Produto #${count}</span>
-                <button type="button" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                    </svg>
-                    Remover
-                </button>
+                <div class="flex items-center gap-3">
+                    <button type="button" class="btn-clone-dados flex items-center gap-1 text-[11px] text-nexo-500 hover:text-nexo-600 transition-colors ${count === 1 ? '' : 'hidden'}" title="Copiar Datas e Status para os itens abaixo">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" />
+                            <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z" />
+                        </svg>
+                        Aplicar aos Demais
+                    </button>
+                    <button type="button" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        Remover
+                    </button>
+                </div>
             </div>
 
             <!-- Campos do Produto -->
@@ -596,7 +604,7 @@ const IA = (() => {
                         <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-material" value="${data.MATERIAL || ''}">
                     </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Qtde</label>
                         <input type="number" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-qtde" value="${data.QTDE || ''}">
@@ -616,6 +624,10 @@ const IA = (() => {
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
                         <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vtotal" value="${data.VALOR_TOTAL || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Total Norm.</label>
+                        <input type="text" readonly class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-900 rounded-lg text-steel-800 dark:text-gray-200 outline-none prod-total-norm" value="">
                     </div>
                 </div>
 
@@ -638,6 +650,56 @@ const IA = (() => {
                                 <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-nomesupra" value="${data.NOME_SUPRA || ''}">
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <hr class="border-gray-100 dark:border-steel-600/50 my-4">
+                
+                <!-- Datas e Status do Produto -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Proposta</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dproposta" value="${data.DATA_PROPOSTA ? data.DATA_PROPOSTA.split('T')[0] : ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Código Status</label>
+                        <select class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-codstatus">
+                            <option value="">--</option>
+                            <option value="0" ${data.CODIGO_STATUS === 0 ? 'selected' : ''}>0</option>
+                            <option value="1" ${data.CODIGO_STATUS === 1 ? 'selected' : ''}>1</option>
+                            <option value="2" ${data.CODIGO_STATUS === 2 ? 'selected' : ''}>2</option>
+                            <option value="3" ${data.CODIGO_STATUS === 3 ? 'selected' : ''}>3</option>
+                            <option value="4" ${data.CODIGO_STATUS === 4 ? 'selected' : ''}>4</option>
+                            <option value="5" ${data.CODIGO_STATUS === 5 ? 'selected' : ''}>5</option>
+                            <option value="6" ${data.CODIGO_STATUS === 6 ? 'selected' : ''}>6</option>
+                            <option value="7" ${data.CODIGO_STATUS === 7 ? 'selected' : ''}>7</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Situação / Status</label>
+                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-status" value="${data.SITUACAO_STATUS || ''}">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vigência</label>
+                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vigencia" value="${data.VIGENCIA || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Início</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dinicio" value="${data.DATA_INICIO ? data.DATA_INICIO.split('T')[0] : ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Término</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dtermino" value="${data.DATA_TERMINO ? data.DATA_TERMINO.split('T')[0] : ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Empenho</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dempenho" value="${data.DATA_EMPENHO ? data.DATA_EMPENHO.split('T')[0] : ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Adjudicação</label>
+                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dadjudicacao" value="${data.DATA_ADJUDICACAO ? data.DATA_ADJUDICACAO.split('T')[0] : ''}">
                     </div>
                 </div>
             </div>
@@ -680,6 +742,88 @@ const IA = (() => {
             }
         });
 
+        // Auto-calcular Valor Total (Qtde * Valor Unitário) e Total Norm.
+        const qtdeInput = div.querySelector('.prod-qtde');
+        const vUnitInput = div.querySelector('.prod-vunit');
+        const vTotalInput = div.querySelector('.prod-vtotal');
+        const totalNormInput = div.querySelector('.prod-total-norm');
+
+        const calculateTotal = () => {
+            const qtde = parseFloat(qtdeInput.value) || 0;
+            const vUnit = parseFloat(vUnitInput.value) || 0;
+            let total = '';
+            
+            if (qtdeInput.value !== '' && vUnitInput.value !== '') {
+                total = qtde * vUnit;
+                vTotalInput.value = total.toFixed(2);
+            } else if (qtdeInput.value === '' || vUnitInput.value === '') {
+                vTotalInput.value = '';
+                total = parseFloat(vTotalInput.value) || '';
+            }
+
+            updateTotalNorm(total);
+        };
+
+        const updateTotalNorm = (totalVal) => {
+            if (totalVal === '' || isNaN(totalVal)) {
+                totalNormInput.value = '';
+            } else if (totalVal < 10000) {
+                totalNormInput.value = totalVal.toFixed(2);
+            } else if (totalVal < 100000) {
+                totalNormInput.value = (totalVal * 0.3).toFixed(2);
+            } else {
+                totalNormInput.value = "AVALIAÇÃO INDIVIDUAL";
+            }
+        };
+
+        qtdeInput.addEventListener('input', calculateTotal);
+        vUnitInput.addEventListener('input', calculateTotal);
+        vTotalInput.addEventListener('input', () => {
+            const manualTotal = parseFloat(vTotalInput.value);
+            updateTotalNorm(manualTotal);
+        });
+
+        // Trigger math calculation if this is an edit and total is not set yet
+        if (data.VALOR_TOTAL) {
+            updateTotalNorm(parseFloat(data.VALOR_TOTAL));
+        }
+
+        // Botão Clonar Dados e Status
+        const cloneBtn = div.querySelector('.btn-clone-dados');
+        if (cloneBtn) {
+            cloneBtn.addEventListener('click', () => {
+                const codStatus = div.querySelector('.prod-codstatus').value;
+                const situacao = div.querySelector('.prod-status').value;
+                const vigencia = div.querySelector('.prod-vigencia').value;
+                const dProposta = div.querySelector('.prod-dproposta').value;
+                const dInicio = div.querySelector('.prod-dinicio').value;
+                const dTermino = div.querySelector('.prod-dtermino').value;
+                const dEmpenho = div.querySelector('.prod-dempenho').value;
+                const dAdjudicacao = div.querySelector('.prod-dadjudicacao').value;
+
+                let sibling = div.nextElementSibling;
+                let count = 0;
+                while (sibling && sibling.classList.contains('produto-box')) {
+                    sibling.querySelector('.prod-codstatus').value = codStatus;
+                    sibling.querySelector('.prod-status').value = situacao;
+                    sibling.querySelector('.prod-vigencia').value = vigencia;
+                    sibling.querySelector('.prod-dproposta').value = dProposta;
+                    sibling.querySelector('.prod-dinicio').value = dInicio;
+                    sibling.querySelector('.prod-dtermino').value = dTermino;
+                    sibling.querySelector('.prod-dempenho').value = dEmpenho;
+                    sibling.querySelector('.prod-dadjudicacao').value = dAdjudicacao;
+                    sibling = sibling.nextElementSibling;
+                    count++;
+                }
+                
+                if (count > 0) {
+                    showToast(`Datas e Status copiados para ${count} produto(s) abaixo.`, 'success');
+                } else {
+                    showToast('Não há produtos abaixo para copiar.', 'info');
+                }
+            });
+        }
+
         container.appendChild(div);
     }
 
@@ -695,13 +839,6 @@ const IA = (() => {
         document.getElementById('formTipoContrato').value = r.TIPO_CONTRATO || '';
         document.getElementById('formClassificacao').value = r.CLASSIFICACAO || '';
         document.getElementById('formDataPregao').value = r.DATA_PREGAO ? r.DATA_PREGAO.split('T')[0] : '';
-        document.getElementById('formDataProposta').value = r.DATA_PROPOSTA ? r.DATA_PROPOSTA.split('T')[0] : '';
-        document.getElementById('formSituacaoStatus').value = r.SITUACAO_STATUS || '';
-        document.getElementById('formVigencia').value = r.VIGENCIA || '';
-        document.getElementById('formDataInicio').value = r.DATA_INICIO || '';
-        document.getElementById('formDataTermino').value = r.DATA_TERMINO || '';
-        document.getElementById('formDataEmpenho').value = r.DATA_EMPENHO || '';
-        document.getElementById('formDataAdjudicacao').value = r.DATA_ADJUDICACAO || '';
         document.getElementById('formInstrumental').value = r.INSTRUMENTAL || '';
         document.getElementById('formInstrumentador').value = r.INSTRUMENTADOR || '';
         document.getElementById('formLocalEntrega').value = r.LOCAL_ENTREGA || '';
@@ -725,13 +862,6 @@ const IA = (() => {
             TIPO_CONTRATO: document.getElementById('formTipoContrato').value || null,
             CLASSIFICACAO: document.getElementById('formClassificacao').value || null,
             DATA_PREGAO: document.getElementById('formDataPregao').value || null,
-            DATA_PROPOSTA: document.getElementById('formDataProposta').value || null,
-            SITUACAO_STATUS: document.getElementById('formSituacaoStatus').value || null,
-            VIGENCIA: document.getElementById('formVigencia').value || null,
-            DATA_INICIO: document.getElementById('formDataInicio').value || null,
-            DATA_TERMINO: document.getElementById('formDataTermino').value || null,
-            DATA_EMPENHO: document.getElementById('formDataEmpenho').value || null,
-            DATA_ADJUDICACAO: document.getElementById('formDataAdjudicacao').value || null,
             INSTRUMENTAL: document.getElementById('formInstrumental').value || null,
             INSTRUMENTADOR: document.getElementById('formInstrumentador').value || null,
             LOCAL_ENTREGA: document.getElementById('formLocalEntrega').value || null,
@@ -755,6 +885,15 @@ const IA = (() => {
                     FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
                     VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
                     VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
+                    TOTAL_NORMALIZADO: box.querySelector('.prod-total-norm').value || null,
+                    CODIGO_STATUS: box.querySelector('.prod-codstatus').value !== '' ? parseInt(box.querySelector('.prod-codstatus').value) : null,
+                    SITUACAO_STATUS: box.querySelector('.prod-status').value || null,
+                    VIGENCIA: box.querySelector('.prod-vigencia').value || null,
+                    DATA_PROPOSTA: box.querySelector('.prod-dproposta').value || null,
+                    DATA_INICIO: box.querySelector('.prod-dinicio').value || null,
+                    DATA_TERMINO: box.querySelector('.prod-dtermino').value || null,
+                    DATA_EMPENHO: box.querySelector('.prod-dempenho').value || null,
+                    DATA_ADJUDICACAO: box.querySelector('.prod-dadjudicacao').value || null,
                     COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
                     NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
                 };
@@ -776,6 +915,15 @@ const IA = (() => {
                         FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
                         VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
                         VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
+                        TOTAL_NORMALIZADO: box.querySelector('.prod-total-norm').value || null,
+                        CODIGO_STATUS: box.querySelector('.prod-codstatus').value !== '' ? parseInt(box.querySelector('.prod-codstatus').value) : null,
+                        SITUACAO_STATUS: box.querySelector('.prod-status').value || null,
+                        VIGENCIA: box.querySelector('.prod-vigencia').value || null,
+                        DATA_PROPOSTA: box.querySelector('.prod-dproposta').value || null,
+                        DATA_INICIO: box.querySelector('.prod-dinicio').value || null,
+                        DATA_TERMINO: box.querySelector('.prod-dtermino').value || null,
+                        DATA_EMPENHO: box.querySelector('.prod-dempenho').value || null,
+                        DATA_ADJUDICACAO: box.querySelector('.prod-dadjudicacao').value || null,
                         COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
                         NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
                     };
