@@ -23,6 +23,10 @@ const getRoleLevel = (role) => {
 
 const canInteractWithRole = (myRole, targetRole) => {
     if (!myRole || !targetRole) return false;
+    
+    // ADMIN é Deus
+    if (myRole.trim().toUpperCase() === 'ADMIN') return true;
+    
     const myLevel = getRoleLevel(myRole);
     const targetLevel = getRoleLevel(targetRole);
     
@@ -30,7 +34,7 @@ const canInteractWithRole = (myRole, targetRole) => {
     if (targetLevel > myLevel) return false;
     
     // Rule 2: If my level < 4 (and not ADMIN), I can only manage my own department (CR or LC)
-    if (myLevel < 4 && myRole.trim().toUpperCase() !== 'ADMIN') {
+    if (myLevel < 4) {
         const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
         const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
         if (myPrefix !== targetPrefix) return false;

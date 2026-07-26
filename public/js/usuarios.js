@@ -24,10 +24,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const canInteractWithRole = (myRole, targetRole) => {
         if (!myRole || !targetRole) return false;
+        
+        // ADMIN é Deus, sempre pode interagir com tudo
+        if (myRole.trim().toUpperCase() === 'ADMIN') return true;
+        
         const myLvl = getRoleLevel(myRole);
         const targetLvl = getRoleLevel(targetRole);
         if (targetLvl > myLvl) return false;
-        if (myLvl < 4 && myRole.trim().toUpperCase() !== 'ADMIN') {
+        if (myLvl < 4) {
             const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
             const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
             if (myPrefix !== targetPrefix) return false;
