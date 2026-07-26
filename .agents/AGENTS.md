@@ -85,10 +85,42 @@ As métricas do Dashboard obedecem a uma matemática estrita baseada na tabela d
 
 ## Autenticação, Onboarding e Proteção de Rotas (Auth Guard)
 - **Criação de Usuários e SMTP:** A criação de contas não exige digitação de senha pelo Admin. O backend gera uma senha forte, a encripta e utiliza o `nodemailer` para enviar as credenciais para o e-mail do usuário usando um template HTML responsivo estilizado com estética Tailwind (inline-styles). O e-mail contém um link com o parâmetro `?force_logout=1` para garantir que o cache de sessão seja limpo.
-- **Proteção Global (auth_guard.js):** Para evitar flashes de conteúdo não autorizado, o controle de acesso é implementado injetando a tag `<script src="/js/auth_guard.js"></script>` no topo do `<head>` das páginas HTML protegidas.
-- **Redirecionamento Rígido:** O `auth_guard.js` é implacável: se não houver token, envia para `/`. Se houver token mas `first_access === true`, tranca o usuário em `/primeiro_acesso`. Se não for admin e tentar entrar em `/usuarios` ou `/cadastro_usuario`, despacha o usuário imediatamente para a rota `/403`.
+- **Proteção Global (auth_guard.js):** Para evitar flashes de conteúdo não autorizado, o controle de acesso é implementado injetando a tag `<script src="/js/auth_guard.js"></script>` no topo do `<head>` das páginas HTML protegidas. A lógica não usa mais um campo booleano genérico, mas lê o objeto de permissões explícitas no JWT.
+- **Redirecionamento Rígido:** O `auth_guard.js` é implacável: se não houver token, envia para `/`. Se houver token mas `first_access === true`, tranca o usuário em `/primeiro_acesso`. Se tentar entrar em uma rota sem a permissão específica (`canViewUsers`, `canViewLC`, etc.), despacha o usuário imediatamente para a rota `/403`.
 - **Estética de Telas 403 e Login:** Páginas externas ao layout do painel (como Login, Primeiro Acesso e Acesso Restrito 403) devem obrigatoriamente herdar a paleta suave de "Soft UI" da marca Nexomed (tons de `steel` para fundo e `nexo` para destaque), centralizadas na tela com leves sombras (`shadow-xl`).
+
+## Controle de Acesso Baseado em Papéis (RBAC)
+- O sistema abandonou flags booleanas para administradores. Agora, existe a coluna `role` na tabela `users` do PostgreSQL, mapeada para um modelo estrito de níveis de permissão no backend (`middleware/rbac.js`).
+- **Nomenclatura de Níveis:** Os papéis atuais são `ADMIN`, `CR1` a `CR4` e `LC1` a `LC4`. As regras são definidas de forma explícita por flags booleanas no payload do token: `canViewCR`, `canViewLC`, `canViewUsers`, `canManageUsers`.
+- Os agentes e o frontend nunca devem referenciar "se o usuário é admin", mas sim verificar a permissão específica exigida para o contexto de exibição ou ação (ex: ocultar um link via JS lendo `user.permissions.canViewCR`).
+
+## Navegação Lateral (Sidebar e Submenus)
+- **Estrutura Expandível:** Os links no menu lateral (Sidebar) agora estão agrupados sob blocos lógicos principais (Ex: `Financeiro` e `Licitações`).
+- A visibilidade de blocos completos é gerenciada dinamicamente pelo `public/js/layout.js`, que utiliza os IDs dos grupos (como `menu-group-financeiro` ou `menu-group-licitacoes`) para omitir itens da tela caso o usuário não possua permissão (RBAC) para ver qualquer item interno do bloco.
+- A mecânica de expansão/colapso (`sidebar-submenu`, `.hidden`) é tratada globalmente via JS, evitando dependências ou comportamentos hard-coded de CSS.
 
 ## Peculiaridades do Banco de Dados Legado (Supra ERP)
 - **Cruzamento de Tabelas de Itens da Nota:** A arquitetura original do banco de dados do Supra possui um relacionamento anti-intuitivo para o cruzamento entre cabeçalho (`nota_fiscal_venda`) e itens (`nota_fiscal_venda_item`). A coluna `nf_numero` na tabela de itens **NÃO** armazena o número da nota fiscal (`numero_nota`). Ela armazena o ID Primário Interno da tabela pai (`codigo`).
 - **Como realizar o JOIN:** Ao invés de `ON item.nf_numero = cabecalho.numero_nota` (que puxará itens cruzados incorretos caso a nota tenha mesmo número em outra série), todo e qualquer agente que precisar buscar itens de uma nota **deve obrigatoriamente** fazer o cruzamento utilizando `ON item.nf_numero = cabecalho.codigo`.
+
+## Diretrizes para a Tela "Itens Arrematados"
+As seguintes regras definem o comportamento e design consolidados para o grid de Itens Arrematados (Licitações):
+1. **Minimalismo e Foco (Sem KPIs / Text Search):** A interface deve permanecer limpa. Não inclua cards de KPIs no topo e nem barra de pesquisa global por texto livre (`#searchInput`). Toda e qualquer pesquisa de dados deve ser feita exclusivamente através dos filtros dinâmicos embutidos no cabeçalho de cada coluna (ícone de funil).
+2. **Centralização Estrita de Cabeçalhos:** Todos os títulos de todas as colunas — sem exceção (nem mesmo Órgão e Material), tanto no grid principal quanto na tabela interna do modal de contrato — devem ser forçados ao centro geométrico, horizontal e verticalmente (`text-center`, `justify-center`, `align-middle`).
+3. **Ícones de Filtro Flutuantes:** Para que o texto do cabeçalho permaneça no centro absoluto da célula, o ícone de filtro (funil) deve ser renderizado com posição absoluta (ex: `absolute right-2 top-1/2 -translate-y-1/2`). Ele não deve fazer parte do Flexbox que alinha o texto principal do título.
+4. **Status Textual Simples:** Ao contrário de outros grids do projeto, a coluna de "Status" de itens arrematados não deve utilizar componentes de "Badges" ou "Pills" coloridos, devido à falta de dicionário/padronização dos textos que vêm do legado. Deve-se renderizar apenas o texto limpo, forçado em caixa alta (uppercase).
+5. **Altura de Linha Fixa:** As linhas (`<tr>`) do grid principal possuem uma altura travada (`h-[150px]`) para simular o espaçamento de visualização do Excel, com os textos alinhados verticalmente ao centro. Colunas textuais (como Órgão e Material) devem usar quebra de linha normal (`break-words`, `whitespace-normal`), enquanto dados quantitativos permanecem `whitespace-nowrap`.
+6. **Modal de Criação / Edição de Contrato (Múltiplos Produtos):** A atomicidade do banco de dados para itens arrematados é o **Produto/Item**, não o contrato em si.
+   - O modal de criação de contrato deve permitir a inserção dinâmica de múltiplos produtos.
+   - Os campos burocráticos (Datas e Status) pertencem ao escopo do **Produto**, e não ao escopo do contrato global.
+   - O cálculo do "Total Normalizado" ocorre em tempo real via JavaScript (`* 0.3` para valores entre 10k e 100k, ou "AVALIAÇÃO INDIVIDUAL" para acima de 100k) interceptando eventos de input nos campos "Qtde", "Valor Unitário" e "Valor Total".
+   - Deve existir um recurso de "Aplicar aos Demais" para clonar os campos de Datas e Status do primeiro produto para os subsequentes da interface.
+   - Na inserção (POST), o backend deve gerar *N* registros independentes no banco de dados, onde cada um representa um produto, mas que compartilham as mesmas informações globais (Cód. Contrato, Órgão, Edital).
+   - A geração da chave primária (`CHAVE`) ocorre automaticamente pela *Identity Sequence* do PostgreSQL. É proibido passar o ID no corpo da requisição POST. Em caso de dessincronização de *sequence* (ex: após seeding manual), deve-se usar `setval(pg_get_serial_sequence(...), MAX("CHAVE"))` diretamente no PostgreSQL para realinhar.
+
+## Sistema de Notificações
+O sistema possui uma central de notificações injetada globalmente, com as seguintes regras de desenvolvimento:
+1. **Frontend Modular:** A UI (`public/js/notifications.js`) é carregada dinamicamente via `layout.js` e não deve ser copiada/colada em arquivos HTML. O estilo do "custom-scrollbar" também é injetado programaticamente por este script para garantir visualização consistente.
+2. **Armazenamento:** As notificações utilizam duas tabelas no PostgreSQL: `notifications` (log central) e `notification_reads` (controle de leitura atrelado ao usuário, garantindo que o estado de leitura seja individual).
+3. **Geração Inteligente (Diff):** Durante uma ação de `UPDATE` (PUT), o sistema realiza a comparação de campos (Diff) verificando os dados antigos contra os novos. Apenas colunas que **realmente sofreram mutação** geram log. Além disso, existe um dicionário de mapeamento (`columnNamesMap`) na rota backend para que nomes de colunas de banco de dados sejam convertidos para rótulos amigáveis (UX) na notificação.
+4. **Proteção de Acesso (RBAC):** Somente perfis `ADMIN, LC1, LC2, LC3, LC4` podem visualizar a UI do sino e consumir a API `/api/notifications`. A interface sequer é renderizada para usuários de outros perfis.

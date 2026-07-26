@@ -40,11 +40,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Oculta itens admin-only se não for admin
-            if (!currentUser.is_admin) {
-                const adminElements = document.querySelectorAll('.admin-only');
-                adminElements.forEach(el => el.style.display = 'none');
+            // Controle de Acesso da Interface (RBAC)
+            const perms = currentUser.permissions || {};
+            
+            const hideLink = (href, canAccess) => {
+                const links = document.querySelectorAll(`a[href="${href}"]`);
+                if (!canAccess) {
+                    links.forEach(l => l.style.display = 'none');
+                }
+                return canAccess;
+            };
+            
+            const canCR = hideLink('/contas_a_receber', perms.canViewCR);
+            const canLC = hideLink('/itens_arrematados', perms.canViewLC);
+            
+            // Oculta grupos inteiros se não houver permissão
+            if (!canCR) {
+                const groupFinanceiro = document.getElementById('menu-group-financeiro');
+                if (groupFinanceiro) groupFinanceiro.style.display = 'none';
             }
+            if (!canLC) {
+                const groupLicitacoes = document.getElementById('menu-group-licitacoes');
+                if (groupLicitacoes) groupLicitacoes.style.display = 'none';
+            }
+
+            hideLink('/usuarios', perms.canViewUsers);
+            hideLink('/cadastro_usuario', perms.canManageUsers);
         } catch(e) {
             console.error('Erro ao fazer parse do usuário local', e);
         }
@@ -147,6 +168,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
+    // 2.1 Sidebar Submenu Toggles
+    // ==========================================
+    document.querySelectorAll('.sidebar-group-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // Se a sidebar estiver fechada, abre ela primeiro
+            if (document.body.classList.contains('sidebar-collapsed')) {
+                document.body.classList.remove('sidebar-collapsed');
+                localStorage.setItem('sidebarCollapsed', 'false');
+            }
+            
+            const submenu = btn.nextElementSibling;
+            const chevron = btn.querySelector('.sidebar-chevron');
+            if (submenu) {
+                if (submenu.classList.contains('hidden')) {
+                    submenu.classList.remove('hidden');
+                    if(chevron) chevron.style.transform = 'rotate(180deg)';
+                } else {
+                    submenu.classList.add('hidden');
+                    if(chevron) chevron.style.transform = 'rotate(0deg)';
+                }
+            }
+        });
+    });
+
+    // ==========================================
     // 3. Profile Dropdown Menu
     // ==========================================
     const profileBtn = document.getElementById('profileDropdownBtn');
@@ -178,4 +224,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Injetar o sistema de notificações modularmente
+    const notifScript = document.createElement('script');
+    notifScript.src = '/js/notifications.js';
+    document.body.appendChild(notifScript);
 });

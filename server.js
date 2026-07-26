@@ -22,6 +22,8 @@ app.use('/api/contratos', require('./routes/contratos'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/metas', require('./routes/metas'));
 app.use('/api/notas', require('./routes/notas'));
+app.use('/api/itens_arrematados', require('./routes/itens_arrematados'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
@@ -31,6 +33,11 @@ app.get('/', (req, res) => {
 // Nova rota para Contas a Receber
 app.get('/contas_a_receber', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'contas_a_receber.html'));
+});
+
+// Nova rota para Itens Arrematados
+app.get('/itens_arrematados', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'itens_arrematados.html'));
 });
 
 // Nova rota para Dashboard
