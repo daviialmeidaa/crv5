@@ -14,6 +14,7 @@ const IA = (() => {
         { key: 'ORGAO', label: 'Órgão' },
         { key: 'MUNICIPIO', label: 'Município' },
         { key: 'UF', label: 'UF' },
+        { key: 'TIPO_CONTRATO', label: 'Tipo Contrato' },
         { key: 'CLASSIFICACAO', label: 'Classificação' },
         { key: 'MATERIAL', label: 'Material' },
         { key: 'QTDE', label: 'Qtde', type: 'number' },
@@ -218,8 +219,10 @@ const IA = (() => {
             `;
         });
 
-        // Coluna de ações
-        html += '<th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none text-center align-middle">Ações</th>';
+        // Coluna de ações (apenas excluir)
+        html += `<th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none text-center align-middle w-[50px]">
+            <svg class="w-3.5 h-3.5 mx-auto text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        </th>`;
         html += '</tr>';
         thead.innerHTML = html;
     }
@@ -258,7 +261,7 @@ const IA = (() => {
                     displayVal = `<div class="relative group/link inline-block">
                         <a href="#" onclick="IA.openContratoModal('${safeContrato}'); return false;" class="text-steel-800 dark:text-gray-100 group-hover/link:text-nexo-600 dark:group-hover/link:text-nexo-400 font-medium transition-colors">${val}</a>
                         <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 invisible group-hover/link:opacity-100 group-hover/link:visible transition-all duration-200 z-10 whitespace-nowrap bg-steel-800 dark:bg-gray-100 text-white dark:text-steel-900 text-[10px] font-medium py-1 px-2 rounded shadow-sm pointer-events-none">
-                            Ver Contrato
+                            Abrir Contrato
                             <svg class="absolute text-steel-800 dark:text-gray-100 h-2 w-full left-0 top-full" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
                         </div>
                     </div>`;
@@ -274,16 +277,11 @@ const IA = (() => {
                 html += `<td class="px-3 py-1.5 text-[12px] align-middle ${alignClass}" title="${String(row[col.key] || '').replace(/"/g, '&quot;')}">${displayVal}</td>`;
             });
 
-            // Ações
+            // Ações (apenas excluir)
             html += `<td class="px-3 py-1.5 text-[12px] align-middle text-center whitespace-nowrap">
-                <div class="flex items-center justify-center gap-1">
-                    <button onclick="IA.editItem(${row.CHAVE})" class="p-1.5 text-steel-400 hover:text-nexo-500 hover:bg-nexo-50 dark:hover:bg-nexo-900/20 rounded-lg transition-all" title="Editar">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                    </button>
-                    <button onclick="IA.requestDelete(${row.CHAVE})" class="p-1.5 text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Excluir">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                </div>
+                <button onclick="event.stopPropagation(); IA.requestDelete(${row.CHAVE})" class="p-1.5 text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Excluir">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
             </td>`;
             html += '</tr>';
         });
@@ -462,70 +460,82 @@ const IA = (() => {
     // 10. Modal de Contrato (Agrupado por COD_CONTRATO_CONCAT)
     // ==========================================
     function openContratoModal(contratoConcat) {
+        // Abre o modal de edição com TODOS os produtos daquele contrato
         const items = state.rawData.filter(r => r.COD_CONTRATO_CONCAT === contratoConcat);
         if (items.length === 0) return;
 
-        const ref = items[0]; // Dados de cabeçalho do contrato (comuns a todas as linhas)
+        // Usar o primeiro item como referência para os campos globais do contrato
+        const ref = items[0];
+        editingChave = 'CONTRACT'; // Marcador especial para modo "edição de contrato"
+        editingContractItems = items; // Guardar referência dos itens do contrato
 
-        // Construir HTML do modal
-        const modal = document.getElementById('contratoModal');
-        document.getElementById('contratoModalTitle').textContent = `Contrato: ${contratoConcat}`;
+        const modal = document.getElementById('itemModal');
+        const title = document.getElementById('modalTitle');
+        const deleteBtn = document.getElementById('btnDeleteFromModal');
 
-        // Dados do cabeçalho (comuns)
-        document.getElementById('cmOrgao').textContent = (ref.ORGAO || '-').toUpperCase();
-        document.getElementById('cmMunicipio').textContent = (ref.MUNICIPIO || '-').toUpperCase();
-        document.getElementById('cmUF').textContent = (ref.UF || '-').toUpperCase();
-        document.getElementById('cmEdital').textContent = ref.EDITAL || '-';
-        document.getElementById('cmParticipante').textContent = ref.PARTICIPANTE || '-';
-        document.getElementById('cmTipoContrato').textContent = ref.TIPO_CONTRATO || '-';
-        document.getElementById('cmStatus').textContent = getStatusBadge(ref.SITUACAO_STATUS);
-        document.getElementById('cmVigencia').textContent = ref.VIGENCIA || '-';
-        document.getElementById('cmDataInicio').textContent = ref.DATA_INICIO || '-';
-        document.getElementById('cmDataTermino').textContent = ref.DATA_TERMINO || '-';
-        document.getElementById('cmInstrumental').textContent = ref.INSTRUMENTAL || '-';
-        document.getElementById('cmInstrumentador').textContent = ref.INSTRUMENTADOR || '-';
-        document.getElementById('cmLocalEntrega').textContent = ref.LOCAL_ENTREGA || '-';
-        document.getElementById('cmPrazoEntrega').textContent = ref.PRAZO_ENTREGA || '-';
+        document.getElementById('itemForm').reset();
+        document.getElementById('formChave').value = '';
+        document.getElementById('produtosContainer').innerHTML = '';
 
-        // Tabela de itens do contrato (1..N linhas)
-        const tbody = document.getElementById('cmItensBody');
-        let total = 0;
-        let html = '';
-        items.forEach((item, idx) => {
-            const vt = parseFloat(item.VALOR_TOTAL) || 0;
-            total += vt;
-            html += `<tr class="hover:bg-nexo-50/50 dark:hover:bg-nexo-500/5 transition-colors">
-                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.LOTE_ITEM || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-left text-steel-700 dark:text-gray-300 max-w-[300px] truncate" title="${(item.MATERIAL || '').replace(/"/g, '&quot;')}">${(item.MATERIAL || '-').toUpperCase()}</td>
-                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.QTDE || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.UNIDADE || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.FORNECEDOR || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300 font-medium">${formatCurrency(item.VALOR_UNITARIO)}</td>
-                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300 font-medium">${formatCurrency(item.VALOR_TOTAL)}</td>
-                <td class="px-3 py-2 text-[12px] text-center">
-                    <button onclick="IA.editItem(${item.CHAVE})" class="p-1 text-steel-400 hover:text-nexo-500 hover:bg-nexo-50 dark:hover:bg-nexo-900/20 rounded transition-all" title="Editar item"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
-                </td>
-            </tr>`;
-        });
-        tbody.innerHTML = html;
-        document.getElementById('cmTotalValor').textContent = formatCurrency(total);
-        document.getElementById('cmTotalItens').textContent = `${items.length} ${items.length === 1 ? 'item' : 'itens'}`;
+        title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Contrato: ${contratoConcat}`;
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+        document.getElementById('btnAddProduto').classList.remove('hidden');
+
+        // Preencher campos globais do contrato a partir do primeiro item
+        document.getElementById('formCodContrato').value = ref.COD_CONTRATO || '';
+        document.getElementById('formCodContratoConcat').value = ref.COD_CONTRATO_CONCAT || '';
+        document.getElementById('formEdital').value = ref.EDITAL || '';
+        document.getElementById('formParticipante').value = ref.PARTICIPANTE || 'NEXOMED';
+        document.getElementById('formOrgao').value = ref.ORGAO || '';
+        document.getElementById('formUF').value = ref.UF || '';
+        document.getElementById('formMunicipio').value = ref.MUNICIPIO || '';
+        // Helper: preencher select mesmo que o valor do banco não exista nas options pré-definidas
+        function setSelectWithLegacy(selectEl, dbValue) {
+            // Remover option legada anterior (se houver)
+            selectEl.querySelectorAll('option[data-legacy]').forEach(o => o.remove());
+            if (!dbValue) { selectEl.value = ''; return; }
+            selectEl.value = dbValue;
+            if (selectEl.value !== dbValue) {
+                // Valor do banco não bate com nenhuma option → injetar como opção temporária
+                const opt = document.createElement('option');
+                opt.value = dbValue;
+                opt.textContent = dbValue;
+                opt.dataset.legacy = '1';
+                selectEl.insertBefore(opt, selectEl.options[1]); // Após o "Selecione..."
+                selectEl.value = dbValue;
+            }
+        }
+        setSelectWithLegacy(document.getElementById('formTipoContrato'), ref.TIPO_CONTRATO);
+        setSelectWithLegacy(document.getElementById('formClassificacao'), ref.CLASSIFICACAO);
+        document.getElementById('formDataPregao').value = ref.DATA_PREGAO ? ref.DATA_PREGAO.split('T')[0] : '';
+        document.getElementById('formInstrumental').value = ref.INSTRUMENTAL || '';
+        document.getElementById('formInstrumentador').value = ref.INSTRUMENTADOR || '';
+        document.getElementById('formLocalEntrega').value = ref.LOCAL_ENTREGA || '';
+        document.getElementById('formPrazoEntrega').value = ref.PRAZO_ENTREGA || '';
+        document.getElementById('formDetalhamento').value = ref.DETALHAMENTO || '';
+        document.getElementById('formDescricaoDatabase').value = ref.DESCRICAO_DATABASE || '';
+
+        // Carregar TODOS os produtos do contrato como cards
+        items.forEach(item => addProdutoBox(item));
 
         modal.classList.remove('hidden');
     }
 
     function closeContratoModal() {
-        document.getElementById('contratoModal').classList.add('hidden');
+        // Manter por compatibilidade, mas agora redireciona para closeModal
+        closeModal();
     }
 
     // ==========================================
     // 11. CRUD Modal (Criar / Editar Item)
     // ==========================================
     let editingChave = null;
+    let editingContractItems = []; // Itens do contrato em modo edição
     let deleteChave = null;
 
     function openModal(chave = null) {
         editingChave = chave;
+        editingContractItems = [];
         const modal = document.getElementById('itemModal');
         const title = document.getElementById('modalTitle');
         const deleteBtn = document.getElementById('btnDeleteFromModal');
@@ -534,25 +544,19 @@ const IA = (() => {
         document.getElementById('formChave').value = '';
         document.getElementById('produtosContainer').innerHTML = ''; // Limpa os produtos
 
-        if (chave) {
-            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg> Editar Item Arrematado`;
-            if (deleteBtn) deleteBtn.classList.remove('hidden');
-            document.getElementById('btnAddProduto').classList.add('hidden');
-            const row = state.rawData.find(r => r.CHAVE === chave);
-            if (row) populateForm(row);
-        } else {
-            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item Arrematado`;
-            if (deleteBtn) deleteBtn.classList.add('hidden');
-            document.getElementById('formParticipante').value = currentTab === 'BML' ? 'BML HOSPITALAR' : 'NEXOMED';
-            document.getElementById('btnAddProduto').classList.remove('hidden');
-            addProdutoBox(); // Adiciona 1 produto vazio
-        }
+        // Modo Criação (sem chave)
+        title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item Arrematado`;
+        if (deleteBtn) deleteBtn.classList.add('hidden');
+        document.getElementById('formParticipante').value = currentTab === 'BML' ? 'BML HOSPITALAR' : 'NEXOMED';
+        document.getElementById('btnAddProduto').classList.remove('hidden');
+        addProdutoBox(); // Adiciona 1 produto vazio
         modal.classList.remove('hidden');
     }
 
     function closeModal() {
         document.getElementById('itemModal').classList.add('hidden');
         editingChave = null;
+        editingContractItems = [];
     }
 
     function renumberProdutoBoxes() {
@@ -570,11 +574,16 @@ const IA = (() => {
         
         const div = document.createElement('div');
         div.className = 'produto-box border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-hidden transition-all duration-300';
+        if (data.CHAVE) div.dataset.chave = data.CHAVE; // Marcar com a CHAVE original para edição
 
         div.innerHTML = `
             <!-- Header do Card -->
-            <div class="flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600">
-                <span class="produto-number text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">Produto #${count}</span>
+            <div class="accordion-header flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-steel-700/60 select-none">
+                <div class="flex items-center gap-2">
+                    <svg class="accordion-icon w-4 h-4 text-steel-400 transition-transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <span class="produto-number text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">Produto #${count}</span>
+                    <span class="lote-title-suffix text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wide ml-1">${data.LOTE_ITEM ? `- Lote / Item ${data.LOTE_ITEM}` : ''}</span>
+                </div>
                 <div class="flex items-center gap-3">
                     <button type="button" class="btn-clone-dados flex items-center gap-1 text-[11px] text-nexo-500 hover:text-nexo-600 transition-colors ${count === 1 ? '' : 'hidden'}" title="Copiar Datas e Status para os itens abaixo">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
@@ -592,42 +601,47 @@ const IA = (() => {
                 </div>
             </div>
 
-            <!-- Campos do Produto -->
-            <div class="p-4 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote / Item</label>
-                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-lote" value="${data.LOTE_ITEM || ''}">
+            <!-- Campos do Produto (Accordion Body) -->
+            <div class="accordion-body hidden">
+                <div class="p-4 space-y-4">
+                <div class="flex gap-4">
+                    <!-- Coluna Esquerda (50%) — Grid 2x3 -->
+                    <div class="w-1/2 grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote / Item</label>
+                            <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-lote" value="${data.LOTE_ITEM || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Fornecedor</label>
+                            <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-fornecedor" value="${data.FORNECEDOR || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Unidade</label>
+                            <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-unidade" value="${data.UNIDADE || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Qtde</label>
+                            <input type="number" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-qtde" value="${data.QTDE || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
+                            <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vunit" value="${data.VALOR_UNITARIO || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
+                            <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vtotal" value="${data.VALOR_TOTAL || ''}">
+                        </div>
                     </div>
-                    <div class="md:col-span-3">
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Material</label>
-                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-material" value="${data.MATERIAL || ''}">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Qtde</label>
-                        <input type="number" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-qtde" value="${data.QTDE || ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Unidade</label>
-                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-unidade" value="${data.UNIDADE || ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Fornecedor</label>
-                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-fornecedor" value="${data.FORNECEDOR || ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
-                        <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vunit" value="${data.VALOR_UNITARIO || ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
-                        <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vtotal" value="${data.VALOR_TOTAL || ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Total Norm.</label>
-                        <input type="text" readonly class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-900 rounded-lg text-steel-800 dark:text-gray-200 outline-none prod-total-norm" value="">
+                    <!-- Coluna Direita (50%) — Material + Total Norm -->
+                    <div class="w-1/2 flex flex-col gap-3">
+                        <div class="flex-1">
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Material</label>
+                            <textarea class="w-full h-[calc(100%-1.25rem)] min-h-[6.5rem] px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none custom-scrollbar prod-material">${data.MATERIAL || ''}</textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Total Norm.</label>
+                            <input type="text" readonly class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-900 rounded-lg text-steel-800 dark:text-gray-200 outline-none prod-total-norm" value="">
+                        </div>
                     </div>
                 </div>
 
@@ -702,8 +716,32 @@ const IA = (() => {
                         <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dadjudicacao" value="${data.DATA_ADJUDICACAO ? data.DATA_ADJUDICACAO.split('T')[0] : ''}">
                     </div>
                 </div>
+                </div>
             </div>
         `;
+
+        // Lógica de Accordion
+        const header = div.querySelector('.accordion-header');
+        const body = div.querySelector('.accordion-body');
+        const icon = div.querySelector('.accordion-icon');
+        
+        header.addEventListener('click', (e) => {
+            if (e.target.closest('button')) return; // Não colapsar ao clicar nos botões de ação
+            body.classList.toggle('hidden');
+            if (body.classList.contains('hidden')) {
+                icon.classList.add('-rotate-90');
+            } else {
+                icon.classList.remove('-rotate-90');
+            }
+        });
+
+        // Título dinâmico do Lote
+        const loteInput = div.querySelector('.prod-lote');
+        const titleSuffix = div.querySelector('.lote-title-suffix');
+        loteInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            titleSuffix.textContent = val ? `- Lote / Item ${val}` : '';
+        });
 
         // Remove button handler
         div.querySelector('.btn-remove-produto').addEventListener('click', () => {
@@ -874,59 +912,58 @@ const IA = (() => {
         const boxes = document.querySelectorAll('.produto-box');
         
         try {
-            if (editingChave) {
-                // Modo Edição (1 produto apenas)
-                const box = boxes[0];
-                const productData = {
-                    LOTE_ITEM: box.querySelector('.prod-lote').value || null,
-                    MATERIAL: box.querySelector('.prod-material').value || null,
-                    QTDE: box.querySelector('.prod-qtde').value || null,
-                    UNIDADE: box.querySelector('.prod-unidade').value || null,
-                    FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
-                    VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
-                    VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
-                    TOTAL_NORMALIZADO: box.querySelector('.prod-total-norm').value || null,
-                    CODIGO_STATUS: box.querySelector('.prod-codstatus').value !== '' ? parseInt(box.querySelector('.prod-codstatus').value) : null,
-                    SITUACAO_STATUS: box.querySelector('.prod-status').value || null,
-                    VIGENCIA: box.querySelector('.prod-vigencia').value || null,
-                    DATA_PROPOSTA: box.querySelector('.prod-dproposta').value || null,
-                    DATA_INICIO: box.querySelector('.prod-dinicio').value || null,
-                    DATA_TERMINO: box.querySelector('.prod-dtermino').value || null,
-                    DATA_EMPENHO: box.querySelector('.prod-dempenho').value || null,
-                    DATA_ADJUDICACAO: box.querySelector('.prod-dadjudicacao').value || null,
-                    COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
-                    NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
-                };
-                const data = { ...baseData, ...productData };
-                
-                const res = await fetch(`/api/itens_arrematados/${editingChave}${pp}`, { 
-                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data) 
+            // Helper para extrair dados do produto de um box
+            const extractProductData = (box) => ({
+                LOTE_ITEM: box.querySelector('.prod-lote').value || null,
+                MATERIAL: box.querySelector('.prod-material').value || null,
+                QTDE: box.querySelector('.prod-qtde').value || null,
+                UNIDADE: box.querySelector('.prod-unidade').value || null,
+                FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
+                VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
+                VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
+                TOTAL_NORMALIZADO: box.querySelector('.prod-total-norm').value || null,
+                CODIGO_STATUS: box.querySelector('.prod-codstatus').value !== '' ? parseInt(box.querySelector('.prod-codstatus').value) : null,
+                SITUACAO_STATUS: box.querySelector('.prod-status').value || null,
+                VIGENCIA: box.querySelector('.prod-vigencia').value || null,
+                DATA_PROPOSTA: box.querySelector('.prod-dproposta').value || null,
+                DATA_INICIO: box.querySelector('.prod-dinicio').value || null,
+                DATA_TERMINO: box.querySelector('.prod-dtermino').value || null,
+                DATA_EMPENHO: box.querySelector('.prod-dempenho').value || null,
+                DATA_ADJUDICACAO: box.querySelector('.prod-dadjudicacao').value || null,
+                COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
+                NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
+            });
+
+            if (editingChave === 'CONTRACT') {
+                // Modo Edição de Contrato (múltiplos produtos)
+                // Cada box tem um data-chave com a CHAVE original, ou vazio se é um produto novo
+                const fetchPromises = Array.from(boxes).map(box => {
+                    const productData = extractProductData(box);
+                    const data = { ...baseData, ...productData };
+                    const chave = box.dataset.chave;
+
+                    if (chave) {
+                        // Produto existente → PUT
+                        return fetch(`/api/itens_arrematados/${chave}${pp}`, {
+                            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data)
+                        });
+                    } else {
+                        // Produto novo adicionado ao contrato → POST
+                        return fetch(`/api/itens_arrematados${pp}`, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data)
+                        });
+                    }
                 });
-                if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Erro ao salvar'); }
-                
+
+                const responses = await Promise.all(fetchPromises);
+                for (let r of responses) {
+                    if (!r.ok) { const err = await r.json(); throw new Error(err.error || 'Erro ao salvar produto'); }
+                }
+
             } else {
                 // Modo Criação (Múltiplos produtos via chamadas simultâneas)
                 const fetchPromises = Array.from(boxes).map(box => {
-                    const productData = {
-                        LOTE_ITEM: box.querySelector('.prod-lote').value || null,
-                        MATERIAL: box.querySelector('.prod-material').value || null,
-                        QTDE: box.querySelector('.prod-qtde').value || null,
-                        UNIDADE: box.querySelector('.prod-unidade').value || null,
-                        FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
-                        VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
-                        VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
-                        TOTAL_NORMALIZADO: box.querySelector('.prod-total-norm').value || null,
-                        CODIGO_STATUS: box.querySelector('.prod-codstatus').value !== '' ? parseInt(box.querySelector('.prod-codstatus').value) : null,
-                        SITUACAO_STATUS: box.querySelector('.prod-status').value || null,
-                        VIGENCIA: box.querySelector('.prod-vigencia').value || null,
-                        DATA_PROPOSTA: box.querySelector('.prod-dproposta').value || null,
-                        DATA_INICIO: box.querySelector('.prod-dinicio').value || null,
-                        DATA_TERMINO: box.querySelector('.prod-dtermino').value || null,
-                        DATA_EMPENHO: box.querySelector('.prod-dempenho').value || null,
-                        DATA_ADJUDICACAO: box.querySelector('.prod-dadjudicacao').value || null,
-                        COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
-                        NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
-                    };
+                    const productData = extractProductData(box);
                     const data = { ...baseData, ...productData };
                     return fetch(`/api/itens_arrematados${pp}`, { 
                         method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data) 
@@ -939,7 +976,7 @@ const IA = (() => {
                 }
             }
 
-            showToast(editingChave ? 'Item atualizado com sucesso!' : 'Itens criados com sucesso!');
+            showToast(editingChave === 'CONTRACT' ? 'Contrato atualizado com sucesso!' : 'Itens criados com sucesso!');
             closeModal();
             await fetchData();
         } catch (error) { 
@@ -1107,8 +1144,8 @@ const IA = (() => {
     return {
         switchTab, toggleSort: key => { if (state.sort.key === key) state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc'; else { state.sort.key = key; state.sort.dir = 'asc'; } processData(); },
         setPage: p => { state.pagination.current = p; processData(); },
-        openFilter, openModal, closeModal, editItem: chave => openModal(chave), saveItem,
-        requestDelete, closeDeleteModal, confirmDelete, deleteFromModal,
+        openFilter, openModal, closeModal, saveItem,
+        requestDelete, closeDeleteModal, confirmDelete,
         openContratoModal, closeContratoModal, exportXLS,
     };
 })();
