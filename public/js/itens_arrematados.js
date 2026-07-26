@@ -529,23 +529,159 @@ const IA = (() => {
         const modal = document.getElementById('itemModal');
         const title = document.getElementById('modalTitle');
         const deleteBtn = document.getElementById('btnDeleteFromModal');
+        
         document.getElementById('itemForm').reset();
         document.getElementById('formChave').value = '';
+        document.getElementById('produtosContainer').innerHTML = ''; // Limpa os produtos
+        document.getElementById('formMunicipio').placeholder = 'Selecione a UF...'; // Reseta placeholder
 
         if (chave) {
-            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg> Editar Item Arrematado`;
-            deleteBtn.classList.remove('hidden');
+            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg> Editar Item Arrematado`;
+            if (deleteBtn) deleteBtn.classList.remove('hidden');
+            document.getElementById('btnAddProduto').classList.add('hidden');
             const row = state.rawData.find(r => r.CHAVE === chave);
             if (row) populateForm(row);
         } else {
-            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item Arrematado`;
-            deleteBtn.classList.add('hidden');
+            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item Arrematado`;
+            if (deleteBtn) deleteBtn.classList.add('hidden');
             document.getElementById('formParticipante').value = currentTab === 'BML' ? 'BML HOSPITALAR' : 'NEXOMED';
+            document.getElementById('btnAddProduto').classList.remove('hidden');
+            addProdutoBox(); // Adiciona 1 produto vazio
         }
         modal.classList.remove('hidden');
     }
 
-    function closeModal() { document.getElementById('itemModal').classList.add('hidden'); editingChave = null; }
+    function closeModal() {
+        document.getElementById('itemModal').classList.add('hidden');
+        editingChave = null;
+    }
+
+    function renumberProdutoBoxes() {
+        const boxes = document.querySelectorAll('.produto-box');
+        boxes.forEach((box, i) => {
+            const badge = box.querySelector('.produto-number');
+            if (badge) badge.textContent = `Produto #${i + 1}`;
+        });
+    }
+
+    function addProdutoBox(data = {}) {
+        const container = document.getElementById('produtosContainer');
+        const count = container.querySelectorAll('.produto-box').length + 1;
+        const hasSupra = !!(data.COD_SUPRA || data.NOME_SUPRA);
+        
+        const div = document.createElement('div');
+        div.className = 'produto-box border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-hidden transition-all duration-300';
+
+        div.innerHTML = `
+            <!-- Header do Card -->
+            <div class="flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600">
+                <span class="produto-number text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">Produto #${count}</span>
+                <button type="button" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    Remover
+                </button>
+            </div>
+
+            <!-- Campos do Produto -->
+            <div class="p-4 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote / Item</label>
+                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-lote" value="${data.LOTE_ITEM || ''}">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Material</label>
+                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-material" value="${data.MATERIAL || ''}">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Qtde</label>
+                        <input type="number" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-qtde" value="${data.QTDE || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Unidade</label>
+                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-unidade" value="${data.UNIDADE || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Fornecedor</label>
+                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-fornecedor" value="${data.FORNECEDOR || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
+                        <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vunit" value="${data.VALOR_UNITARIO || ''}">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
+                        <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vtotal" value="${data.VALOR_TOTAL || ''}">
+                    </div>
+                </div>
+
+                <!-- Supra: Chip toggle -->
+                <div class="pt-2">
+                    <button type="button" class="toggle-supra inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wide transition-all duration-200 ${hasSupra ? 'bg-nexo-500/15 text-nexo-600 dark:text-nexo-400 ring-1 ring-nexo-500/30' : 'bg-gray-100 dark:bg-steel-700 text-steel-500 dark:text-steel-400 hover:bg-nexo-500/10 hover:text-nexo-600 dark:hover:text-nexo-400'}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Vincular Supra
+                    </button>
+                    <div class="supra-fields overflow-hidden transition-all duration-300 ease-in-out ${hasSupra ? 'max-h-40 opacity-100 mt-3' : 'max-h-0 opacity-0'}">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Supra</label>
+                                <input type="number" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-codsupra" value="${data.COD_SUPRA || ''}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nome Supra</label>
+                                <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-nomesupra" value="${data.NOME_SUPRA || ''}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove button handler
+        div.querySelector('.btn-remove-produto').addEventListener('click', () => {
+            if (document.querySelectorAll('.produto-box').length > 1) {
+                div.style.maxHeight = div.scrollHeight + 'px';
+                requestAnimationFrame(() => {
+                    div.style.transition = 'max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease';
+                    div.style.maxHeight = '0';
+                    div.style.opacity = '0';
+                    div.style.marginTop = '0';
+                    div.style.marginBottom = '0';
+                    div.style.overflow = 'hidden';
+                });
+                setTimeout(() => { div.remove(); renumberProdutoBoxes(); }, 320);
+            } else {
+                showToast('O contrato precisa ter pelo menos um produto.', 'error');
+            }
+        });
+
+        // Supra toggle handler
+        const toggleBtn = div.querySelector('.toggle-supra');
+        const supraFields = div.querySelector('.supra-fields');
+
+        toggleBtn.addEventListener('click', () => {
+            const isOpen = supraFields.classList.contains('max-h-40');
+            if (isOpen) {
+                supraFields.classList.remove('max-h-40', 'opacity-100', 'mt-3');
+                supraFields.classList.add('max-h-0', 'opacity-0');
+                toggleBtn.classList.remove('bg-nexo-500/15', 'text-nexo-600', 'dark:text-nexo-400', 'ring-1', 'ring-nexo-500/30');
+                toggleBtn.classList.add('bg-gray-100', 'dark:bg-steel-700', 'text-steel-500', 'dark:text-steel-400');
+            } else {
+                supraFields.classList.remove('max-h-0', 'opacity-0');
+                supraFields.classList.add('max-h-40', 'opacity-100', 'mt-3');
+                toggleBtn.classList.remove('bg-gray-100', 'dark:bg-steel-700', 'text-steel-500', 'dark:text-steel-400');
+                toggleBtn.classList.add('bg-nexo-500/15', 'text-nexo-600', 'dark:text-nexo-400', 'ring-1', 'ring-nexo-500/30');
+            }
+        });
+
+        container.appendChild(div);
+    }
 
     function populateForm(r) {
         document.getElementById('formChave').value = r.CHAVE;
@@ -554,19 +690,10 @@ const IA = (() => {
         document.getElementById('formEdital').value = r.EDITAL || '';
         document.getElementById('formParticipante').value = r.PARTICIPANTE || 'NEXOMED';
         document.getElementById('formOrgao').value = r.ORGAO || '';
-        document.getElementById('formMunicipio').value = r.MUNICIPIO || '';
         document.getElementById('formUF').value = r.UF || '';
-        document.getElementById('formLoteItem').value = r.LOTE_ITEM || '';
-        document.getElementById('formMaterial').value = r.MATERIAL || '';
-        document.getElementById('formClassificacao').value = r.CLASSIFICACAO || '';
-        document.getElementById('formQtde').value = r.QTDE || '';
-        document.getElementById('formUnidade').value = r.UNIDADE || '';
-        document.getElementById('formFornecedor').value = r.FORNECEDOR || '';
+        document.getElementById('formMunicipio').value = r.MUNICIPIO || '';
         document.getElementById('formTipoContrato').value = r.TIPO_CONTRATO || '';
-        document.getElementById('formValorUnitario').value = r.VALOR_UNITARIO || '';
-        document.getElementById('formValorTotal').value = r.VALOR_TOTAL || '';
-        document.getElementById('formCodSupra').value = r.COD_SUPRA || '';
-        document.getElementById('formNomeSupra').value = r.NOME_SUPRA || '';
+        document.getElementById('formClassificacao').value = r.CLASSIFICACAO || '';
         document.getElementById('formDataPregao').value = r.DATA_PREGAO ? r.DATA_PREGAO.split('T')[0] : '';
         document.getElementById('formDataProposta').value = r.DATA_PROPOSTA ? r.DATA_PROPOSTA.split('T')[0] : '';
         document.getElementById('formSituacaoStatus').value = r.SITUACAO_STATUS || '';
@@ -581,10 +708,13 @@ const IA = (() => {
         document.getElementById('formPrazoEntrega').value = r.PRAZO_ENTREGA || '';
         document.getElementById('formDetalhamento').value = r.DETALHAMENTO || '';
         document.getElementById('formDescricaoDatabase').value = r.DESCRICAO_DATABASE || '';
+        addProdutoBox(r);
     }
 
-    function collectFormData() {
-        return {
+    async function saveItem(event) {
+        if (event) event.preventDefault();
+        
+        const baseData = {
             COD_CONTRATO: document.getElementById('formCodContrato').value || null,
             COD_CONTRATO_CONCAT: document.getElementById('formCodContratoConcat').value || null,
             EDITAL: document.getElementById('formEdital').value || null,
@@ -592,18 +722,8 @@ const IA = (() => {
             ORGAO: document.getElementById('formOrgao').value || null,
             MUNICIPIO: document.getElementById('formMunicipio').value || null,
             UF: document.getElementById('formUF').value || null,
-            LOTE_ITEM: document.getElementById('formLoteItem').value || null,
-            MATERIAL: document.getElementById('formMaterial').value || null,
-            CLASSIFICACAO: document.getElementById('formClassificacao').value || null,
-            QTDE: document.getElementById('formQtde').value || null,
-            UNIDADE: document.getElementById('formUnidade').value || null,
-            FORNECEDOR: document.getElementById('formFornecedor').value || null,
             TIPO_CONTRATO: document.getElementById('formTipoContrato').value || null,
-            VALOR_UNITARIO: document.getElementById('formValorUnitario').value || null,
-            VALOR_TOTAL: document.getElementById('formValorTotal').value || null,
-            TOTAL_NORMALIZADO: null, COD_STATUS: null,
-            COD_SUPRA: document.getElementById('formCodSupra').value || null,
-            NOME_SUPRA: document.getElementById('formNomeSupra').value || null,
+            CLASSIFICACAO: document.getElementById('formClassificacao').value || null,
             DATA_PREGAO: document.getElementById('formDataPregao').value || null,
             DATA_PROPOSTA: document.getElementById('formDataProposta').value || null,
             SITUACAO_STATUS: document.getElementById('formSituacaoStatus').value || null,
@@ -619,22 +739,65 @@ const IA = (() => {
             DETALHAMENTO: document.getElementById('formDetalhamento').value || null,
             DESCRICAO_DATABASE: document.getElementById('formDescricaoDatabase').value || null,
         };
-    }
 
-    async function saveItem(event) {
-        if (event) event.preventDefault();
-        const data = collectFormData();
         const pp = currentTab === 'BML' ? '?participante=BML' : '';
+        const boxes = document.querySelectorAll('.produto-box');
+        
         try {
-            let url, method;
-            if (editingChave) { url = `/api/itens_arrematados/${editingChave}${pp}`; method = 'PUT'; }
-            else { url = `/api/itens_arrematados`; method = 'POST'; }
-            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data) });
-            if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Erro ao salvar'); }
-            showToast(editingChave ? 'Item atualizado com sucesso!' : 'Item criado com sucesso!');
+            if (editingChave) {
+                // Modo Edição (1 produto apenas)
+                const box = boxes[0];
+                const productData = {
+                    LOTE_ITEM: box.querySelector('.prod-lote').value || null,
+                    MATERIAL: box.querySelector('.prod-material').value || null,
+                    QTDE: box.querySelector('.prod-qtde').value || null,
+                    UNIDADE: box.querySelector('.prod-unidade').value || null,
+                    FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
+                    VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
+                    VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
+                    COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
+                    NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
+                };
+                const data = { ...baseData, ...productData };
+                
+                const res = await fetch(`/api/itens_arrematados/${editingChave}${pp}`, { 
+                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data) 
+                });
+                if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Erro ao salvar'); }
+                
+            } else {
+                // Modo Criação (Múltiplos produtos via chamadas simultâneas)
+                const fetchPromises = Array.from(boxes).map(box => {
+                    const productData = {
+                        LOTE_ITEM: box.querySelector('.prod-lote').value || null,
+                        MATERIAL: box.querySelector('.prod-material').value || null,
+                        QTDE: box.querySelector('.prod-qtde').value || null,
+                        UNIDADE: box.querySelector('.prod-unidade').value || null,
+                        FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
+                        VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
+                        VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
+                        COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
+                        NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
+                    };
+                    const data = { ...baseData, ...productData };
+                    return fetch(`/api/itens_arrematados${pp}`, { 
+                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data) 
+                    });
+                });
+                
+                const responses = await Promise.all(fetchPromises);
+                for (let r of responses) {
+                    if (!r.ok) { const err = await r.json(); throw new Error(err.error || 'Erro ao salvar produto'); }
+                }
+            }
+
+            showToast(editingChave ? 'Item atualizado com sucesso!' : 'Itens criados com sucesso!');
             closeModal();
             await fetchData();
-        } catch (error) { console.error('Erro ao salvar:', error); showToast(error.message || 'Erro ao salvar item', 'error'); }
+        } catch (error) { 
+            console.error('Erro ao salvar:', error); 
+            showToast(error.message || 'Erro ao salvar item', 'error'); 
+        }
     }
 
     // ==========================================
@@ -698,6 +861,95 @@ const IA = (() => {
             state.pagination.current = 1;
             processData();
         });
+
+        const updateCodContratoConcat = () => {
+            const participante = document.getElementById('formParticipante').value;
+            const cod = document.getElementById('formCodContrato').value;
+            const prefix = participante === 'NEXOMED' ? 'BIO' : (participante === 'BML HOSPITALAR' ? 'BML' : '');
+            document.getElementById('formCodContratoConcat').value = cod ? `${prefix}${cod}` : '';
+        };
+        document.getElementById('formParticipante').addEventListener('change', updateCodContratoConcat);
+        document.getElementById('formCodContrato').addEventListener('input', updateCodContratoConcat);
+
+        // Setup Custom Dropdowns
+        function setupCustomDropdown(inputId, dropdownId, listId, dataFetcher = null, onChange = null) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+            const ul = document.getElementById(listId);
+            let optionsData = [];
+
+            const renderOptions = (filter = '') => {
+                ul.innerHTML = '';
+                const filtered = optionsData.filter(opt => opt.includes(filter.toUpperCase()));
+                if (filtered.length === 0) {
+                    ul.innerHTML = '<li class="px-4 py-2 text-steel-400 text-xs text-center italic">Nenhum resultado</li>';
+                    return;
+                }
+                filtered.forEach(opt => {
+                    const li = document.createElement('li');
+                    li.textContent = opt;
+                    li.className = 'px-4 py-2 cursor-pointer hover:bg-nexo-50 dark:hover:bg-steel-700 transition-colors text-steel-700 dark:text-gray-200';
+                    li.onmousedown = (e) => { // mousedown dispara antes do blur
+                        e.preventDefault();
+                        input.value = opt;
+                        dropdown.classList.add('hidden');
+                        if (onChange) onChange(opt);
+                    };
+                    ul.appendChild(li);
+                });
+            };
+
+            const loadData = async () => {
+                if (dataFetcher && optionsData.length === 0) {
+                    optionsData = await dataFetcher();
+                }
+                renderOptions(input.value);
+            };
+
+            input.addEventListener('focus', async () => {
+                dropdown.classList.remove('hidden');
+                await loadData();
+                renderOptions();
+            });
+
+            input.addEventListener('input', async (e) => {
+                dropdown.classList.remove('hidden');
+                await loadData();
+                renderOptions(e.target.value);
+            });
+
+            input.addEventListener('blur', () => { dropdown.classList.add('hidden'); });
+
+            return {
+                setOptions: (data) => { optionsData = data; renderOptions(); },
+                clearOptions: () => { optionsData = []; }
+            };
+        }
+
+        const ufs = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+        
+        let munDropdown;
+        const ufDropdown = setupCustomDropdown('formUF', 'ufDropdown', 'ufList', null, (uf) => {
+            document.getElementById('formMunicipio').value = '';
+            if (munDropdown) munDropdown.clearOptions();
+        });
+        ufDropdown.setOptions(ufs);
+
+        munDropdown = setupCustomDropdown('formMunicipio', 'municipioDropdown', 'municipiosList', async () => {
+            const uf = document.getElementById('formUF').value;
+            if (!uf) return [];
+            try {
+                const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+                const data = await res.json();
+                return data.map(m => m.nome.toUpperCase());
+            } catch (e) {
+                return [];
+            }
+        });
+
+        // Botão Adicionar Produto
+        document.getElementById('btnAddProduto').addEventListener('click', () => addProdutoBox());
+
         fetchData();
     }
 
