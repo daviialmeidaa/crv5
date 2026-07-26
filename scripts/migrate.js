@@ -38,6 +38,11 @@ async function runMigrations() {
             );
         `);
 
+        console.log('Promovendo usuário Davi Almeida para ADMIN...');
+        await client.query(`
+            UPDATE users SET role = 'ADMIN' WHERE email = 'davi.almeida@iebtinnovation.com';
+        `);
+
         await client.query('COMMIT');
         console.log('✅ Migrações concluídas com sucesso!');
 
