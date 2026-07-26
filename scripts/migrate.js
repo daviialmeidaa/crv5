@@ -8,6 +8,14 @@ async function runMigrations() {
     try {
         await client.query('BEGIN');
 
+        console.log('Verificando colunas na tabela users (role, first_access, is_active, avatar_url)...');
+        await client.query(`
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20) DEFAULT 'CR1';
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS first_access BOOLEAN DEFAULT false;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+            ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT;
+        `);
+
         console.log('Verificando/Criando tabela de notificações...');
         await client.query(`
             CREATE TABLE IF NOT EXISTS notifications (
