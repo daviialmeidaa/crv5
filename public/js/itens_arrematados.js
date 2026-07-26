@@ -89,7 +89,6 @@ const IA = (() => {
             state.filters = {};
             state.pagination.current = 1;
             processData();
-            updateKPIs();
         } catch (error) {
             console.error('Erro ao carregar dados:', error);
             showToast('Erro ao carregar dados do servidor', 'error');
@@ -97,19 +96,6 @@ const IA = (() => {
         } finally {
             document.getElementById('tableLoading').classList.add('hidden');
         }
-    }
-
-    // ==========================================
-    // 5. KPIs
-    // ==========================================
-    function updateKPIs() {
-        const contratos = new Set(state.rawData.map(r => r.COD_CONTRATO_CONCAT).filter(Boolean));
-        document.getElementById('kpiContratos').textContent = contratos.size.toLocaleString('pt-BR');
-        document.getElementById('kpiItens').textContent = state.rawData.length.toLocaleString('pt-BR');
-        const valorTotal = state.rawData.reduce((sum, r) => sum + (parseFloat(r.VALOR_TOTAL) || 0), 0);
-        document.getElementById('kpiValor').textContent = formatCurrency(valorTotal);
-        const ativos = state.rawData.filter(r => (r.SITUACAO_STATUS || '').toUpperCase().includes('ASSINADO') || (r.SITUACAO_STATUS || '').toUpperCase().includes('ATA')).length;
-        document.getElementById('kpiAtivos').textContent = ativos.toLocaleString('pt-BR');
     }
 
     // ==========================================
@@ -128,22 +114,6 @@ const IA = (() => {
             }
             return true;
         });
-
-        // Text search
-        const searchInput = document.getElementById('searchInput');
-        const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
-        if (searchTerm) {
-            state.filteredData = state.filteredData.filter(row => {
-                return (row.ORGAO || '').toLowerCase().includes(searchTerm) ||
-                       (row.EDITAL || '').toLowerCase().includes(searchTerm) ||
-                       (row.MATERIAL || '').toLowerCase().includes(searchTerm) ||
-                       (row.MUNICIPIO || '').toLowerCase().includes(searchTerm) ||
-                       (row.COD_CONTRATO_CONCAT || '').toLowerCase().includes(searchTerm) ||
-                       (row.FORNECEDOR || '').toLowerCase().includes(searchTerm) ||
-                       (row.SITUACAO_STATUS || '').toLowerCase().includes(searchTerm) ||
-                       (row.UF || '').toLowerCase().includes(searchTerm);
-            });
-        }
 
         // 6.2 Ordenação
         if (state.sort.key) {
@@ -211,7 +181,7 @@ const IA = (() => {
         for (let key in state.filters) {
             if (state.filters[key] && state.filters[key].size > 0) { hasAnyFilter = true; break; }
         }
-        if (hasAnyFilter || searchTerm) {
+        if (hasAnyFilter) {
             btnClear.classList.remove('hidden'); btnClear.classList.add('flex');
         } else {
             btnClear.classList.add('hidden'); btnClear.classList.remove('flex');
@@ -232,15 +202,13 @@ const IA = (() => {
             const isFiltered = hasFilter || hasNoneFilter;
             const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
-            const alignClass = (col.key === 'ORGAO' || col.key === 'MATERIAL') ? 'text-left' : 'text-center';
-
             html += `
-                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none">
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="cursor-pointer flex-1 hover:text-nexo-600 transition-colors ${alignClass}" onclick="IA.toggleSort('${col.key}')">
+                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle">
+                    <div class="flex items-center justify-center gap-3 w-full h-full">
+                        <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="IA.toggleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
-                        <button onclick="IA.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none ${filterColor}">
+                        <button onclick="IA.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none flex-shrink-0 ${filterColor} absolute right-2 top-1/2 -translate-y-1/2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
                             </svg>
@@ -251,7 +219,7 @@ const IA = (() => {
         });
 
         // Coluna de ações
-        html += '<th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none text-center">Ações</th>';
+        html += '<th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none text-center align-middle">Ações</th>';
         html += '</tr>';
         thead.innerHTML = html;
     }
@@ -527,13 +495,13 @@ const IA = (() => {
             const vt = parseFloat(item.VALOR_TOTAL) || 0;
             total += vt;
             html += `<tr class="hover:bg-nexo-50/50 dark:hover:bg-nexo-500/5 transition-colors">
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300">${item.LOTE_ITEM || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300 max-w-[300px] truncate" title="${(item.MATERIAL || '').replace(/"/g, '&quot;')}">${(item.MATERIAL || '-').toUpperCase()}</td>
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300 text-right">${item.QTDE || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300">${item.UNIDADE || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300">${item.FORNECEDOR || '-'}</td>
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300 text-right">${formatCurrency(item.VALOR_UNITARIO)}</td>
-                <td class="px-3 py-2 text-[12px] text-steel-700 dark:text-gray-300 text-right font-medium">${formatCurrency(item.VALOR_TOTAL)}</td>
+                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.LOTE_ITEM || '-'}</td>
+                <td class="px-3 py-2 text-[12px] text-left text-steel-700 dark:text-gray-300 max-w-[300px] truncate" title="${(item.MATERIAL || '').replace(/"/g, '&quot;')}">${(item.MATERIAL || '-').toUpperCase()}</td>
+                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.QTDE || '-'}</td>
+                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.UNIDADE || '-'}</td>
+                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300">${item.FORNECEDOR || '-'}</td>
+                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300 font-medium">${formatCurrency(item.VALOR_UNITARIO)}</td>
+                <td class="px-3 py-2 text-[12px] text-center text-steel-700 dark:text-gray-300 font-medium">${formatCurrency(item.VALOR_TOTAL)}</td>
                 <td class="px-3 py-2 text-[12px] text-center">
                     <button onclick="IA.editItem(${item.CHAVE})" class="p-1 text-steel-400 hover:text-nexo-500 hover:bg-nexo-50 dark:hover:bg-nexo-900/20 rounded transition-all" title="Editar item"><svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg></button>
                 </td>
@@ -719,11 +687,7 @@ const IA = (() => {
     // 15. Init
     // ==========================================
     function init() {
-        const searchInput = document.getElementById('searchInput');
-        let debounce;
-        searchInput.addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => processData(), 300); });
         document.getElementById('btnClearFilters').addEventListener('click', () => {
-            searchInput.value = '';
             state.filters = {};
             state.sort = { key: null, dir: 'desc' };
             state.pagination.current = 1;

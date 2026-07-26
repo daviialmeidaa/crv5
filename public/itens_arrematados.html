@@ -199,54 +199,7 @@
         <!-- Content Area -->
         <div class="flex-1 p-6 overflow-hidden flex flex-col">
             
-            <!-- KPI Cards Row -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-5 fade-in-up">
-                <!-- Total Contratos -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Contratos</span>
-                        <div class="w-8 h-8 rounded-lg bg-nexo-50 dark:bg-nexo-900/30 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-nexo-600 dark:text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                        </div>
-                    </div>
-                    <p id="kpiContratos" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
-                    <p class="text-xs text-steel-400 mt-1">Contratos únicos</p>
-                </div>
-                <!-- Total Itens -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Itens</span>
-                        <div class="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-                        </div>
-                    </div>
-                    <p id="kpiItens" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
-                    <p class="text-xs text-steel-400 mt-1">Linhas de itens</p>
-                </div>
-                <!-- Valor Total -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Valor Total</span>
-                        <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                    </div>
-                    <p id="kpiValor" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
-                    <p class="text-xs text-steel-400 mt-1">Somatório valor total</p>
-                </div>
-                <!-- Ativos -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 shadow-sm">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-xs font-medium text-steel-500 dark:text-steel-400 uppercase tracking-wide">Ativos</span>
-                        <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                    </div>
-                    <p id="kpiAtivos" class="text-2xl font-bold text-steel-800 dark:text-gray-100">--</p>
-                    <p class="text-xs text-steel-400 mt-1">Com ata/contrato assinado</p>
-                </div>
-            </div>
-
+            <!-- KPI Cards Row (Removido a pedido) -->
             <!-- Ferramentas e Filtros -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 fade-in-up" style="animation-delay: 0.1s">
                 <div class="flex items-center gap-2">
@@ -255,8 +208,6 @@
                         <button id="tabNexomed" onclick="IA.switchTab('NEXOMED')" class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all bg-white dark:bg-steel-600 text-steel-800 dark:text-white shadow-sm">NEXOMED</button>
                         <button id="tabBml" onclick="IA.switchTab('BML')" class="px-4 py-1.5 text-xs font-semibold rounded-md transition-all text-steel-500 dark:text-steel-400 hover:text-steel-700 dark:hover:text-gray-200">BML</button>
                     </div>
-                    <!-- Search -->
-                    <input id="searchInput" type="text" placeholder="Buscar por órgão, edital, material..." class="px-4 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-64 md:w-80 transition-all shadow-sm">
                 </div>
                 
                 <div class="flex items-center gap-3">
@@ -662,15 +613,15 @@
                         <div class="overflow-x-auto custom-scrollbar">
                             <table class="w-full text-left border-collapse min-w-max">
                                 <thead class="bg-gray-50 dark:bg-steel-900">
-                                    <tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Lote/Item</th>
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Material</th>
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-right">Qtde</th>
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Unidade</th>
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap">Fornecedor</th>
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-right">Vlr. Unit.</th>
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-right">Vlr. Total</th>
-                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center">Editar</th>
+                                    <tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium text-center align-middle">
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Lote/Item</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Material</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Qtde</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Unidade</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Fornecedor</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Vlr. Unit.</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Vlr. Total</th>
+                                        <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap text-center align-middle">Editar</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cmItensBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm">
