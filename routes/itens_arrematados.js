@@ -136,7 +136,7 @@ router.post('/', async (req, res) => {
 
         const saved = result.rows[0];
 
-        // Disparar Notificação
+        // Disparar Notificação e Alimentar Contratos
         try {
             const userName = req.user && req.user.nome ? req.user.nome : 'Usuário';
             const userId = req.user ? req.user.id : null;
@@ -144,8 +144,17 @@ router.post('/', async (req, res) => {
             
             const msg = `${userName} acaba de inserir um novo contrato na ${empresa}, Codigo ${saved.COD_CONTRATO_CONCAT || '-'}, Orgão ${saved.ORGAO || '-'}, UF ${saved.UF || '-'}, Edital ${saved.EDITAL || '-'}, Tipo de Contrato ${saved.TIPO_CONTRATO || '-'} e Classificação ${saved.CLASSIFICACAO || '-'}.`;
             await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'INSERT', msg, userId]);
+
+            // Alimentar banco local na tabela 'contratos' do Contas a Receber
+            if (saved.COD_CONTRATO_CONCAT) {
+                await pgPool.query(`
+                    INSERT INTO contratos (codigo_contrato, empresa, edital, tipo_contrato, classificacao)
+                    VALUES ($1, $2, $3, $4, $5)
+                    ON CONFLICT (codigo_contrato) DO NOTHING;
+                `, [saved.COD_CONTRATO_CONCAT, empresa, saved.EDITAL || '', saved.TIPO_CONTRATO || '', saved.CLASSIFICACAO || '']);
+            }
         } catch (e) {
-            console.error('Erro ao gerar notificação de INSERT:', e);
+            console.error('Erro ao gerar notificação ou inserir no contratos:', e);
         }
 
         res.status(201).json(saved);
@@ -245,9 +254,24 @@ router.put('/:chave', async (req, res) => {
                     const msg = `O ${userName} acaba de alterar ${changes.join(', ')} no contrato ${saved.COD_CONTRATO_CONCAT || '-'}.`;
                     await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'UPDATE', msg, userId]);
                 }
+
+                // Alimentar banco local na tabela 'contratos' do Contas a Receber
+                // O usuário pediu para atualizar quando TIPO_CONTRATO e CLASSIFICACAO forem atualizados,
+                // verificaremos se essas colunas (ou edital) sofreram alteração.
+                const changedContratoInfo = changes.some(c => c.includes('Tipo de Contrato') || c.includes('Classificação') || c.includes('Edital') || c.includes('Cód. Contrato'));
+                
+                if (changedContratoInfo && saved.COD_CONTRATO_CONCAT) {
+                    const empresa = saved.PARTICIPANTE ? (saved.PARTICIPANTE.toUpperCase().includes('BML') ? 'BML' : 'Nexomed') : 'Nexomed';
+                    await pgPool.query(`
+                        UPDATE contratos 
+                        SET edital = $1, tipo_contrato = $2, classificacao = $3, updated_at = CURRENT_TIMESTAMP
+                        WHERE codigo_contrato = $4 AND empresa = $5
+                    `, [saved.EDITAL || '', saved.TIPO_CONTRATO || '', saved.CLASSIFICACAO || '', saved.COD_CONTRATO_CONCAT, empresa]);
+                }
+
             }
         } catch (e) {
-            console.error('Erro ao gerar notificação de UPDATE:', e);
+            console.error('Erro ao gerar notificação ou atualizar no contratos:', e);
         }
 
         res.json(saved);
