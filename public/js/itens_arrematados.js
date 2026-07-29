@@ -497,6 +497,7 @@ const IA = (() => {
         document.getElementById('formCodContratoConcat').value = ref.COD_CONTRATO_CONCAT || '';
         document.getElementById('formEdital').value = ref.EDITAL || '';
         document.getElementById('formParticipante').value = ref.PARTICIPANTE || 'NEXOMED';
+        document.getElementById('formParticipante').disabled = true;
         document.getElementById('formOrgao').value = ref.ORGAO || '';
         document.getElementById('formUF').value = ref.UF || '';
         document.getElementById('formMunicipio').value = ref.MUNICIPIO || '';
@@ -559,6 +560,7 @@ const IA = (() => {
         title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item Arrematado`;
         if (deleteBtn) deleteBtn.classList.add('hidden');
         document.getElementById('formParticipante').value = currentTab === 'BML' ? 'BML HOSPITALAR' : 'NEXOMED';
+        document.getElementById('formParticipante').disabled = false;
         document.getElementById('btnAddProduto').classList.remove('hidden');
         addProdutoBox(); // Adiciona 1 produto vazio
         modal.classList.remove('hidden');
