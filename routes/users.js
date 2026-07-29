@@ -72,10 +72,14 @@ router.put('/profile', authMiddleware, async (req, res) => {
         }
 
         const result = await pgPool.query(query, values);
+        
+        const updatedUser = result.rows[0];
+        const { getPermissionsForRole } = require('../middleware/rbac');
+        updatedUser.permissions = getPermissionsForRole(updatedUser.role);
 
         res.json({
             message: 'Perfil atualizado com sucesso!',
-            user: result.rows[0]
+            user: updatedUser
         });
 
     } catch (error) {
