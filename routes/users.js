@@ -58,26 +58,9 @@ router.put('/profile', authMiddleware, async (req, res) => {
     try {
         // Se a imagem for enviada em base64
         if (avatarBase64 && avatarBase64.startsWith('data:image')) {
-            const matches = avatarBase64.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-
-            if (matches && matches.length === 3) {
-                const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-                const base64Data = matches[2];
-                const buffer = Buffer.from(base64Data, 'base64');
-
-                // Define o caminho físico (public/uploads/avatars/1.jpg)
-                const fileName = `${userId}-${Date.now()}.${ext}`;
-                const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'avatars');
-                const filePath = path.join(uploadDir, fileName);
-
-                // Garante que o diretório existe
-                if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, { recursive: true });
-                }
-
-                fs.writeFileSync(filePath, buffer);
-                avatarUrl = `/uploads/avatars/${fileName}`;
-            }
+            // No Heroku, o sistema de arquivos é efêmero (apagado a cada deploy/restart)
+            // Para não precisar de AWS S3, vamos salvar o Base64 diretamente no banco de dados.
+            avatarUrl = avatarBase64;
         }
 
         let query = 'UPDATE users SET nome = $1 WHERE id = $2 RETURNING id, nome, email, role, first_access, avatar_url';
