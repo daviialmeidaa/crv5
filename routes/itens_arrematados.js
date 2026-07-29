@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const supaPool = require('../db/supabaseConnection');
 const pgPool = require('../db/pgConnection');
+const { getPool, sql } = require('../db/connection');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { requirePermission } = require('../middleware/rbac');
 
@@ -324,6 +325,34 @@ router.delete('/:chave', async (req, res) => {
     } catch (error) {
         console.error('Erro na API Itens Arrematados (DELETE /:chave):', error);
         res.status(500).json({ error: 'Erro ao excluir item: ' + error.message });
+    }
+});
+
+// ==========================================
+// GET /api/itens_arrematados/produto_supra/:codigo
+// Busca o nome do produto no banco Supra SGC a partir do código
+// ==========================================
+router.get('/produto_supra/:codigo', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        const pool = await getPool();
+        
+        if (!pool) {
+            return res.status(500).json({ error: 'Falha na conexão com o banco de dados Supra' });
+        }
+
+        const result = await pool.request()
+            .input('codigo', sql.VarChar, codigo)
+            .query('SELECT nome FROM produto WHERE codigo = @codigo');
+
+        if (result.recordset.length > 0) {
+            res.json({ nome: result.recordset[0].nome });
+        } else {
+            res.json({ nome: null });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar produto Supra:', error);
+        res.status(500).json({ error: 'Erro interno ao buscar produto no Supra' });
     }
 });
 

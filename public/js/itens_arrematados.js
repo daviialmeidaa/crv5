@@ -879,6 +879,40 @@ const IA = (() => {
             });
         }
 
+        const codSupraInput = div.querySelector('.prod-codsupra');
+        const nomeSupraInput = div.querySelector('.prod-nomesupra');
+
+        if (codSupraInput && nomeSupraInput) {
+            codSupraInput.addEventListener('change', async (e) => {
+                const codigo = e.target.value.trim();
+                if (!codigo) {
+                    nomeSupraInput.value = '';
+                    return;
+                }
+
+                try {
+                    nomeSupraInput.placeholder = 'Buscando...';
+                    const response = await fetch(`/api/itens_arrematados/produto_supra/${codigo}`, {
+                        headers: { 'Authorization': `Bearer ${getToken()}` }
+                    });
+                    if (!response.ok) throw new Error('Erro na busca');
+                    const result = await response.json();
+                    
+                    if (result.nome) {
+                        nomeSupraInput.value = result.nome;
+                    } else {
+                        nomeSupraInput.value = '';
+                        showToast('Produto não encontrado no Supra', 'warning');
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar produto:', error);
+                    showToast('Erro ao buscar produto Supra', 'error');
+                } finally {
+                    nomeSupraInput.placeholder = '';
+                }
+            });
+        }
+
         container.appendChild(div);
     }
 
