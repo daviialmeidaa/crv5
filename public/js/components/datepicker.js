@@ -3,6 +3,16 @@ function initCustomDatepickers() {
     document.querySelectorAll('.custom-datepicker:not(.initialized)').forEach(originalInput => {
         originalInput.classList.add('initialized');
         
+        // Função auxiliar para normalizar datas do BD (DD/MM/YYYY ou ISO)
+        function parseDate(val) {
+            if (!val) return '';
+            if (val.includes('/')) {
+                const p = val.split('/');
+                if (p.length === 3) return `${p[2]}-${p[1]}-${p[0]}`;
+            }
+            return val.split('T')[0];
+        }
+        
         // Esconder o input original mas mantê-lo no DOM para o código existente conseguir ler seu .value
         originalInput.style.display = 'none';
         
@@ -22,11 +32,13 @@ function initCustomDatepickers() {
         // Copia a estética do input original
         displayInput.className = 'w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 hover:border-nexo-500 input-glow transition-all cursor-pointer';
         
-        // Sincronizar valor inicial
-        if (originalInput.value) {
-            // value nativo do input type="date" é sempre YYYY-MM-DD
-            const parts = originalInput.value.split('-');
-            if(parts.length === 3) {
+        // Sincronizar valor inicial (suportando se o BD mandou atributo em formato brasileiro ou ISO)
+        let rawVal = originalInput.getAttribute('value') || originalInput.value;
+        if (rawVal) {
+            const isoVal = parseDate(rawVal);
+            originalInput.value = isoVal; // Força pro formato ISO para o form original
+            const parts = isoVal.split('-');
+            if (parts.length === 3) {
                 displayInput.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
         }
@@ -319,7 +331,25 @@ function initCustomDatepickers() {
             }
         });
         
-        // Sincronizar caso o JS set um valor no originalInput diretamente
+        // Interceptador para quando o Javascript da página (ex: populateForm) faz: originalInput.value = "..."
+        const descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+        if (descriptor && descriptor.set) {
+            Object.defineProperty(originalInput, 'value', {
+                get: function() { return descriptor.get.call(this); },
+                set: function(val) {
+                    const isoVal = parseDate(val);
+                    descriptor.set.call(this, isoVal);
+                    if (this.value) {
+                        const parts = this.value.split('-');
+                        if (parts.length === 3) displayInput.value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    } else {
+                        displayInput.value = '';
+                    }
+                }
+            });
+        }
+        
+        // Sincronizar caso o JS dispare um evento nativo manual de change
         originalInput.addEventListener('change', () => {
             if (originalInput.value) {
                 const parts = originalInput.value.split('-');
