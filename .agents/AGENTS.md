@@ -95,9 +95,12 @@ As métricas do Dashboard obedecem a uma matemática estrita baseada na tabela d
 - Os agentes e o frontend nunca devem referenciar "se o usuário é admin", mas sim verificar a permissão específica exigida para o contexto de exibição ou ação (ex: ocultar um link via JS lendo `user.permissions.canViewCR`).
 
 ## Navegação Lateral (Sidebar e Submenus)
-- **Estrutura Expandível:** Os links no menu lateral (Sidebar) agora estão agrupados sob blocos lógicos principais (Ex: `Financeiro` e `Licitações`).
+- **Estrutura Expandível:** Os links no menu lateral (Sidebar) agora estão agrupados sob blocos lógicos principais (Ex: `Financeiro` e `Licitações`) categorizados em cabeçalhos (Ex: `MAIN` e `HUB`).
 - A visibilidade de blocos completos é gerenciada dinamicamente pelo `public/js/layout.js`, que utiliza os IDs dos grupos (como `menu-group-financeiro` ou `menu-group-licitacoes`) para omitir itens da tela caso o usuário não possua permissão (RBAC) para ver qualquer item interno do bloco.
-- A mecânica de expansão/colapso (`sidebar-submenu`, `.hidden`) é tratada globalmente via JS, evitando dependências ou comportamentos hard-coded de CSS.
+- **Abertura Inteligente de Submenus:** A mecânica de expansão/colapso (`sidebar-submenu`, `.hidden`) é tratada globalmente via JS (`layout.js`), MAS na montagem inicial do HTML (build-time/server-side), o grupo que contém a página atual ativa DEVE ser renderizado já aberto (sem a classe `hidden`) e com a rotação do Chevron em `90deg`.
+- **Rotação do Chevron:** O ícone de seta (`sidebar-chevron`) é desenhado nativamente apontando para a direita (`d="M9 5l7 7-7 7"`). Quando o submenu está aberto, o JS aplica a rotação `transform: rotate(90deg)` (apontando para baixo). O estado fechado retorna a `rotate(0deg)`.
+- **Estética "Sash" (Design Premium):** Botões e links da sidebar NÃO usam fundos sólidos pesados. Quando uma rota está ativa, ela deve utilizar tipografia Semibold na cor primária (`text-nexo-400`) e um background sutil de 10% de opacidade (`bg-nexo-500/10`). Ícones internos de submenu usam um marcador circular vazado (`span` vazio com borda `border-current`).
+- **ATENÇÃO AO TAILWIND JIT:** Ao injetar classes via scripts dinâmicos (Javascript executado em node, por exemplo), aspas invertidas de *Template Literals* (`${variável}`) NUNCA devem ser escapadas com `\`, pois isso força a string literal no HTML final, inutilizando a compilação do Tailwind CDN (ex: quebrando as classes do `flexbox`).
 
 ## Peculiaridades do Banco de Dados Legado (Supra ERP)
 - **Cruzamento de Tabelas de Itens da Nota:** A arquitetura original do banco de dados do Supra possui um relacionamento anti-intuitivo para o cruzamento entre cabeçalho (`nota_fiscal_venda`) e itens (`nota_fiscal_venda_item`). A coluna `nf_numero` na tabela de itens **NÃO** armazena o número da nota fiscal (`numero_nota`). Ela armazena o ID Primário Interno da tabela pai (`codigo`).

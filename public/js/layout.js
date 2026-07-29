@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (submenu) {
                 if (submenu.classList.contains('hidden')) {
                     submenu.classList.remove('hidden');
-                    if(chevron) chevron.style.transform = 'rotate(180deg)';
+                    if(chevron) chevron.style.transform = 'rotate(90deg)';
                 } else {
                     submenu.classList.add('hidden');
                     if(chevron) chevron.style.transform = 'rotate(0deg)';
