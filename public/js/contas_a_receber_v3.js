@@ -467,8 +467,27 @@ const ContasGrid = (function () {
                         tree['-']['-'].push(val);
                         return;
                     }
-                    const [y, m, d] = val.split('-');
-                    if (!y || !m || !d) {
+                    
+                    let y, m, d;
+                    const valStr = String(val);
+                    
+                    if (valStr.includes('-') && valStr.split('-').length >= 3) {
+                        const datePart = valStr.split('T')[0];
+                        const parts = datePart.split('-');
+                        if (parts.length === 3) {
+                            [y, m, d] = parts;
+                        }
+                    } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
+                        const datePart = valStr.split(' ')[0];
+                        const parts = datePart.split('/');
+                        if (parts.length === 3) {
+                            d = parts[0];
+                            m = parts[1];
+                            y = parts[2];
+                        }
+                    }
+
+                    if (!y || !m || !d || isNaN(y) || isNaN(m) || isNaN(d)) {
                         if (!tree['Outros']) tree['Outros'] = {};
                         if (!tree['Outros']['-']) tree['Outros']['-'] = [];
                         tree['Outros']['-'].push(val);
@@ -526,7 +545,7 @@ const ContasGrid = (function () {
                         renderCheckboxes(searchTerm);
                     };
 
-                    Object.keys(tree[year]).sort((a,b) => b.localeCompare(a)).forEach(month => {
+                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
                         const monthVals = tree[year][month];
                         const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
                         
@@ -577,6 +596,19 @@ const ContasGrid = (function () {
                             const dHeader = document.createElement('div');
                             dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
                             let displayVal = formatDate(val);
+                            
+                            const valStr = String(val);
+                            if (valStr.includes('-') && valStr.split('-').length >= 3) {
+                                const datePart = valStr.split('T')[0];
+                                if (datePart.split('-').length === 3) {
+                                    displayVal = datePart.split('-')[2];
+                                }
+                            } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
+                                const datePart = valStr.split(' ')[0];
+                                if (datePart.split('/').length === 3) {
+                                    displayVal = datePart.split('/')[0];
+                                }
+                            }
                             dHeader.innerHTML = `
                                 <div class="w-3"></div>
                                 <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
