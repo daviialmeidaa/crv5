@@ -731,6 +731,7 @@ const IA = (() => {
         items.forEach(item => addProdutoBox(item));
 
         modal.classList.remove('hidden');
+        if (typeof initCustomDatepickers === 'function') initCustomDatepickers();
     }
 
     function closeContratoModal() {
@@ -764,6 +765,7 @@ const IA = (() => {
         document.getElementById('btnAddProduto').classList.remove('hidden');
         addProdutoBox(); // Adiciona 1 produto vazio
         modal.classList.remove('hidden');
+        if (typeof initCustomDatepickers === 'function') initCustomDatepickers();
     }
 
     function closeModal() {
@@ -786,7 +788,7 @@ const IA = (() => {
         const hasSupra = !!(data.COD_SUPRA || data.NOME_SUPRA);
         
         const div = document.createElement('div');
-        div.className = 'produto-box border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-hidden transition-all duration-300';
+        div.className = 'produto-box border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
         if (data.CHAVE) div.dataset.chave = data.CHAVE; // Marcar com a CHAVE original para edição
 
         div.innerHTML = `
@@ -887,7 +889,7 @@ const IA = (() => {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Proposta</label>
-                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dproposta" value="${data.DATA_PROPOSTA ? data.DATA_PROPOSTA.split('T')[0] : ''}">
+                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dproposta" value="${data.DATA_PROPOSTA ? data.DATA_PROPOSTA.split('T')[0] : ''}">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Código Status</label>
@@ -915,19 +917,19 @@ const IA = (() => {
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Início</label>
-                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dinicio" value="${data.DATA_INICIO ? data.DATA_INICIO.split('T')[0] : ''}">
+                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dinicio" value="${data.DATA_INICIO ? data.DATA_INICIO.split('T')[0] : ''}">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Término</label>
-                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dtermino" value="${data.DATA_TERMINO ? data.DATA_TERMINO.split('T')[0] : ''}">
+                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dtermino" value="${data.DATA_TERMINO ? data.DATA_TERMINO.split('T')[0] : ''}">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Empenho</label>
-                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dempenho" value="${data.DATA_EMPENHO ? data.DATA_EMPENHO.split('T')[0] : ''}">
+                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dempenho" value="${data.DATA_EMPENHO ? data.DATA_EMPENHO.split('T')[0] : ''}">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Adjudicação</label>
-                        <input type="date" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dadjudicacao" value="${data.DATA_ADJUDICACAO ? data.DATA_ADJUDICACAO.split('T')[0] : ''}">
+                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dadjudicacao" value="${data.DATA_ADJUDICACAO ? data.DATA_ADJUDICACAO.split('T')[0] : ''}">
                     </div>
                 </div>
                 </div>
@@ -1114,6 +1116,7 @@ const IA = (() => {
         }
 
         container.appendChild(div);
+        if (typeof initCustomDatepickers === 'function') initCustomDatepickers();
     }
 
     function populateForm(r) {
