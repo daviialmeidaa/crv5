@@ -1203,16 +1203,16 @@ const ContasGrid = (function () {
                 let dateStr = '---';
                 if (f.data) {
                     const d = new Date(f.data);
-                    // Não adicionar userTimezoneOffset pois essa hora pode vir UTC puro e acabar avançando ou recuando se errarmos o offset de datas com timestamp (Diferente da emissão que era dia zerado). 
-                    // No sql server geralmente vem localtime, então no javascript new Date(string_sem_z) ele assume local.
-                    // Para garantir consistência vamos tentar formatar o mais simples.
+                    // O banco SQL Server salva a hora local, mas ao enviar via JSON o node converte para UTC adicionando o 'Z'.
+                    // Por isso, devemos extrair os dados usando os métodos UTC para ignorar o fuso horário do navegador
+                    // e exibir exatamente os dígitos que vieram do banco (ex: 10:05 ao invés de 07:05).
                     if (!isNaN(d)) {
-                        const day = String(d.getDate()).padStart(2, '0');
-                        const month = String(d.getMonth() + 1).padStart(2, '0');
-                        const year = d.getFullYear();
-                        const h = String(d.getHours()).padStart(2, '0');
-                        const m = String(d.getMinutes()).padStart(2, '0');
-                        const s = String(d.getSeconds()).padStart(2, '0');
+                        const day = String(d.getUTCDate()).padStart(2, '0');
+                        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+                        const year = d.getUTCFullYear();
+                        const h = String(d.getUTCHours()).padStart(2, '0');
+                        const m = String(d.getUTCMinutes()).padStart(2, '0');
+                        const s = String(d.getUTCSeconds()).padStart(2, '0');
                         dateStr = `${day}/${month}/${year} ${h}:${m}:${s}`;
                     } else {
                         // fallback to string direct print if it was an ISO or something that can't be parsed
