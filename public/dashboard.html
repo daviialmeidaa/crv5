@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
+
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
     <script src="/js/auth_guard.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | Nexomed - Contas a Receber</title>
+    <title>Dashboard | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -18,7 +19,7 @@
                 extend: {
                     colors: {
                         nexo: {
-                            50:  '#e0f7fa',
+                            50: '#e0f7fa',
                             100: '#b2ebf2',
                             200: '#80deea',
                             300: '#4dd0e1',
@@ -49,19 +50,40 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body.loading-auth { visibility: hidden; }
-        
+        body.loading-auth {
+            visibility: hidden;
+        }
+
         /* Layout Fixos (Sidebar) */
-        aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; } /* w-20 */
-        body.sidebar-collapsed .sidebar-text { display: none; }
-        body.sidebar-collapsed .logo-full { display: none; }
-        body.sidebar-collapsed .logo-mini { display: block; }
-        
-        .logo-mini { display: none; }
-        
+        aside {
+            transition: width 0.3s ease;
+        }
+
+        body.sidebar-collapsed aside {
+            width: 5rem !important;
+        }
+
+        /* w-20 */
+        body.sidebar-collapsed .sidebar-text {
+            display: none;
+        }
+
+        body.sidebar-collapsed .logo-full {
+            display: none;
+        }
+
+        body.sidebar-collapsed .logo-mini {
+            display: block;
+        }
+
+        .logo-mini {
+            display: none;
+        }
+
         /* Google GeoChart: forçar fundo transparente apenas no iframe */
-        #brazilMapContainer > div > div > iframe { background: transparent !important; }
+        #brazilMapContainer>div>div>iframe {
+            background: transparent !important;
+        }
     </style>
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
@@ -70,51 +92,75 @@
         }
     </script>
 </head>
-<body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
-    
+
+<body
+    class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
-        <a href="/dashboard" class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
+    <aside
+        class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
+        <a href="/dashboard"
+            class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
             <img src="/assets/images/logo.png" alt="Nexomed" class="h-7 logo-full">
             <img src="/assets/images/simbolo.png" alt="NX" class="h-8 logo-mini mx-auto">
         </a>
         <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto custom-scrollbar">
-            <a href="/dashboard" class="flex items-center gap-3 px-4 py-2.5 bg-nexo-600/90 text-white rounded-lg text-sm font-medium transition-colors" title="Dashboard">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+            <a href="/dashboard"
+                class="flex items-center gap-3 px-4 py-2.5 bg-nexo-600/90 text-white rounded-lg text-sm font-medium transition-colors"
+                title="Dashboard">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                 </svg>
                 <span class="sidebar-text truncate">Dashboard</span>
             </a>
 
             <!-- Grupo Financeiro -->
             <div class="sidebar-group" id="menu-group-financeiro">
-                <button class="w-full flex items-center justify-between px-4 py-2.5 text-steel-400 hover:bg-steel-800 hover:text-white rounded-lg text-sm font-medium transition-colors sidebar-group-btn">
+                <button
+                    class="w-full flex items-center justify-between px-4 py-2.5 text-steel-400 hover:bg-steel-800 hover:text-white rounded-lg text-sm font-medium transition-colors sidebar-group-btn">
                     <div class="flex items-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                         <span class="sidebar-text truncate">Financeiro</span>
                     </div>
-                    <svg class="w-4 h-4 transition-transform duration-200 sidebar-chevron sidebar-text" style="" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    <svg class="w-4 h-4 transition-transform duration-200 sidebar-chevron sidebar-text" style=""
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </button>
                 <div class="sidebar-submenu hidden pl-11 pr-4 py-1 space-y-1">
-                    <a href="/contas_a_receber" class="block py-2 text-sm text-steel-400 hover:text-white transition-colors sidebar-text">Contas a Receber</a>
+                    <a href="/contas_a_receber"
+                        class="block py-2 text-sm text-steel-400 hover:text-white transition-colors sidebar-text">Contas
+                        a Receber</a>
                 </div>
             </div>
 
             <!-- Grupo Licitações -->
             <div class="sidebar-group" id="menu-group-licitacoes">
-                <button class="w-full flex items-center justify-between px-4 py-2.5 text-steel-400 hover:bg-steel-800 hover:text-white rounded-lg text-sm font-medium transition-colors sidebar-group-btn">
+                <button
+                    class="w-full flex items-center justify-between px-4 py-2.5 text-steel-400 hover:bg-steel-800 hover:text-white rounded-lg text-sm font-medium transition-colors sidebar-group-btn">
                     <div class="flex items-center gap-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px] shrink-0" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                         </svg>
                         <span class="sidebar-text truncate">Licitações</span>
                     </div>
-                    <svg class="w-4 h-4 transition-transform duration-200 sidebar-chevron sidebar-text" style="" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    <svg class="w-4 h-4 transition-transform duration-200 sidebar-chevron sidebar-text" style=""
+                        viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </button>
                 <div class="sidebar-submenu hidden pl-11 pr-4 py-1 space-y-1">
-                    <a href="/itens_arrematados" class="block py-2 text-sm text-steel-400 hover:text-white transition-colors sidebar-text">Itens Arrematados</a>
+                    <a href="/itens_arrematados"
+                        class="block py-2 text-sm text-steel-400 hover:text-white transition-colors sidebar-text">Itens
+                        Arrematados</a>
                 </div>
             </div>
 
@@ -124,43 +170,63 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
         <!-- Header -->
-        <header class="h-16 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-40 transition-colors duration-200 shrink-0">
+        <header
+            class="h-16 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-40 transition-colors duration-200 shrink-0">
             <div class="flex items-center gap-4">
-                <button id="sidebarToggleBtn" class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                <button id="sidebarToggleBtn"
+                    class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
                 <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Dashboard</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- Dark Mode Toggle -->
-                <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
-                    <svg id="sunIcon" class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                <button id="themeToggle"
+                    class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors"
+                    title="Alternar tema">
+                    <svg id="sunIcon" class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
                     </svg>
-                    <svg id="moonIcon" class="h-5 w-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    <svg id="moonIcon" class="h-5 w-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
                     </svg>
                 </button>
 
                 <!-- Profile Dropdown -->
                 <div class="relative">
                     <button id="profileDropdownBtn" class="flex items-center gap-2 focus:outline-none">
-                        <div class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">U</div>
+                        <div
+                            class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">
+                            U</div>
                     </button>
                     <!-- Dropdown Menu -->
-                    <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
+                    <div id="profileDropdownMenu"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
                         <div class="px-4 py-2 border-b border-gray-100 dark:border-steel-700 mb-1">
                             <p class="text-sm font-medium text-steel-800 dark:text-gray-100 truncate">Usuário Logado</p>
                             <p class="text-xs text-steel-500 dark:text-steel-400 truncate">usuario@nexomed.com</p>
                         </div>
-                        <a href="/perfil" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver Perfil</a>
-                        <a href="/cadastro_usuario" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Cadastrar Usuário</a>
-                        <a href="/usuarios" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Ver Usuários</a>
+                        <a href="/perfil"
+                            class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver
+                            Perfil</a>
+                        <a href="/cadastro_usuario"
+                            class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Cadastrar
+                            Usuário</a>
+                        <a href="/usuarios"
+                            class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Ver
+                            Usuários</a>
                         <div class="border-t border-gray-100 dark:border-steel-700 mt-1"></div>
-                        <a href="#" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-steel-700 transition-colors font-medium">Sair</a>
+                        <a href="#"
+                            class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-steel-700 transition-colors font-medium">Sair</a>
                     </div>
                 </div>
             </div>
@@ -168,24 +234,38 @@
 
         <!-- Content Area -->
         <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-steel-900/50 p-6 space-y-6">
-            
+
             <!-- Title Bar with Refresh -->
             <div class="flex items-center justify-between">
-                <h1 class="text-xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Painel Contas a Receber</h1>
-                <button id="btnRefresh" class="flex items-center gap-2 px-4 py-2 bg-nexo-500 hover:bg-nexo-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm" title="Atualizar Dados">
-                    <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                <h1 class="text-xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Painel Contas a Receber
+                </h1>
+                <button id="btnRefresh"
+                    class="flex items-center gap-2 px-4 py-2 bg-nexo-500 hover:bg-nexo-600 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                    title="Atualizar Dados">
+                    <svg id="refreshIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
                     Atualizar Dados
                 </button>
             </div>
 
             <!-- ═══════════ FILTER PILLS (Slicer-style) ═══════════ -->
-            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 space-y-4">
+            <div
+                class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider flex items-center gap-2">
-                        <svg class="w-4 h-4 text-nexo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    <h2
+                        class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider flex items-center gap-2">
+                        <svg class="w-4 h-4 text-nexo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z">
+                            </path>
+                        </svg>
                         Filtros
                     </h2>
-                    <button id="btnClearFilters" class="hidden text-xs font-medium text-rose-500 hover:text-rose-600 dark:text-rose-400 transition-colors px-3 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20">
+                    <button id="btnClearFilters"
+                        class="hidden text-xs font-medium text-rose-500 hover:text-rose-600 dark:text-rose-400 transition-colors px-3 py-1 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/20">
                         ✕ Limpar Filtros
                     </button>
                 </div>
@@ -194,39 +274,51 @@
                     <!-- Row 1: Business Filters -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-2 uppercase tracking-wider">Empresa</label>
+                            <label
+                                class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-2 uppercase tracking-wider">Empresa</label>
                             <div id="filterEmpresa" class="flex flex-wrap gap-1.5"></div>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-2 uppercase tracking-wider">Status</label>
+                            <label
+                                class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-2 uppercase tracking-wider">Status</label>
                             <div id="filterStatus" class="flex flex-wrap gap-1.5"></div>
                         </div>
                         <div>
-                            <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-2 uppercase tracking-wider">Esfera</label>
+                            <label
+                                class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 mb-2 uppercase tracking-wider">Esfera</label>
                             <div id="filterEsfera" class="flex flex-wrap gap-1.5"></div>
                         </div>
                     </div>
 
                     <!-- Toggle Advanced Filters Button -->
                     <div class="flex items-center pt-2">
-                        <button id="btnToggleAdvancedFilters" type="button" class="text-[11px] font-semibold text-nexo-600 dark:text-nexo-400 flex items-center gap-1 hover:text-nexo-700 dark:hover:text-nexo-300 transition-colors">
+                        <button id="btnToggleAdvancedFilters" type="button"
+                            class="text-[11px] font-semibold text-nexo-600 dark:text-nexo-400 flex items-center gap-1 hover:text-nexo-700 dark:hover:text-nexo-300 transition-colors">
                             <span id="advancedFiltersText">Mostrar mais filtros</span>
-                            <svg id="advancedFiltersIcon" class="w-3 h-3 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <svg id="advancedFiltersIcon" class="w-3 h-3 transition-transform duration-200" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
                         </button>
                     </div>
 
                     <!-- Row 2: Data-Heavy Filters (Collapsible) -->
-                    <div id="advancedFiltersContainer" class="hidden grid-cols-1 xl:grid-cols-3 gap-6 pt-4 border-t border-gray-100 dark:border-steel-700/50 mt-2">
+                    <div id="advancedFiltersContainer"
+                        class="hidden grid-cols-1 xl:grid-cols-3 gap-6 pt-4 border-t border-gray-100 dark:border-steel-700/50 mt-2">
                         <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">UF</label>
+                            <label
+                                class="text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">UF</label>
                             <div id="filterUf" class="grid grid-cols-10 gap-1.5 w-fit"></div>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Ano</label>
+                            <label
+                                class="text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Ano</label>
                             <div id="filterAno" class="grid grid-cols-7 gap-1.5 w-fit"></div>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <label class="text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Mês</label>
+                            <label
+                                class="text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Mês</label>
                             <div id="filterMes" class="grid grid-cols-6 gap-1.5 w-fit"></div>
                         </div>
                     </div>
@@ -235,13 +327,20 @@
 
             <!-- ═══════════ TOP ROW: MAP + KPI TOTAIS ═══════════ -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
+
                 <!-- Mapa do Brasil -->
-                <div class="lg:col-span-5 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 flex flex-col">
-                    <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-3">Distribuição por UF</h3>
+                <div
+                    class="lg:col-span-5 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5 flex flex-col">
+                    <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-3">
+                        Distribuição por UF</h3>
                     <div id="brazilMapContainer" class="flex-1 w-full min-h-[260px] rounded-lg overflow-hidden">
                         <div class="w-full h-full flex items-center justify-center">
-                            <svg class="w-8 h-8 animate-spin text-nexo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                            <svg class="w-8 h-8 animate-spin text-nexo-500" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
                         </div>
                     </div>
                 </div>
@@ -249,33 +348,48 @@
                 <!-- Totais KPI -->
                 <div class="lg:col-span-7 flex flex-col gap-4 lg:gap-5">
                     <!-- Total Vendido -->
-                    <div class="flex-1 flex flex-col justify-center bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
+                    <div
+                        class="flex-1 flex flex-col justify-center bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-sm font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Total Vendido</h3>
-                            <span class="text-sm font-bold font-mono text-steel-800 dark:text-gray-100" id="kpiTotalVendido">R$ 0,00</span>
+                            <h3 class="text-sm font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">
+                                Total Vendido</h3>
+                            <span class="text-sm font-bold font-mono text-steel-800 dark:text-gray-100"
+                                id="kpiTotalVendido">R$ 0,00</span>
                         </div>
                         <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
-                            <div id="barTotalVendido" class="h-full bg-gradient-to-r from-nexo-500 to-nexo-400 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                            <div id="barTotalVendido"
+                                class="h-full bg-gradient-to-r from-nexo-500 to-nexo-400 rounded-full transition-all duration-700 ease-out"
+                                style="width: 0%"></div>
                         </div>
                     </div>
                     <!-- Total Recebido -->
-                    <div class="flex-1 flex flex-col justify-center bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
+                    <div
+                        class="flex-1 flex flex-col justify-center bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-sm font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Total Recebido</h3>
-                            <span class="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400" id="kpiTotalRecebido">R$ 0,00</span>
+                            <h3 class="text-sm font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">
+                                Total Recebido</h3>
+                            <span class="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400"
+                                id="kpiTotalRecebido">R$ 0,00</span>
                         </div>
                         <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
-                            <div id="barTotalRecebido" class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                            <div id="barTotalRecebido"
+                                class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700 ease-out"
+                                style="width: 0%"></div>
                         </div>
                     </div>
                     <!-- Total em Aberto -->
-                    <div class="flex-1 flex flex-col justify-center bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
+                    <div
+                        class="flex-1 flex flex-col justify-center bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-5">
                         <div class="flex items-center justify-between mb-3">
-                            <h3 class="text-sm font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Total em Aberto</h3>
-                            <span class="text-sm font-bold font-mono text-rose-600 dark:text-rose-400" id="kpiTotalAberto">R$ 0,00</span>
+                            <h3 class="text-sm font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider">
+                                Total em Aberto</h3>
+                            <span class="text-sm font-bold font-mono text-rose-600 dark:text-rose-400"
+                                id="kpiTotalAberto">R$ 0,00</span>
                         </div>
                         <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
-                            <div id="barTotalAberto" class="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                            <div id="barTotalAberto"
+                                class="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-700 ease-out"
+                                style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
@@ -284,14 +398,20 @@
             <!-- ═══════════ NEW ROW: TOP PAGADORES ═══════════ -->
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <!-- Donut: Top 5 Contratos -->
-                <div class="lg:col-span-1 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col" style="min-height: 320px;">
-                    <h3 id="titleTopContratos" class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 5 Contratos</h3>
+                <div class="lg:col-span-1 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
+                    style="min-height: 320px;">
+                    <h3 id="titleTopContratos"
+                        class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 5
+                        Contratos</h3>
                     <div id="chartTopContratos" class="flex-1 w-full"></div>
                 </div>
 
                 <!-- Bar: Top 10 Clientes -->
-                <div class="lg:col-span-4 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col" style="min-height: 320px;">
-                    <h3 id="titleTopClientes" class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 10 Clientes</h3>
+                <div class="lg:col-span-4 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
+                    style="min-height: 320px;">
+                    <h3 id="titleTopClientes"
+                        class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 10
+                        Clientes</h3>
                     <div id="chartTopClientes" class="flex-1 w-full"></div>
                 </div>
             </div>
@@ -299,33 +419,60 @@
             <!-- ═══════════ MIDDLE ROW: 3 Charts ═══════════ -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Bar Chart: Recebimento por Banco -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col" style="min-height: 280px;">
-                    <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Recebimento por Banco</h3>
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
+                    style="min-height: 280px;">
+                    <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">
+                        Recebimento por Banco</h3>
                     <div id="chartBancos" class="flex-1 w-full"></div>
                 </div>
-                
+
                 <!-- Gauge: Desempenho Recebimento do Mês -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col items-center" style="min-height: 280px;">
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col items-center"
+                    style="min-height: 280px;">
                     <div class="flex items-center justify-between w-full mb-1">
-                        <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider">Desempenho do Mês</h3>
-                        <button id="btnEditMeta" class="text-[10px] text-nexo-500 hover:text-nexo-600 font-medium transition-colors" title="Definir Meta">✎ Meta</button>
+                        <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider">
+                            Desempenho do Mês</h3>
+                        <button id="btnEditMeta"
+                            class="text-[10px] text-nexo-500 hover:text-nexo-600 font-medium transition-colors"
+                            title="Definir Meta">✎ Meta</button>
                     </div>
                     <!-- Meta Controls (hidden by default, toggle on click) -->
                     <div id="metaControls" class="hidden flex items-center gap-1.5 mb-1.5 w-full">
-                        <select id="metaMes" class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 rounded px-1.5 py-0.5 text-[10px] text-steel-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-nexo-500">
-                            <option value="1">Jan</option><option value="2">Fev</option><option value="3">Mar</option>
-                            <option value="4">Abr</option><option value="5">Mai</option><option value="6">Jun</option>
-                            <option value="7">Jul</option><option value="8">Ago</option><option value="9">Set</option>
-                            <option value="10">Out</option><option value="11">Nov</option><option value="12">Dez</option>
+                        <select id="metaMes"
+                            class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 rounded px-1.5 py-0.5 text-[10px] text-steel-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-nexo-500">
+                            <option value="1">Jan</option>
+                            <option value="2">Fev</option>
+                            <option value="3">Mar</option>
+                            <option value="4">Abr</option>
+                            <option value="5">Mai</option>
+                            <option value="6">Jun</option>
+                            <option value="7">Jul</option>
+                            <option value="8">Ago</option>
+                            <option value="9">Set</option>
+                            <option value="10">Out</option>
+                            <option value="11">Nov</option>
+                            <option value="12">Dez</option>
                         </select>
-                        <select id="metaAno" class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 rounded px-1.5 py-0.5 text-[10px] text-steel-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-nexo-500">
+                        <select id="metaAno"
+                            class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 rounded px-1.5 py-0.5 text-[10px] text-steel-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-nexo-500">
                         </select>
-                        <input id="metaValorInput" type="text" placeholder="R$ 0,00" class="flex-1 min-w-0 bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 rounded px-1.5 py-0.5 text-[10px] text-steel-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-nexo-500 font-mono">
-                        <button id="btnSalvarMeta" class="p-0.5 bg-nexo-500 hover:bg-nexo-600 text-white rounded transition-colors" title="Salvar">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                        <input id="metaValorInput" type="text" placeholder="R$ 0,00"
+                            class="flex-1 min-w-0 bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 rounded px-1.5 py-0.5 text-[10px] text-steel-700 dark:text-gray-300 outline-none focus:ring-1 focus:ring-nexo-500 font-mono">
+                        <button id="btnSalvarMeta"
+                            class="p-0.5 bg-nexo-500 hover:bg-nexo-600 text-white rounded transition-colors"
+                            title="Salvar">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M5 13l4 4L19 7"></path>
+                            </svg>
                         </button>
-                        <button id="btnLimparMeta" class="p-0.5 bg-rose-500 hover:bg-rose-600 text-white rounded transition-colors" title="Remover Meta">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <button id="btnLimparMeta"
+                            class="p-0.5 bg-rose-500 hover:bg-rose-600 text-white rounded transition-colors"
+                            title="Remover Meta">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                         </button>
                     </div>
                     <p id="gaugeSubtitle" class="text-[10px] text-steel-400 mb-0.5">Meta: —</p>
@@ -333,24 +480,31 @@
                 </div>
 
                 <!-- Donut: Recebimento por Esfera -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col" style="min-height: 280px;">
-                    <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Recebimento por Esfera</h3>
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
+                    style="min-height: 280px;">
+                    <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">
+                        Recebimento por Esfera</h3>
                     <div id="chartEsfera" class="flex-1 w-full"></div>
                 </div>
             </div>
 
             <!-- ═══════════ BOTTOM: Evolução Mensal ═══════════ -->
-            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col" style="min-height: 280px;">
-                <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Recebimento por Mês</h3>
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
+                style="min-height: 280px;">
+                <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">
+                    Recebimento por Mês</h3>
                 <div id="chartEvolucao" class="flex-1 w-full"></div>
             </div>
 
         </div>
 
         <!-- Footer -->
-        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 shrink-0">
+        <footer
+            class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 shrink-0">
             <p class="text-xs text-steel-400">
-                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
+                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a
+                    href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer"
+                    class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
             </p>
         </footer>
     </main>
@@ -365,4 +519,5 @@
     <script src="/js/layout.js"></script>
     <script src="/js/dashboard.js"></script>
 </body>
+
 </html>
