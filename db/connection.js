@@ -4,12 +4,12 @@ require('dotenv').config();
 const dbConfig = {
     user: process.env.SUPRA_USER ? process.env.SUPRA_USER.trim() : '',
     password: process.env.SUPRA_PASSWORD ? process.env.SUPRA_PASSWORD.trim() : '',
-    server: '10.0.0.2', 
-    database: 'SGC', 
+    server: 'nexomed.defenseti.com.br',
+    port: 9074,
+    database: 'SGC',
     options: {
-        instanceName: 'SUPRASOFT',
-        encrypt: true, 
-        trustServerCertificate: true 
+        encrypt: true,
+        trustServerCertificate: true
     },
     connectionTimeout: 15000,
     requestTimeout: 300000, // 5 minutos para queries pesadas
