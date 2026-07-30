@@ -53,7 +53,7 @@
             </span>
         </button>
 
-        <div id="notifDropdown" class="hidden absolute top-full right-0 mt-2 w-80 md:w-96 bg-white dark:bg-steel-800 border border-gray-100 dark:border-steel-700 rounded-xl shadow-xl z-50 overflow-hidden transform opacity-0 scale-95 transition-all duration-200 origin-top-right">
+        <div id="notifDropdown" class="hidden absolute top-full right-0 mt-2 w-96 md:w-[32rem] bg-white dark:bg-steel-800 border border-gray-100 dark:border-steel-700 rounded-xl shadow-xl z-50 overflow-hidden transform opacity-0 scale-95 transition-all duration-200 origin-top-right">
             <!-- Header e Abas -->
             <div class="px-4 pt-4 pb-0 border-b border-gray-100 dark:border-steel-700">
                 <div class="flex justify-between items-center mb-3">
@@ -61,8 +61,8 @@
                     <button id="markAllReadBtn" class="text-[11px] font-medium text-nexo-500 hover:text-nexo-600 transition-colors">Marcar todas como lidas</button>
                 </div>
                 <div class="flex space-x-4">
-                    <button id="tabSistema" class="text-xs font-medium pb-2 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 transition-colors">Sistema</button>
-                    <button id="tabAgendamentos" class="text-xs font-medium pb-2 border-b-2 border-transparent text-steel-400 hover:text-steel-600 dark:hover:text-steel-300 transition-colors">Agendamentos</button>
+                    <button id="tabSistema" class="relative text-xs font-medium pb-2 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 transition-colors pr-2">Sistema</button>
+                    <button id="tabAgendamentos" class="relative text-xs font-medium pb-2 border-b-2 border-transparent text-steel-400 hover:text-steel-600 dark:hover:text-steel-300 transition-colors pr-2">Agendamentos</button>
                 </div>
             </div>
 
@@ -214,53 +214,76 @@
             badge.classList.add('hidden');
         }
 
-        if (notifications.length === 0) {
-            listSistema.innerHTML = '<div class="p-6 flex flex-col items-center justify-center text-center"><svg class="w-8 h-8 text-steel-300 dark:text-steel-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg><span class="text-xs font-medium text-steel-400 dark:text-steel-500">Tudo limpo por aqui!</span></div>';
-            return;
-        }
+        const notifsSistema = notifications.filter(n => n.module !== 'AGENDA');
+        const notifsAgenda = notifications.filter(n => n.module === 'AGENDA');
 
-        listSistema.innerHTML = '';
-        notifications.forEach(n => {
-            const isUnread = !n.is_read;
-            const item = document.createElement('div');
-            item.className = `p-3 rounded-lg flex gap-3 transition-colors cursor-pointer ${isUnread ? 'bg-white dark:bg-steel-800 border border-nexo-100 dark:border-steel-600 shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-steel-800'}`;
-            
-            // Avatar
-            let avatarHtml = '';
-            if (n.avatar_url) {
-                avatarHtml = `<img src="${n.avatar_url}" class="w-8 h-8 rounded-full object-cover">`;
-            } else {
-                const parts = (n.created_by_name || 'Sis').trim().split(' ');
-                const inits = parts.length > 1 ? parts[0][0] + (parts[parts.length - 1][0] || '') : parts[0][0];
-                avatarHtml = `<div class="w-8 h-8 rounded-full bg-nexo-100 dark:bg-steel-700 flex items-center justify-center text-xs font-bold text-nexo-600 dark:text-nexo-400">${inits.toUpperCase()}</div>`;
+        const unreadSistemaCount = notifsSistema.filter(n => !n.is_read).length;
+        const unreadAgendamentosCount = notifsAgenda.filter(n => !n.is_read).length;
+
+        const badgeHtml = '<span class="absolute top-0 right-0 flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span></span>';
+
+        tabSistema.innerHTML = `Sistema ${unreadSistemaCount > 0 ? badgeHtml : ''}`;
+        tabAgendamentos.innerHTML = `Agendamentos ${unreadAgendamentosCount > 0 ? badgeHtml : ''}`;
+
+        function renderList(listEl, notifArray, emptyMsg) {
+            if (notifArray.length === 0) {
+                listEl.innerHTML = `<div class="p-6 flex flex-col items-center justify-center text-center"><svg class="w-8 h-8 text-steel-300 dark:text-steel-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg><span class="text-xs font-medium text-steel-400 dark:text-steel-500">${emptyMsg}</span></div>`;
+                return;
             }
 
-            // Action icon color
-            let iconColor = 'text-nexo-500';
-            if (n.action === 'UPDATE') iconColor = 'text-amber-500';
-            if (n.action === 'DELETE') iconColor = 'text-red-500';
+            listEl.innerHTML = '';
+            notifArray.forEach(n => {
+                const isUnread = !n.is_read;
+                const item = document.createElement('div');
+                item.className = `p-3 rounded-lg flex gap-3 transition-colors cursor-pointer ${isUnread ? 'bg-white dark:bg-steel-800 border border-nexo-100 dark:border-steel-600 shadow-sm' : 'hover:bg-gray-100 dark:hover:bg-steel-800'}`;
+                
+                // Avatar
+                let avatarHtml = '';
+                if (n.avatar_url && n.avatar_url !== 'null' && n.avatar_url.trim() !== '') {
+                    avatarHtml = `<img src="${n.avatar_url}" class="w-8 h-8 rounded-full object-cover">`;
+                } else {
+                    const parts = (n.created_by_name || 'Sis').trim().split(' ');
+                    const inits = parts.length > 1 ? parts[0][0] + (parts[parts.length - 1][0] || '') : parts[0][0];
+                    avatarHtml = `<div class="w-8 h-8 rounded-full bg-nexo-100 dark:bg-steel-700 flex items-center justify-center text-xs font-bold text-nexo-600 dark:text-nexo-400">${inits.toUpperCase()}</div>`;
+                }
 
-            item.innerHTML = `
-                <div class="flex-shrink-0 relative">
-                    ${avatarHtml}
-                    ${isUnread ? '<span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-steel-800 rounded-full"></span>' : ''}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <p class="text-[11px] text-steel-700 dark:text-gray-300 leading-snug">${n.message}</p>
-                    <p class="text-[10px] font-medium text-steel-400 dark:text-steel-500 mt-1 flex items-center gap-1">
-                        <svg class="w-3 h-3 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${n.action === 'INSERT' ? 'M12 4v16m8-8H4' : n.action === 'UPDATE' ? 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' : 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'}"></path></svg>
-                        ${formatTimeAgo(n.created_at)}
-                    </p>
-                </div>
-            `;
+                // Action icon color
+                let iconColor = 'text-nexo-500';
+                if (n.action === 'UPDATE') iconColor = 'text-amber-500';
+                if (n.action === 'DELETE') iconColor = 'text-red-500';
+                if (n.action && n.action.startsWith('REMINDER')) iconColor = 'text-purple-500';
 
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (isUnread) markAsRead(n.id);
+                let iconSvg = '';
+                if (n.action === 'INSERT') iconSvg = 'M12 4v16m8-8H4';
+                else if (n.action === 'UPDATE') iconSvg = 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z';
+                else if (n.action && n.action.startsWith('REMINDER')) iconSvg = 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'; // Clock icon
+                else iconSvg = 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16';
+
+                item.innerHTML = `
+                    <div class="flex-shrink-0 relative">
+                        ${avatarHtml}
+                        ${isUnread ? '<span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 border-2 border-white dark:border-steel-800 rounded-full"></span>' : ''}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[11px] text-steel-700 dark:text-gray-300 leading-snug whitespace-pre-line">${n.message}</p>
+                        <p class="text-[10px] font-medium text-steel-400 dark:text-steel-500 mt-1 flex items-center gap-1">
+                            <svg class="w-3 h-3 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${iconSvg}"></path></svg>
+                            ${formatTimeAgo(n.created_at)}
+                        </p>
+                    </div>
+                `;
+
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (isUnread) markAsRead(n.id);
+                });
+
+                listEl.appendChild(item);
             });
+        }
 
-            listSistema.appendChild(item);
-        });
+        renderList(listSistema, notifsSistema, 'Tudo limpo por aqui!');
+        renderList(listAgendamentos, notifsAgenda, 'Nenhum agendamento futuro.');
     }
 
     // Inicializa carregando do backend

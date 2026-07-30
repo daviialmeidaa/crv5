@@ -77,12 +77,16 @@ app.get('/403', (req, res) => {
 
 const cron = require('node-cron');
 const { runSync } = require('./services/syncService');
+const { initAgendaCron } = require('./services/cron_agenda');
 
 // Iniciando o servidor
 app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`🔗 Acesse: http://localhost:${PORT}`);
     
+    // Inicializa Cron Jobs Específicos
+    initAgendaCron();
+
     // Configura o Cron Job para rodar a cada 15 minutos
     cron.schedule('*/15 * * * *', async () => {
         console.log('⏰ Executando Sincronização Automática via Cron...');

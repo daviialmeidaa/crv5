@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supaPool = require('../db/supabaseConnection');
+const pgPool = require('../db/pgConnection'); // Para inserção de notificações
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { requirePermission } = require('../middleware/rbac');
 
@@ -112,6 +113,20 @@ router.post('/', async (req, res) => {
         ];
 
         const result = await supaPool.query(query, values);
+        
+        // --- INÍCIO: Log de Notificação (Criação) ---
+        if (req.user && req.user.id) {
+            const dataStr = data_lances ? data_lances.split('T')[0].split('-').reverse().join('/') : 'N/A';
+            const horaStr = hora_lances ? hora_lances.substring(0, 5) : 'N/A';
+            const msg = `O(a) ${req.user.nome} acaba de inserir a agenda do pregão ${pregao || 'Sem Nº'} para o dia ${dataStr} às ${horaStr}.`;
+            
+            await pgPool.query(
+                `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
+                ['AGENDA', 'INSERT', msg, req.user.id]
+            ).catch(err => console.error('Erro ao registrar notificação (POST /agenda):', err));
+        }
+        // --- FIM: Log de Notificação ---
+
         res.status(201).json(result.rows[0]);
     } catch (error) {
         console.error('Erro na API Agenda Licitações (POST /):', error);
@@ -150,8 +165,41 @@ router.put('/:chave', async (req, res) => {
             chave
         ];
 
+        // Buscar dados antigos para o Diff de Notificação
+        let oldData = null;
+        try {
+            const oldResult = await supaPool.query(`SELECT data_lances, hora_lances FROM agenda_licitacoes."AGENDA_LICITACOES" WHERE "CHAVE" = $1`, [chave]);
+            if (oldResult.rows.length > 0) oldData = oldResult.rows[0];
+        } catch (e) {
+            console.error('Erro ao buscar dados antigos para diff:', e);
+        }
+
         const result = await supaPool.query(query, values);
         
+        // --- INÍCIO: Log de Notificação (Edição com Diff) ---
+        if (req.user && req.user.id && oldData && result.rows.length > 0) {
+            const newData = result.rows[0];
+            
+            // Formatando as datas em ISO para comparação fácil (apenas YYYY-MM-DD)
+            const oldDateISO = oldData.data_lances ? new Date(oldData.data_lances).toISOString().split('T')[0] : null;
+            const newDateISO = newData.data_lances ? new Date(newData.data_lances).toISOString().split('T')[0] : null;
+            
+            const oldHour = oldData.hora_lances ? oldData.hora_lances.substring(0, 8) : null;
+            const newHour = newData.hora_lances ? newData.hora_lances.substring(0, 8) : null;
+
+            if (oldDateISO !== newDateISO || oldHour !== newHour) {
+                const dataStr = newDateISO ? newDateISO.split('-').reverse().join('/') : 'N/A';
+                const horaStr = newHour ? newHour.substring(0, 5) : 'N/A';
+                
+                const msg = `O(a) ${req.user.nome} acaba de alterar a data do pregão ${newData.pregao || 'Sem Nº'} para o dia ${dataStr} às ${horaStr}.`;
+                
+                await pgPool.query(
+                    `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
+                    ['AGENDA', 'UPDATE', msg, req.user.id]
+                ).catch(err => console.error('Erro ao registrar notificação (PUT /agenda):', err));
+            }
+        }
+        // --- FIM: Log de Notificação ---
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Item não encontrado para atualização' });
         }
