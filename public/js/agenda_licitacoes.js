@@ -717,7 +717,9 @@ const AL = (() => {
             title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> Editar Item ${chave}`;
             if (deleteBtn && canDelete) deleteBtn.classList.remove('hidden');
 
-            document.getElementById('formEmpresa').value = item.empresa || currentTab;
+            const empSel = document.getElementById('formEmpresa');
+            empSel.value = item.empresa || currentTab;
+            empSel.disabled = true;
             document.getElementById('formPregao').value = item.pregao || '';
             document.getElementById('formModalidade').value = item.modalidade || '';
             document.getElementById('formOrgao').value = item.orgao || '';
@@ -752,7 +754,9 @@ const AL = (() => {
             // Criação
             title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item da Agenda`;
             if (deleteBtn) deleteBtn.classList.add('hidden');
-            document.getElementById('formEmpresa').value = currentTab;
+            const empSel = document.getElementById('formEmpresa');
+            empSel.value = currentTab;
+            empSel.disabled = false;
 
             document.getElementById('formDataCadastro').dispatchEvent(new Event('change'));
             document.getElementById('formDataLimite').dispatchEvent(new Event('change'));
@@ -923,7 +927,7 @@ const AL = (() => {
         switchTab, toggleSort: key => { if (state.sort.key === key) state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc'; else { state.sort.key = key; state.sort.dir = 'asc'; } processData(); },
         setPage: p => { state.pagination.current = p; processData(); },
         openFilter, openModal, closeModal, saveItem,
-        requestDelete, closeDeleteModal, confirmDelete,
+        requestDelete, closeDeleteModal, confirmDelete, deleteFromModal,
         exportXLS,
     };
 })();
