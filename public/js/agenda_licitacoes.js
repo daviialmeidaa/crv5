@@ -215,7 +215,7 @@ const AL = (() => {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += '<tr class="h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-default">';
+            html += `<tr onclick="AL.openModal(${row.CHAVE})" class="h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
             columns.forEach(col => {
                 let val = row[col.key];
                 let displayVal;
@@ -711,11 +711,11 @@ const AL = (() => {
 
         if (chave) {
             // Edição
-            const item = state.rawData.find(r => r.CHAVE === chave);
+            const item = state.rawData.find(r => String(r.CHAVE) === String(chave));
             if (!item) return;
 
             title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> Editar Item ${chave}`;
-            if (deleteBtn) deleteBtn.classList.remove('hidden');
+            if (deleteBtn && canDelete) deleteBtn.classList.remove('hidden');
 
             document.getElementById('formEmpresa').value = item.empresa || currentTab;
             document.getElementById('formPregao').value = item.pregao || '';
@@ -862,10 +862,38 @@ const AL = (() => {
     // ==========================================
     function exportXLS() {
         if (state.filteredData.length === 0) { showToast('Nenhum dado para exportar', 'warning'); return; }
-        const ws = XLSX.utils.json_to_sheet(state.filteredData);
+
+        const exportData = state.filteredData.map(row => {
+            let exportedRow = {};
+            columns.forEach(col => {
+                let val = row[col.key];
+                let displayVal = val;
+                
+                if (col.type === 'date' && val) {
+                    const d = new Date(val);
+                    displayVal = !isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : val;
+                } else if (col.type === 'currency') {
+                    displayVal = typeof formatCurrency === 'function' ? formatCurrency(val) : val;
+                } else if (col.key === 'SITUACAO_STATUS' || col.key === 'observacoes_status') {
+                    displayVal = val;
+                } else {
+                    displayVal = (val !== null && val !== undefined && val !== '') ? val : '';
+                }
+
+                if (['ORGAO', 'MUNICIPIO', 'UF', 'CLASSIFICACAO', 'MATERIAL'].includes(col.key) && displayVal) {
+                    displayVal = String(displayVal).toUpperCase();
+                }
+
+                exportedRow[col.label] = displayVal;
+            });
+            exportedRow['Empresa Participante'] = currentTab;
+            return exportedRow;
+        });
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, `IA_${currentTab}`);
-        XLSX.writeFile(wb, `itens_arrematados_${currentTab.toLowerCase()}_${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, ws, `Agenda_${currentTab}`);
+        XLSX.writeFile(wb, `agenda_licitacoes_${currentTab.toLowerCase()}_${new Date().toISOString().split('T')[0]}.xlsx`);
         showToast('Exportação concluída!');
     }
 
