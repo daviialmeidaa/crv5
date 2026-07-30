@@ -643,556 +643,161 @@ const AL = (() => {
     document.addEventListener('click', e => { if (activeFilterModal && !activeFilterModal.contains(e.target)) closeFilter(); });
 
     // ==========================================
-    // 10. Modal de Contrato (Agrupado por COD_CONTRATO_CONCAT)
+        // ==========================================
+    // 10. Lógica de Dias Úteis
     // ==========================================
-    function openContratoModal(contratoConcat) {
-        // Abre o modal de edição com TODOS os produtos daquele contrato
-        const items = state.rawData.filter(r => r.COD_CONTRATO_CONCAT === contratoConcat);
-        if (items.length === 0) return;
+    function calculateBusinessDays(startDate, endDate) {
+        if (!startDate || !endDate) return '';
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return '';
 
-        // Usar o primeiro item como referência para os campos globais do contrato
-        const ref = items[0];
-        editingChave = 'CONTRACT'; // Marcador especial para modo "edição de contrato"
-        editingContractItems = items; // Guardar referência dos itens do contrato
+        // Ignorar tempo
+        start.setUTCHours(0,0,0,0);
+        end.setUTCHours(0,0,0,0);
 
-        const modal = document.getElementById('itemModal');
-        const title = document.getElementById('modalTitle');
-        const deleteBtn = document.getElementById('btnDeleteFromModal');
+        if (start > end) return '';
 
-        document.getElementById('itemForm').reset();
-        document.getElementById('formChave').value = '';
-        document.getElementById('produtosContainer').innerHTML = '';
+        let count = 0;
+        let current = new Date(start);
 
-        title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Contrato: ${contratoConcat}`;
-        if (deleteBtn) deleteBtn.classList.add('hidden');
-        document.getElementById('btnAddProduto').classList.remove('hidden');
-
-        // Preencher campos globais do contrato a partir do primeiro item
-        document.getElementById('formCodContrato').value = ref.COD_CONTRATO || '';
-        document.getElementById('formCodContratoConcat').value = ref.COD_CONTRATO_CONCAT || '';
-        document.getElementById('formEdital').value = ref.EDITAL || '';
-        document.getElementById('formParticipante').value = ref.PARTICIPANTE || 'NEXOMED';
-        document.getElementById('formParticipante').disabled = true;
-        document.getElementById('formOrgao').value = ref.ORGAO || '';
-        document.getElementById('formUF').value = ref.UF || '';
-        document.getElementById('formMunicipio').value = ref.MUNICIPIO || '';
-        // Helper: preencher select mesmo que o valor do banco não exista nas options pré-definidas
-        function setSelectWithLegacy(selectEl, dbValue) {
-            // Remover option legada anterior (se houver)
-            selectEl.querySelectorAll('option[data-legacy]').forEach(o => o.remove());
-            if (!dbValue) { selectEl.value = ''; return; }
-            selectEl.value = dbValue;
-            if (selectEl.value !== dbValue) {
-                // Valor do banco não bate com nenhuma option → injetar como opção temporária
-                const opt = document.createElement('option');
-                opt.value = dbValue;
-                opt.textContent = dbValue;
-                opt.dataset.legacy = '1';
-                selectEl.insertBefore(opt, selectEl.options[1]); // Após o "Selecione..."
-                selectEl.value = dbValue;
+        while (current <= end) {
+            const dayOfWeek = current.getUTCDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+                count++;
             }
+            current.setUTCDate(current.getUTCDate() + 1);
         }
-        setSelectWithLegacy(document.getElementById('formTipoContrato'), ref.TIPO_CONTRATO);
-        setSelectWithLegacy(document.getElementById('formClassificacao'), ref.CLASSIFICACAO);
-        document.getElementById('formDataPregao').value = ref.DATA_PREGAO ? ref.DATA_PREGAO.split('T')[0] : '';
-        document.getElementById('formInstrumental').value = ref.INSTRUMENTAL || '';
-        document.getElementById('formInstrumentador').value = ref.INSTRUMENTADOR || '';
-        document.getElementById('formLocalEntrega').value = ref.LOCAL_ENTREGA || '';
-        document.getElementById('formPrazoEntrega').value = ref.PRAZO_ENTREGA || '';
-        document.getElementById('formDetalhamento').value = ref.DETALHAMENTO || '';
-        document.getElementById('formDescricaoDatabase').value = ref.DESCRICAO_DATABASE || '';
 
-        // Carregar TODOS os produtos do contrato como cards
-        items.forEach(item => addProdutoBox(item));
-
-        modal.classList.remove('hidden');
-        if (typeof initCustomDatepickers === 'function') initCustomDatepickers();
+        return count;
     }
 
-    function closeContratoModal() {
-        // Manter por compatibilidade, mas agora redireciona para closeModal
-        closeModal();
+    function initBusinessDaysAutoCalc() {
+        const inputCadastro = document.getElementById('formDataCadastro');
+        const inputLimite = document.getElementById('formDataLimite');
+        const inputAntecedencia = document.getElementById('formAntecedencia');
+
+        const updateCalc = () => {
+            const valCadastro = inputCadastro.value;
+            const valLimite = inputLimite.value;
+            if (valCadastro && valLimite) {
+                const result = calculateBusinessDays(valCadastro, valLimite);
+                inputAntecedencia.value = result;
+            } else {
+                inputAntecedencia.value = '';
+            }
+        };
+
+        if (inputCadastro && inputLimite) {
+            inputCadastro.addEventListener('change', updateCalc);
+            inputLimite.addEventListener('change', updateCalc);
+        }
     }
 
     // ==========================================
     // 11. CRUD Modal (Criar / Editar Item)
     // ==========================================
     let editingChave = null;
-    let editingContractItems = []; // Itens do contrato em modo edição
     let deleteChave = null;
 
     function openModal(chave = null) {
-    document.getElementById('itemModal').classList.remove('hidden');
-}
+        editingChave = chave;
+        const modal = document.getElementById('itemModal');
+        const title = document.getElementById('modalTitle');
+        const deleteBtn = document.getElementById('btnDeleteFromModal');
+        const form = document.getElementById('itemForm');
 
-function closeModal() {
+        form.reset();
+
+        if (chave) {
+            // Edição
+            const item = state.rawData.find(r => r.CHAVE === chave);
+            if (!item) return;
+
+            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg> Editar Item ${chave}`;
+            if (deleteBtn) deleteBtn.classList.remove('hidden');
+
+            document.getElementById('formEmpresa').value = item.empresa || currentTab;
+            document.getElementById('formPregao').value = item.pregao || '';
+            document.getElementById('formModalidade').value = item.modalidade || '';
+            document.getElementById('formOrgao').value = item.orgao || '';
+            document.getElementById('formUF').value = item.uf || '';
+            document.getElementById('formCategoria').value = item.categoria || '';
+            document.getElementById('formObjeto').value = item.objeto || '';
+            document.getElementById('formPortal').value = item.portal || '';
+            document.getElementById('formObservacoes').value = item.observacoes_status || '';
+
+            // Datas
+            document.getElementById('formDataCadastro').value = item.data_cadastro ? item.data_cadastro.split('T')[0] : '';
+            document.getElementById('formDataLimite').value = item.data_limite ? item.data_limite.split('T')[0] : '';
+            document.getElementById('formHoraLimite').value = item.hora_limite || '';
+            document.getElementById('formDataLances').value = item.data_lances ? item.data_lances.split('T')[0] : '';
+            document.getElementById('formHoraLances').value = item.hora_lances || '';
+            document.getElementById('formAntecedencia').value = item.antecedencia !== null ? item.antecedencia : '';
+
+        } else {
+            // Criação
+            title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item da Agenda`;
+            if (deleteBtn) deleteBtn.classList.add('hidden');
+            document.getElementById('formEmpresa').value = currentTab;
+        }
+
+        // Initialize business days auto calc if not yet initialized on these inputs
+        initBusinessDaysAutoCalc();
+
+        modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
         document.getElementById('itemModal').classList.add('hidden');
         editingChave = null;
-        editingContractItems = [];
-    }
-
-    function renumberProdutoBoxes() {
-        const boxes = document.querySelectorAll('.produto-box');
-        boxes.forEach((box, i) => {
-            const badge = box.querySelector('.produto-number');
-            if (badge) badge.textContent = `Produto #${i + 1}`;
-        });
-    }
-
-    function addProdutoBox(data = {}) {
-        const container = document.getElementById('produtosContainer');
-        const count = container.querySelectorAll('.produto-box').length + 1;
-        const hasSupra = !!(data.COD_SUPRA || data.NOME_SUPRA);
-        
-        const div = document.createElement('div');
-        div.className = 'produto-box border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
-        if (data.CHAVE) div.dataset.chave = data.CHAVE; // Marcar com a CHAVE original para edição
-
-        div.innerHTML = `
-            <!-- Header do Card -->
-            <div class="accordion-header flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-steel-700/60 select-none">
-                <div class="flex items-center gap-2">
-                    <svg class="accordion-icon w-4 h-4 text-steel-400 transition-transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    <span class="produto-number text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">Produto #${count}</span>
-                    <span class="lote-title-suffix text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wide ml-1">${data.LOTE_ITEM ? `- Lote / Item ${data.LOTE_ITEM}` : ''}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button type="button" class="btn-clone-dados flex items-center gap-1 text-[11px] text-nexo-500 hover:text-nexo-600 transition-colors ${count === 1 ? '' : 'hidden'}" title="Copiar Datas e Status para os itens abaixo">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M8 2a1 1 0 000 2h2a1 1 0 100-2H8z" />
-                            <path d="M3 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v6h-4.586l1.293-1.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 000 1.414l3 3a1 1 0 001.414-1.414L10.414 13H15v3a2 2 0 01-2 2H5a2 2 0 01-2-2V5zM15 11h2a1 1 0 110 2h-2v-2z" />
-                        </svg>
-                        Aplicar aos Demais
-                    </button>
-                    ${canDelete ? `
-                    <button type="button" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                        Remover
-                    </button>` : ''}
-                </div>
-            </div>
-
-            <!-- Campos do Produto (Accordion Body) -->
-            <div class="accordion-body hidden">
-                <div class="p-4 space-y-4">
-                <div class="flex gap-4">
-                    <!-- Coluna Esquerda (50%) — Grid 2x3 -->
-                    <div class="w-1/2 grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote / Item</label>
-                            <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-lote" value="${data.LOTE_ITEM || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Fornecedor</label>
-                            <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-fornecedor" value="${data.FORNECEDOR || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Unidade</label>
-                            <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-unidade" value="${data.UNIDADE || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Qtde</label>
-                            <input type="number" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-qtde" value="${data.QTDE || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
-                            <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vunit" value="${data.VALOR_UNITARIO || ''}">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
-                            <input type="number" step="0.01" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vtotal" value="${data.VALOR_TOTAL || ''}">
-                        </div>
-                    </div>
-                    <!-- Coluna Direita (50%) — Material + Total Norm -->
-                    <div class="w-1/2 flex flex-col gap-3">
-                        <div class="flex-1">
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Material</label>
-                            <textarea class="w-full h-[calc(100%-1.25rem)] min-h-[6.5rem] px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none custom-scrollbar prod-material">${data.MATERIAL || ''}</textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Total Norm.</label>
-                            <input type="text" readonly class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-900 rounded-lg text-steel-800 dark:text-gray-200 outline-none prod-total-norm" value="">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Supra: Chip toggle -->
-                <div class="pt-2">
-                    <button type="button" class="toggle-supra inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold tracking-wide transition-all duration-200 ${hasSupra ? 'bg-nexo-500/15 text-nexo-600 dark:text-nexo-400 ring-1 ring-nexo-500/30' : 'bg-gray-100 dark:bg-steel-700 text-steel-500 dark:text-steel-400 hover:bg-nexo-500/10 hover:text-nexo-600 dark:hover:text-nexo-400'}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                        </svg>
-                        Vincular Supra
-                    </button>
-                    <div class="supra-fields overflow-hidden transition-all duration-300 ease-in-out ${hasSupra ? 'max-h-40 opacity-100 mt-3' : 'max-h-0 opacity-0'}">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Supra</label>
-                                <input type="number" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-codsupra" value="${data.COD_SUPRA || ''}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nome Supra</label>
-                                <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-nomesupra" value="${data.NOME_SUPRA || ''}">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <hr class="border-gray-100 dark:border-steel-600/50 my-4">
-                
-                <!-- Datas e Status do Produto -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data Proposta</label>
-                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dproposta" value="${data.DATA_PROPOSTA ? data.DATA_PROPOSTA.split('T')[0] : ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Código Status</label>
-                        <select class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-codstatus">
-                            <option value="">--</option>
-                            <option value="0" ${data.CODIGO_STATUS === 0 ? 'selected' : ''}>0</option>
-                            <option value="1" ${data.CODIGO_STATUS === 1 ? 'selected' : ''}>1</option>
-                            <option value="2" ${data.CODIGO_STATUS === 2 ? 'selected' : ''}>2</option>
-                            <option value="3" ${data.CODIGO_STATUS === 3 ? 'selected' : ''}>3</option>
-                            <option value="4" ${data.CODIGO_STATUS === 4 ? 'selected' : ''}>4</option>
-                            <option value="5" ${data.CODIGO_STATUS === 5 ? 'selected' : ''}>5</option>
-                            <option value="6" ${data.CODIGO_STATUS === 6 ? 'selected' : ''}>6</option>
-                            <option value="7" ${data.CODIGO_STATUS === 7 ? 'selected' : ''}>7</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Situação / Status</label>
-                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-status" value="${data.SITUACAO_STATUS || ''}">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vigência</label>
-                        <input type="text" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-vigencia" value="${data.VIGENCIA || ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Início</label>
-                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dinicio" value="${data.DATA_INICIO ? data.DATA_INICIO.split('T')[0] : ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Término</label>
-                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dtermino" value="${data.DATA_TERMINO ? data.DATA_TERMINO.split('T')[0] : ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Empenho</label>
-                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dempenho" value="${data.DATA_EMPENHO ? data.DATA_EMPENHO.split('T')[0] : ''}">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Adjudicação</label>
-                        <input type="date" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all prod-dadjudicacao" value="${data.DATA_ADJUDICACAO ? data.DATA_ADJUDICACAO.split('T')[0] : ''}">
-                    </div>
-                </div>
-                </div>
-            </div>
-        `;
-
-        // Lógica de Accordion
-        const header = div.querySelector('.accordion-header');
-        const body = div.querySelector('.accordion-body');
-        const icon = div.querySelector('.accordion-icon');
-        
-        header.addEventListener('click', (e) => {
-            if (e.target.closest('button')) return; // Não colapsar ao clicar nos botões de ação
-            body.classList.toggle('hidden');
-            if (body.classList.contains('hidden')) {
-                icon.classList.add('-rotate-90');
-            } else {
-                icon.classList.remove('-rotate-90');
-            }
-        });
-
-        // Título dinâmico do Lote
-        const loteInput = div.querySelector('.prod-lote');
-        const titleSuffix = div.querySelector('.lote-title-suffix');
-        loteInput.addEventListener('input', (e) => {
-            const val = e.target.value.trim();
-            titleSuffix.textContent = val ? `- Lote / Item ${val}` : '';
-        });
-
-        // Remove button handler
-        const btnRemove = div.querySelector('.btn-remove-produto');
-        if (btnRemove) {
-            btnRemove.addEventListener('click', () => {
-                if (document.querySelectorAll('.produto-box').length > 1) {
-                    div.style.maxHeight = div.scrollHeight + 'px';
-                    requestAnimationFrame(() => {
-                        div.style.transition = 'max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease';
-                        div.style.maxHeight = '0';
-                        div.style.opacity = '0';
-                        div.style.marginTop = '0';
-                        div.style.marginBottom = '0';
-                        div.style.overflow = 'hidden';
-                    });
-                    setTimeout(() => { div.remove(); renumberProdutoBoxes(); }, 320);
-                } else {
-                    showToast('O contrato deve ter no mínimo 1 produto.', 'warning');
-                }
-            });
-        }
-
-        // Supra toggle handler
-        const toggleBtn = div.querySelector('.toggle-supra');
-        const supraFields = div.querySelector('.supra-fields');
-
-        toggleBtn.addEventListener('click', () => {
-            const isOpen = supraFields.classList.contains('max-h-40');
-            if (isOpen) {
-                supraFields.classList.remove('max-h-40', 'opacity-100', 'mt-3');
-                supraFields.classList.add('max-h-0', 'opacity-0');
-                toggleBtn.classList.remove('bg-nexo-500/15', 'text-nexo-600', 'dark:text-nexo-400', 'ring-1', 'ring-nexo-500/30');
-                toggleBtn.classList.add('bg-gray-100', 'dark:bg-steel-700', 'text-steel-500', 'dark:text-steel-400');
-            } else {
-                supraFields.classList.remove('max-h-0', 'opacity-0');
-                supraFields.classList.add('max-h-40', 'opacity-100', 'mt-3');
-                toggleBtn.classList.remove('bg-gray-100', 'dark:bg-steel-700', 'text-steel-500', 'dark:text-steel-400');
-                toggleBtn.classList.add('bg-nexo-500/15', 'text-nexo-600', 'dark:text-nexo-400', 'ring-1', 'ring-nexo-500/30');
-            }
-        });
-
-        // Auto-calcular Valor Total (Qtde * Valor Unitário) e Total Norm.
-        const qtdeInput = div.querySelector('.prod-qtde');
-        const vUnitInput = div.querySelector('.prod-vunit');
-        const vTotalInput = div.querySelector('.prod-vtotal');
-        const totalNormInput = div.querySelector('.prod-total-norm');
-
-        const calculateTotal = () => {
-            const qtde = parseFloat(qtdeInput.value) || 0;
-            const vUnit = parseFloat(vUnitInput.value) || 0;
-            let total = '';
-            
-            if (qtdeInput.value !== '' && vUnitInput.value !== '') {
-                total = qtde * vUnit;
-                vTotalInput.value = total.toFixed(2);
-            } else if (qtdeInput.value === '' || vUnitInput.value === '') {
-                vTotalInput.value = '';
-                total = parseFloat(vTotalInput.value) || '';
-            }
-
-            updateTotalNorm(total);
-        };
-
-        const updateTotalNorm = (totalVal) => {
-            if (totalVal === '' || isNaN(totalVal)) {
-                totalNormInput.value = '';
-            } else if (totalVal < 10000) {
-                totalNormInput.value = totalVal.toFixed(2);
-            } else if (totalVal < 100000) {
-                totalNormInput.value = (totalVal * 0.3).toFixed(2);
-            } else {
-                totalNormInput.value = "AVALIAÇÃO INDIVIDUAL";
-            }
-        };
-
-        qtdeInput.addEventListener('input', calculateTotal);
-        vUnitInput.addEventListener('input', calculateTotal);
-        vTotalInput.addEventListener('input', () => {
-            const manualTotal = parseFloat(vTotalInput.value);
-            updateTotalNorm(manualTotal);
-        });
-
-        // Trigger math calculation if this is an edit and total is not set yet
-        if (data.VALOR_TOTAL) {
-            updateTotalNorm(parseFloat(data.VALOR_TOTAL));
-        }
-
-        // Botão Clonar Dados e Status
-        const cloneBtn = div.querySelector('.btn-clone-dados');
-        if (cloneBtn) {
-            cloneBtn.addEventListener('click', () => {
-                const codStatus = div.querySelector('.prod-codstatus').value;
-                const situacao = div.querySelector('.prod-status').value;
-                const vigencia = div.querySelector('.prod-vigencia').value;
-                const dProposta = div.querySelector('.prod-dproposta').value;
-                const dInicio = div.querySelector('.prod-dinicio').value;
-                const dTermino = div.querySelector('.prod-dtermino').value;
-                const dEmpenho = div.querySelector('.prod-dempenho').value;
-                const dAdjudicacao = div.querySelector('.prod-dadjudicacao').value;
-
-                let sibling = div.nextElementSibling;
-                let count = 0;
-                while (sibling && sibling.classList.contains('produto-box')) {
-                    sibling.querySelector('.prod-codstatus').value = codStatus;
-                    sibling.querySelector('.prod-status').value = situacao;
-                    sibling.querySelector('.prod-vigencia').value = vigencia;
-                    sibling.querySelector('.prod-dproposta').value = dProposta;
-                    sibling.querySelector('.prod-dinicio').value = dInicio;
-                    sibling.querySelector('.prod-dtermino').value = dTermino;
-                    sibling.querySelector('.prod-dempenho').value = dEmpenho;
-                    sibling.querySelector('.prod-dadjudicacao').value = dAdjudicacao;
-                    sibling = sibling.nextElementSibling;
-                    count++;
-                }
-                
-                if (count > 0) {
-                    showToast(`Datas e Status copiados para ${count} produto(s) abaixo.`, 'success');
-                } else {
-                    showToast('Não há produtos abaixo para copiar.', 'info');
-                }
-            });
-        }
-
-        const codSupraInput = div.querySelector('.prod-codsupra');
-        const nomeSupraInput = div.querySelector('.prod-nomesupra');
-
-        if (codSupraInput && nomeSupraInput) {
-            codSupraInput.addEventListener('change', async (e) => {
-                const codigo = e.target.value.trim();
-                if (!codigo) {
-                    nomeSupraInput.value = '';
-                    return;
-                }
-
-                try {
-                    nomeSupraInput.placeholder = 'Buscando...';
-                    const response = await fetch(`/api/agenda_licitacoes/produto_supra/${codigo}`, {
-                        headers: { 'Authorization': `Bearer ${getToken()}` }
-                    });
-                    if (!response.ok) throw new Error('Erro na busca');
-                    const result = await response.json();
-                    
-                    if (result.nome) {
-                        nomeSupraInput.value = result.nome;
-                    } else {
-                        nomeSupraInput.value = '';
-                        showToast('Produto não encontrado no Supra', 'warning');
-                    }
-                } catch (error) {
-                    console.error('Erro ao buscar produto:', error);
-                    showToast('Erro ao buscar produto Supra', 'error');
-                } finally {
-                    nomeSupraInput.placeholder = '';
-                }
-            });
-        }
-
-        container.appendChild(div);
-        if (typeof initCustomDatepickers === 'function') initCustomDatepickers();
-    }
-
-    function populateForm(r) {
-        document.getElementById('formChave').value = r.CHAVE;
-        document.getElementById('formCodContrato').value = r.COD_CONTRATO || '';
-        document.getElementById('formCodContratoConcat').value = r.COD_CONTRATO_CONCAT || '';
-        document.getElementById('formEdital').value = r.EDITAL || '';
-        document.getElementById('formParticipante').value = r.PARTICIPANTE || 'NEXOMED';
-        document.getElementById('formOrgao').value = r.ORGAO || '';
-        document.getElementById('formUF').value = r.UF || '';
-        document.getElementById('formMunicipio').value = r.MUNICIPIO || '';
-        document.getElementById('formTipoContrato').value = r.TIPO_CONTRATO || '';
-        document.getElementById('formClassificacao').value = r.CLASSIFICACAO || '';
-        document.getElementById('formDataPregao').value = r.DATA_PREGAO ? r.DATA_PREGAO.split('T')[0] : '';
-        document.getElementById('formInstrumental').value = r.INSTRUMENTAL || '';
-        document.getElementById('formInstrumentador').value = r.INSTRUMENTADOR || '';
-        document.getElementById('formLocalEntrega').value = r.LOCAL_ENTREGA || '';
-        document.getElementById('formPrazoEntrega').value = r.PRAZO_ENTREGA || '';
-        document.getElementById('formDetalhamento').value = r.DETALHAMENTO || '';
-        document.getElementById('formDescricaoDatabase').value = r.DESCRICAO_DATABASE || '';
-        addProdutoBox(r);
     }
 
     async function saveItem(event) {
         if (event) event.preventDefault();
         
-        const baseData = {
-            COD_CONTRATO: document.getElementById('formCodContrato').value || null,
-            COD_CONTRATO_CONCAT: document.getElementById('formCodContratoConcat').value || null,
-            EDITAL: document.getElementById('formEdital').value || null,
-            PARTICIPANTE: document.getElementById('formParticipante').value || null,
-            ORGAO: document.getElementById('formOrgao').value || null,
-            MUNICIPIO: document.getElementById('formMunicipio').value || null,
-            UF: document.getElementById('formUF').value || null,
-            TIPO_CONTRATO: document.getElementById('formTipoContrato').value || null,
-            CLASSIFICACAO: document.getElementById('formClassificacao').value || null,
-            DATA_PREGAO: document.getElementById('formDataPregao').value || null,
-            INSTRUMENTAL: document.getElementById('formInstrumental').value || null,
-            INSTRUMENTADOR: document.getElementById('formInstrumentador').value || null,
-            LOCAL_ENTREGA: document.getElementById('formLocalEntrega').value || null,
-            PRAZO_ENTREGA: document.getElementById('formPrazoEntrega').value || null,
-            DETALHAMENTO: document.getElementById('formDetalhamento').value || null,
-            DESCRICAO_DATABASE: document.getElementById('formDescricaoDatabase').value || null,
+        const data = {
+            empresa: document.getElementById('formEmpresa').value || null,
+            pregao: document.getElementById('formPregao').value || null,
+            modalidade: document.getElementById('formModalidade').value || null,
+            orgao: document.getElementById('formOrgao').value || null,
+            uf: document.getElementById('formUF').value || null,
+            categoria: document.getElementById('formCategoria').value || null,
+            objeto: document.getElementById('formObjeto').value || null,
+            portal: document.getElementById('formPortal').value || null,
+            observacoes_status: document.getElementById('formObservacoes').value || null,
+            data_cadastro: document.getElementById('formDataCadastro').value || null,
+            data_limite: document.getElementById('formDataLimite').value || null,
+            hora_limite: document.getElementById('formHoraLimite').value || null,
+            data_lances: document.getElementById('formDataLances').value || null,
+            hora_lances: document.getElementById('formHoraLances').value || null,
+            antecedencia: document.getElementById('formAntecedencia').value !== '' ? parseInt(document.getElementById('formAntecedencia').value) : null
         };
 
         const pp = currentTab === 'BML' ? '?empresa=BML' : '';
-        const boxes = document.querySelectorAll('.produto-box');
         
         try {
-            // Helper para extrair dados do produto de um box
-            const extractProductData = (box) => ({
-                LOTE_ITEM: box.querySelector('.prod-lote').value || null,
-                MATERIAL: box.querySelector('.prod-material').value || null,
-                QTDE: box.querySelector('.prod-qtde').value || null,
-                UNIDADE: box.querySelector('.prod-unidade').value || null,
-                FORNECEDOR: box.querySelector('.prod-fornecedor').value || null,
-                VALOR_UNITARIO: box.querySelector('.prod-vunit').value || null,
-                VALOR_TOTAL: box.querySelector('.prod-vtotal').value || null,
-                TOTAL_NORMALIZADO: box.querySelector('.prod-total-norm').value || null,
-                CODIGO_STATUS: box.querySelector('.prod-codstatus').value !== '' ? parseInt(box.querySelector('.prod-codstatus').value) : null,
-                SITUACAO_STATUS: box.querySelector('.prod-status').value || null,
-                VIGENCIA: box.querySelector('.prod-vigencia').value || null,
-                DATA_PROPOSTA: box.querySelector('.prod-dproposta').value || null,
-                DATA_INICIO: box.querySelector('.prod-dinicio').value || null,
-                DATA_TERMINO: box.querySelector('.prod-dtermino').value || null,
-                DATA_EMPENHO: box.querySelector('.prod-dempenho').value || null,
-                DATA_ADJUDICACAO: box.querySelector('.prod-dadjudicacao').value || null,
-                COD_SUPRA: box.querySelector('.prod-codsupra').value || null,
-                NOME_SUPRA: box.querySelector('.prod-nomesupra').value || null,
-            });
-
-            if (editingChave === 'CONTRACT') {
-                // Modo Edição de Contrato (múltiplos produtos)
-                // Cada box tem um data-chave com a CHAVE original, ou vazio se é um produto novo
-                const fetchPromises = Array.from(boxes).map(box => {
-                    const productData = extractProductData(box);
-                    const data = { ...baseData, ...productData };
-                    const chave = box.dataset.chave;
-
-                    if (chave) {
-                        // Produto existente → PUT
-                        return fetch(`/api/agenda_licitacoes/${chave}${pp}`, {
-                            method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data)
-                        });
-                    } else {
-                        // Produto novo adicionado ao contrato → POST
-                        return fetch(`/api/agenda_licitacoes${pp}`, {
-                            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data)
-                        });
-                    }
+            let res;
+            if (editingChave) {
+                // PUT
+                res = await fetch(`/api/agenda_licitacoes/${editingChave}${pp}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data)
                 });
-
-                const responses = await Promise.all(fetchPromises);
-                for (let r of responses) {
-                    if (!r.ok) { const err = await r.json(); throw new Error(err.error || 'Erro ao salvar produto'); }
-                }
-
             } else {
-                // Modo Criação (Múltiplos produtos via chamadas simultâneas)
-                const fetchPromises = Array.from(boxes).map(box => {
-                    const productData = extractProductData(box);
-                    const data = { ...baseData, ...productData };
-                    return fetch(`/api/agenda_licitacoes${pp}`, { 
-                        method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data) 
-                    });
+                // POST
+                res = await fetch(`/api/agenda_licitacoes${pp}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify(data)
                 });
-                
-                const responses = await Promise.all(fetchPromises);
-                for (let r of responses) {
-                    if (!r.ok) { const err = await r.json(); throw new Error(err.error || 'Erro ao salvar produto'); }
-                }
             }
 
-            showToast(editingChave === 'CONTRACT' ? 'Contrato atualizado com sucesso!' : 'Itens criados com sucesso!');
+            if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Erro ao salvar item'); }
+
+            showToast(editingChave ? 'Item atualizado com sucesso!' : 'Item criado com sucesso!');
             closeModal();
             await fetchData();
         } catch (error) { 
             console.error('Erro ao salvar:', error); 
-            showToast(error.message || 'Erro ao salvar item', 'error'); 
+            showToast(error.message || 'Erro ao salvar item', 'error');  
         }
     }
 
@@ -1269,6 +874,6 @@ function closeModal() {
         setPage: p => { state.pagination.current = p; processData(); },
         openFilter, openModal, closeModal, saveItem,
         requestDelete, closeDeleteModal, confirmDelete,
-        openContratoModal, closeContratoModal, exportXLS,
+        exportXLS,
     };
 })();

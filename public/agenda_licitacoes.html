@@ -334,15 +334,136 @@
 
             <!-- Body do Modal -->
             <div class="flex-1 overflow-y-auto">
-                <form id="itemForm" onsubmit="AL.saveItem(event)">
-                    <div class="flex flex-col items-center justify-center py-12 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-steel-300 dark:text-steel-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        <h4 class="text-lg font-medium text-steel-700 dark:text-gray-300 mb-2">Formulário em Construção</h4>
-                        <p class="text-sm text-steel-500 dark:text-steel-500 max-w-sm">
-                            A interface de cadastro e edição da Agenda de Licitações será implementada na próxima fase, seguindo as diretrizes de acesso e permissões.
-                        </p>
+                <form id="itemForm" onsubmit="AL.saveItem(event)" class="p-6 space-y-6">
+                    
+                    <!-- 1. Cabeçalho / Empresa -->
+                    <div class="bg-gray-50 dark:bg-steel-900/30 p-4 rounded-xl border border-gray-100 dark:border-steel-700/50">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-steel-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">Empresa Participante <span class="text-red-500">*</span></label>
+                                <select id="formEmpresa" required class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                    <option value="NEXOMED">NEXOMED</option>
+                                    <option value="BML">BML</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Identificação do Pregão -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Identificação do Pregão
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Nº do Pregão</label>
+                                <input type="text" id="formPregao" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Modalidade</label>
+                                <input type="text" id="formModalidade" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Órgão/Instituição</label>
+                                <input type="text" id="formOrgao" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">UF</label>
+                                <select id="formUF" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                    <option value="">Selecione...</option>
+                                    <option value="AC">Acre</option>
+                                    <option value="AL">Alagoas</option>
+                                    <option value="AP">Amapá</option>
+                                    <option value="AM">Amazonas</option>
+                                    <option value="BA">Bahia</option>
+                                    <option value="CE">Ceará</option>
+                                    <option value="DF">Distrito Federal</option>
+                                    <option value="ES">Espírito Santo</option>
+                                    <option value="GO">Goiás</option>
+                                    <option value="MA">Maranhão</option>
+                                    <option value="MT">Mato Grosso</option>
+                                    <option value="MS">Mato Grosso do Sul</option>
+                                    <option value="MG">Minas Gerais</option>
+                                    <option value="PA">Pará</option>
+                                    <option value="PB">Paraíba</option>
+                                    <option value="PR">Paraná</option>
+                                    <option value="PE">Pernambuco</option>
+                                    <option value="PI">Piauí</option>
+                                    <option value="RJ">Rio de Janeiro</option>
+                                    <option value="RN">Rio Grande do Norte</option>
+                                    <option value="RS">Rio Grande do Sul</option>
+                                    <option value="RO">Rondônia</option>
+                                    <option value="RR">Roraima</option>
+                                    <option value="SC">Santa Catarina</option>
+                                    <option value="SP">São Paulo</option>
+                                    <option value="SE">Sergipe</option>
+                                    <option value="TO">Tocantins</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Objeto e Plataforma -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Objeto e Plataforma
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Categoria/Classe do Material</label>
+                                <input type="text" id="formCategoria" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Portal/Plataforma do Pregão</label>
+                                <input type="text" id="formPortal" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Objeto/Especialidade</label>
+                                <input type="text" id="formObjeto" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Observações/Status</label>
+                                <textarea id="formObservacoes" rows="2" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm resize-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Prazos e Datas -->
+                    <div>
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Prazos e Datas
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                            <div class="lg:col-span-1">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Data Cad. Proposta</label>
+                                <input type="date" id="formDataCadastro" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div class="lg:col-span-1">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Data Limite Proposta</label>
+                                <input type="date" id="formDataLimite" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div class="lg:col-span-1">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Hora Limite</label>
+                                <input type="time" id="formHoraLimite" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div class="lg:col-span-1">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Data dos Lances</label>
+                                <input type="date" id="formDataLances" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div class="lg:col-span-1">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Hora dos Lances</label>
+                                <input type="time" id="formHoraLances" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                            </div>
+                            <div class="lg:col-span-1">
+                                <label class="block text-[11px] font-medium text-steel-600 dark:text-steel-400 mb-1.5 truncate" title="Antecedência do Cadastro (Dia Útil)">Antecedência (Dias)</label>
+                                <input type="number" id="formAntecedencia" readonly tabindex="-1" class="w-full bg-gray-100 dark:bg-steel-900/50 border border-gray-200 dark:border-steel-700 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none shadow-inner opacity-80 cursor-not-allowed text-center font-semibold">
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
