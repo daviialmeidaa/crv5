@@ -371,34 +371,34 @@
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">UF</label>
                                 <select id="formUF" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
-                                    <option value="">Selecione...</option>
-                                    <option value="AC">Acre</option>
-                                    <option value="AL">Alagoas</option>
-                                    <option value="AP">Amapá</option>
-                                    <option value="AM">Amazonas</option>
-                                    <option value="BA">Bahia</option>
-                                    <option value="CE">Ceará</option>
-                                    <option value="DF">Distrito Federal</option>
-                                    <option value="ES">Espírito Santo</option>
-                                    <option value="GO">Goiás</option>
-                                    <option value="MA">Maranhão</option>
-                                    <option value="MT">Mato Grosso</option>
-                                    <option value="MS">Mato Grosso do Sul</option>
-                                    <option value="MG">Minas Gerais</option>
-                                    <option value="PA">Pará</option>
-                                    <option value="PB">Paraíba</option>
-                                    <option value="PR">Paraná</option>
-                                    <option value="PE">Pernambuco</option>
-                                    <option value="PI">Piauí</option>
-                                    <option value="RJ">Rio de Janeiro</option>
-                                    <option value="RN">Rio Grande do Norte</option>
-                                    <option value="RS">Rio Grande do Sul</option>
-                                    <option value="RO">Rondônia</option>
-                                    <option value="RR">Roraima</option>
-                                    <option value="SC">Santa Catarina</option>
-                                    <option value="SP">São Paulo</option>
-                                    <option value="SE">Sergipe</option>
-                                    <option value="TO">Tocantins</option>
+                                    <option value="">--</option>
+                                    <option value="AC">AC</option>
+                                    <option value="AL">AL</option>
+                                    <option value="AP">AP</option>
+                                    <option value="AM">AM</option>
+                                    <option value="BA">BA</option>
+                                    <option value="CE">CE</option>
+                                    <option value="DF">DF</option>
+                                    <option value="ES">ES</option>
+                                    <option value="GO">GO</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MG">MG</option>
+                                    <option value="PA">PA</option>
+                                    <option value="PB">PB</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PE">PE</option>
+                                    <option value="PI">PI</option>
+                                    <option value="RJ">RJ</option>
+                                    <option value="RN">RN</option>
+                                    <option value="RS">RS</option>
+                                    <option value="RO">RO</option>
+                                    <option value="RR">RR</option>
+                                    <option value="SC">SC</option>
+                                    <option value="SP">SP</option>
+                                    <option value="SE">SE</option>
+                                    <option value="TO">TO</option>
                                 </select>
                             </div>
                         </div>
@@ -413,7 +413,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Categoria/Classe do Material</label>
-                                <input type="text" id="formCategoria" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                <select id="formCategoria" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                    <option value="">--</option>
+                                    <option value="OPME">OPME</option>
+                                    <option value="Descartável">Descartável</option>
+                                    <option value="Misto">Misto</option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Portal/Plataforma do Pregão</label>
@@ -441,23 +446,23 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                             <div class="lg:col-span-1">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Data Cad. Proposta</label>
-                                <input type="date" id="formDataCadastro" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                <input type="date" id="formDataCadastro" class="custom-datepicker w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
                             </div>
                             <div class="lg:col-span-1">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Data Limite Proposta</label>
-                                <input type="date" id="formDataLimite" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                <input type="date" id="formDataLimite" class="custom-datepicker w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
                             </div>
                             <div class="lg:col-span-1">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Hora Limite</label>
-                                <input type="time" id="formHoraLimite" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                <input type="time" id="formHoraLimite" class="custom-timepicker w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
                             </div>
                             <div class="lg:col-span-1">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Data dos Lances</label>
-                                <input type="date" id="formDataLances" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                <input type="date" id="formDataLances" class="custom-datepicker w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
                             </div>
                             <div class="lg:col-span-1">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1.5">Hora dos Lances</label>
-                                <input type="time" id="formHoraLances" class="w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
+                                <input type="time" id="formHoraLances" class="custom-timepicker w-full bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-white text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all input-glow shadow-sm">
                             </div>
                             <div class="lg:col-span-1">
                                 <label class="block text-[11px] font-medium text-steel-600 dark:text-steel-400 mb-1.5 truncate" title="Antecedência do Cadastro (Dia Útil)">Antecedência (Dias)</label>
@@ -518,8 +523,9 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/js/theme.js"></script>
-    <script src="/js/components/datepicker.js"></script>
     <script src="/js/layout.js"></script>
+    <script src="/js/components/datepicker.js"></script>
+    <script src="/js/components/timepicker.js"></script>
     <script src="/js/agenda_licitacoes.js"></script>
 </body>
 </html>

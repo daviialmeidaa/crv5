@@ -265,11 +265,17 @@ function initCustomDatepickers() {
             
             // Fix para posições na tela (se passar das bordas inferior ou lateral)
             const rect = wrapper.getBoundingClientRect();
-            const scrollContainer = wrapper.closest('.custom-scrollbar') || document.body;
+            const scrollContainer = wrapper.closest('.custom-scrollbar') || wrapper.closest('.overflow-y-auto') || wrapper.closest('.overflow-auto') || document.body;
             const containerRect = scrollContainer.getBoundingClientRect();
             
+            // Altura aproximada do popup do calendário
+            const popupHeight = 320;
+            
+            // Limite inferior é o menor valor entre a janela inteira e o container de scroll
+            const bottomLimit = scrollContainer === document.body ? window.innerHeight : Math.min(window.innerHeight, containerRect.bottom);
+            
             let originY = 'top';
-            if (rect.bottom + 300 > window.innerHeight) {
+            if (rect.bottom + popupHeight > bottomLimit) {
                 popup.style.top = 'auto';
                 popup.style.bottom = '100%';
                 popup.style.marginBottom = '4px';

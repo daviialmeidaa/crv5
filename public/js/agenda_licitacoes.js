@@ -728,19 +728,41 @@ const AL = (() => {
             document.getElementById('formObservacoes').value = item.observacoes_status || '';
 
             // Datas
-            document.getElementById('formDataCadastro').value = item.data_cadastro ? item.data_cadastro.split('T')[0] : '';
-            document.getElementById('formDataLimite').value = item.data_limite ? item.data_limite.split('T')[0] : '';
-            document.getElementById('formHoraLimite').value = item.hora_limite || '';
-            document.getElementById('formDataLances').value = item.data_lances ? item.data_lances.split('T')[0] : '';
-            document.getElementById('formHoraLances').value = item.hora_lances || '';
+            const inputCadastro = document.getElementById('formDataCadastro');
+            const inputLimite = document.getElementById('formDataLimite');
+            const inputLances = document.getElementById('formDataLances');
+            const horaLimite = document.getElementById('formHoraLimite');
+            const horaLances = document.getElementById('formHoraLances');
+
+            inputCadastro.value = item.data_cadastro ? item.data_cadastro.split('T')[0] : '';
+            inputLimite.value = item.data_limite ? item.data_limite.split('T')[0] : '';
+            horaLimite.value = item.hora_limite || '';
+            inputLances.value = item.data_lances ? item.data_lances.split('T')[0] : '';
+            horaLances.value = item.hora_lances || '';
             document.getElementById('formAntecedencia').value = item.antecedencia !== null ? item.antecedencia : '';
+
+            // Sincronizar com datepickers visuais customizados
+            inputCadastro.dispatchEvent(new Event('change'));
+            inputLimite.dispatchEvent(new Event('change'));
+            inputLances.dispatchEvent(new Event('change'));
+            horaLimite.dispatchEvent(new Event('change'));
+            horaLances.dispatchEvent(new Event('change'));
 
         } else {
             // Criação
             title.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-nexo-500 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> Novo Item da Agenda`;
             if (deleteBtn) deleteBtn.classList.add('hidden');
             document.getElementById('formEmpresa').value = currentTab;
+
+            document.getElementById('formDataCadastro').dispatchEvent(new Event('change'));
+            document.getElementById('formDataLimite').dispatchEvent(new Event('change'));
+            document.getElementById('formDataLances').dispatchEvent(new Event('change'));
+            document.getElementById('formHoraLimite').dispatchEvent(new Event('change'));
+            document.getElementById('formHoraLances').dispatchEvent(new Event('change'));
         }
+
+        if (typeof initCustomDatepickers === 'function') initCustomDatepickers();
+        if (typeof initCustomTimepickers === 'function') initCustomTimepickers();
 
         // Initialize business days auto calc if not yet initialized on these inputs
         initBusinessDaysAutoCalc();
