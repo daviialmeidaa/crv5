@@ -159,8 +159,11 @@ async function runAgendaCronLogic() {
 }
 
 function initAgendaCron() {
-    cron.schedule('0 8,17 * * *', runAgendaCronLogic);
-    console.log('Cron Job de Agenda de Licitações iniciado (Execução às 08h e 17h).');
+    cron.schedule('0 8 * * 1-5', runAgendaCronLogic, {
+        scheduled: true,
+        timezone: "America/Sao_Paulo"
+    });
+    console.log('Cron Job de Agenda de Licitações iniciado (Execução às 08h de seg a sex, Horário de Brasília).');
 }
 
 module.exports = { initAgendaCron, runAgendaCronLogic };
