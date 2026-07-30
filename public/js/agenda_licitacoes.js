@@ -183,8 +183,8 @@ const AL = (() => {
             const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
             html += `
-                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle">
-                    <div class="flex items-center justify-center gap-3 w-full h-full">
+                <th class="px-3 py-2 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[70px] select-none relative align-middle">
+                    <div class="flex items-center justify-center gap-1.5 w-full h-full px-4">
                         <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="AL.toggleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
@@ -222,6 +222,9 @@ const AL = (() => {
 
                 if (col.type === 'currency') {
                     displayVal = formatCurrency(val);
+                } else if (col.type === 'date' && val) {
+                    const d = new Date(val);
+                    displayVal = !isNaN(d.getTime()) ? d.toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : val;
                 } else if (col.key === 'SITUACAO_STATUS') {
                     displayVal = getStatusBadge(val);
                 } else if (col.key === 'DATA_INICIO' || col.key === 'DATA_TERMINO') {
@@ -246,11 +249,11 @@ const AL = (() => {
                     </div>`;
                 }
 
-                let alignClass = 'text-center whitespace-nowrap';
-                if (col.key === 'ORGAO' || col.key === 'MATERIAL') {
-                    alignClass = 'text-left whitespace-normal break-words min-w-[250px] max-w-[350px]';
-                } else if (col.key === 'SITUACAO_STATUS') {
-                    alignClass = 'text-center whitespace-normal break-words min-w-[120px] max-w-[200px]';
+                let alignClass = 'text-center whitespace-normal break-words';
+                if (col.key === 'ORGAO' || col.key === 'MATERIAL' || col.key === 'OBJETO' || col.key === 'CATEGORIA') {
+                    alignClass = 'text-left whitespace-normal break-words min-w-[150px]';
+                } else if (col.key === 'SITUACAO_STATUS' || col.key === 'observacoes_status') {
+                    alignClass = 'text-center whitespace-normal break-words min-w-[120px]';
                 }
 
                 html += `<td class="px-3 py-1.5 text-[12px] align-middle ${alignClass}" title="${String(row[col.key] || '').replace(/"/g, '&quot;')}">${displayVal}</td>`;
