@@ -34,6 +34,9 @@ async function runSync(onProgress = () => {}) {
     let supraPool;
     try {
         supraPool = await getPool();
+        if (!supraPool) {
+            throw new Error("Falha na conexão com o banco de dados do Supra ERP (SGC). Verifique as credenciais (variáveis de ambiente) ou as regras de firewall do servidor em produção (Heroku).");
+        }
 
         const upsertQuery = `
             INSERT INTO titulos (
