@@ -13,34 +13,40 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-async function runAgendaCronLogic() {
+async function runAgendaCronLogic(options = {}) {
+    const daysToAdd = options.daysToAdd || 1;
+    const isFridayRoutine = options.isFridayRoutine || false;
+
     try {
-        // Busca todos os pregões que ocorrerão exatamente amanhã
+        // Busca todos os pregões que ocorrerão daqui a 'daysToAdd' dias
         const query = `
             SELECT "CHAVE", pregao, orgao, uf, categoria, portal, empresa, data_lances, hora_lances
             FROM agenda_licitacoes."AGENDA_LICITACOES"
             WHERE data_lances IS NOT NULL
-              AND data_lances::date = CURRENT_DATE + INTERVAL '1 DAY'
+              AND data_lances::date = CURRENT_DATE + INTERVAL '${daysToAdd} DAY'
             ORDER BY hora_lances ASC
         `;
         
         const result = await supaPool.query(query);
         
         if (result.rows.length > 0) {
-            // Pega a data de amanhã para montar uma chave única do dia
+            // Pega a data alvo para montar uma chave única do dia
             const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const dateISO = tomorrow.toISOString().split('T')[0];
-            const dateFormatted = tomorrow.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
-            const actionId = `REMINDER_${dateISO}`;
+            const targetDate = new Date(today);
+            targetDate.setDate(targetDate.getDate() + daysToAdd);
+            const dateISO = targetDate.toISOString().split('T')[0];
+            const dateFormatted = targetDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+            
+            const actionId = isFridayRoutine ? `REMINDER_FRIDAY_${dateISO}` : `REMINDER_${dateISO}`;
+            const diaTexto = isFridayRoutine ? 'na próxima segunda-feira' : 'amanhã';
+            const diaTextoMaiusculo = diaTexto.charAt(0).toUpperCase() + diaTexto.slice(1);
             
             let pregoesLista = result.rows.map(item => {
                 const horaStr = item.hora_lances ? item.hora_lances.substring(0, 5) : '--:--';
                 return `• <b>${item.pregao || 'Sem Nº'}</b> - ${item.orgao || 'N/D'} - às ${horaStr}`;
             }).join('\n\n');
 
-            const msg = `⏰ LEMBRETE: Amanhã teremos ${result.rows.length} pregão(ões):\n\n${pregoesLista}`;
+            const msg = `⏰ LEMBRETE: ${diaTextoMaiusculo} teremos ${result.rows.length} pregão(ões):\n\n${pregoesLista}`;
 
             // Para garantir que a lista fique sempre atualizada caso um novo pregão seja adicionado durante o dia
             // para o dia seguinte, nós deletamos o lembrete consolidado anterior e inserimos um novo no topo.
@@ -54,7 +60,7 @@ async function runAgendaCronLogic() {
                 `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, NULL)`,
                 ['AGENDA', actionId, msg]
             );
-            console.log(`[Agenda Cron] Lembrete diário consolidado gerado para ${result.rows.length} pregões amanhã.`);
+            console.log(`[Agenda Cron] Lembrete diário consolidado gerado para ${result.rows.length} pregões ${diaTexto}.`);
 
             // ==========================================
             // Lógica para Notificação por E-mail
@@ -78,7 +84,7 @@ async function runAgendaCronLogic() {
             let emailHtml = `
                 <div style="font-family: 'Inter', Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #1f2937; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
                     <h2 style="color: #00838F; border-bottom: 2px solid #0097A7; padding-bottom: 10px;">Lembrete de Licitações</h2>
-                    <p style="font-size: 16px; line-height: 1.5;">Olá, esse e-mail é um lembrete oficial de que amanhã, <strong>${dateFormatted}</strong>, teremos os seguintes pregões agendados:</p>
+                    <p style="font-size: 16px; line-height: 1.5;">Olá, esse e-mail é um lembrete oficial de que ${diaTexto}, <strong>${dateFormatted}</strong>, teremos os seguintes pregões agendados:</p>
             `;
 
             const tableHeader = `
