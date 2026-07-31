@@ -37,7 +37,7 @@ async function runAgendaCronLogic(options = {}) {
             const dateISO = targetDate.toISOString().split('T')[0];
             const dateFormatted = targetDate.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
             
-            const actionId = isFridayRoutine ? `REMINDER_FRIDAY_${dateISO}` : `REMINDER_${dateISO}`;
+            const actionId = isFridayRoutine ? `FRI_RM_${dateISO}` : `REMINDER_${dateISO}`;
             const diaTexto = isFridayRoutine ? 'na próxima segunda-feira' : 'amanhã';
             const diaTextoMaiusculo = diaTexto.charAt(0).toUpperCase() + diaTexto.slice(1);
             
