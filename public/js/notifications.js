@@ -22,6 +22,23 @@
 
     let notifications = [];
     let unreadCount = 0;
+    let previousUnreadCount = 0;
+    let isFirstLoad = true;
+
+    // Áudio pré-carregado (com cache-buster para forçar o navegador a pegar o arquivo novo)
+    const notifAudio = new Audio('/assets/notification/audio_notification.wav?v=' + Date.now());
+
+    // Função para tocar som de notificação
+    function playNotificationSound() {
+        try {
+            notifAudio.currentTime = 0;
+            notifAudio.play().catch(e => {
+                // Ignora erros de bloqueio de autoplay do navegador
+            });
+        } catch(e) {
+            console.error('Erro ao tentar tocar notificação:', e);
+        }
+    }
 
     // 0. Injetar Estilos (Scrollbar customizado)
     if (!document.getElementById('notif-styles')) {
@@ -208,6 +225,12 @@
     function renderNotifications() {
         unreadCount = notifications.filter(n => !n.is_read).length;
         
+        if (!isFirstLoad && unreadCount > previousUnreadCount) {
+            playNotificationSound();
+        }
+        previousUnreadCount = unreadCount;
+        isFirstLoad = false;
+        
         if (unreadCount > 0) {
             badge.classList.remove('hidden');
         } else {
@@ -289,6 +312,13 @@
     // Inicializa carregando do backend
     fetchNotifications();
 
-    // Polling opcional a cada 2 minutos
-    setInterval(fetchNotifications, 120000);
+    // Polling agressivo a cada 5 segundos para simular tempo real
+    setInterval(fetchNotifications, 5000);
+
+    // Busca as notificações instantaneamente se o usuário voltar para a aba
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            fetchNotifications();
+        }
+    });
 })();
