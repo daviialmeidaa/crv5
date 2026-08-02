@@ -84,8 +84,7 @@ app.listen(PORT, () => {
     console.log(`🚀 Servidor rodando na porta ${PORT}`);
     console.log(`🔗 Acesse: http://localhost:${PORT}`);
     
-    // Inicializa Cron Jobs Específicos
-    initAgendaCron();
+    // A inicialização do Cron da Agenda foi removida daqui, pois o Heroku Scheduler é o responsável pelos disparos.
 
     // Configura o Cron Job para rodar a cada 15 minutos
     cron.schedule('*/15 * * * *', async () => {
