@@ -4,7 +4,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.get('force_logout') === '1') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        // Limpar o parâmetro da URL para não poluir
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Verificar se a sessão expirou
+    if (urlParams.get('session_expired') === '1') {
+        const errorText = document.getElementById('errorText');
+        const errorMessage = document.getElementById('errorMessage');
+        if (errorText && errorMessage) {
+            errorText.textContent = 'Sua sessão expirou. Por favor, faça login novamente.';
+            errorMessage.classList.remove('hidden');
+        }
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 

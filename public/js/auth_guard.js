@@ -16,6 +16,46 @@
         return;
     }
 
+    // --- Início: Verificação de Validade do Token (Item 3) ---
+    function decodeJwt(t) {
+        try {
+            const base64Url = t.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch(e) {
+            return null;
+        }
+    }
+
+    const payload = decodeJwt(token);
+    if (payload && payload.exp) {
+        const now = Math.floor(Date.now() / 1000);
+        if (payload.exp < now) {
+            // Token expirado
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.replace('/?session_expired=1');
+            return;
+        }
+    }
+    // --- Fim: Verificação de Validade do Token ---
+
+    // --- Início: Interceptor Global de Fetch (Item 2) ---
+    const originalFetch = window.fetch;
+    window.fetch = async function() {
+        const response = await originalFetch.apply(this, arguments);
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.replace('/?session_expired=1');
+        }
+        return response;
+    };
+    // --- Fim: Interceptor Global de Fetch ---
+
     const currentPath = window.location.pathname;
 
     // Bloqueia acesso a qualquer página se o usuário estiver pendente de redefinir senha
