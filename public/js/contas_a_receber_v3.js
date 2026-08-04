@@ -1123,9 +1123,14 @@ const ContasGrid = (function () {
             try {
                 const token = localStorage.getItem('token');
                 let url = `/api/notas/${empresa}/${numero_nota}`;
-                if (valorTotal) {
-                    url += `?valor=${valorTotal}`;
-                }
+                
+                const params = new URLSearchParams();
+                if (valorTotal) params.append('valor', valorTotal);
+                if (documento) params.append('documento', documento);
+                
+                const qs = params.toString();
+                if (qs) url += `?${qs}`;
+                
                 const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
