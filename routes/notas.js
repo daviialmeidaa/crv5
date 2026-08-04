@@ -25,6 +25,20 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
 
         // Utilizando parameterização segura contra SQL Injection
         const valorFiltro = req.query.valor;
+        const documento = req.query.documento;
+
+        let clifor_codigo = null;
+        if (documento) {
+            try {
+                const empresaPg = empresa.toUpperCase() === 'NEXOMED' ? 'Nexomed' : 'BML';
+                const pgRes = await pgPool.query(`SELECT cod_cliente FROM titulos WHERE empresa = $1 AND documento = $2`, [empresaPg, documento]);
+                if (pgRes.rows.length > 0) {
+                    clifor_codigo = pgRes.rows[0].cod_cliente;
+                }
+            } catch (err) {
+                console.error('Erro ao buscar clifor_codigo no PostgreSQL:', err);
+            }
+        }
 
         let queryCabecalho = `
             SELECT 
@@ -42,14 +56,19 @@ router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
 
         const requestCabecalho = pool.request().input('nota', sql.VarChar, numero);
         
-        if (valorFiltro) {
-            // Converte o valor recebido do front (ex: "1669.6") para float, ou tenta match exato se a conversão do BD permitir
+        if (clifor_codigo) {
+            queryCabecalho += ` AND clifor_codigo = @clifor_codigo`;
+            requestCabecalho.input('clifor_codigo', sql.Int, parseInt(clifor_codigo));
+        } else if (valorFiltro) {
+            // Fallback para manter retrocompatibilidade caso documento nao seja passado
             const valorNum = parseFloat(valorFiltro);
             if (!isNaN(valorNum)) {
                 queryCabecalho += ` AND ABS(valor_total - @valor) < 0.05`;
                 requestCabecalho.input('valor', sql.Float, valorNum);
             }
         }
+
+        queryCabecalho += ` ORDER BY data DESC`;
 
         const cabecalhoResult = await requestCabecalho.query(queryCabecalho);
 
