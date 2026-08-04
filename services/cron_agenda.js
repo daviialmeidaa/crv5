@@ -165,8 +165,8 @@ async function runAgendaCronLogic(options = {}) {
 }
 
 function initAgendaCron() {
-    // 1 - Segunda a Quinta-feira (1-4) às 08:00
-    cron.schedule('0 8 * * 1-4', () => {
+    // 1 - Segunda a Quinta-feira (1-4) às 17:00
+    cron.schedule('0 17 * * 1-4', () => {
         runAgendaCronLogic({ daysToAdd: 1, isFridayRoutine: false });
     }, {
         scheduled: true,
@@ -181,7 +181,7 @@ function initAgendaCron() {
         timezone: "America/Sao_Paulo"
     });
 
-    console.log('Cron Job de Agenda de Licitações iniciado (Seg-Qui às 08h, Sex às 16h, Horário de Brasília).');
+    console.log('Cron Job de Agenda de Licitações iniciado (Seg-Qui às 17h, Sex às 16h, Horário de Brasília).');
 }
 
 module.exports = { initAgendaCron, runAgendaCronLogic };
