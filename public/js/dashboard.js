@@ -49,7 +49,10 @@ async function fetchDashboardData() {
         const data = await res.json();
 
         // A API retorna um array direto (result.rows)
-        rawData = Array.isArray(data) ? data : (data.titulos || []);
+        let fetchedData = Array.isArray(data) ? data : (data.titulos || []);
+        
+        // Ignorar clientes intercompany/específicos: Nexomed Hospitalar (167) e Bml Hospitalar (401)
+        rawData = fetchedData.filter(t => t.cod_cliente != 167 && t.cod_cliente != 401);
 
         const hoje = new Date();
         hoje.setHours(0,0,0,0);
