@@ -78,6 +78,11 @@
         return;
     }
     
+    if (currentPath === '/clientes' && !permissions.canViewClientes) {
+        window.location.replace('/403');
+        return;
+    }
+    
     if (currentPath === '/itens_arrematados' && !permissions.canViewLC) {
         window.location.replace('/403');
         return;

@@ -1,13 +1,13 @@
 const rolePermissions = {
-    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true },
-    'CR1':   { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: true },
-    'CR2':   { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: true },
-    'CR3':   { canViewCR: true, canViewLC: true,  canViewUsers: true, canManageUsers: true },
-    'CR4':   { canViewCR: true, canViewLC: true,  canViewUsers: true, canManageUsers: true },
-    'LC1':   { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: true },
-    'LC2':   { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: true },
-    'LC3':   { canViewCR: true,  canViewLC: true, canViewUsers: true, canManageUsers: true },
-    'LC4':   { canViewCR: true,  canViewLC: true, canViewUsers: true, canManageUsers: true }
+    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true },
+    'CR1':   { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: true, canViewClientes: false },
+    'CR2':   { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: true, canViewClientes: true },
+    'CR3':   { canViewCR: true, canViewLC: true,  canViewUsers: true, canManageUsers: true, canViewClientes: true },
+    'CR4':   { canViewCR: true, canViewLC: true,  canViewUsers: true, canManageUsers: true, canViewClientes: true },
+    'LC1':   { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: false },
+    'LC2':   { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: false },
+    'LC3':   { canViewCR: true,  canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true },
+    'LC4':   { canViewCR: true,  canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true }
 };
 
 const getRoleLevel = (role) => {

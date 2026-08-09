@@ -5,10 +5,9 @@
     <script src="/js/auth_guard.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usuários - Nexomed</title>
+    <title>Cobrança de Clientes | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -70,6 +69,43 @@
         }
         
         .logo-mini { display: none; }
+        
+        /* Estilos específicos para a tabela grande */
+        .table-container {
+            max-height: calc(100vh - 210px);
+        }
+        
+        /* Custom Scrollbar para a tabela */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.02);
+            border-radius: 8px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+        
+        /* Fixar colunas importantes na esquerda para rolagem horizontal suave */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
     </style>
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
@@ -109,7 +145,7 @@
                 <!-- Grupo Financeiro -->
                 <div class="sidebar-group" id="menu-group-financeiro">
                     <button
-                        class="w-full flex items-center justify-between px-4 py-2.5 text-steel-400 hover:text-white hover:bg-white/5 rounded-lg font-medium transition-colors sidebar-group-btn">
+                        class="w-full flex items-center justify-between px-4 py-2.5 text-nexo-400 font-semibold rounded-lg bg-nexo-500/10 transition-colors sidebar-group-btn">
                         <div class="flex items-center gap-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -118,19 +154,19 @@
                             </svg>
                             <span class="sidebar-text truncate text-[14.5px]">Financeiro</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style="transform: rotate(90deg)"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
-                    <div class="sidebar-submenu hidden pl-[44px] pr-4 py-1 space-y-1">
+                    <div class="sidebar-submenu pl-[44px] pr-4 py-1 space-y-1">
                         <a href="/contas_a_receber"
                             class="flex items-center gap-2 py-2 text-[14px] font-medium text-steel-400 hover:text-white transition-colors sidebar-text">
                             <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Contas a Receber
                         </a>
                         <a href="/clientes"
-                            class="flex items-center gap-2 py-2 text-[14px] font-medium text-steel-400 hover:text-white transition-colors sidebar-text">
+                            class="flex items-center gap-2 py-2 text-[14px] font-semibold text-nexo-400 transition-colors sidebar-text">
                             <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Cobrança
                         </a>
@@ -181,7 +217,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
-                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Gerenciamento de Usuários</h2>
+                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Cobrança de Clientes</h2>
             </div>
             
             <div class="flex items-center gap-4">
@@ -217,42 +253,66 @@
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-steel-900 transition-colors duration-200 p-6 md:p-8">
-            <div class="max-w-7xl mx-auto space-y-6">
-                <!-- Header Actions -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-steel-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-steel-700 transition-colors">
-                    <div>
-                        <h2 class="text-xl md:text-2xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Gerenciamento de Usuários</h2>
-                        <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Lista completa de usuários registrados no sistema.</p>
-                    </div>
+        <div class="flex-1 p-6 overflow-hidden flex flex-col">
+            
+            <!-- Ferramentas e Filtros -->
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <input type="text" id="searchClientInput" placeholder="Buscar por cliente, cnpj..." class="px-4 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-64 md:w-96 transition-all shadow-sm">
+                    <button class="px-4 py-2 bg-steel-100 dark:bg-steel-700 text-steel-700 dark:text-gray-200 border border-gray-200 dark:border-steel-600 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </button>
                 </div>
+            </div>
 
-                <!-- Tabela de Usuários -->
-                <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-sm border border-gray-100 dark:border-steel-700 overflow-hidden transition-colors">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse min-w-max">
-                            <thead>
-                                <tr class="bg-gray-50/50 dark:bg-steel-900/50 border-b border-gray-100 dark:border-steel-700">
-                                    <th class="px-6 py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Usuário</th>
-                                    <th class="px-6 py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">E-mail</th>
-                                    <th class="px-6 py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Acesso</th>
-                                    <th class="px-6 py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="usersTableBody" class="divide-y divide-gray-50 dark:divide-steel-700/50 text-sm text-steel-700 dark:text-gray-300">
-                                <!-- Preenchido via JS -->
-                                <tr>
-                                    <td colspan="4" class="px-6 py-8 text-center text-steel-500">Carregando usuários...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <!-- Tabela Super Larga -->
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative">
+                
+                <!-- Container com overflow -->
+                <div class="table-container custom-scrollbar overflow-auto flex-1">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead id="clientesTableHeader" class="sticky top-0 z-20 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)]">
+                            <tr>
+                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider sticky-col bg-gray-50 dark:bg-steel-900 border-r border-gray-200 dark:border-steel-700">Cliente</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-center">CNPJ</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-center">Status</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-right">Dívida Total (R$)</th>
+                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientesTableBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm text-steel-700 dark:text-gray-300">
+                            <tr><td colspan="5" class="p-6 text-center text-steel-400">Carregando clientes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginação -->
+                <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-white dark:bg-steel-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-steel-500 dark:text-steel-400">Registros por página:</span>
+                        <select id="itemsPerPage" class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-700 dark:text-gray-200 text-xs rounded px-2 py-1 outline-none focus:ring-1 focus:ring-nexo-500 transition-colors">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="250">250</option>
+                            <option value="500">500</option>
+                            <option value="1000">1000</option>
+                        </select>
+                        <span id="paginationInfo" class="text-xs text-steel-500 dark:text-steel-400 ml-2">Mostrando 0 de 0 registros</span>
+                    </div>
+                    <div class="flex items-center gap-1" id="paginationControls">
+                        <!-- Botões de paginação injetados via JS -->
                     </div>
                 </div>
             </div>
+
         </div>
 
         <!-- Footer -->
-        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200">
+        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 mt-auto">
             <p class="text-xs text-steel-400">
                 &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
             </p>
@@ -267,53 +327,8 @@
             document.body.classList.remove('loading-auth');
         });
     </script>
-
-    <!-- Edit Modal -->
-    <div id="editModal" class="fixed inset-0 z-[70] flex items-center justify-center hidden">
-        <div class="fixed inset-0 bg-steel-900/60 backdrop-blur-sm transition-opacity" id="editModalOverlay"></div>
-        <div class="relative bg-white dark:bg-steel-800 rounded-xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-95 opacity-0 mx-4 border border-gray-100 dark:border-steel-700">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-steel-800 dark:text-gray-100">Editar Usuário</h3>
-                <button type="button" id="editCancelBtnIcon" class="text-steel-400 hover:text-steel-600 dark:hover:text-gray-200 transition-colors focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <form id="editForm" class="space-y-4">
-                <input type="hidden" id="editUserId">
-                <div>
-                    <label class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Nome</label>
-                    <input type="text" id="editName" required class="w-full px-4 py-2 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">E-mail</label>
-                    <input type="email" id="editEmail" required class="w-full px-4 py-2 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Perfil de Acesso</label>
-                    <select id="editRole" required class="w-full px-4 py-2 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500">
-                        <option value="CR1">CR1</option>
-                        <option value="CR2">CR2</option>
-                        <option value="CR3">CR3</option>
-                        <option value="CR4">CR4</option>
-                        <option value="LC1">LC1</option>
-                        <option value="LC2">LC2</option>
-                        <option value="LC3">LC3</option>
-                        <option value="LC4">LC4</option>
-                        <option value="ADMIN">ADMIN</option>
-                    </select>
-                </div>
-                <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-steel-700 mt-6">
-                    <button type="button" id="editCancelBtn" class="px-4 py-2 text-steel-600 dark:text-steel-300 hover:bg-gray-100 dark:hover:bg-steel-700 rounded-lg transition-colors text-sm font-medium">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-nexo-600 hover:bg-nexo-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm">Salvar Alterações</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="/js/theme.js"></script>
     <script src="/js/layout.js"></script>
-    <script src="/js/usuarios.js" type="module"></script>
+    <script src="/js/clientes.js"></script>
 </body>
 </html>

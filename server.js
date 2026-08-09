@@ -36,6 +36,11 @@ app.get('/contas_a_receber', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'contas_a_receber.html'));
 });
 
+// Nova rota para Cobrança (Clientes)
+app.get('/clientes', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'clientes.html'));
+});
+
 // Nova rota para Itens Arrematados
 app.get('/itens_arrematados', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'itens_arrematados.html'));
