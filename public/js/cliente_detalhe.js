@@ -314,7 +314,7 @@ const ClienteDetalhe = (() => {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += `<tr class="h-[52px] hover:bg-gray-50 dark:hover:bg-steel-700/30 transition-colors duration-200">`;
+            html += `<tr class="h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-default">`;
 
             columns.forEach(col => {
                 let val = row[col.key];
