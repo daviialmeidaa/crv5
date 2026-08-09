@@ -58,6 +58,25 @@ async function runMigrations() {
             );
         `);
 
+        console.log('Verificando/Criando tabela de Histórico de Cobrança...');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS historico_cobranca (
+                id SERIAL PRIMARY KEY,
+                codigo_cliente VARCHAR(50) NOT NULL,
+                agenda_contato_id INTEGER REFERENCES agenda_contatos(id) ON DELETE SET NULL,
+                tipo_contato VARCHAR(50),
+                resultado_contato VARCHAR(50),
+                descritivo_contato TEXT,
+                agendamento_data_contato DATE,
+                agendamento_hora_contato TIME,
+                agendamento_tipo_retorno_contato VARCHAR(50),
+                agendamento_nota_contato TEXT,
+                has_agendamento BOOLEAN DEFAULT false,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by INTEGER REFERENCES users(id) ON DELETE SET NULL
+            );
+        `);
+
         await client.query('COMMIT');
         console.log('✅ Migrações concluídas com sucesso!');
 

@@ -146,3 +146,14 @@ O módulo de Clientes, acessado via `/clientes`, serve como base para a frente d
    - **Filtros Dinâmicos:** O modal de filtro segue o padrão do sistema (checkboxes) com a opção inteligente "(Selecionar Tudo)" ancorada no topo.
    - **Paginação Minimalista:** Os controles numéricos e setas da paginação no rodapé não possuem bordas marcadas. Utilizam-se SVGs vetoriais elegantes para "Primeira/Última" e "Anterior/Próxima", com destaque de cor primária apenas na página ativa.
 4. **Navegação (Drill-down):** Cada linha da tabela é interativa (`cursor-pointer`, hover cinza/nexo). Ao clicar em um registro, o sistema deve redirecionar o usuário para a rota detalhada utilizando o ID do cliente: `window.location.href = '/clientes/' + row.codigo`.
+
+## Diretrizes da Tela de Detalhes do Cliente (Cobrança)
+A tela de Detalhes do Cliente (`/clientes/:codigo`) atua como um hub central para as ações de cobrança, dividida em três pilares principais (Abas): **Notas Fiscais**, **Agenda de Contatos** e **Histórico**.
+1. **Estética de Interatividade (Hover/Glow):** Cards informativos (KPIs de vendas, cards de contatos e itens da timeline do histórico) possuem um padrão estrito de elevação sutil e borda colorida no `hover` (ex: `hover:-translate-y-1 hover:shadow-lg hover:border-nexo-400 transition-all duration-300`). O design deve parecer dinâmico e responsivo ao mouse.
+2. **Agenda de Contatos (Relacional):** 
+   - A aba Agenda gerencia contatos/pessoas físicas vinculadas ao cliente (PostgreSQL local: `agenda_contatos`). 
+3. **Histórico de Cobrança e Timeline:**
+   - A lógica de Registro de Histórico de Cobrança exige a vinculação a um contato existente (`agenda_contato_id`). Isso força a alimentação do CRM.
+   - O formulário possui uma seção colapsável de **"Agendar próximo contato"** que é acionada por um botão de toggle com design *Sash/Soft*. O estado real (salvo no banco no campo `has_agendamento`) governa regras futuras de notificação (cron).
+   - **⚠️ Fuso Horário (Timezone):** É obrigatório que qualquer data transacional salva via `CURRENT_TIMESTAMP` na tabela `historico_cobranca` (que seja do tipo `timestamp without time zone`), seja resgatada na query do backend (Node) injetando `AT TIME ZONE 'UTC'` (ex: `h.created_at AT TIME ZONE 'UTC' AS created_at`). Isso impede o driver `pg` de classificar erroneamente a hora gerada pelo servidor como se fosse a hora local, garantindo que a renderização no Javascript do navegador diminua corretamente as 3 horas (-03:00) do fuso de Brasília.
+4. **Isolamento de Escopo JS:** Métodos disparados diretamente por eventos HTML (ex: `onclick="ClienteDetalhe.changeModalPage(1)"`) devem sempre referenciar de forma estrita o Namespace/Objeto da respectiva página para evitar *ReferenceErrors*, pois o sistema não empacota o JS via Webpack, contando com escopo de janela (window) isolado por namespaces definidos no topo dos arquivos Vanilla JS.

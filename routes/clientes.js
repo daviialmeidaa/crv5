@@ -208,4 +208,83 @@ router.delete('/:id/contatos/:contatoId', authMiddleware, async (req, res) => {
     }
 });
 
+// ==========================================
+// HISTÓRICO DE COBRANÇA (PostgreSQL)
+// ==========================================
+
+// Buscar histórico de cobrança do cliente
+router.get('/:id/historico', authMiddleware, async (req, res) => {
+    try {
+        const result = await pgPool.query(`
+            SELECT 
+                h.id, 
+                h.tipo_contato, 
+                h.resultado_contato, 
+                h.descritivo_contato, 
+                h.agendamento_data_contato, 
+                h.agendamento_hora_contato, 
+                h.agendamento_tipo_retorno_contato, 
+                h.agendamento_nota_contato,
+                h.created_at AT TIME ZONE 'UTC' AS created_at,
+                c.nome_contato,
+                u.nome AS usuario_nome
+            FROM historico_cobranca h
+            LEFT JOIN agenda_contatos c ON h.agenda_contato_id = c.id
+            LEFT JOIN users u ON h.created_by = u.id
+            WHERE h.codigo_cliente = $1
+            ORDER BY h.created_at DESC
+        `, [req.params.id]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Erro ao buscar histórico de cobrança:', err);
+        res.status(500).json({ error: 'Erro ao buscar histórico de cobrança no banco de dados.' });
+    }
+});
+
+// Cadastrar novo registro no histórico
+router.post('/:id/historico', authMiddleware, async (req, res) => {
+    const { 
+        tipo_contato, 
+        agenda_contato_id, 
+        resultado_contato, 
+        descritivo_contato, 
+        agendamento_data_contato, 
+        agendamento_hora_contato, 
+        agendamento_tipo_retorno_contato, 
+        agendamento_nota_contato,
+        has_agendamento
+    } = req.body;
+    
+    // Pegar o ID do usuário do token injetado pelo authMiddleware
+    const created_by = req.user ? req.user.id : null;
+
+    try {
+        const result = await pgPool.query(`
+            INSERT INTO historico_cobranca 
+            (codigo_cliente, tipo_contato, agenda_contato_id, resultado_contato, descritivo_contato, 
+             agendamento_data_contato, agendamento_hora_contato, agendamento_tipo_retorno_contato, agendamento_nota_contato, has_agendamento, created_by)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING *
+        `, [
+            req.params.id, 
+            tipo_contato, 
+            agenda_contato_id || null, 
+            resultado_contato, 
+            descritivo_contato, 
+            agendamento_data_contato || null, 
+            agendamento_hora_contato || null, 
+            agendamento_tipo_retorno_contato || null, 
+            agendamento_nota_contato || null, 
+            has_agendamento || false,
+            created_by
+        ]);
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Erro ao cadastrar histórico de cobrança:', err);
+        res.status(500).json({ error: 'Erro ao cadastrar histórico de cobrança no banco de dados.' });
+    }
+});
+
 module.exports = router;

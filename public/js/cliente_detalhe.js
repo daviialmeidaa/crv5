@@ -28,7 +28,7 @@ const ClienteDetalhe = (() => {
     const columns = [
         { key: 'empresa', label: 'Empresa Vendedora' },
         { key: 'nota', label: 'Nota', type: 'number' },
-        { key: 'posicao', label: 'Posição' },
+        // { key: 'posicao', label: 'Posição' }, // Ocultado temporariamente
         { key: 'contrato', label: 'Contrato' },
         { key: 'pregao', label: 'Pregão' },
         { key: 'tipoContrato', label: 'Tipo Contrato' },
@@ -85,6 +85,9 @@ const ClienteDetalhe = (() => {
 
         // Buscar contatos da agenda (PostgreSQL)
         loadContatos();
+
+        // Buscar histórico de cobrança (PostgreSQL)
+        loadHistorico();
 
         // Items per page
         const perPage = document.getElementById('notasPerPage');
@@ -1143,9 +1146,9 @@ const ClienteDetalhe = (() => {
     };
 
     // ==========================================
-    // 18. Histórico de Cobrança (Client-Side / Mock)
+    // 18. Histórico de Cobrança (PostgreSQL)
     // ==========================================
-    let historicoEntries = []; // Array in-memory
+    let historicoEntries = []; // Array da API
 
     const tipoIcons = {
         LIGACAO: '📞',
@@ -1206,6 +1209,21 @@ const ClienteDetalhe = (() => {
         }
     };
 
+    const loadHistorico = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/clientes/${clienteId}/historico`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                historicoEntries = await res.json();
+                renderHistoricoTimeline();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar histórico:', error);
+        }
+    };
+
     const renderHistoricoTimeline = () => {
         const emptyState = document.getElementById('historicoEmptyState');
         const entriesContainer = document.getElementById('historicoEntries');
@@ -1222,10 +1240,11 @@ const ClienteDetalhe = (() => {
         let html = '<div class="absolute left-[19px] top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-steel-700"></div>';
 
         historicoEntries.forEach(entry => {
-            const icon = tipoIcons[entry.tipo] || '📝';
-            const tipoLabel = tipoLabels[entry.tipo] || entry.tipo;
-            const rs = resultadoStyles[entry.resultado] || resultadoStyles.INFORMATIVO;
-            const dateStr = entry.data.toLocaleDateString('pt-BR') + ' às ' + entry.data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const icon = tipoIcons[entry.tipo_contato] || '📝';
+            const tipoLabel = tipoLabels[entry.tipo_contato] || entry.tipo_contato;
+            const rs = resultadoStyles[entry.resultado_contato] || resultadoStyles.INFORMATIVO;
+            const dateObj = new Date(entry.created_at);
+            const dateStr = dateObj.toLocaleDateString('pt-BR') + ' às ' + dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
             html += `
                 <div class="relative pl-12 pb-8 last:pb-0">
@@ -1233,21 +1252,24 @@ const ClienteDetalhe = (() => {
                     <div class="absolute left-[12px] top-1 w-4 h-4 rounded-full ${rs.dot} border-[3px] border-white dark:border-steel-800 shadow-sm z-10"></div>
                     
                     <!-- Card -->
-                    <div class="bg-gray-50 dark:bg-steel-900/50 rounded-xl border border-gray-200 dark:border-steel-700 p-4 hover:shadow-sm transition-shadow">
+                    <div class="bg-gray-50 dark:bg-steel-900/50 rounded-xl border border-gray-200 dark:border-steel-700 p-4 hover:-translate-y-1 hover:shadow-lg hover:border-nexo-300 dark:hover:border-nexo-700 transition-all duration-300">
                         <!-- Header -->
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-2">
-                                <span class="text-base">${icon}</span>
-                                <span class="text-sm font-semibold text-steel-800 dark:text-gray-200">${tipoLabel}</span>
-                                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${rs.bg} ${rs.text}">${rs.label}</span>
+                        <div class="flex items-start justify-between mb-2">
+                            <div class="flex flex-col gap-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">${icon}</span>
+                                    <span class="text-sm font-semibold text-steel-800 dark:text-gray-200">${tipoLabel}</span>
+                                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${rs.bg} ${rs.text}">${rs.label}</span>
+                                </div>
+                                ${entry.nome_contato ? `<p class="text-xs text-steel-500 dark:text-steel-400 mt-1">Contato com: <span class="font-medium text-steel-700 dark:text-gray-300">${escapeHtmlSafe(entry.nome_contato)}</span></p>` : ''}
                             </div>
-                            <span class="text-[11px] text-steel-400 dark:text-steel-500 font-mono">${dateStr}</span>
+                            <span class="text-[11px] text-steel-400 dark:text-steel-500 font-mono mt-0.5">${dateStr}</span>
                         </div>
                         <!-- Usuario -->
-                        <p class="text-xs text-steel-500 dark:text-steel-400 mb-2">por <span class="font-medium">${escapeHtmlSafe(entry.usuario)}</span></p>
+                        <p class="text-xs text-steel-500 dark:text-steel-400 mb-2">por <span class="font-medium">${escapeHtmlSafe(entry.usuario_nome || 'Sistema')}</span></p>
                         <!-- Descrição -->
-                        <p class="text-sm text-steel-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">${escapeHtmlSafe(entry.descricao)}</p>
-                        ${entry.agendamento ? `
+                        <p class="text-sm text-steel-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">${escapeHtmlSafe(entry.descritivo_contato)}</p>
+                        ${entry.agendamento_data_contato ? `
                         <!-- Agendamento de Retorno -->
                         <div class="mt-3 pt-3 border-t border-gray-200 dark:border-steel-700">
                             <div class="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/30">
@@ -1256,9 +1278,9 @@ const ClienteDetalhe = (() => {
                                 </svg>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                                        ${tipoIcons[entry.agendamento.tipoRetorno] || '📞'} Retorno agendado para ${entry.agendamento.dataFormatada}${entry.agendamento.hora ? ' às ' + entry.agendamento.hora : ''}
+                                        ${tipoIcons[entry.agendamento_tipo_retorno_contato] || '📞'} Retorno agendado para ${new Date(entry.agendamento_data_contato).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}${entry.agendamento_hora_contato ? ' às ' + entry.agendamento_hora_contato.substring(0, 5) : ''}
                                     </p>
-                                    ${entry.agendamento.nota ? `<p class="text-[11px] text-amber-600/80 dark:text-amber-500/80 mt-0.5 truncate">${escapeHtmlSafe(entry.agendamento.nota)}</p>` : ''}
+                                    ${entry.agendamento_nota_contato ? `<p class="text-[11px] text-amber-600/80 dark:text-amber-500/80 mt-0.5 truncate">${escapeHtmlSafe(entry.agendamento_nota_contato)}</p>` : ''}
                                 </div>
                             </div>
                         </div>` : ''}
@@ -1270,7 +1292,7 @@ const ClienteDetalhe = (() => {
         entriesContainer.innerHTML = html;
     };
 
-    const registrarHistorico = () => {
+    const registrarHistorico = async () => {
         const tipo = document.getElementById('historicoTipo').value;
         const contato = document.getElementById('historicoContato').value;
         const resultado = document.getElementById('historicoResultado').value;
@@ -1281,12 +1303,15 @@ const ClienteDetalhe = (() => {
         if (!resultado) { alert('Selecione o resultado.'); return; }
         if (!descricao) { alert('Descreva o contato realizado.'); return; }
 
-        // Pegar nome do usuário logado do DOM (avatar/profile)
-        const userEl = document.querySelector('#profileDropdownMenu .text-sm.font-medium');
-        const userName = userEl ? userEl.textContent.trim() : 'Usuário';
+        let payload = {
+            tipo_contato: tipo,
+            agenda_contato_id: parseInt(contato, 10),
+            resultado_contato: resultado,
+            descritivo_contato: descricao,
+            has_agendamento: agendamentoAtivo
+        };
 
         // Capturar agendamento (se ativo)
-        let agendamento = null;
         if (agendamentoAtivo) {
             const agData = document.getElementById('agendamentoData').value;
             const agHora = document.getElementById('agendamentoHora').value;
@@ -1295,44 +1320,54 @@ const ClienteDetalhe = (() => {
 
             if (!agData) { alert('Informe a data do retorno agendado.'); return; }
 
-            // Formatar data para exibição
-            const parts = agData.split('-');
-            const dataFormatada = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : agData;
-
-            agendamento = {
-                data: agData,
-                hora: agHora,
-                tipoRetorno: agTipoRetorno,
-                nota: agNota,
-                dataFormatada
-            };
+            payload.agendamento_data_contato = agData;
+            if (agHora) payload.agendamento_hora_contato = agHora;
+            payload.agendamento_tipo_retorno_contato = agTipoRetorno;
+            if (agNota) payload.agendamento_nota_contato = agNota;
         }
 
-        historicoEntries.unshift({
-            tipo,
-            resultado,
-            descricao,
-            data: new Date(),
-            usuario: userName,
-            agendamento
-        });
+        const btn = document.getElementById('btnSubmitHistorico');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Registrando...';
+        btn.disabled = true;
 
-        // Limpar formulário
-        document.getElementById('historicoTipo').value = '';
-        document.getElementById('historicoContato').value = '';
-        document.getElementById('historicoResultado').value = '';
-        document.getElementById('historicoDescricao').value = '';
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/clientes/${clienteId}/historico`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
 
-        // Reset agendamento
-        if (agendamentoAtivo) {
-            document.getElementById('agendamentoData').value = '';
-            document.getElementById('agendamentoHora').value = '';
-            document.getElementById('agendamentoTipoRetorno').value = 'LIGACAO';
-            document.getElementById('agendamentoNota').value = '';
-            toggleAgendamento(); // Fecha o painel
+            if (!res.ok) throw new Error('Erro ao salvar histórico');
+
+            // Limpar formulário
+            document.getElementById('historicoTipo').value = '';
+            document.getElementById('historicoContato').value = '';
+            document.getElementById('historicoResultado').value = '';
+            document.getElementById('historicoDescricao').value = '';
+
+            // Reset agendamento
+            if (agendamentoAtivo) {
+                document.getElementById('agendamentoData').value = '';
+                document.getElementById('agendamentoHora').value = '';
+                document.getElementById('agendamentoTipoRetorno').value = 'LIGACAO';
+                document.getElementById('agendamentoNota').value = '';
+                toggleAgendamento(); // Fecha o painel
+            }
+
+            // Recarregar histórico
+            await loadHistorico();
+        } catch (error) {
+            console.error(error);
+            alert('Falha ao registrar histórico de cobrança.');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
-
-        renderHistoricoTimeline();
     };
 
     // ==========================================
@@ -1435,14 +1470,14 @@ const ClienteDetalhe = (() => {
             
             const prevDisabled = modalCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
             paginationHtml += `
-                <button onclick="ContasGrid.changeModalPage(${modalCurrentPage - 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${prevDisabled}" ${modalCurrentPage === 1 ? 'disabled' : ''}>
+                <button onclick="ClienteDetalhe.changeModalPage(${modalCurrentPage - 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${prevDisabled}" ${modalCurrentPage === 1 ? 'disabled' : ''}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
                 </button>
             `;
 
             const nextDisabled = modalCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
             paginationHtml += `
-                <button onclick="ContasGrid.changeModalPage(${modalCurrentPage + 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${nextDisabled}" ${modalCurrentPage === totalPages ? 'disabled' : ''}>
+                <button onclick="ClienteDetalhe.changeModalPage(${modalCurrentPage + 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${nextDisabled}" ${modalCurrentPage === totalPages ? 'disabled' : ''}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                 </button>
             `;
