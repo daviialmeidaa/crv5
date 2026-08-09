@@ -114,5 +114,98 @@ router.get('/:id/notas', authMiddleware, async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar notas do banco de dados.' });
     }
 });
+// ==========================================
+// AGENDA DE CONTATOS (PostgreSQL)
+// ==========================================
+
+// Buscar contatos da agenda do cliente
+router.get('/:id/contatos', authMiddleware, async (req, res) => {
+    try {
+        const result = await pgPool.query(`
+            SELECT id, nome_contato, cargo_contato, telefone_contato, email_contato, observacao
+            FROM agenda_contatos
+            WHERE codigo_cliente = $1 AND ativo = true
+            ORDER BY id DESC
+        `, [req.params.id]);
+
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Erro ao buscar contatos da agenda:', err);
+        res.status(500).json({ error: 'Erro ao buscar contatos do banco de dados.' });
+    }
+});
+
+// Cadastrar novo contato na agenda
+router.post('/:id/contatos', authMiddleware, async (req, res) => {
+    const { nome, cargo, telefone, email, observacao } = req.body;
+    
+    if (!nome) {
+        return res.status(400).json({ error: 'Nome do contato é obrigatório.' });
+    }
+
+    try {
+        const result = await pgPool.query(`
+            INSERT INTO agenda_contatos 
+            (codigo_cliente, nome_contato, cargo_contato, telefone_contato, email_contato, observacao)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id, nome_contato, cargo_contato, telefone_contato, email_contato, observacao
+        `, [req.params.id, nome, cargo, telefone, email, observacao]);
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Erro ao cadastrar contato na agenda:', err);
+        res.status(500).json({ error: 'Erro ao cadastrar contato no banco de dados.' });
+    }
+});
+
+// Editar contato na agenda
+router.put('/:id/contatos/:contatoId', authMiddleware, async (req, res) => {
+    const { nome, cargo, telefone, email, observacao } = req.body;
+    const { id, contatoId } = req.params;
+
+    if (!nome) {
+        return res.status(400).json({ error: 'Nome do contato é obrigatório.' });
+    }
+
+    try {
+        const result = await pgPool.query(`
+            UPDATE agenda_contatos 
+            SET nome_contato = $1, cargo_contato = $2, telefone_contato = $3, email_contato = $4, observacao = $5
+            WHERE id = $6 AND codigo_cliente = $7 AND ativo = true
+            RETURNING id, nome_contato, cargo_contato, telefone_contato, email_contato, observacao
+        `, [nome, cargo, telefone, email, observacao, contatoId, id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Contato não encontrado ou inativo.' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Erro ao atualizar contato na agenda:', err);
+        res.status(500).json({ error: 'Erro ao atualizar contato no banco de dados.' });
+    }
+});
+
+// Deletar contato da agenda (Soft Delete)
+router.delete('/:id/contatos/:contatoId', authMiddleware, async (req, res) => {
+    const { id, contatoId } = req.params;
+
+    try {
+        const result = await pgPool.query(`
+            UPDATE agenda_contatos 
+            SET ativo = false 
+            WHERE id = $1 AND codigo_cliente = $2
+        `, [contatoId, id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Contato não encontrado.' });
+        }
+
+        res.json({ success: true, message: 'Contato excluído com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao deletar contato na agenda:', err);
+        res.status(500).json({ error: 'Erro ao deletar contato no banco de dados.' });
+    }
+});
 
 module.exports = router;
