@@ -83,6 +83,9 @@ const ClienteDetalhe = (() => {
         // Buscar notas fiscais
         fetchNotasData();
 
+        // Buscar contatos da agenda (PostgreSQL)
+        loadContatos();
+
         // Items per page
         const perPage = document.getElementById('notasPerPage');
         if (perPage) {
@@ -846,9 +849,23 @@ const ClienteDetalhe = (() => {
     };
 
     // ==========================================
-    // 17. Agenda de Contatos (Client-Side / Mock)
+    // 17. Agenda de Contatos (PostgreSQL)
     // ==========================================
-    let contatos = []; // Array in-memory (mock, sem persistência por enquanto)
+    let contatos = []; 
+    const loadContatos = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/clientes/${clienteId}/contatos`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                contatos = await res.json();
+                renderAgendaCards();
+            }
+        } catch (error) {
+            console.error('Erro ao carregar contatos:', error);
+        }
+    };
 
     const avatarColors = [
         'bg-nexo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500',
@@ -888,10 +905,10 @@ const ClienteDetalhe = (() => {
 
         let html = '';
         contatos.forEach((c, idx) => {
-            const initials = getInitials(c.nome);
-            const color = getAvatarColor(c.nome);
+            const initials = getInitials(c.nome_contato);
+            const color = getAvatarColor(c.nome_contato);
             html += `
-                <div class="bg-gray-50 dark:bg-steel-900/50 rounded-xl border border-gray-200 dark:border-steel-700 p-5 hover:shadow-md hover:border-nexo-300 dark:hover:border-nexo-700 transition-all duration-200 group">
+                <div class="bg-gray-50 dark:bg-steel-900/50 rounded-xl border border-gray-200 dark:border-steel-700 p-5 hover:-translate-y-1 hover:shadow-lg hover:border-nexo-300 dark:hover:border-nexo-700 transition-all duration-300 group">
                     <div class="flex items-start gap-4">
                         <!-- Avatar -->
                         <div class="w-11 h-11 rounded-full ${color} flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
@@ -899,8 +916,8 @@ const ClienteDetalhe = (() => {
                         </div>
                         <!-- Info -->
                         <div class="flex-1 min-w-0">
-                            <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 truncate">${escapeHtmlSafe(c.nome)}</h4>
-                            <p class="text-xs text-steel-500 dark:text-steel-400 mt-0.5">${escapeHtmlSafe(c.cargo) || 'Cargo não informado'}</p>
+                            <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 truncate">${escapeHtmlSafe(c.nome_contato)}</h4>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mt-0.5">${escapeHtmlSafe(c.cargo_contato) || 'Cargo não informado'}</p>
                         </div>
                         <!-- Ações -->
                         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -915,19 +932,19 @@ const ClienteDetalhe = (() => {
 
                     <!-- Dados de contato -->
                     <div class="mt-4 space-y-2 text-[13px]">
-                        ${c.telefone ? `
+                        ${c.telefone_contato ? `
                         <div class="flex items-center gap-2 text-steel-600 dark:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-steel-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                            <span class="truncate">${escapeHtmlSafe(c.telefone)}</span>
-                            <button onclick="navigator.clipboard.writeText('${escapeHtmlSafe(c.telefone)}')" class="ml-auto p-1 rounded text-steel-300 hover:text-nexo-500 transition-colors shrink-0" title="Copiar telefone">
+                            <span class="truncate">${escapeHtmlSafe(c.telefone_contato)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtmlSafe(c.telefone_contato)}')" class="ml-auto p-1 rounded text-steel-300 hover:text-nexo-500 transition-colors shrink-0" title="Copiar telefone">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                             </button>
                         </div>` : ''}
-                        ${c.email ? `
+                        ${c.email_contato ? `
                         <div class="flex items-center gap-2 text-steel-600 dark:text-gray-400">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-steel-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-                            <span class="truncate">${escapeHtmlSafe(c.email)}</span>
-                            <button onclick="navigator.clipboard.writeText('${escapeHtmlSafe(c.email)}')" class="ml-auto p-1 rounded text-steel-300 hover:text-nexo-500 transition-colors shrink-0" title="Copiar e-mail">
+                            <span class="truncate">${escapeHtmlSafe(c.email_contato)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtmlSafe(c.email_contato)}')" class="ml-auto p-1 rounded text-steel-300 hover:text-nexo-500 transition-colors shrink-0" title="Copiar e-mail">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                             </button>
                         </div>` : ''}
@@ -969,20 +986,20 @@ const ClienteDetalhe = (() => {
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">Nome Completo *</label>
-                        <input type="text" id="contatoNome" value="${escapeHtmlSafe(c.nome || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="Ex: Maria da Silva">
+                        <input type="text" id="contatoNome" value="${escapeHtmlSafe(c.nome_contato || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="Ex: Maria da Silva">
                     </div>
                     <div>
                         <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">Cargo / Função</label>
-                        <input type="text" id="contatoCargo" value="${escapeHtmlSafe(c.cargo || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="Ex: Coord. Financeira">
+                        <input type="text" id="contatoCargo" value="${escapeHtmlSafe(c.cargo_contato || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="Ex: Coord. Financeira">
                     </div>
                     <div class="grid grid-cols-2 gap-4">
                         <div>
                             <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">Telefone</label>
-                            <input type="tel" id="contatoTelefone" value="${escapeHtmlSafe(c.telefone || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="(51) 99123-4567">
+                            <input type="tel" id="contatoTelefone" value="${escapeHtmlSafe(c.telefone_contato || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="(51) 99123-4567">
                         </div>
                         <div>
                             <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">E-mail</label>
-                            <input type="email" id="contatoEmail" value="${escapeHtmlSafe(c.email || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="email@exemplo.com">
+                            <input type="email" id="contatoEmail" value="${escapeHtmlSafe(c.email_contato || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="email@exemplo.com">
                         </div>
                     </div>
                     <div>
@@ -1005,11 +1022,11 @@ const ClienteDetalhe = (() => {
         editingContatoIdx = null;
     };
 
-    const saveContato = () => {
+    const saveContato = async () => {
         const nome = document.getElementById('contatoNome').value.trim();
         if (!nome) { alert('O nome é obrigatório.'); return; }
 
-        const data = {
+        const payload = {
             nome,
             cargo: document.getElementById('contatoCargo').value.trim(),
             telefone: document.getElementById('contatoTelefone').value.trim(),
@@ -1017,21 +1034,101 @@ const ClienteDetalhe = (() => {
             observacao: document.getElementById('contatoObs').value.trim()
         };
 
-        if (editingContatoIdx !== null) {
-            contatos[editingContatoIdx] = data;
-        } else {
-            contatos.push(data);
+        const isEdit = editingContatoIdx !== null;
+        const url = isEdit 
+            ? `/api/clientes/${clienteId}/contatos/${contatos[editingContatoIdx].id}`
+            : `/api/clientes/${clienteId}/contatos`;
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const btn = document.querySelector('#contatoModal button:last-child');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<svg class="animate-spin h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+        btn.disabled = true;
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(url, {
+                method,
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error('Erro ao salvar contato');
+
+            await loadContatos();
+            closeContatoModal();
+        } catch (error) {
+            console.error('Erro:', error);
+            alert('Falha ao salvar contato. Tente novamente.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
         }
-        closeContatoModal();
-        renderAgendaCards();
     };
 
     const editContato = (idx) => openContatoModal(idx);
 
     const deleteContato = (idx) => {
-        if (!confirm('Deseja realmente excluir este contato?')) return;
-        contatos.splice(idx, 1);
-        renderAgendaCards();
+        const contato = contatos[idx];
+        if (!contato) return;
+
+        let modal = document.getElementById('deleteContatoModal');
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = 'deleteContatoModal';
+        modal.className = 'fixed inset-0 z-[100] flex items-center justify-center';
+        modal.innerHTML = `
+            <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity" onclick="document.getElementById('deleteContatoModal').remove()"></div>
+            <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 mx-4 border border-gray-100 dark:border-steel-700 animate-fade-in-up p-6 text-center">
+                <div class="w-14 h-14 rounded-full bg-red-50 dark:bg-red-900/20 text-red-500 flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-steel-900 dark:text-gray-100 mb-2">Excluir Contato</h3>
+                <p class="text-sm text-steel-500 dark:text-steel-400 mb-6">
+                    Tem certeza que deseja excluir o contato <strong>${escapeHtmlSafe(contato.nome_contato)}</strong>?<br>Esta ação não poderá ser desfeita.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button onclick="document.getElementById('deleteContatoModal').remove()" class="px-5 py-2.5 bg-gray-100 dark:bg-steel-700 text-steel-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors text-sm font-semibold w-full sm:w-auto">
+                        Cancelar
+                    </button>
+                    <button id="btnConfirmDeleteContato" class="px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors text-sm font-semibold w-full sm:w-auto flex items-center justify-center gap-2 shadow-sm shadow-red-500/30">
+                        Sim, excluir
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const btnConfirm = document.getElementById('btnConfirmDeleteContato');
+        btnConfirm.onclick = async () => {
+            const originalText = btnConfirm.innerHTML;
+            btnConfirm.innerHTML = '<svg class="animate-spin h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Excluindo...';
+            btnConfirm.disabled = true;
+
+            try {
+                const token = localStorage.getItem('token');
+                const contatoId = contato.id;
+                const res = await fetch(`/api/clientes/${clienteId}/contatos/${contatoId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!res.ok) throw new Error('Erro ao deletar contato');
+
+                modal.remove();
+                await loadContatos();
+            } catch (error) {
+                console.error('Erro:', error);
+                alert('Falha ao excluir contato. Tente novamente.');
+                btnConfirm.innerHTML = originalText;
+                btnConfirm.disabled = false;
+            }
+        };
     };
 
     // ==========================================
