@@ -861,6 +861,17 @@ const ClienteDetalhe = (() => {
             if (res.ok) {
                 contatos = await res.json();
                 renderAgendaCards();
+                
+                const selectHistorico = document.getElementById('historicoContato');
+                if (selectHistorico) {
+                    selectHistorico.innerHTML = '<option value="">Selecione o contato...</option>';
+                    contatos.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.id;
+                        opt.textContent = c.nome_contato + (c.cargo_contato ? ` (${c.cargo_contato})` : '');
+                        selectHistorico.appendChild(opt);
+                    });
+                }
             }
         } catch (error) {
             console.error('Erro ao carregar contatos:', error);
@@ -1261,10 +1272,12 @@ const ClienteDetalhe = (() => {
 
     const registrarHistorico = () => {
         const tipo = document.getElementById('historicoTipo').value;
+        const contato = document.getElementById('historicoContato').value;
         const resultado = document.getElementById('historicoResultado').value;
         const descricao = document.getElementById('historicoDescricao').value.trim();
 
         if (!tipo) { alert('Selecione o tipo de contato.'); return; }
+        if (!contato) { alert('Selecione o contato vinculado. (Se não houver, cadastre na aba Agenda de Contatos)'); return; }
         if (!resultado) { alert('Selecione o resultado.'); return; }
         if (!descricao) { alert('Descreva o contato realizado.'); return; }
 
@@ -1306,6 +1319,7 @@ const ClienteDetalhe = (() => {
 
         // Limpar formulário
         document.getElementById('historicoTipo').value = '';
+        document.getElementById('historicoContato').value = '';
         document.getElementById('historicoResultado').value = '';
         document.getElementById('historicoDescricao').value = '';
 
