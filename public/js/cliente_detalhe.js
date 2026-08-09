@@ -27,7 +27,18 @@ const ClienteDetalhe = (() => {
         { key: 'empenho', label: 'Empenho' },
         { key: 'documento', label: 'Documento' },
         { key: 'valor', label: 'Valor', type: 'currency' },
-        { key: 'dataEmissao', label: 'Data de Emissão', type: 'date' }
+        { key: 'dataEmissao', label: 'Data de Emissão', type: 'date' },
+        {
+            key: 'status', label: 'Status', render: v => {
+                const styles = {
+                    'PAGO': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
+                    'ATRASADO': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
+                    'PENDENTE': { grad: 'linear-gradient(135deg, #f6c23e, #dda520)', color: '#fff' }
+                };
+                const s = styles[v] || { grad: 'linear-gradient(135deg, #858796, #6c6d7e)', color: '#fff' };
+                return `<span style="background:${s.grad};color:${s.color};padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
+            }
+        }
     ];
 
     // ==========================================
@@ -38,7 +49,7 @@ const ClienteDetalhe = (() => {
         filteredData: [],
         viewData: [],
         filters: {},
-        sort: { key: 'dataEmissao', dir: 'desc' },
+        sort: { key: null, dir: null },
         pagination: { current: 1, limit: 25, total: 0 }
     };
 
@@ -97,8 +108,10 @@ const ClienteDetalhe = (() => {
             const data = await res.json();
             
             document.getElementById('breadcrumbClientName').textContent = data.razaoSocial || '-';
+            document.getElementById('clienteCodigo').textContent = data.codigo || clienteId || '-';
             document.getElementById('clienteNome').textContent = data.razaoSocial || '-';
             document.getElementById('clienteFantasia').textContent = data.nomeFantasia || '-';
+            document.getElementById('clienteClassificacao').textContent = data.classificacao || '-';
             document.getElementById('clienteCnpj').textContent = data.cnpj || '-';
             
             // Concatenação do Endereço
@@ -247,9 +260,9 @@ const ClienteDetalhe = (() => {
     const updateKpis = () => {
         const data = state.filteredData;
         const vendido = data.reduce((sum, r) => sum + (parseFloat(r.valor) || 0), 0);
-        const pago = 0; // Será desenvolvido
-        const aberto = 0; // Será desenvolvido
-        const processos = 0; // Será desenvolvido
+        const pago = data.filter(r => r.status === 'PAGO').reduce((sum, r) => sum + (parseFloat(r.valor) || 0), 0);
+        const aberto = data.filter(r => r.status === 'PENDENTE' || r.status === 'ATRASADO').reduce((sum, r) => sum + (parseFloat(r.valor) || 0), 0);
+        const processos = data.filter(r => r.status === 'PENDENTE' || r.status === 'ATRASADO').length;
 
         document.getElementById('kpiVendido').textContent = formatBRL(vendido);
         document.getElementById('kpiPago').textContent = formatBRL(pago);

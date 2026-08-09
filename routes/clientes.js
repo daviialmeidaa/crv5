@@ -55,7 +55,8 @@ router.get('/:id', authMiddleware, async (req, res) => {
                     [Estado] AS uf,
                     [E_mail] AS email,
                     [DDD] AS ddd,
-                    [Telefone] AS telefone
+                    [Telefone] AS telefone,
+                    [Class_Cliente_2] AS classificacao
                 FROM SGC.dbo.bi_cadastro_clientes
                 WHERE [Código] = @codigo
             `);
@@ -87,11 +88,24 @@ router.get('/:id/notas', authMiddleware, async (req, res) => {
                 t.empenho AS "empenho",
                 t.documento AS "documento",
                 t.valor_nota AS "valor",
-                t.data_emissao AS "dataEmissao"
+                t.data_emissao AS "dataEmissao",
+                t.status AS "status"
             FROM titulos t
             LEFT JOIN contratos c ON t.contrato = c.codigo_contrato
             WHERE t.cod_cliente = $1
-            ORDER BY t.data_emissao DESC
+            ORDER BY 
+                CASE t.status
+                    WHEN 'ATRASADO' THEN 1
+                    WHEN 'PENDENTE' THEN 2
+                    WHEN 'PAGO' THEN 3
+                    ELSE 4
+                END ASC,
+                CASE 
+                    WHEN t.status IN ('ATRASADO', 'PENDENTE') THEN t.data_emissao 
+                END ASC,
+                CASE 
+                    WHEN t.status = 'PAGO' THEN t.data_emissao 
+                END DESC
         `, [req.params.id]);
 
         res.json(result.rows);

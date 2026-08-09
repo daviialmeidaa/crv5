@@ -194,7 +194,7 @@ const ClientesGrid = (() => {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += `<tr class="h-[60px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer" onclick="window.location.href='/clientes/${row.codigo}'">`;
+            html += `<tr class="h-[60px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer" onauxclick="if(event.button === 1) window.open('/clientes/${row.codigo}', '_blank')" onclick="if(event.ctrlKey || event.metaKey) window.open('/clientes/${row.codigo}', '_blank'); else window.location.href='/clientes/${row.codigo}'">`;
             
             columns.forEach(col => {
                 let val = row[col.key];
