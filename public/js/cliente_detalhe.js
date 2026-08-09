@@ -820,7 +820,412 @@ const ClienteDetalhe = (() => {
     };
 
     // ==========================================
-    // 16. Boot
+    // 16. Tabs Principais (Notas / Agenda / Histórico)
+    // ==========================================
+    const activeTabClass = 'flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-t-lg border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 bg-nexo-50/50 dark:bg-nexo-500/10 transition-all duration-200';
+    const inactiveTabClass = 'flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg border-b-2 border-transparent text-steel-500 dark:text-steel-400 hover:text-steel-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700/50 transition-all duration-200';
+
+    const switchMainTab = (tab) => {
+        const tabs = {
+            notas: { btn: 'mainTabNotas', content: 'tabContentNotas' },
+            agenda: { btn: 'mainTabAgenda', content: 'tabContentAgenda' },
+            historico: { btn: 'mainTabHistorico', content: 'tabContentHistorico' }
+        };
+
+        Object.keys(tabs).forEach(key => {
+            const btn = document.getElementById(tabs[key].btn);
+            const content = document.getElementById(tabs[key].content);
+            if (key === tab) {
+                btn.className = activeTabClass;
+                content.classList.remove('hidden');
+            } else {
+                btn.className = inactiveTabClass;
+                content.classList.add('hidden');
+            }
+        });
+    };
+
+    // ==========================================
+    // 17. Agenda de Contatos (Client-Side / Mock)
+    // ==========================================
+    let contatos = []; // Array in-memory (mock, sem persistência por enquanto)
+
+    const avatarColors = [
+        'bg-nexo-500', 'bg-emerald-500', 'bg-amber-500', 'bg-rose-500',
+        'bg-violet-500', 'bg-sky-500', 'bg-pink-500', 'bg-indigo-500'
+    ];
+
+    const getInitials = (name) => {
+        if (!name) return '?';
+        const parts = name.trim().split(' ');
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        return parts[0][0].toUpperCase();
+    };
+
+    const getAvatarColor = (name) => {
+        if (!name) return avatarColors[0];
+        const idx = name.charCodeAt(0) % avatarColors.length;
+        return avatarColors[idx];
+    };
+
+    const escapeHtmlSafe = (str) => {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    };
+
+    const renderAgendaCards = () => {
+        const emptyState = document.getElementById('agendaEmptyState');
+        const cardsContainer = document.getElementById('agendaCards');
+
+        if (contatos.length === 0) {
+            emptyState.classList.remove('hidden');
+            cardsContainer.classList.add('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+        cardsContainer.classList.remove('hidden');
+
+        let html = '';
+        contatos.forEach((c, idx) => {
+            const initials = getInitials(c.nome);
+            const color = getAvatarColor(c.nome);
+            html += `
+                <div class="bg-gray-50 dark:bg-steel-900/50 rounded-xl border border-gray-200 dark:border-steel-700 p-5 hover:shadow-md hover:border-nexo-300 dark:hover:border-nexo-700 transition-all duration-200 group">
+                    <div class="flex items-start gap-4">
+                        <!-- Avatar -->
+                        <div class="w-11 h-11 rounded-full ${color} flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-sm">
+                            ${initials}
+                        </div>
+                        <!-- Info -->
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 truncate">${escapeHtmlSafe(c.nome)}</h4>
+                            <p class="text-xs text-steel-500 dark:text-steel-400 mt-0.5">${escapeHtmlSafe(c.cargo) || 'Cargo não informado'}</p>
+                        </div>
+                        <!-- Ações -->
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="ClienteDetalhe.editContato(${idx})" class="p-1.5 rounded-lg text-steel-400 hover:text-nexo-500 hover:bg-nexo-50 dark:hover:bg-nexo-900/30 transition-colors" title="Editar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                            </button>
+                            <button onclick="ClienteDetalhe.deleteContato(${idx})" class="p-1.5 rounded-lg text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Excluir">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dados de contato -->
+                    <div class="mt-4 space-y-2 text-[13px]">
+                        ${c.telefone ? `
+                        <div class="flex items-center gap-2 text-steel-600 dark:text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-steel-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
+                            <span class="truncate">${escapeHtmlSafe(c.telefone)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtmlSafe(c.telefone)}')" class="ml-auto p-1 rounded text-steel-300 hover:text-nexo-500 transition-colors shrink-0" title="Copiar telefone">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            </button>
+                        </div>` : ''}
+                        ${c.email ? `
+                        <div class="flex items-center gap-2 text-steel-600 dark:text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-steel-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                            <span class="truncate">${escapeHtmlSafe(c.email)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtmlSafe(c.email)}')" class="ml-auto p-1 rounded text-steel-300 hover:text-nexo-500 transition-colors shrink-0" title="Copiar e-mail">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            </button>
+                        </div>` : ''}
+                    </div>
+
+                    ${c.observacao ? `
+                    <div class="mt-3 pt-3 border-t border-gray-200 dark:border-steel-700">
+                        <p class="text-xs text-steel-500 dark:text-steel-400 italic">"${escapeHtmlSafe(c.observacao)}"</p>
+                    </div>` : ''}
+                </div>
+            `;
+        });
+        cardsContainer.innerHTML = html;
+    };
+
+    let editingContatoIdx = null;
+
+    const openContatoModal = (idx = null) => {
+        editingContatoIdx = idx;
+        const isEdit = idx !== null;
+        const c = isEdit ? contatos[idx] : {};
+
+        // Cria modal overlay
+        let modal = document.getElementById('contatoModal');
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = 'contatoModal';
+        modal.className = 'fixed inset-0 z-[100] flex items-center justify-center';
+        modal.innerHTML = `
+            <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm" onclick="ClienteDetalhe.closeContatoModal()"></div>
+            <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 border border-gray-100 dark:border-steel-700 animate-fade-in-up">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
+                    <h3 class="text-base font-semibold text-steel-800 dark:text-gray-100">${isEdit ? 'Editar Contato' : 'Novo Contato'}</h3>
+                    <button onclick="ClienteDetalhe.closeContatoModal()" class="text-steel-400 hover:text-red-500 transition-colors p-1 rounded-lg hover:bg-red-50 dark:hover:bg-steel-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">Nome Completo *</label>
+                        <input type="text" id="contatoNome" value="${escapeHtmlSafe(c.nome || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="Ex: Maria da Silva">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">Cargo / Função</label>
+                        <input type="text" id="contatoCargo" value="${escapeHtmlSafe(c.cargo || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="Ex: Coord. Financeira">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">Telefone</label>
+                            <input type="tel" id="contatoTelefone" value="${escapeHtmlSafe(c.telefone || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="(51) 99123-4567">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">E-mail</label>
+                            <input type="email" id="contatoEmail" value="${escapeHtmlSafe(c.email || '')}" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all" placeholder="email@exemplo.com">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1.5">Observação</label>
+                        <textarea id="contatoObs" rows="2" class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg outline-none focus:ring-2 focus:ring-nexo-500/40 focus:border-nexo-500 text-steel-700 dark:text-gray-200 transition-all resize-none" placeholder="Notas sobre este contato...">${escapeHtmlSafe(c.observacao || '')}</textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button onclick="ClienteDetalhe.closeContatoModal()" class="px-4 py-2 text-sm font-medium text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 transition-colors">Cancelar</button>
+                        <button onclick="ClienteDetalhe.saveContato()" class="px-5 py-2 text-sm font-medium bg-nexo-600 hover:bg-nexo-700 text-white rounded-lg shadow-sm transition-colors">${isEdit ? 'Salvar Alterações' : 'Adicionar'}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    };
+
+    const closeContatoModal = () => {
+        const modal = document.getElementById('contatoModal');
+        if (modal) modal.remove();
+        editingContatoIdx = null;
+    };
+
+    const saveContato = () => {
+        const nome = document.getElementById('contatoNome').value.trim();
+        if (!nome) { alert('O nome é obrigatório.'); return; }
+
+        const data = {
+            nome,
+            cargo: document.getElementById('contatoCargo').value.trim(),
+            telefone: document.getElementById('contatoTelefone').value.trim(),
+            email: document.getElementById('contatoEmail').value.trim(),
+            observacao: document.getElementById('contatoObs').value.trim()
+        };
+
+        if (editingContatoIdx !== null) {
+            contatos[editingContatoIdx] = data;
+        } else {
+            contatos.push(data);
+        }
+        closeContatoModal();
+        renderAgendaCards();
+    };
+
+    const editContato = (idx) => openContatoModal(idx);
+
+    const deleteContato = (idx) => {
+        if (!confirm('Deseja realmente excluir este contato?')) return;
+        contatos.splice(idx, 1);
+        renderAgendaCards();
+    };
+
+    // ==========================================
+    // 18. Histórico de Cobrança (Client-Side / Mock)
+    // ==========================================
+    let historicoEntries = []; // Array in-memory
+
+    const tipoIcons = {
+        LIGACAO: '📞',
+        EMAIL: '✉️',
+        WHATSAPP: '💬',
+        REUNIAO: '🤝',
+        OUTRO: '📝'
+    };
+    const tipoLabels = {
+        LIGACAO: 'Ligação',
+        EMAIL: 'E-mail',
+        WHATSAPP: 'WhatsApp',
+        REUNIAO: 'Reunião',
+        OUTRO: 'Outro'
+    };
+    const resultadoStyles = {
+        PROMESSA: { label: 'Promessa de Pagamento', bg: 'bg-emerald-100 dark:bg-emerald-900/30', text: 'text-emerald-700 dark:text-emerald-400', dot: 'bg-emerald-500' },
+        SEM_RESPOSTA: { label: 'Sem Resposta', bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-400', dot: 'bg-amber-500' },
+        RECUSOU: { label: 'Recusou', bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', dot: 'bg-red-500' },
+        NEGOCIACAO: { label: 'Em Negociação', bg: 'bg-sky-100 dark:bg-sky-900/30', text: 'text-sky-700 dark:text-sky-400', dot: 'bg-sky-500' },
+        INFORMATIVO: { label: 'Informativo', bg: 'bg-gray-100 dark:bg-steel-700', text: 'text-steel-600 dark:text-gray-400', dot: 'bg-steel-400' }
+    };
+
+    let agendamentoAtivo = false;
+
+    const toggleAgendamento = () => {
+        agendamentoAtivo = !agendamentoAtivo;
+        const fields = document.getElementById('agendamentoFields');
+        const checkbox = document.getElementById('agendamentoCheckbox');
+        const chevron = document.getElementById('agendamentoChevron');
+
+        const toggleBtn = document.getElementById('agendamentoToggleBtn');
+
+        if (agendamentoAtivo) {
+            fields.classList.remove('hidden');
+            toggleBtn.classList.remove('rounded-xl');
+            toggleBtn.classList.add('rounded-t-xl');
+            checkbox.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-white" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>';
+            checkbox.className = 'w-5 h-5 rounded-md bg-amber-500 border-2 border-amber-500 flex items-center justify-center transition-all duration-200';
+            chevron.style.transform = 'rotate(180deg)';
+            // Pré-preencher data com amanhã
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const dateInput = document.getElementById('agendamentoData');
+            if (dateInput && !dateInput.value) {
+                dateInput.value = tomorrow.toISOString().split('T')[0];
+            }
+            // Inicializar os pickers customizados do projeto
+            if (typeof initCustomDatepickers === 'function') initCustomDatepickers();
+            if (typeof initCustomTimepickers === 'function') initCustomTimepickers();
+        } else {
+            fields.classList.add('hidden');
+            toggleBtn.classList.remove('rounded-t-xl');
+            toggleBtn.classList.add('rounded-xl');
+            checkbox.innerHTML = '';
+            checkbox.className = 'w-5 h-5 rounded-md border-2 border-gray-300 dark:border-steel-600 flex items-center justify-center transition-all duration-200';
+            chevron.style.transform = 'rotate(0deg)';
+        }
+    };
+
+    const renderHistoricoTimeline = () => {
+        const emptyState = document.getElementById('historicoEmptyState');
+        const entriesContainer = document.getElementById('historicoEntries');
+
+        if (historicoEntries.length === 0) {
+            emptyState.classList.remove('hidden');
+            entriesContainer.classList.add('hidden');
+            return;
+        }
+
+        emptyState.classList.add('hidden');
+        entriesContainer.classList.remove('hidden');
+
+        let html = '<div class="absolute left-[19px] top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-steel-700"></div>';
+
+        historicoEntries.forEach(entry => {
+            const icon = tipoIcons[entry.tipo] || '📝';
+            const tipoLabel = tipoLabels[entry.tipo] || entry.tipo;
+            const rs = resultadoStyles[entry.resultado] || resultadoStyles.INFORMATIVO;
+            const dateStr = entry.data.toLocaleDateString('pt-BR') + ' às ' + entry.data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            html += `
+                <div class="relative pl-12 pb-8 last:pb-0">
+                    <!-- Dot -->
+                    <div class="absolute left-[12px] top-1 w-4 h-4 rounded-full ${rs.dot} border-[3px] border-white dark:border-steel-800 shadow-sm z-10"></div>
+                    
+                    <!-- Card -->
+                    <div class="bg-gray-50 dark:bg-steel-900/50 rounded-xl border border-gray-200 dark:border-steel-700 p-4 hover:shadow-sm transition-shadow">
+                        <!-- Header -->
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">${icon}</span>
+                                <span class="text-sm font-semibold text-steel-800 dark:text-gray-200">${tipoLabel}</span>
+                                <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${rs.bg} ${rs.text}">${rs.label}</span>
+                            </div>
+                            <span class="text-[11px] text-steel-400 dark:text-steel-500 font-mono">${dateStr}</span>
+                        </div>
+                        <!-- Usuario -->
+                        <p class="text-xs text-steel-500 dark:text-steel-400 mb-2">por <span class="font-medium">${escapeHtmlSafe(entry.usuario)}</span></p>
+                        <!-- Descrição -->
+                        <p class="text-sm text-steel-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">${escapeHtmlSafe(entry.descricao)}</p>
+                        ${entry.agendamento ? `
+                        <!-- Agendamento de Retorno -->
+                        <div class="mt-3 pt-3 border-t border-gray-200 dark:border-steel-700">
+                            <div class="flex items-center gap-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/30">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                                        ${tipoIcons[entry.agendamento.tipoRetorno] || '📞'} Retorno agendado para ${entry.agendamento.dataFormatada}${entry.agendamento.hora ? ' às ' + entry.agendamento.hora : ''}
+                                    </p>
+                                    ${entry.agendamento.nota ? `<p class="text-[11px] text-amber-600/80 dark:text-amber-500/80 mt-0.5 truncate">${escapeHtmlSafe(entry.agendamento.nota)}</p>` : ''}
+                                </div>
+                            </div>
+                        </div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        entriesContainer.innerHTML = html;
+    };
+
+    const registrarHistorico = () => {
+        const tipo = document.getElementById('historicoTipo').value;
+        const resultado = document.getElementById('historicoResultado').value;
+        const descricao = document.getElementById('historicoDescricao').value.trim();
+
+        if (!tipo) { alert('Selecione o tipo de contato.'); return; }
+        if (!resultado) { alert('Selecione o resultado.'); return; }
+        if (!descricao) { alert('Descreva o contato realizado.'); return; }
+
+        // Pegar nome do usuário logado do DOM (avatar/profile)
+        const userEl = document.querySelector('#profileDropdownMenu .text-sm.font-medium');
+        const userName = userEl ? userEl.textContent.trim() : 'Usuário';
+
+        // Capturar agendamento (se ativo)
+        let agendamento = null;
+        if (agendamentoAtivo) {
+            const agData = document.getElementById('agendamentoData').value;
+            const agHora = document.getElementById('agendamentoHora').value;
+            const agTipoRetorno = document.getElementById('agendamentoTipoRetorno').value;
+            const agNota = document.getElementById('agendamentoNota').value.trim();
+
+            if (!agData) { alert('Informe a data do retorno agendado.'); return; }
+
+            // Formatar data para exibição
+            const parts = agData.split('-');
+            const dataFormatada = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : agData;
+
+            agendamento = {
+                data: agData,
+                hora: agHora,
+                tipoRetorno: agTipoRetorno,
+                nota: agNota,
+                dataFormatada
+            };
+        }
+
+        historicoEntries.unshift({
+            tipo,
+            resultado,
+            descricao,
+            data: new Date(),
+            usuario: userName,
+            agendamento
+        });
+
+        // Limpar formulário
+        document.getElementById('historicoTipo').value = '';
+        document.getElementById('historicoResultado').value = '';
+        document.getElementById('historicoDescricao').value = '';
+
+        // Reset agendamento
+        if (agendamentoAtivo) {
+            document.getElementById('agendamentoData').value = '';
+            document.getElementById('agendamentoHora').value = '';
+            document.getElementById('agendamentoTipoRetorno').value = 'LIGACAO';
+            document.getElementById('agendamentoNota').value = '';
+            toggleAgendamento(); // Fecha o painel
+        }
+
+        renderHistoricoTimeline();
+    };
+
+    // ==========================================
+    // 19. Boot
     // ==========================================
     document.addEventListener('DOMContentLoaded', init);
 
@@ -829,6 +1234,14 @@ const ClienteDetalhe = (() => {
         changePage,
         clearAllFilters,
         openFilter,
+        switchMainTab,
+        openContatoModal,
+        closeContatoModal,
+        saveContato,
+        editContato,
+        deleteContato,
+        registrarHistorico,
+        toggleAgendamento,
         switchNotaTab(tab) {
             const btnProd = document.getElementById('tabBtnProdutos');
             const btnObs = document.getElementById('tabBtnObservacoes');
