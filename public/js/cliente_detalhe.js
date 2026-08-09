@@ -9,62 +9,25 @@ const ClienteDetalhe = (() => {
     // ==========================================
     const clienteId = window.location.pathname.split('/').pop();
 
-    // ==========================================
-    // 2. Dados Mockados (Ficha Cadastral)
-    // ==========================================
-    const clienteMock = {
-        codigo: clienteId,
-        razaoSocial: 'Hospital Santa Casa de Misericórdia de Belo Horizonte',
-        nomeFantasia: 'Santa Casa BH',
-        classificacao: 'Pessoa Jurídica',
-        cnpj: '17.214.847/0001-06',
-        endereco: 'Av. Francisco Sales, 1111 - Santa Efigênia',
-        cidade: 'Belo Horizonte',
-        uf: 'MG',
-        cep: '30150-221',
-        email: 'compras@santacasabh.org.br',
-        telefone: '(31) 3238-8100'
-    };
+    // Os dados do cliente agora são buscados via API no init().
 
-    // ==========================================
-    // 3. Dados Mockados (Notas Fiscais)
-    // ==========================================
-    const notasMock = [
-        { numNota: 15423, serie: '1', dataEmissao: '2026-01-15', dataVencimento: '2026-02-14', valorNota: 45200.00, valorPago: 45200.00, status: 'PAGO' },
-        { numNota: 15487, serie: '1', dataEmissao: '2026-02-10', dataVencimento: '2026-03-12', valorNota: 32780.50, valorPago: 32780.50, status: 'PAGO' },
-        { numNota: 15512, serie: '1', dataEmissao: '2026-03-05', dataVencimento: '2026-04-04', valorNota: 18950.00, valorPago: 0, status: 'ATRASADO' },
-        { numNota: 15534, serie: '1', dataEmissao: '2026-03-20', dataVencimento: '2026-04-19', valorNota: 67400.00, valorPago: 67400.00, status: 'PAGO' },
-        { numNota: 15601, serie: '1', dataEmissao: '2026-04-08', dataVencimento: '2026-05-08', valorNota: 23100.75, valorPago: 0, status: 'ATRASADO' },
-        { numNota: 15645, serie: '1', dataEmissao: '2026-04-22', dataVencimento: '2026-05-22', valorNota: 51800.00, valorPago: 51800.00, status: 'PAGO' },
-        { numNota: 15702, serie: '1', dataEmissao: '2026-05-10', dataVencimento: '2026-06-09', valorNota: 14300.00, valorPago: 14300.00, status: 'PAGO' },
-        { numNota: 15756, serie: '1', dataEmissao: '2026-05-28', dataVencimento: '2026-06-27', valorNota: 89200.00, valorPago: 0, status: 'PENDENTE' },
-        { numNota: 15801, serie: '1', dataEmissao: '2026-06-15', dataVencimento: '2026-07-15', valorNota: 37600.25, valorPago: 0, status: 'PENDENTE' },
-        { numNota: 15834, serie: '1', dataEmissao: '2026-06-30', dataVencimento: '2026-07-30', valorNota: 42150.00, valorPago: 42150.00, status: 'PAGO' },
-        { numNota: 15890, serie: '1', dataEmissao: '2026-07-12', dataVencimento: '2026-08-11', valorNota: 28700.00, valorPago: 0, status: 'PENDENTE' },
-        { numNota: 15923, serie: '1', dataEmissao: '2026-07-25', dataVencimento: '2026-08-24', valorNota: 55430.50, valorPago: 0, status: 'PENDENTE' },
-    ];
+    
 
     // ==========================================
     // 4. Definição das Colunas do Grid
     // ==========================================
     const columns = [
-        { key: 'numNota', label: 'Nº Nota', type: 'number' },
-        { key: 'serie', label: 'Série' },
-        { key: 'dataEmissao', label: 'Data Emissão', type: 'date' },
-        { key: 'dataVencimento', label: 'Data Vencimento', type: 'date' },
-        { key: 'valorNota', label: 'Valor Nota', type: 'currency' },
-        { key: 'valorPago', label: 'Valor Pago', type: 'currency' },
-        {
-            key: 'status', label: 'Status', render: v => {
-                const styles = {
-                    'PAGO': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
-                    'ATRASADO': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
-                    'PENDENTE': { grad: 'linear-gradient(135deg, #f6c23e, #dda520)', color: '#fff' }
-                };
-                const s = styles[v] || { grad: 'linear-gradient(135deg, #858796, #6c6d7e)', color: '#fff' };
-                return `<span style="background:${s.grad};color:${s.color};padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
-            }
-        }
+        { key: 'empresa', label: 'Empresa Vendedora' },
+        { key: 'nota', label: 'Nota', type: 'number' },
+        { key: 'posicao', label: 'Posição' },
+        { key: 'contrato', label: 'Contrato' },
+        { key: 'pregao', label: 'Pregão' },
+        { key: 'tipoContrato', label: 'Tipo Contrato' },
+        { key: 'classificacao', label: 'Classificação' },
+        { key: 'empenho', label: 'Empenho' },
+        { key: 'documento', label: 'Documento' },
+        { key: 'valor', label: 'Valor', type: 'currency' },
+        { key: 'dataEmissao', label: 'Data de Emissão', type: 'date' }
     ];
 
     // ==========================================
@@ -75,7 +38,7 @@ const ClienteDetalhe = (() => {
         filteredData: [],
         viewData: [],
         filters: {},
-        sort: { key: 'numNota', dir: 'desc' },
+        sort: { key: 'dataEmissao', dir: 'desc' },
         pagination: { current: 1, limit: 25, total: 0 }
     };
 
@@ -94,14 +57,11 @@ const ClienteDetalhe = (() => {
         elements.tableBody = document.getElementById('notasTableBody');
         elements.btnClearFilters = document.getElementById('btnClearFiltersNotas');
 
-        // Preencher ficha cadastral
-        renderFichaCadastral();
+        // Buscar e preencher dados da ficha cadastral
+        fetchClienteData();
 
-        // Carregar dados mockados
-        state.rawData = [...notasMock];
-
-        // Montar grid
-        processData();
+        // Buscar notas fiscais
+        fetchNotasData();
 
         // Items per page
         const perPage = document.getElementById('notasPerPage');
@@ -123,21 +83,81 @@ const ClienteDetalhe = (() => {
         });
     };
 
+    const fetchClienteData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/clientes/${clienteId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (!res.ok) {
+                throw new Error('Falha ao buscar dados do cliente');
+            }
+            const data = await res.json();
+            
+            document.getElementById('breadcrumbClientName').textContent = data.razaoSocial || '-';
+            document.getElementById('clienteNome').textContent = data.razaoSocial || '-';
+            document.getElementById('clienteFantasia').textContent = data.nomeFantasia || '-';
+            document.getElementById('clienteCnpj').textContent = data.cnpj || '-';
+            
+            // Concatenação do Endereço
+            let endParts = [];
+            if (data.tipoLogradouro) endParts.push(data.tipoLogradouro);
+            if (data.logradouro) endParts.push(data.logradouro);
+            if (data.numero) endParts.push(data.numero);
+            
+            let comp = data.complemento ? String(data.complemento).trim() : '';
+            if (comp && comp.toLowerCase() !== '<null>') {
+                endParts.push(comp);
+            }
+            
+            if (data.bairro) endParts.push(data.bairro);
+            document.getElementById('clienteEndereco').textContent = endParts.join(' ') || '-';
+            
+            document.getElementById('clienteCidade').textContent = data.cidade || '-';
+            document.getElementById('clienteUf').textContent = data.uf || '-';
+            document.getElementById('clienteCep').textContent = data.cep || '-';
+            document.getElementById('clienteEmail').textContent = data.email || '-';
+            
+            // Concatenação do Telefone
+            let tel = '';
+            if (data.ddd) tel += `(${String(data.ddd).trim()}) `;
+            if (data.telefone) tel += String(data.telefone).trim();
+            document.getElementById('clienteTelefone').textContent = tel || '-';
+            
+        } catch (error) {
+            console.error('Erro ao buscar dados do cliente:', error);
+            document.getElementById('clienteNome').textContent = 'Erro ao carregar';
+        }
+    };
+
+    
     // ==========================================
-    // 8. Ficha Cadastral
+    // 8.5 Buscar Notas Fiscais
     // ==========================================
-    const renderFichaCadastral = () => {
-        document.getElementById('breadcrumbClientName').textContent = clienteMock.razaoSocial;
-        document.getElementById('clienteNome').textContent = clienteMock.razaoSocial;
-        document.getElementById('clienteFantasia').textContent = clienteMock.nomeFantasia;
-        document.getElementById('clienteClassificacao').textContent = clienteMock.classificacao;
-        document.getElementById('clienteCnpj').textContent = clienteMock.cnpj;
-        document.getElementById('clienteEndereco').textContent = clienteMock.endereco;
-        document.getElementById('clienteCidade').textContent = clienteMock.cidade;
-        document.getElementById('clienteUf').textContent = clienteMock.uf;
-        document.getElementById('clienteCep').textContent = clienteMock.cep;
-        document.getElementById('clienteEmail').textContent = clienteMock.email;
-        document.getElementById('clienteTelefone').textContent = clienteMock.telefone;
+    const fetchNotasData = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/clientes/${clienteId}/notas`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Falha ao buscar notas fiscais');
+            const data = await res.json();
+            
+            // Ajustar datas para YYYY-MM-DD se vierem em ISO (garante que os filtros funcionem)
+            state.rawData = data.map(row => {
+                if (row.dataEmissao && row.dataEmissao.includes('T')) {
+                    row.dataEmissao = row.dataEmissao.split('T')[0];
+                }
+                return row;
+            });
+            processData();
+        } catch (error) {
+            console.error('Erro ao buscar notas:', error);
+            state.rawData = [];
+            processData();
+        }
     };
 
     // ==========================================
@@ -226,10 +246,10 @@ const ClienteDetalhe = (() => {
 
     const updateKpis = () => {
         const data = state.filteredData;
-        const vendido = data.reduce((sum, r) => sum + (r.valorNota || 0), 0);
-        const pago = data.reduce((sum, r) => sum + (r.valorPago || 0), 0);
-        const aberto = data.filter(r => r.status === 'PENDENTE' || r.status === 'ATRASADO').reduce((sum, r) => sum + (r.valorNota || 0), 0);
-        const processos = data.filter(r => r.status === 'PENDENTE' || r.status === 'ATRASADO').length;
+        const vendido = data.reduce((sum, r) => sum + (parseFloat(r.valor) || 0), 0);
+        const pago = 0; // Será desenvolvido
+        const aberto = 0; // Será desenvolvido
+        const processos = 0; // Será desenvolvido
 
         document.getElementById('kpiVendido').textContent = formatBRL(vendido);
         document.getElementById('kpiPago').textContent = formatBRL(pago);
@@ -361,154 +381,393 @@ const ClienteDetalhe = (() => {
     // ==========================================
     // 14. Filtros (Modal Dinâmico)
     // ==========================================
+    const formatCurrency = (val) => {
+        if (val === '-' || !val) return '-';
+        return parseFloat(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
+    const formatDate = (val) => {
+        if (val === '-' || !val) return '-';
+        const parts = String(val).split('T')[0].split('-');
+        if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        return val;
+    };
+
+    // Declaração de activeFilterModal removida pois já existe no topo do arquivo.
+
+    const closeFilter = () => {
+        if (activeFilterModal) {
+            activeFilterModal.remove();
+            activeFilterModal = null;
+        }
+    };
+
     const openFilter = (event, colKey) => {
         event.stopPropagation();
+        closeFilter(); // Fecha anterior se existir
 
-        // Criar ou reutilizar o modal
-        let modal = document.getElementById('notasFilterModal');
-        if (!modal) {
-            modal = document.createElement('div');
-            modal.id = 'notasFilterModal';
-            modal.className = 'hidden fixed z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-72 flex flex-col max-h-96';
-            modal.innerHTML = `
-                <div class="p-3 border-b border-gray-200 dark:border-steel-700 sticky top-0 bg-white dark:bg-steel-800 rounded-t-lg z-10 shrink-0">
-                    <input type="text" id="notasFilterSearch" placeholder="Pesquisar..." class="w-full text-xs px-3 py-1.5 border border-gray-200 dark:border-steel-600 bg-gray-50 dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 outline-none focus:ring-1 focus:ring-nexo-500">
-                </div>
-                <div class="p-2 overflow-y-auto custom-scrollbar flex-1" id="notasFilterOptions"></div>
-                <div class="p-3 border-t border-gray-200 dark:border-steel-700 sticky bottom-0 bg-white dark:bg-steel-800 rounded-b-lg z-10 flex justify-between gap-2 shrink-0">
-                    <button id="notasFilterClear" class="flex-1 text-xs px-2 py-1.5 text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 rounded transition-colors">Limpar</button>
-                    <button id="notasFilterApply" class="flex-1 text-xs px-2 py-1.5 bg-nexo-500 hover:bg-nexo-600 text-white rounded transition-colors">Aplicar</button>
-                </div>
+        const col = columns.find(c => c.key === colKey);
+
+        // Coleta valores únicos para essa coluna respeitando os filtros já aplicados em outras colunas (Filtro em cascata)
+        const preFilteredData = state.rawData.filter(row => {
+            for (let key in state.filters) {
+                if (key === colKey) continue; // Ignora o filtro da própria coluna que estamos abrindo
+                const selectedValues = state.filters[key];
+                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
+                    if (!selectedValues.has(row[key])) {
+                        return false; 
+                    }
+                }
+            }
+            return true;
+        });
+        const uniqueValues = [...new Set(preFilteredData.map(row => {
+            let val = row[colKey];
+            if (val === null || val === undefined || val === '') return '__EMPTY__';
+            return String(val);
+        }))].sort();
+
+        // Inicializa o state do filtro se não existir
+        if (!state.filters[colKey]) {
+            state.filters[colKey] = new Set();
+        }
+
+        // Criar DOM do Modal
+        const modal = document.createElement('div');
+        modal.id = 'filterModal';
+        modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm animate-fade-in-up';
+
+        // Evita que cliques dentro do modal propaguem para o document e fechem o filtro
+        modal.addEventListener('click', (e) => e.stopPropagation());
+
+        // Posicionamento abaixo do ícone clicado
+        const rect = event.currentTarget.getBoundingClientRect();
+        let left = rect.left;
+        if (left + 256 > window.innerWidth) left = window.innerWidth - 266;
+
+        modal.style.top = `${rect.bottom + window.scrollY + 8}px`;
+        modal.style.left = `${left}px`;
+
+        // Cabeçalho / Busca
+        modal.innerHTML = `
+            <div class="p-3 border-b border-gray-100 dark:border-steel-700">
+                <input type="text" id="filterSearchInput" placeholder="Pesquisar..." class="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded outline-none focus:ring-1 focus:ring-nexo-500 text-steel-700 dark:text-gray-200">
+            </div>
+            <div class="flex-1 max-h-48 overflow-y-auto p-2" id="filterCheckboxList">
+            </div>
+            <div class="p-3 border-t border-gray-100 dark:border-steel-700 flex justify-between bg-gray-50 dark:bg-steel-800/50 rounded-b-lg">
+                <button id="btnClearFilter" class="text-xs text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 font-medium">Limpar</button>
+                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium shadow-sm">Aplicar</button>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        activeFilterModal = modal;
+        
+        // Injetar custom-scrollbar se não existir
+        if (!document.getElementById('filterScrollStyle')) {
+            const style = document.createElement('style');
+            style.id = 'filterScrollStyle';
+            style.textContent = `
+                #filterCheckboxList::-webkit-scrollbar { width: 6px; }
+                #filterCheckboxList::-webkit-scrollbar-track { background: transparent; }
+                #filterCheckboxList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+                .dark #filterCheckboxList::-webkit-scrollbar-thumb { background: #475569; }
             `;
-            document.body.appendChild(modal);
+            document.head.appendChild(style);
+        }
 
-            // Injetar custom-scrollbar style
-            if (!document.getElementById('filterScrollStyle')) {
-                const style = document.createElement('style');
-                style.id = 'filterScrollStyle';
-                style.textContent = `
-                    #notasFilterOptions::-webkit-scrollbar { width: 6px; }
-                    #notasFilterOptions::-webkit-scrollbar-track { background: transparent; }
-                    #notasFilterOptions::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-                    .dark #notasFilterOptions::-webkit-scrollbar-thumb { background: #475569; }
-                `;
-                document.head.appendChild(style);
+        const listContainer = modal.querySelector('#filterCheckboxList');
+        const searchInput = modal.querySelector('#filterSearchInput');
+
+        // Estado temporário para as seleções no modal explícito:
+        const tempSelected = new Set(state.filters[colKey]);
+        // Se filtro global estiver limpo, significa que tudo está visivel
+        if (tempSelected.size === 0 || tempSelected.has('__NONE__')) {
+            if (!tempSelected.has('__NONE__')) {
+                uniqueValues.forEach(v => tempSelected.add(v));
+            } else {
+                tempSelected.clear();
             }
         }
 
-        activeFilterModal = colKey;
+        // Estado de expansão do modal (árvore de datas)
+        let expandedState = {};
 
-        // Coletar valores únicos da coluna
-        const uniqueVals = new Set();
-        state.rawData.forEach(row => {
-            let val = row[colKey];
-            if (val === null || val === undefined || val === '') {
-                uniqueVals.add('__EMPTY__');
-            } else {
-                uniqueVals.add(String(val));
+        function renderCheckboxes(searchTerm = '') {
+            listContainer.innerHTML = '';
+            
+            const filteredVals = uniqueValues.filter(v => {
+                if (!searchTerm) return true;
+                let displayVal = v === '__EMPTY__' ? '(Vazio)' : v;
+                if (col.type === 'currency' && v !== '__EMPTY__') displayVal = formatCurrency(v);
+                if (col.type === 'date' && v !== '__EMPTY__') displayVal = formatDate(v);
+                return String(displayVal).toLowerCase().includes(searchTerm.toLowerCase());
+            });
+
+            if (filteredVals.length === 0) {
+                listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
+                return;
             }
-        });
-        const sortedVals = [...uniqueVals].sort((a, b) => {
-            if (a === '__EMPTY__') return 1;
-            if (b === '__EMPTY__') return -1;
-            return a.localeCompare(b, 'pt-BR', { numeric: true });
-        });
 
-        // Determinar quais estão marcados
-        const currentFilter = state.filters[colKey];
-        const hasActiveFilter = currentFilter && currentFilter.size > 0;
-
-        // Renderizar opções
-        const optionsList = document.getElementById('notasFilterOptions');
-        let optHtml = '';
-
-        // (Selecionar Tudo)
-        const allChecked = !hasActiveFilter;
-        optHtml += `
-            <label class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-steel-700/50 cursor-pointer transition-colors select-all-option" data-val="__ALL__">
-                <input type="checkbox" class="w-3.5 h-3.5 rounded border-gray-300 text-nexo-500 focus:ring-nexo-500 accent-nexo-500" ${allChecked ? 'checked' : ''}>
-                <span class="text-xs font-semibold text-steel-700 dark:text-gray-200">(Selecionar Tudo)</span>
-            </label>
-        `;
-
-        sortedVals.forEach(val => {
-            const displayVal = val === '__EMPTY__' ? '(Vazio)' : val;
-            const isChecked = allChecked || (hasActiveFilter && currentFilter.has(val));
-            optHtml += `
-                <label class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-50 dark:hover:bg-steel-700/50 cursor-pointer transition-colors filter-option" data-val="${val}">
-                    <input type="checkbox" class="w-3.5 h-3.5 rounded border-gray-300 text-nexo-500 focus:ring-nexo-500 accent-nexo-500" ${isChecked ? 'checked' : ''}>
-                    <span class="text-xs text-steel-600 dark:text-gray-300 truncate">${displayVal}</span>
-                </label>
+            // Botão "Selecionar Tudo"
+            const allChecked = filteredVals.length > 0 && filteredVals.every(v => tempSelected.has(v));
+            const selectAllDiv = document.createElement('div');
+            selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
+            selectAllDiv.innerHTML = `
+                <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${allChecked ? 'checked' : ''}>
+                <span class="font-medium text-steel-700 dark:text-gray-300">(Selecionar Tudo)</span>
             `;
-        });
-
-        optionsList.innerHTML = optHtml;
-
-        // Bindings
-        const selectAllCb = optionsList.querySelector('.select-all-option input');
-        const optionCbs = optionsList.querySelectorAll('.filter-option input');
-
-        selectAllCb.addEventListener('change', () => {
-            optionCbs.forEach(cb => cb.checked = selectAllCb.checked);
-        });
-        optionCbs.forEach(cb => {
-            cb.addEventListener('change', () => {
-                const allCheckedNow = [...optionCbs].every(c => c.checked);
-                selectAllCb.checked = allCheckedNow;
-            });
-        });
-
-        // Search
-        const searchInput = document.getElementById('notasFilterSearch');
-        searchInput.value = '';
-        searchInput.oninput = () => {
-            const term = searchInput.value.toLowerCase();
-            optionsList.querySelectorAll('.filter-option').forEach(label => {
-                const text = label.querySelector('span').textContent.toLowerCase();
-                label.style.display = text.includes(term) ? '' : 'none';
-            });
-        };
-
-        // Buttons
-        document.getElementById('notasFilterClear').onclick = () => {
-            delete state.filters[colKey];
-            modal.classList.add('hidden');
-            activeFilterModal = null;
-            processData();
-        };
-
-        document.getElementById('notasFilterApply').onclick = () => {
-            const checkedVals = new Set();
-            optionsList.querySelectorAll('.filter-option').forEach(label => {
-                const cb = label.querySelector('input');
-                if (cb.checked) {
-                    checkedVals.add(label.dataset.val);
+            selectAllDiv.querySelector('input').onclick = (e) => {
+                if (e.target.checked) {
+                    filteredVals.forEach(v => tempSelected.add(v));
+                } else {
+                    filteredVals.forEach(v => tempSelected.delete(v));
                 }
-            });
+                renderCheckboxes(searchTerm);
+            };
+            listContainer.appendChild(selectAllDiv);
 
-            // Se todos marcados, equivale a "sem filtro"
-            if (checkedVals.size === sortedVals.length || selectAllCb.checked) {
-                delete state.filters[colKey];
+            if (col.type === 'date' && !searchTerm) {
+                // Renderização hierárquica (Ano > Mês > Dia)
+                const tree = {};
+                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                
+                filteredVals.forEach(val => {
+                    if (val === '__EMPTY__' || val === '-' || !val) {
+                        if (!tree['-']) tree['-'] = {};
+                        if (!tree['-']['-']) tree['-']['-'] = [];
+                        tree['-']['-'].push(val);
+                        return;
+                    }
+                    
+                    let y, m, d;
+                    const valStr = String(val);
+                    
+                    if (valStr.includes('-') && valStr.split('-').length >= 3) {
+                        const datePart = valStr.split('T')[0];
+                        const parts = datePart.split('-');
+                        if (parts.length === 3) {
+                            [y, m, d] = parts;
+                        }
+                    } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
+                        const datePart = valStr.split(' ')[0];
+                        const parts = datePart.split('/');
+                        if (parts.length === 3) {
+                            d = parts[0];
+                            m = parts[1];
+                            y = parts[2];
+                        }
+                    }
+
+                    if (!y || !m || !d || isNaN(y) || isNaN(m) || isNaN(d)) {
+                        if (!tree['Outros']) tree['Outros'] = {};
+                        if (!tree['Outros']['-']) tree['Outros']['-'] = [];
+                        tree['Outros']['-'].push(val);
+                        return;
+                    }
+                    if (!tree[y]) tree[y] = {};
+                    if (!tree[y][m]) tree[y][m] = [];
+                    tree[y][m].push(val);
+                });
+
+                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
+                    const yearDiv = document.createElement('div');
+                    yearDiv.className = 'pl-1';
+                    
+                    let yearAllChecked = true;
+                    let yearAnyChecked = false;
+                    const yearVals = [];
+                    Object.keys(tree[year]).forEach(m => tree[year][m].forEach(v => {
+                        yearVals.push(v);
+                        if (tempSelected.has(v)) yearAnyChecked = true;
+                        else yearAllChecked = false;
+                    }));
+
+                    const yHeader = document.createElement('div');
+                    yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
+                    yHeader.innerHTML = `
+                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                        <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
+                        <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
+                    `;
+                    
+                    const yCb = yHeader.querySelector('input');
+                    yCb.indeterminate = yearAnyChecked && !yearAllChecked;
+                    
+                    const mContainer = document.createElement('div');
+                    mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
+                    
+                    yHeader.onclick = (e) => {
+                        if (e.target === yCb) return;
+                        const isHidden = mContainer.classList.contains('hidden');
+                        expandedState[year] = isHidden;
+                        mContainer.classList.toggle('hidden');
+                        yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
+                    };
+                    
+                    if (expandedState[year]) {
+                        mContainer.classList.remove('hidden');
+                        yHeader.querySelector('span').textContent = '-';
+                    }
+
+                    yCb.onclick = (e) => {
+                        e.stopPropagation();
+                        const isChecked = e.target.checked;
+                        yearVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
+                        renderCheckboxes(searchTerm);
+                    };
+
+                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
+                        const monthVals = tree[year][month];
+                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
+                        
+                        let monthAllChecked = true;
+                        let monthAnyChecked = false;
+                        monthVals.forEach(v => {
+                            if (tempSelected.has(v)) monthAnyChecked = true;
+                            else monthAllChecked = false;
+                        });
+
+                        const mHeader = document.createElement('div');
+                        mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+                        mHeader.innerHTML = `
+                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                            <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
+                            <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
+                        `;
+
+                        const mCb = mHeader.querySelector('input');
+                        mCb.indeterminate = monthAnyChecked && !monthAllChecked;
+
+                        const dContainer = document.createElement('div');
+                        dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
+                        
+                        const monthKey = `${year}-${month}`;
+                        mHeader.onclick = (e) => {
+                            if (e.target === mCb) return;
+                            const isHidden = dContainer.classList.contains('hidden');
+                            expandedState[monthKey] = isHidden;
+                            dContainer.classList.toggle('hidden');
+                            mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
+                        };
+                        
+                        if (expandedState[monthKey]) {
+                            dContainer.classList.remove('hidden');
+                            mHeader.querySelector('span').textContent = '-';
+                        }
+
+                        mCb.onclick = (e) => {
+                            e.stopPropagation();
+                            const isChecked = e.target.checked;
+                            monthVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
+                            renderCheckboxes(searchTerm);
+                        };
+
+                        monthVals.forEach(val => {
+                            const isChecked = tempSelected.has(val);
+                            const dHeader = document.createElement('div');
+                            dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+                            let displayVal = val === '__EMPTY__' ? '(Vazio)' : formatDate(val);
+                            
+                            dHeader.innerHTML = `
+                                <div class="w-3"></div>
+                                <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                                <span class="truncate text-steel-500 dark:text-gray-500 text-[11px]">${displayVal}</span>
+                            `;
+                            const dCb = dHeader.querySelector('input');
+                            dHeader.onclick = (e) => {
+                                if (e.target !== dCb) dCb.checked = !dCb.checked;
+                                if (dCb.checked) tempSelected.add(val);
+                                else tempSelected.delete(val);
+                                renderCheckboxes(searchTerm);
+                            };
+                            dContainer.appendChild(dHeader);
+                        });
+
+                        mContainer.appendChild(mHeader);
+                        mContainer.appendChild(dContainer);
+                    });
+
+                    yearDiv.appendChild(yHeader);
+                    yearDiv.appendChild(mContainer);
+                    listContainer.appendChild(yearDiv);
+                });
             } else {
-                state.filters[colKey] = checkedVals;
-            }
+                // Flat rendering (lista simples) para outros tipos de dados ou durante pesquisa
+                filteredVals.forEach(val => {
+                    const isChecked = tempSelected.has(val);
 
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+
+                    let displayVal = val === '__EMPTY__' ? '(Vazio)' : val;
+                    if (col.type === 'currency' && val !== '__EMPTY__') displayVal = formatCurrency(val);
+                    if (col.type === 'date' && val !== '__EMPTY__') displayVal = formatDate(val);
+
+                    div.innerHTML = `
+                        <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                        <span class="truncate text-steel-600 dark:text-gray-400" title="${displayVal}">${displayVal}</span>
+                    `;
+
+                    const checkbox = div.querySelector('input');
+                    div.onclick = (e) => {
+                        if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
+
+                        if (checkbox.checked) {
+                            tempSelected.add(val);
+                        } else {
+                            tempSelected.delete(val);
+                        }
+                        renderCheckboxes(searchTerm);
+                    };
+
+                    listContainer.appendChild(div);
+                });
+            }
+        }
+
+        renderCheckboxes();
+        searchInput.focus();
+
+        let hasTyped = false;
+        searchInput.addEventListener('input', (e) => {
+            // Limpa tudo apenas no PRIMEIRO caractere digitado na busca, permitindo acúmulo de buscas manuais depois
+            if (!hasTyped && e.target.value.length > 0) {
+                tempSelected.clear();
+                hasTyped = true;
+            }
+            renderCheckboxes(e.target.value);
+        });
+
+        modal.querySelector('#btnApplyFilter').onclick = () => {
+            if (tempSelected.size === uniqueValues.length) {
+                state.filters[colKey].clear();
+            } else if (tempSelected.size === 0) {
+                state.filters[colKey] = new Set(['__NONE__']);
+            } else {
+                state.filters[colKey] = new Set(tempSelected);
+            }
             state.pagination.current = 1;
-            modal.classList.add('hidden');
-            activeFilterModal = null;
             processData();
+            closeFilter();
         };
 
-        // Posicionar o modal
-        modal.classList.remove('hidden');
-        const btn = event.currentTarget;
-        const rect = btn.getBoundingClientRect();
-        modal.style.top = (rect.bottom + 4) + 'px';
-        modal.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - 300)) + 'px';
-
-        // Focus no search
-        setTimeout(() => searchInput.focus(), 50);
+        modal.querySelector('#btnClearFilter').onclick = () => {
+            state.filters[colKey].clear();
+            state.pagination.current = 1;
+            processData();
+            closeFilter();
+        };
     };
+
+    // Fechar filtro ao clicar fora
+    document.addEventListener('click', (e) => {
+        const modal = document.getElementById('filterModal');
+        if (modal && !modal.contains(e.target) && !e.target.closest('[data-filter-btn]')) {
+            closeFilter();
+        }
+    });
 
     // ==========================================
     // 15. Ações Públicas

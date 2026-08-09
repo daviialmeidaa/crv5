@@ -78,7 +78,7 @@
         return;
     }
     
-    if (currentPath === '/clientes' && !permissions.canViewClientes) {
+    if (currentPath.startsWith('/clientes') && !permissions.canViewClientes) {
         window.location.replace('/403');
         return;
     }
