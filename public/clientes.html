@@ -256,13 +256,16 @@
         <div class="flex-1 p-6 overflow-hidden flex flex-col">
             
             <!-- Ferramentas e Filtros -->
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <div class="flex items-center gap-2">
-                    <input type="text" id="searchClientInput" placeholder="Buscar por cliente, cnpj..." class="px-4 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-64 md:w-96 transition-all shadow-sm">
-                    <button class="px-4 py-2 bg-steel-100 dark:bg-steel-700 text-steel-700 dark:text-gray-200 border border-gray-200 dark:border-steel-600 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors shadow-sm">
+                    <input type="text" id="searchClientInput" placeholder="Busca global..." class="px-4 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-64 md:w-96 transition-all shadow-sm">
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="btnClearFilters" onclick="ClientesGrid.clearAllFilters()" class="hidden px-4 py-2 flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 rounded-lg text-sm font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
+                        Remover Filtros
                     </button>
                 </div>
             </div>
@@ -274,16 +277,10 @@
                 <div class="table-container custom-scrollbar overflow-auto flex-1">
                     <table class="w-full text-left border-collapse min-w-max">
                         <thead id="clientesTableHeader" class="sticky top-0 z-20 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)]">
-                            <tr>
-                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider sticky-col bg-gray-50 dark:bg-steel-900 border-r border-gray-200 dark:border-steel-700">Cliente</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-center">CNPJ</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-center">Status</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-right">Dívida Total (R$)</th>
-                                <th class="px-6 py-3 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-center">Ações</th>
-                            </tr>
+                            <!-- Injetado via JS -->
                         </thead>
                         <tbody id="clientesTableBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm text-steel-700 dark:text-gray-300">
-                            <tr><td colspan="5" class="p-6 text-center text-steel-400">Carregando clientes...</td></tr>
+                            <tr><td colspan="6" class="p-6 text-center text-steel-400">Carregando clientes...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -318,6 +315,7 @@
             </p>
         </footer>
     </main>
+
 
     <script>
         document.getElementById('footerYear').textContent = new Date().getFullYear();
