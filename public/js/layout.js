@@ -52,10 +52,11 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             
             const canCR = hideLink('/contas_a_receber', perms.canViewCR);
+            const canClientes = hideLink('/clientes', perms.canViewClientes);
             const canLC = hideLink('/itens_arrematados', perms.canViewLC);
             
             // Oculta grupos inteiros se não houver permissão
-            if (!canCR) {
+            if (!canCR && !canClientes) {
                 const groupFinanceiro = document.getElementById('menu-group-financeiro');
                 if (groupFinanceiro) groupFinanceiro.style.display = 'none';
             }
