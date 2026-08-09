@@ -43,6 +43,21 @@ async function runMigrations() {
             UPDATE users SET role = 'ADMIN' WHERE email = 'davi.almeida@iebtinnovation.com';
         `);
 
+        console.log('Verificando/Criando tabela de Agenda de Contatos...');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS agenda_contatos (
+                id SERIAL PRIMARY KEY,
+                codigo_cliente VARCHAR(50) NOT NULL,
+                nome_contato VARCHAR(255) NOT NULL,
+                cargo_contato VARCHAR(150),
+                telefone_contato VARCHAR(50),
+                email_contato VARCHAR(255),
+                observacao TEXT,
+                ativo BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `);
+
         await client.query('COMMIT');
         console.log('✅ Migrações concluídas com sucesso!');
 
