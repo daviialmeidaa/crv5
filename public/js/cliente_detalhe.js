@@ -3,6 +3,15 @@
  * Ficha Cadastral + KPIs + Grid de Notas Fiscais (dados mockados).
  */
 const ClienteDetalhe = (() => {
+    let modalItens = [];
+    let modalCurrentPage = 1;
+    const modalItemsPerPage = 10;
+    let currentModalContext = {
+        empresa: '',
+        numero_nota: '',
+        cliente: '',
+        valor: ''
+    };
 
     // ==========================================
     // 1. Extrair ID do Cliente da URL
@@ -314,7 +323,9 @@ const ClienteDetalhe = (() => {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += `<tr class="h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-default">`;
+            const clientName = document.getElementById('clienteNome') ? document.getElementById('clienteNome').textContent.replace(/'/g, "\\'") : '';
+            const args = `'${row.empresa}', '${row.nota}', '${row.documento || ''}', '${clientName}', '', '', '${row.valor || '0'}'`;
+            html += `<tr onclick="ClienteDetalhe.openNotaModal(${args})" class="h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
 
             columns.forEach(col => {
                 let val = row[col.key];
@@ -817,6 +828,295 @@ const ClienteDetalhe = (() => {
         toggleSort,
         changePage,
         clearAllFilters,
-        openFilter
+        openFilter,
+        switchNotaTab(tab) {
+            const btnProd = document.getElementById('tabBtnProdutos');
+            const btnObs = document.getElementById('tabBtnObservacoes');
+            const btnFollowUp = document.getElementById('tabBtnFollowUp');
+            const contentProd = document.getElementById('tabContentProdutos');
+            const contentObs = document.getElementById('tabContentObservacoes');
+            const contentFollowUp = document.getElementById('tabContentFollowUp');
+
+            const activeClass = 'pb-3 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 font-medium text-sm transition-colors';
+            const inactiveClass = 'pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors';
+
+            if (btnProd) btnProd.className = tab === 'produtos' ? activeClass : inactiveClass;
+            if (btnObs) btnObs.className = tab === 'observacoes' ? activeClass : inactiveClass;
+            if (btnFollowUp) btnFollowUp.className = tab === 'followup' ? activeClass : inactiveClass;
+
+            if (contentProd) contentProd.classList.toggle('hidden', tab !== 'produtos');
+            if (contentObs) contentObs.classList.toggle('hidden', tab !== 'observacoes');
+            if (contentFollowUp) contentFollowUp.classList.toggle('hidden', tab !== 'followup');
+        },
+
+        renderModalItens() {
+            const tbody = document.getElementById('modalItensBody');
+            if (!modalItens || modalItens.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-steel-500">Nenhum item encontrado.</td></tr>';
+                document.getElementById('modalPaginationInfo').textContent = 'Nenhum item';
+                document.getElementById('modalPaginationControls').innerHTML = '';
+                return;
+            }
+
+            const totalItems = modalItens.length;
+            const totalPages = Math.ceil(totalItems / modalItemsPerPage);
+            const startIdx = (modalCurrentPage - 1) * modalItemsPerPage;
+            const endIdx = Math.min(startIdx + modalItemsPerPage, totalItems);
+
+            const pageItens = modalItens.slice(startIdx, endIdx);
+
+            const toTitleCase = (str) => {
+                if (!str) return '';
+                return str.toString().toLowerCase().split(' ').map(word => {
+                    const preps = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'com', 'por', 'para'];
+                    if (preps.includes(word)) return word;
+                    return word.charAt(0).toUpperCase() + word.slice(1);
+                }).join(' ');
+            };
+
+            const escapeHtml = (unsafe) => {
+                return (unsafe || '').toString()
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            };
+
+            let itensHtml = '';
+            pageItens.forEach(item => {
+                const qtd = (item.quantidade !== null && item.quantidade !== undefined) ? Number(item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+                const vUnit = (item.valor_unitario !== null && item.valor_unitario !== undefined) ? Number(item.valor_unitario).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+                const vTotal = (item.valor_total !== null && item.valor_total !== undefined) ? Number(item.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
+
+                itensHtml += `<tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors">
+                    <td class="px-4 py-2 font-mono text-steel-600 dark:text-steel-400">${escapeHtml(item.prod_codigo)}</td>
+                    <td class="px-4 py-2 text-steel-800 dark:text-gray-200">${escapeHtml(toTitleCase(item.produto_nome))}</td>
+                    <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(toTitleCase(item.fabricante_nome))}</td>
+                    <td class="px-4 py-2 font-mono text-steel-500">${escapeHtml(item.classificacao_fiscal)}</td>
+                    <td class="px-4 py-2 text-right font-medium text-steel-700 dark:text-gray-300">${qtd}</td>
+                    <td class="px-4 py-2 text-center text-steel-500">${escapeHtml(item.Unidade)}</td>
+                    <td class="px-4 py-2 text-right text-steel-600 dark:text-gray-400">${vUnit}</td>
+                    <td class="px-4 py-2 text-right font-medium text-nexo-600 dark:text-nexo-400">${vTotal}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = itensHtml;
+
+            // Info Paginação
+            document.getElementById('modalPaginationInfo').textContent = `Mostrando ${startIdx + 1} a ${endIdx} de ${totalItems} itens`;
+
+            // Controles
+            let paginationHtml = '';
+            
+            const prevDisabled = modalCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
+            paginationHtml += `
+                <button onclick="ContasGrid.changeModalPage(${modalCurrentPage - 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${prevDisabled}" ${modalCurrentPage === 1 ? 'disabled' : ''}>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+            `;
+
+            const nextDisabled = modalCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
+            paginationHtml += `
+                <button onclick="ContasGrid.changeModalPage(${modalCurrentPage + 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${nextDisabled}" ${modalCurrentPage === totalPages ? 'disabled' : ''}>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            `;
+
+            document.getElementById('modalPaginationControls').innerHTML = paginationHtml;
+        },
+
+        changeModalPage(page) {
+            const totalPages = Math.ceil(modalItens.length / modalItemsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                                        modalCurrentPage = page;
+                this.renderModalItens();
+            }
+        },
+
+        async openNotaModal(empresa, numero_nota, documento, cliente, esfera, uf, valorTotal) {
+            const modal = document.getElementById('notaModal');
+            const loading = document.getElementById('notaModalLoading');
+            
+            // Show modal and loading state
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            
+            // Reset fields
+            document.getElementById('modalNotaTitulo').textContent = numero_nota;
+            this.switchNotaTab('produtos'); // Default to products tab
+            
+            // Reset edit states
+            if (document.getElementById('editEsferaContainer') && !document.getElementById('editEsferaContainer').classList.contains('hidden')) {
+                this.toggleEditEsfera(false);
+            }
+            if (document.getElementById('editContratoContainer') && !document.getElementById('editContratoContainer').classList.contains('hidden')) {
+                this.toggleEditContrato(false);
+            }
+
+            document.getElementById('modalEmpresa').textContent = '---';
+            document.getElementById('modalEsfera').textContent = '---';
+            document.getElementById('modalUF').textContent = '---';
+            document.getElementById('modalCliente').textContent = '---';
+            document.getElementById('modalNatureza').textContent = '---';
+            document.getElementById('modalDataEmissao').textContent = '---';
+            document.getElementById('modalValorTotal').textContent = '---';
+            document.getElementById('modalContato').textContent = '---';
+            document.getElementById('modalObservacoes').textContent = '---';
+            document.getElementById('modalItensCount').textContent = '0 itens';
+            if (document.getElementById('modalFollowUpCount')) document.getElementById('modalFollowUpCount').textContent = '0 reg';
+            document.getElementById('modalItensBody').innerHTML = '';
+            if (document.getElementById('modalFollowUpBody')) document.getElementById('modalFollowUpBody').innerHTML = '';
+            
+            try {
+                const token = localStorage.getItem('token');
+                let url = `/api/notas/${empresa}/${numero_nota}`;
+                
+                const params = new URLSearchParams();
+                if (valorTotal) params.append('valor', valorTotal);
+                if (documento) params.append('documento', documento);
+                
+                const qs = params.toString();
+                if (qs) url += `?${qs}`;
+                
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Falha ao buscar dados da nota fiscal no Supra.');
+                }
+                
+                const data = await response.json();
+                
+                const toTitleCase = (str) => {
+                    if (!str) return '';
+                    return str.toString().toLowerCase().split(' ').map(word => {
+                        const preps = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'com', 'por', 'para'];
+                        if (preps.includes(word)) return word;
+                        return word.charAt(0).toUpperCase() + word.slice(1);
+                    }).join(' ');
+                };
+
+                // Populate Header
+                if (data.cabecalho) {
+                    currentModalContext.empresa = empresa;
+                    currentModalContext.numero_nota = numero_nota;
+                    currentModalContext.codigo_nota = data.cabecalho.codigo;
+                    currentModalContext.clifor_codigo = data.cabecalho.clifor_codigo;
+                    currentModalContext.documento = documento;
+
+                    document.getElementById('modalEmpresa').textContent = toTitleCase(empresa);
+                    document.getElementById('modalEsfera').textContent = toTitleCase(esfera) || '---';
+                    document.getElementById('modalUF').textContent = uf ? uf.toUpperCase() : '---';
+                    document.getElementById('modalCliente').textContent = toTitleCase(cliente) || '---';
+                    document.getElementById('modalNatureza').textContent = toTitleCase(data.cabecalho.nome_natureza_operacao) || '---';
+                    document.getElementById('modalNatureza').title = toTitleCase(data.cabecalho.nome_natureza_operacao) || '';
+                    
+                    if (data.cabecalho.data) {
+                        // Trata o timezone para evitar que a data volte um dia (ex: 15/07 virar 14/07)
+                        const dateString = data.cabecalho.data;
+                        const dateObj = new Date(dateString);
+                        const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
+                        const correctedDate = new Date(dateObj.getTime() + userTimezoneOffset);
+                        document.getElementById('modalDataEmissao').textContent = !isNaN(correctedDate) ? correctedDate.toLocaleDateString('pt-BR') : '---';
+                    }
+                    
+                    document.getElementById('modalValorTotal').textContent = data.cabecalho.valor_total ? 
+                        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.cabecalho.valor_total) : '---';
+                        
+                    document.getElementById('modalContato').textContent = data.cabecalho.nome_contato || '---';
+                    
+                    let obs = data.cabecalho.informacao_complementar;
+                    if (obs) {
+                        // Limpa caracteres especiais nulos e espaços de preenchimento (trailing) causados por colunas CHAR no banco
+                        obs = obs.replace(/[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F-\x9F\uFFFD]/g, '').replace(/\s+$/g, '');
+                    }
+                    document.getElementById('modalObservacoes').textContent = (obs && obs !== '') ? obs : 'Nenhuma observação informada.';
+                }
+                
+                // Populate Items
+                if (data.itens && data.itens.length > 0) {
+                    document.getElementById('modalItensCount').textContent = `${data.itens.length} itens`;
+                    modalItens = data.itens;
+                    modalCurrentPage = 1;
+                    this.renderModalItens();
+                } else {
+                    document.getElementById('modalItensCount').textContent = `0 itens`;
+                    modalItens = [];
+                    this.renderModalItens();
+                }
+                
+                // Populate Follow-Up
+                if (data.followup && data.followup.length > 0) {
+                    if (document.getElementById('modalFollowUpCount')) {
+                        document.getElementById('modalFollowUpCount').textContent = `${data.followup.length} reg`;
+                    }
+                    this.renderModalFollowUp(data.followup);
+                } else {
+                    if (document.getElementById('modalFollowUpCount')) {
+                        document.getElementById('modalFollowUpCount').textContent = `0 reg`;
+                    }
+                    if (document.getElementById('modalFollowUpBody')) {
+                        document.getElementById('modalFollowUpBody').innerHTML = '<tr><td colspan="3" class="text-center py-8 text-steel-500">Nenhum follow-up registrado.</td></tr>';
+                    }
+                }
+                
+            } catch (err) {
+                console.error(err);
+                alert('Ocorreu um erro ao buscar os dados da nota. Verifique a conexão com o Supra.');
+            } finally {
+                loading.classList.add('hidden');
+            }
+        },
+        
+        closeNotaModal() {
+            document.getElementById('notaModal').classList.add('hidden');
+        },
+
+        renderModalFollowUp(followups) {
+            const tbody = document.getElementById('modalFollowUpBody');
+            if (!tbody) return;
+            if (!followups || followups.length === 0) return;
+
+            const sortedFollowups = [...followups].sort((a, b) => {
+                return new Date(b.data || 0) - new Date(a.data || 0);
+            });
+
+            let html = '';
+            sortedFollowups.forEach(f => {
+                let dateStr = '---';
+                if (f.data) {
+                    const d = new Date(f.data);
+                    // O banco SQL Server salva a hora local, mas ao enviar via JSON o node converte para UTC adicionando o 'Z'.
+                    // Por isso, devemos extrair os dados usando os métodos UTC para ignorar o fuso horário do navegador
+                    // e exibir exatamente os dígitos que vieram do banco (ex: 10:05 ao invés de 07:05).
+                    if (!isNaN(d)) {
+                        const day = String(d.getUTCDate()).padStart(2, '0');
+                        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+                        const year = d.getUTCFullYear();
+                        const h = String(d.getUTCHours()).padStart(2, '0');
+                        const m = String(d.getUTCMinutes()).padStart(2, '0');
+                        const s = String(d.getUTCSeconds()).padStart(2, '0');
+                        dateStr = `${day}/${month}/${year} ${h}:${m}:${s}`;
+                    } else {
+                        // fallback to string direct print if it was an ISO or something that can't be parsed
+                        dateStr = f.data;
+                    }
+                }
+
+                html += `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-steel-800/50 transition-colors">
+                        <td class="px-4 py-2 text-steel-600 dark:text-gray-300 font-medium whitespace-nowrap align-top border-l-2 border-transparent group-hover:border-nexo-500 transition-colors">${dateStr}</td>
+                        <td class="px-4 py-2 text-steel-800 dark:text-gray-200 whitespace-nowrap align-top">${f.usuario || 'SISTEMA'}</td>
+                        <td class="px-4 py-2 text-steel-600 dark:text-gray-300 break-words align-top">${f.observacao || '---'}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
     };
 })();
+
+
+
