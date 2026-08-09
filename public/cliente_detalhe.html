@@ -463,75 +463,32 @@
                     <!-- Seção 1: Dados Gerais -->
                     <div class="mb-6">
                         <h4 class="text-sm text-steel-500 dark:text-steel-400 mb-3 border-b border-gray-100 dark:border-steel-700 pb-1">1. Informações Gerais</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-steel-900/30 p-4 rounded-xl border border-gray-100 dark:border-steel-700/50">
-                            <!-- Row 1 -->
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 bg-gray-50 dark:bg-steel-900/30 p-4 rounded-xl border border-gray-100 dark:border-steel-700/50">
+                            <!-- Empresa Vendedora -->
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Empresa Vendedora</p>
                                 <p class="text-steel-800 dark:text-gray-100" id="modalEmpresa">---</p>
                             </div>
+                            
+                            <!-- Contrato -->
                             <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <p class="text-xs text-steel-500 dark:text-steel-400">Esfera</p>
-                                    <button onclick="ClienteDetalhe.toggleEditEsfera(true)" id="btnEditEsfera" class="text-steel-400 hover:text-nexo-500 transition-colors" title="Editar Esfera">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                    </button>
-                                </div>
-                                <div id="displayEsferaContainer" class="flex items-center">
-                                    <p class="text-steel-800 dark:text-gray-100 truncate" id="modalEsfera">---</p>
-                                </div>
-                                <div id="editEsferaContainer" class="hidden flex items-center gap-1">
-                                    <select id="editEsferaSelect" class="text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded px-1.5 py-1 text-steel-800 dark:text-gray-200 outline-none focus:ring-1 focus:ring-nexo-500 w-full min-w-0">
-                                        <option value="PARTICULAR">Particular</option>
-                                        <option value="MUNICIPAL">Municipal</option>
-                                        <option value="ESTADUAL">Estadual</option>
-                                        <option value="FEDERAL">Federal</option>
-                                    </select>
-                                    <button onclick="ClienteDetalhe.saveEsfera()" class="p-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors shrink-0" title="Salvar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                                    </button>
-                                    <button onclick="ClienteDetalhe.toggleEditEsfera(false)" class="p-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shrink-0" title="Cancelar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </div>
+                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Contrato</p>
+                                <p class="text-steel-800 dark:text-gray-100 truncate" id="modalContato">---</p>
                             </div>
-                            <div>
-                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">UF</p>
-                                <p class="text-steel-800 dark:text-gray-100" id="modalUF">---</p>
-                            </div>
+
+                            <!-- Data da Emissão -->
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Data da Emissão</p>
                                 <p class="text-steel-800 dark:text-gray-100" id="modalDataEmissao">---</p>
                             </div>
                             
-                            <!-- Row 2 -->
-                            <div>
-                                <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Cliente</p>
-                                <p class="text-steel-800 dark:text-gray-100" id="modalCliente">---</p>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2 mb-1">
-                                    <p class="text-xs text-steel-500 dark:text-steel-400">Contrato</p>
-                                    <button onclick="ClienteDetalhe.toggleEditContrato(true)" id="btnEditContrato" class="text-steel-400 hover:text-nexo-500 transition-colors" title="Editar Contrato">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-                                    </button>
-                                </div>
-                                <div id="displayContratoContainer" class="flex items-center">
-                                    <p class="text-steel-800 dark:text-gray-100 truncate" id="modalContato">---</p>
-                                </div>
-                                <div id="editContratoContainer" class="hidden flex items-center gap-1">
-                                    <input type="text" id="editContratoInput" class="text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded px-1.5 py-1 text-steel-800 dark:text-gray-200 outline-none focus:ring-1 focus:ring-nexo-500 w-full min-w-0" placeholder="Contrato">
-                                    <button onclick="ClienteDetalhe.saveContrato()" class="p-1 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors shrink-0" title="Salvar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                                    </button>
-                                    <button onclick="ClienteDetalhe.toggleEditContrato(false)" class="p-1 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors shrink-0" title="Cancelar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </div>
-                            </div>
+                            <!-- Natureza da Operação -->
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Natureza da Operação</p>
                                 <p class="text-steel-800 dark:text-gray-100" id="modalNatureza">---</p>
                             </div>
+                            
+                            <!-- Valor Total -->
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Valor Total</p>
                                 <p class="text-nexo-600 dark:text-nexo-400 text-base font-medium" id="modalValorTotal">---</p>

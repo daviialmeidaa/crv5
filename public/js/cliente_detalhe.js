@@ -947,17 +947,10 @@ const ClienteDetalhe = (() => {
             this.switchNotaTab('produtos'); // Default to products tab
             
             // Reset edit states
-            if (document.getElementById('editEsferaContainer') && !document.getElementById('editEsferaContainer').classList.contains('hidden')) {
-                this.toggleEditEsfera(false);
-            }
-            if (document.getElementById('editContratoContainer') && !document.getElementById('editContratoContainer').classList.contains('hidden')) {
-                this.toggleEditContrato(false);
-            }
+
 
             document.getElementById('modalEmpresa').textContent = '---';
-            document.getElementById('modalEsfera').textContent = '---';
-            document.getElementById('modalUF').textContent = '---';
-            document.getElementById('modalCliente').textContent = '---';
+
             document.getElementById('modalNatureza').textContent = '---';
             document.getElementById('modalDataEmissao').textContent = '---';
             document.getElementById('modalValorTotal').textContent = '---';
@@ -1007,9 +1000,7 @@ const ClienteDetalhe = (() => {
                     currentModalContext.documento = documento;
 
                     document.getElementById('modalEmpresa').textContent = toTitleCase(empresa);
-                    document.getElementById('modalEsfera').textContent = toTitleCase(esfera) || '---';
-                    document.getElementById('modalUF').textContent = uf ? uf.toUpperCase() : '---';
-                    document.getElementById('modalCliente').textContent = toTitleCase(cliente) || '---';
+
                     document.getElementById('modalNatureza').textContent = toTitleCase(data.cabecalho.nome_natureza_operacao) || '---';
                     document.getElementById('modalNatureza').title = toTitleCase(data.cabecalho.nome_natureza_operacao) || '';
                     
