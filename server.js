@@ -42,6 +42,11 @@ app.get('/clientes', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'clientes.html'));
 });
 
+// Detalhe do Cliente (rota parametrizada)
+app.get('/clientes/:id', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'cliente_detalhe.html'));
+});
+
 // Nova rota para Itens Arrematados
 app.get('/itens_arrematados', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'itens_arrematados.html'));
