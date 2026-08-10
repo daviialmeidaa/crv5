@@ -36,7 +36,41 @@ const ClienteDetalhe = (() => {
         { key: 'empenho', label: 'Empenho' },
         { key: 'documento', label: 'Documento' },
         { key: 'valor', label: 'Valor', type: 'currency' },
-        { key: 'dataEmissao', label: 'Data de Emissão', type: 'date' },
+        { key: 'dataVencimento', label: 'Data de Vencimento', type: 'date' },
+        { 
+            key: 'diasAtraso', label: 'Dias de Atraso', type: 'number',
+            render: (v) => {
+                if (v === '-' || v === null || v === undefined) return '-';
+                
+                const dias_totais = parseInt(v);
+                if (isNaN(dias_totais)) return '-';
+                
+                const anos = Math.floor(dias_totais / 365);
+                let resto_dias = dias_totais % 365;
+                
+                const meses = Math.floor(resto_dias / 30.416);
+                resto_dias = resto_dias - (meses * 30.416);
+                
+                const semanas = Math.floor(resto_dias / 7);
+                const dias_finais = Math.floor(resto_dias % 7);
+                
+                const tooltipParts = [];
+                if (anos > 0) tooltipParts.push(`${anos} ano${anos > 1 ? 's' : ''}`);
+                if (meses > 0) tooltipParts.push(`${meses} ${meses > 1 ? 'meses' : 'mês'}`);
+                if (semanas > 0) tooltipParts.push(`${semanas} semana${semanas > 1 ? 's' : ''}`);
+                if (dias_finais > 0 || tooltipParts.length === 0) tooltipParts.push(`${dias_finais} dia${dias_finais !== 1 ? 's' : ''}`);
+                
+                let title = '';
+                if (tooltipParts.length === 1) {
+                    title = tooltipParts[0];
+                } else if (tooltipParts.length > 1) {
+                    const last = tooltipParts.pop();
+                    title = tooltipParts.join(', ') + ' e ' + last;
+                }
+                
+                return `<span title="${title}" class="cursor-help border-b border-dashed border-steel-400 hover:text-nexo-600 transition-colors">${dias_totais}</span>`;
+            }
+        },
         {
             key: 'status', label: 'Status', render: v => {
                 const styles = {
@@ -175,9 +209,21 @@ const ClienteDetalhe = (() => {
             
             // Ajustar datas para YYYY-MM-DD se vierem em ISO (garante que os filtros funcionem)
             state.rawData = data.map(row => {
-                if (row.dataEmissao && row.dataEmissao.includes('T')) {
-                    row.dataEmissao = row.dataEmissao.split('T')[0];
+                if (row.dataVencimento && row.dataVencimento.includes('T')) {
+                    row.dataVencimento = row.dataVencimento.split('T')[0];
                 }
+
+                if (row.status === 'ATRASADO' && row.dataVencimento) {
+                    const hoje = new Date();
+                    hoje.setHours(0, 0, 0, 0);
+                    const venc = new Date(row.dataVencimento + 'T00:00:00');
+                    
+                    const diffTime = hoje - venc;
+                    row.diasAtraso = diffTime > 0 ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : 0;
+                } else {
+                    row.diasAtraso = '-';
+                }
+
                 return row;
             });
             processData();

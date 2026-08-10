@@ -88,7 +88,7 @@ router.get('/:id/notas', authMiddleware, async (req, res) => {
                 t.empenho AS "empenho",
                 t.documento AS "documento",
                 t.valor_nota AS "valor",
-                t.data_emissao AS "dataEmissao",
+                t.data_vencimento AS "dataVencimento",
                 t.status AS "status"
             FROM titulos t
             LEFT JOIN contratos c ON t.contrato = c.codigo_contrato
@@ -101,10 +101,10 @@ router.get('/:id/notas', authMiddleware, async (req, res) => {
                     ELSE 4
                 END ASC,
                 CASE 
-                    WHEN t.status IN ('ATRASADO', 'PENDENTE') THEN t.data_emissao 
+                    WHEN t.status IN ('ATRASADO', 'PENDENTE') THEN t.data_vencimento 
                 END ASC,
                 CASE 
-                    WHEN t.status = 'PAGO' THEN t.data_emissao 
+                    WHEN t.status = 'PAGO' THEN t.data_vencimento 
                 END DESC
         `, [req.params.id]);
 
