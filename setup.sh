@@ -12,7 +12,7 @@ if [ ! -f .env ]; then
 PG_HOST=db
 PG_PORT=5432
 PG_USER=nexomed
-PG_PASSWORD=nexomed123
+PG_PASSWORD=$(openssl rand -hex 12)
 PG_DATABASE=nexomed_auth
 
 # URL da Aplicação (Para os e-mails apontarem para o IP correto da rede)
@@ -23,7 +23,7 @@ SUPRA_USER=sa
 SUPRA_PASSWORD=sua_senha_do_supra
 
 # Chave JWT
-JWT_SECRET=super_secret_key_nexomed_123!
+JWT_SECRET=$(openssl rand -hex 32)
 EOF
     echo "✅ Arquivo .env criado! Lembre-se de editar as credenciais do SUPRA_PASSWORD depois."
 else

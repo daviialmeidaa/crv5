@@ -6,7 +6,7 @@ services:
     container_name: nexomed_db
     environment:
       POSTGRES_USER: ${PG_USER:-nexomed}
-      POSTGRES_PASSWORD: ${PG_PASSWORD:-nexomed123}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_DB: ${PG_DATABASE:-nexomed_auth}
     ports:
       - "5432:5432"
@@ -27,7 +27,7 @@ services:
       PG_HOST: db
       PG_PORT: 5432
       PG_USER: ${PG_USER:-nexomed}
-      PG_PASSWORD: ${PG_PASSWORD:-nexomed123}
+      PG_PASSWORD: ${PG_PASSWORD}
       PG_DATABASE: ${PG_DATABASE:-nexomed_auth}
       SUPRA_USER: ${SUPRA_USER}
       SUPRA_PASSWORD: ${SUPRA_PASSWORD}

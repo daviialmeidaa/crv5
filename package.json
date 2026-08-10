@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "scheduler:agenda": "node scripts/run_cron_agenda_standalone.js",
-    "scheduler:agenda:friday": "node scripts/run_cron_agenda_friday.js"
+    "scheduler:agenda:friday": "node scripts/run_cron_agenda_friday.js",
+    "postinstall": "node scripts/patch-node-sped-pdf.js"
   },
   "keywords": [],
   "author": "",
@@ -21,8 +22,11 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mssql": "^12.7.0",
+    "nfe-danfe-pdf": "^1.0.3",
     "node-cron": "^4.6.0",
+    "node-sped-pdf": "^1.0.66",
     "nodemailer": "^9.0.3",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.22.0",
     "xlsx": "^0.18.5"
   },

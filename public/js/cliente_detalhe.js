@@ -1687,6 +1687,31 @@ const ClienteDetalhe = (() => {
             document.getElementById('notaModal').classList.add('hidden');
         },
 
+        async downloadDanfe() {
+            if (!currentModalContext.empresa || !currentModalContext.numero_nota) return;
+
+            const btn = document.getElementById('btnVerDanfe');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Gerando...`;
+            btn.disabled = true;
+
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Abre a aba com a URL direta e o token, permitindo que o navegador
+                // assuma o controle do download e respeite o header Content-Disposition com o nome correto
+                const url = `/api/notas/${currentModalContext.empresa}/${currentModalContext.numero_nota}/danfe?token=${token}`;
+                window.open(url, '_blank');
+                
+            } catch (error) {
+                console.error("Erro ao abrir DANFE:", error);
+                alert("Ocorreu um erro ao gerar a DANFE.");
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        },
+
         renderModalFollowUp(followups) {
             const tbody = document.getElementById('modalFollowUpBody');
             if (!tbody) return;

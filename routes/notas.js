@@ -3,7 +3,7 @@ const router = express.Router();
 const { sql, getPool } = require('../db/connection');
 const pgPool = require('../db/pgConnection');
 const { authMiddleware } = require('../middleware/authMiddleware');
-
+const { DANFe } = require('node-sped-pdf');
 // Buscar detalhes e itens da nota fiscal no Supra (Somente Leitura)
 router.get('/:empresa/:numero', authMiddleware, async (req, res) => {
     try {
@@ -252,6 +252,69 @@ router.put('/:empresa/:codigo_cliente/esfera', authMiddleware, async (req, res) 
     } catch (err) {
         console.error('Erro ao atualizar esfera:', err);
         res.status(500).json({ error: `Erro ao atualizar esfera: ${err.message}` });
+    }
+});
+
+// Geração de DANFE (PDF)
+router.get('/:empresa/:numero/danfe', authMiddleware, async (req, res) => {
+    try {
+        const { empresa, numero } = req.params;
+        
+        let dbName = '';
+        if (empresa.toUpperCase() === 'NEXOMED') {
+            dbName = 'SGC';
+        } else if (empresa.toUpperCase() === 'BML') {
+            dbName = 'SGC2';
+        } else {
+            return res.status(400).json({ error: 'Empresa inválida ou desconhecida.' });
+        }
+
+        const pool = await getPool();
+        if (!pool) {
+            return res.status(500).json({ error: 'Falha de conexão com o banco de dados Supra.' });
+        }
+
+        // 1. Encontrar o ID da nota (codigo)
+        const queryCabecalho = `SELECT codigo FROM ${dbName}.dbo.nota_fiscal_venda WHERE numero_nota = @nota`;
+        const cabecalhoResult = await pool.request()
+            .input('nota', sql.VarChar, numero)
+            .query(queryCabecalho);
+
+        if (cabecalhoResult.recordset.length === 0) {
+            return res.status(404).json({ error: 'Nota fiscal não encontrada no Supra.' });
+        }
+
+        const nf_codigo = cabecalhoResult.recordset[0].codigo;
+
+        // 2. Buscar o XML na tabela nfe_nota
+        const queryXml = `SELECT nfe FROM ${dbName}.dbo.nfe_nota WHERE nf_codigo = @codigo`;
+        const xmlResult = await pool.request()
+            .input('codigo', sql.Int, nf_codigo)
+            .query(queryXml);
+
+        if (xmlResult.recordset.length === 0 || !xmlResult.recordset[0].nfe) {
+            return res.status(404).json({ error: 'XML da Nota Fiscal Eletrônica não encontrado.' });
+        }
+
+        const nfeXml = xmlResult.recordset[0].nfe;
+
+        // 3. Gerar o PDF do DANFE em memória (Layout Padrão)
+        const pdfBuffer = await DANFe({ xml: nfeXml });
+
+        // 4. Formatar o nome do arquivo conforme: YYYYMMDD_Empresa_NFe Numero
+        const d = new Date();
+        const dateStr = d.getFullYear().toString() + (d.getMonth() + 1).toString().padStart(2, '0') + d.getDate().toString().padStart(2, '0');
+        const empresaName = empresa.toUpperCase() === 'NEXOMED' ? 'Nexomed' : 'Bml';
+        const filename = `${dateStr}_${empresaName}_NFe ${numero}.pdf`;
+
+        // 5. Retornar o PDF para o navegador
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+        res.send(Buffer.from(pdfBuffer));
+
+    } catch (err) {
+        console.error('Erro ao gerar DANFE:', err);
+        res.status(500).json({ error: 'Erro interno ao gerar DANFE.', details: err.message });
     }
 });
 

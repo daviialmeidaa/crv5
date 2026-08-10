@@ -1,24 +1,27 @@
 const jwt = require('jsonwebtoken');
 
-// Usando um segredo no .env, mas com um fallback genérico apenas para fins de desenvolvimento inicial
-const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_123';
+// Usando o segredo definido no arquivo .env
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.warn("AVISO: JWT_SECRET não definido no .env!");
+}
 
 const authMiddleware = (req, res, next) => {
-    // Pegar o token do header de autorização
+    // Pegar o token do header de autorização ou da query string
     const authHeader = req.header('Authorization');
+    let token = req.query.token;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split(' ')[1];
+    }
 
     // Se não tiver token, retornar 401 Unauthorized
-    if (!authHeader) {
+    if (!token) {
         return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
     }
 
     try {
-        // Formato esperado: "Bearer <token>"
-        const token = authHeader.split(' ')[1];
-        
-        if (!token) {
-            return res.status(401).json({ error: 'Acesso negado. Token malformado.' });
-        }
 
         // Verificar o token
         const decoded = jwt.verify(token, JWT_SECRET);
