@@ -501,7 +501,20 @@ const ClienteDetalhe = (() => {
             let val = row[colKey];
             if (val === null || val === undefined || val === '') return '__EMPTY__';
             return String(val);
-        }))].sort();
+        }))].sort((a, b) => {
+            const aEmpty = a === '__EMPTY__' || a === '-';
+            const bEmpty = b === '__EMPTY__' || b === '-';
+            
+            if (aEmpty && bEmpty) return 0;
+            if (aEmpty) return -1;
+            if (bEmpty) return 1;
+
+            if (col && (col.type === 'number' || col.type === 'currency')) {
+                return (parseFloat(a) || 0) - (parseFloat(b) || 0);
+            }
+            
+            return a.localeCompare(b);
+        });
 
         // Inicializa o state do filtro se não existir
         if (!state.filters[colKey]) {
@@ -744,7 +757,11 @@ const ClienteDetalhe = (() => {
                             const isChecked = tempSelected.has(val);
                             const dHeader = document.createElement('div');
                             dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+                            
                             let displayVal = val === '__EMPTY__' ? '(Vazio)' : formatDate(val);
+                            if (val !== '__EMPTY__' && val !== '-') {
+                                displayVal = displayVal.split('/')[0];
+                            }
                             
                             dHeader.innerHTML = `
                                 <div class="w-3"></div>
