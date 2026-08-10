@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const supaPool = require('../db/supabaseConnection');
 const pgPool = require('../db/pgConnection');
 const nodemailer = require('nodemailer');
+const eventBus = require('./eventBus');
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
@@ -60,6 +61,7 @@ async function runAgendaCronLogic(options = {}) {
                 `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, NULL)`,
                 ['AGENDA', actionId, msg]
             );
+            eventBus.emit('refresh');
             console.log(`[Agenda Cron] Lembrete diário consolidado gerado para ${result.rows.length} pregões ${diaTexto}.`);
 
             // ==========================================

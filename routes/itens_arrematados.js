@@ -5,6 +5,7 @@ const pgPool = require('../db/pgConnection');
 const { getPool, sql } = require('../db/connection');
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { requirePermission } = require('../middleware/rbac');
+const eventBus = require('../services/eventBus');
 
 // Middleware global da rota: Exige autenticação e permissão para visualizar itens arrematados
 router.use(authMiddleware);
@@ -145,6 +146,7 @@ router.post('/', async (req, res) => {
             
             const msg = `${userName} acaba de inserir um novo contrato na ${empresa}, Codigo ${saved.COD_CONTRATO_CONCAT || '-'}, Orgão ${saved.ORGAO || '-'}, UF ${saved.UF || '-'}, Edital ${saved.EDITAL || '-'}, Tipo de Contrato ${saved.TIPO_CONTRATO || '-'} e Classificação ${saved.CLASSIFICACAO || '-'}.`;
             await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'INSERT', msg, userId]);
+            eventBus.emit('refresh');
 
             // Alimentar banco local na tabela 'contratos' do Contas a Receber
             if (saved.COD_CONTRATO_CONCAT) {
@@ -254,6 +256,7 @@ router.put('/:chave', async (req, res) => {
                     const userId = req.user ? req.user.id : null;
                     const msg = `O ${userName} acaba de alterar ${changes.join(', ')} no contrato ${saved.COD_CONTRATO_CONCAT || '-'}.`;
                     await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'UPDATE', msg, userId]);
+                    eventBus.emit('refresh');
                 }
 
                 // Alimentar banco local na tabela 'contratos' do Contas a Receber
@@ -316,6 +319,7 @@ router.delete('/:chave', async (req, res) => {
                 const userId = req.user ? req.user.id : null;
                 const msg = `${userName} deletou o contrato ${oldData.COD_CONTRATO_CONCAT || '-'} do Órgão ${oldData.ORGAO || '-'}.`;
                 await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'DELETE', msg, userId]);
+                eventBus.emit('refresh');
             }
         } catch (e) {
             console.error('Erro ao gerar notificação de DELETE:', e);

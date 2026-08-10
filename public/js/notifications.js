@@ -118,7 +118,9 @@
                 dropdown.classList.remove('opacity-0', 'scale-95');
                 dropdown.classList.add('opacity-100', 'scale-100');
             }, 10);
-            if (notifications.length === 0) fetchNotifications(); // Recarrega ao abrir, caso vazio
+            if (notifications.length === 0 && (!window.notifEventSource || window.notifEventSource.readyState !== EventSource.OPEN)) {
+                connectSSE(); // Força reconexão se não houver notificações
+            }
         } else {
             closeDropdown();
         }
@@ -168,18 +170,31 @@
     // 4. Integração com a API
     const getToken = () => localStorage.getItem('token');
 
-    async function fetchNotifications() {
-        try {
-            const res = await fetch('/api/notifications', {
-                headers: { 'Authorization': `Bearer ${getToken()}` }
-            });
-            if (!res.ok) throw new Error();
-            notifications = await res.json();
-            renderNotifications();
-        } catch (e) {
-            console.error('Erro ao buscar notificações');
-            listSistema.innerHTML = '<div class="p-4 text-center text-xs text-red-400">Falha ao carregar notificações.</div>';
+    function connectSSE() {
+        const token = getToken();
+        if (!token) return;
+
+        // Fecha conexão antiga se existir
+        if (window.notifEventSource) {
+            window.notifEventSource.close();
         }
+
+        window.notifEventSource = new EventSource(`/api/notifications/stream?token=${token}`);
+
+        window.notifEventSource.onmessage = (event) => {
+            try {
+                notifications = JSON.parse(event.data);
+                renderNotifications();
+            } catch (e) {
+                console.error('Erro ao fazer parse das notificações via SSE:', e);
+            }
+        };
+
+        window.notifEventSource.onerror = () => {
+            console.error('Erro na conexão SSE das notificações. Tentando reconectar...');
+            window.notifEventSource.close();
+            setTimeout(connectSSE, 5000);
+        };
     }
 
     async function markAsRead(id) {
@@ -309,16 +324,13 @@
         renderList(listAgendamentos, notifsAgenda, 'Nenhum agendamento futuro.');
     }
 
-    // Inicializa carregando do backend
-    fetchNotifications();
+    // Inicializa carregando via SSE
+    connectSSE();
 
-    // Polling agressivo a cada 5 segundos para simular tempo real
-    setInterval(fetchNotifications, 5000);
-
-    // Busca as notificações instantaneamente se o usuário voltar para a aba
+    // Reconecta se a conexão cair quando o usuário voltar para a aba
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            fetchNotifications();
+        if (document.visibilityState === 'visible' && window.notifEventSource && window.notifEventSource.readyState === EventSource.CLOSED) {
+            connectSSE();
         }
     });
 })();
