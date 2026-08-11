@@ -72,7 +72,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
         }
 
         const result = await pgPool.query(query, values);
-        
+
         const updatedUser = result.rows[0];
         const { getPermissionsForRole } = require('../middleware/rbac');
         updatedUser.permissions = getPermissionsForRole(updatedUser.role);
@@ -141,7 +141,7 @@ router.post('/', authMiddleware, requirePermission('canManageUsers'), async (req
             // from: '"Nexomed Sistemas" <ti@nexomed.com.br>', // Histórico
             from: '"Nexomed Sistemas" <davi.almeida@iebtinnovation.com>',
             to: email,
-            subject: 'Bem vindo ao Contas a Receber - Nexomed',
+            subject: 'Bem vindo ao HUB - Nexomed',
             html: `
             <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 20px; margin: 0;">
                 <div style="max-width: 750px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
@@ -149,10 +149,10 @@ router.post('/', authMiddleware, requirePermission('canManageUsers'), async (req
                     <!-- Header -->
                     <div style="padding: 32px 32px 0 32px;">
                         <div style="display: inline-block; padding: 6px 12px; background-color: #e0f2f1; color: #00838F; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
-                            Contas a Receber v5
+                            HUB de Ferramentas
                         </div>
                         <h1 style="color: #111827; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.2;">
-                            Bem-vindo(a) ao Contas a Receber v5 da Nexomed 👋
+                            Bem-vindo(a) ao HUB de Ferramentas da Nexomed 👋
                         </h1>
                         <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0;">
                             Olá, <strong>${nome}</strong>! Sua conta de acesso foi criada com sucesso pelo administrador do sistema.
@@ -257,7 +257,7 @@ router.delete('/:id', authMiddleware, requirePermission('canManageUsers'), async
     try {
         // Verifica se está tentando excluir um perfil restrito
         const targetUser = await pgPool.query('SELECT role FROM users WHERE id = $1', [id]);
-        
+
         if (targetUser.rows.length > 0) {
             if (!canInteractWithRole(req.user.role, targetUser.rows[0].role)) {
                 return res.status(403).json({ error: 'Você não tem permissão para excluir este usuário (nível superior ou departamento diferente).' });
