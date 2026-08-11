@@ -97,4 +97,9 @@
         window.location.replace('/403');
         return;
     }
+
+    if (currentPath === '/reset-heroku' && user.role !== 'ADMIN') {
+        window.location.replace('/403');
+        return;
+    }
 })();
