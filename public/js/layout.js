@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             hideLink('/usuarios', perms.canViewUsers);
             hideLink('/cadastro_usuario', perms.canManageUsers);
-            hideLink('/reset-heroku', perms.canManageUsers);
+            hideLink('/reset-heroku', currentUser.role === 'ADMIN');
         } catch(e) {
             console.error('Erro ao fazer parse do usuário local', e);
         }
