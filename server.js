@@ -26,6 +26,7 @@ app.use('/api/itens_arrematados', require('./routes/itens_arrematados'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/agenda_licitacoes', require('./routes/agenda_licitacoes'));
 app.use('/api/clientes', require('./routes/clientes'));
+app.use('/api/heroku', require('./routes/heroku'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
@@ -80,6 +81,11 @@ app.get('/primeiro_acesso', (req, res) => {
 // Nova rota para Perfil
 app.get('/perfil', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'perfil.html'));
+});
+
+// Nova rota para Reset do Heroku
+app.get('/reset-heroku', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'reset_heroku.html'));
 });
 
 app.get('/403', (req, res) => {
