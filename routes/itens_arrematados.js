@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const supaPool = require('../db/supabaseConnection');
 const pgPool = require('../db/pgConnection');
 const { getPool, sql } = require('../db/connection');
 const { authMiddleware } = require('../middleware/authMiddleware');
@@ -24,7 +23,7 @@ router.get('/', async (req, res) => {
             table = 'itens_arrematados."IA_BML"';
         }
         
-        const result = await supaPool.query(`
+        const result = await pgPool.query(`
             SELECT 
                 "CHAVE",
                 "COD_CONTRATO_CONCAT",
@@ -86,7 +85,7 @@ router.get('/:chave', async (req, res) => {
             table = 'itens_arrematados."IA_BML"';
         }
 
-        const result = await supaPool.query(
+        const result = await pgPool.query(
             `SELECT * FROM ${table} WHERE "CHAVE" = $1`,
             [chave]
         );
@@ -131,7 +130,7 @@ router.post('/', async (req, res) => {
         const placeholders = columns.map((_, i) => `$${i + 1}`);
         const colsString = columns.map(c => `"${c}"`).join(', ');
 
-        const result = await supaPool.query(
+        const result = await pgPool.query(
             `INSERT INTO ${table} (${colsString}) VALUES (${placeholders.join(', ')}) RETURNING *`,
             values
         );
@@ -183,7 +182,7 @@ router.put('/:chave', async (req, res) => {
         }
 
         // Buscar dados antigos para comparar (diff)
-        const oldResult = await supaPool.query(`SELECT * FROM ${table} WHERE "CHAVE" = $1`, [chave]);
+        const oldResult = await pgPool.query(`SELECT * FROM ${table} WHERE "CHAVE" = $1`, [chave]);
         const oldData = oldResult.rows[0];
 
         const columns = [
@@ -201,7 +200,7 @@ router.put('/:chave', async (req, res) => {
         const values = columns.map(col => data[col] !== undefined && data[col] !== '' ? data[col] : null);
         values.push(chave); // for WHERE clause
 
-        const result = await supaPool.query(
+        const result = await pgPool.query(
             `UPDATE ${table} SET ${setClauses.join(', ')} WHERE "CHAVE" = $${values.length} RETURNING *`,
             values
         );
@@ -300,10 +299,10 @@ router.delete('/:chave', async (req, res) => {
         }
 
         // Buscar os dados do contrato antes de excluir para notificar corretamente
-        const oldResult = await supaPool.query(`SELECT * FROM ${table} WHERE "CHAVE" = $1`, [chave]);
+        const oldResult = await pgPool.query(`SELECT * FROM ${table} WHERE "CHAVE" = $1`, [chave]);
         const oldData = oldResult.rows[0];
 
-        const result = await supaPool.query(
+        const result = await pgPool.query(
             `DELETE FROM ${table} WHERE "CHAVE" = $1 RETURNING "CHAVE"`,
             [chave]
         );

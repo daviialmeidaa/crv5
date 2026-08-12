@@ -1,5 +1,4 @@
 const cron = require('node-cron');
-const supaPool = require('../db/supabaseConnection');
 const pgPool = require('../db/pgConnection');
 const nodemailer = require('nodemailer');
 const eventBus = require('./eventBus');
@@ -28,7 +27,7 @@ async function runAgendaCronLogic(options = {}) {
             ORDER BY hora_lances ASC
         `;
         
-        const result = await supaPool.query(query);
+        const result = await pgPool.query(query);
         
         if (result.rows.length > 0) {
             // Pega a data alvo para montar uma chave única do dia

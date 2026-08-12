@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const supaPool = require('../db/supabaseConnection');
 const pgPool = require('../db/pgConnection'); // Para inserção de notificações
 const { authMiddleware } = require('../middleware/authMiddleware');
 const eventBus = require('../services/eventBus');
@@ -47,7 +46,7 @@ router.get('/', async (req, res) => {
 
         query += ` ORDER BY data_lances DESC NULLS LAST, hora_lances ASC NULLS LAST, "CHAVE" DESC`;
 
-        const result = await supaPool.query(query, values);
+        const result = await pgPool.query(query, values);
         res.json(result.rows);
     } catch (error) {
         console.error('Erro na API Agenda Licitações (GET /):', error);
@@ -63,7 +62,7 @@ router.get('/:chave', async (req, res) => {
     try {
         const { chave } = req.params;
 
-        const result = await supaPool.query(
+        const result = await pgPool.query(
             `SELECT * FROM agenda_licitacoes."AGENDA_LICITACOES" WHERE "CHAVE" = $1`,
             [chave]
         );
@@ -113,7 +112,7 @@ router.post('/', async (req, res) => {
             data_lances || null, hora_lances || null, antecedencia !== undefined ? antecedencia : null
         ];
 
-        const result = await supaPool.query(query, values);
+        const result = await pgPool.query(query, values);
         
         // --- INÍCIO: Log de Notificação (Criação) ---
         if (req.user && req.user.id) {
@@ -170,13 +169,13 @@ router.put('/:chave', async (req, res) => {
         // Buscar dados antigos para o Diff de Notificação
         let oldData = null;
         try {
-            const oldResult = await supaPool.query(`SELECT data_lances, hora_lances FROM agenda_licitacoes."AGENDA_LICITACOES" WHERE "CHAVE" = $1`, [chave]);
+            const oldResult = await pgPool.query(`SELECT data_lances, hora_lances FROM agenda_licitacoes."AGENDA_LICITACOES" WHERE "CHAVE" = $1`, [chave]);
             if (oldResult.rows.length > 0) oldData = oldResult.rows[0];
         } catch (e) {
             console.error('Erro ao buscar dados antigos para diff:', e);
         }
 
-        const result = await supaPool.query(query, values);
+        const result = await pgPool.query(query, values);
         
         // --- INÍCIO: Log de Notificação (Edição com Diff) ---
         if (req.user && req.user.id && oldData && result.rows.length > 0) {
@@ -221,7 +220,7 @@ router.put('/:chave', async (req, res) => {
 router.delete('/:chave', async (req, res) => {
     try {
         const { chave } = req.params;
-        const result = await supaPool.query(
+        const result = await pgPool.query(
             `DELETE FROM agenda_licitacoes."AGENDA_LICITACOES" WHERE "CHAVE" = $1 RETURNING *`,
             [chave]
         );
