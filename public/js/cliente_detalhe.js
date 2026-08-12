@@ -1752,6 +1752,88 @@ const ClienteDetalhe = (() => {
                 `;
             });
             tbody.innerHTML = html;
+        },
+
+        showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-[200] transform transition-all duration-300 translate-y-10 opacity-0 flex items-center gap-2 ${
+                type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+            }`;
+            
+            const icon = type === 'success' 
+                ? '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+                : '<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+                
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            document.body.appendChild(toast);
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            });
+            
+            // Remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        },
+
+        toggleEditContrato(show) {
+            if (show) {
+                document.getElementById('displayContratoContainer').classList.add('hidden');
+                document.getElementById('btnEditContrato').classList.add('hidden');
+                document.getElementById('editContratoContainer').classList.remove('hidden');
+                document.getElementById('editContratoContainer').classList.add('flex');
+                
+                let currentVal = document.getElementById('modalContato').textContent.trim();
+                if (currentVal === '---') currentVal = '';
+                document.getElementById('editContratoInput').value = currentVal;
+            } else {
+                document.getElementById('displayContratoContainer').classList.remove('hidden');
+                document.getElementById('btnEditContrato').classList.remove('hidden');
+                document.getElementById('editContratoContainer').classList.add('hidden');
+                document.getElementById('editContratoContainer').classList.remove('flex');
+            }
+        },
+
+        async saveContrato() {
+            const input = document.getElementById('editContratoInput');
+            const newValue = input.value.trim();
+            const token = localStorage.getItem('token');
+
+            if (!currentModalContext.empresa || !currentModalContext.codigo_nota) {
+                this.showToast('Erro interno: Faltam dados da nota para atualização.', 'error');
+                return;
+            }
+
+            try {
+                input.disabled = true;
+                const res = await fetch(`/api/notas/${currentModalContext.empresa}/${currentModalContext.codigo_nota}/contrato`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ contrato: newValue, numero_nota: currentModalContext.numero_nota, documento: currentModalContext.documento })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Falha ao atualizar contrato no servidor.');
+                }
+
+                // Update UI
+                document.getElementById('modalContato').textContent = newValue || '---';
+                this.toggleEditContrato(false);
+                this.showToast('Contrato atualizado com sucesso!');
+                
+                setTimeout(() => window.location.reload(), 1500);
+            } catch (err) {
+                this.showToast(err.message, 'error');
+            } finally {
+                input.disabled = false;
+            }
         }
     };
 })();
