@@ -261,7 +261,8 @@ const ContasGrid = (function () {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += '<tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 transition-all duration-200 group cursor-default">';
+            const safeCliente = row.cliente ? row.cliente.replace(/'/g, "\\'") : '';
+            html += `<tr onclick="ContasGrid.openNotaModal('${row.empresa}', '${row.nota}', '${row.documento || ''}', '${safeCliente}', '${row.esfera || ''}', '${row.uf || ''}', '${row.valor || '0'}')" class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 transition-all duration-200 group cursor-pointer">`;
             columns.forEach(col => {
                 let val = row[col.key];
 
@@ -272,19 +273,7 @@ const ContasGrid = (function () {
                 // Custom render?
                 if (col.render) val = col.render(val);
                 
-                // Formatação especial de Link para a Nota
-                if (col.key === 'nota' && val && val !== '-') {
-                    val = `<div class="relative group inline-block">
-                             <a href="#" onclick="ContasGrid.openNotaModal('${row.empresa}', '${val}', '${row.documento || ''}', '${row.cliente ? row.cliente.replace(/'/g, "\\'") : ''}', '${row.esfera || ''}', '${row.uf || ''}', '${row.valor || '0'}'); return false;" class="text-steel-800 dark:text-gray-100 group-hover:text-nexo-600 dark:group-hover:text-nexo-400 transition-colors">${val}</a>
-                             <!-- Tooltip minimalista -->
-                             <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10 whitespace-nowrap bg-steel-800 dark:bg-gray-100 text-white dark:text-steel-900 text-[10px] font-medium py-1 px-2 rounded shadow-sm pointer-events-none">
-                                Ver Nota
-                                <!-- Seta do tooltip -->
-                                <svg class="absolute text-steel-800 dark:bg-gray-100 h-2 w-full left-0 top-full" x="0px" y="0px" viewBox="0 0 255 255"><polygon class="fill-current" points="0,0 127.5,127.5 255,0"/></svg>
-                             </div>
-                           </div>`;
-                }
-
+                // Formatação especial de Link para a Nota removida, agora a linha inteira é clicável.
                 const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
 
                 html += `<td class="px-3 py-1.5 text-[12px] whitespace-nowrap ${isSticky}">${val}</td>`;
