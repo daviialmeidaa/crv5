@@ -45,7 +45,7 @@ router.get('/', async (req, res) => {
             values.push(empresa.toUpperCase());
         }
 
-        query += ` ORDER BY "CHAVE" DESC`;
+        query += ` ORDER BY data_lances DESC NULLS LAST, hora_lances ASC NULLS LAST, "CHAVE" DESC`;
 
         const result = await supaPool.query(query, values);
         res.json(result.rows);
