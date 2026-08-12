@@ -97,6 +97,31 @@
         #brazilMapContainer>div>div>iframe {
             background: transparent !important;
         }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.02);
+            border-radius: 8px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.02);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
     </style>
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
@@ -269,7 +294,7 @@
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-steel-900/50 p-6 space-y-6">
+        <div class="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-steel-900/50 p-6 space-y-6">
 
             <!-- Title Bar with Refresh -->
             <div class="flex items-center justify-between">

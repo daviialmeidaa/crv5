@@ -902,6 +902,64 @@ const AL = (() => {
     }
 
     // ==========================================
+    // Setup Custom Dropdowns
+    // ==========================================
+    function setupCustomDropdown(inputId, dropdownId, listId, dataFetcher = null, onChange = null) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+        const ul = document.getElementById(listId);
+        let optionsData = [];
+
+        const renderOptions = (filter = '') => {
+            ul.innerHTML = '';
+            const filterStr = filter.toUpperCase();
+            const filtered = optionsData.filter(opt => opt.toUpperCase().includes(filterStr));
+            if (filtered.length === 0) {
+                ul.innerHTML = '<li class="px-4 py-2 text-steel-400 text-xs text-center italic">Nenhum resultado</li>';
+                return;
+            }
+            filtered.forEach(opt => {
+                const li = document.createElement('li');
+                li.textContent = opt;
+                li.className = 'px-4 py-2 cursor-pointer hover:bg-nexo-50 dark:hover:bg-steel-700 transition-colors text-steel-700 dark:text-gray-200';
+                li.onmousedown = (e) => { // mousedown dispara antes do blur
+                    e.preventDefault();
+                    input.value = opt;
+                    dropdown.classList.add('hidden');
+                    if (onChange) onChange(opt);
+                };
+                ul.appendChild(li);
+            });
+        };
+
+        const loadData = async () => {
+            if (dataFetcher && optionsData.length === 0) {
+                optionsData = await dataFetcher();
+            }
+            renderOptions(input.value);
+        };
+
+        input.addEventListener('focus', async () => {
+            dropdown.classList.remove('hidden');
+            await loadData();
+            renderOptions('');
+        });
+
+        input.addEventListener('input', async (e) => {
+            dropdown.classList.remove('hidden');
+            await loadData();
+            renderOptions(e.target.value);
+        });
+
+        input.addEventListener('blur', () => { dropdown.classList.add('hidden'); });
+
+        return {
+            setOptions: (data) => { optionsData = data; renderOptions(); },
+            clearOptions: () => { optionsData = []; }
+        };
+    }
+
+    // ==========================================
     // 15. Init
     // ==========================================
     function init() {
@@ -916,6 +974,17 @@ const AL = (() => {
             state.pagination.current = 1;
             processData();
         });
+
+        // Initialize Custom Dropdowns
+        const ufs = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+        const modalidadeOps = ["Pregão Eletrônico", "Pregão Presencial", "Dispensa", "Cotação Eletrônica", "Convite", "Concorrência"];
+        const portalOps = ["Comprasnet", "Compras.MG", "PE. INTEGRADO", "Compras.SC", "Banco do Brasil - Antigo", "Banco do Brasil - Novo", "COMPRAS.RJ", "COMPRAS.AM", "COTAÇÕES.SC", "FUNDEP", "FAMESP/SP", "PUBLINEXO", "DISPENSA.SC", "E-MAIL", "BBM NET", "BLL", "Compras Públicas", "Banrrisul", "Licitanet"];
+        const categoriaOps = ["OPME", "Descartável", "Misto"];
+        
+        setupCustomDropdown('formUF', 'ufDropdown', 'ufList').setOptions(ufs);
+        setupCustomDropdown('formModalidade', 'modalidadeDropdown', 'modalidadeList').setOptions(modalidadeOps);
+        setupCustomDropdown('formPortal', 'portalDropdown', 'portalList').setOptions(portalOps);
+        setupCustomDropdown('formCategoria', 'categoriaDropdown', 'categoriaList').setOptions(categoriaOps);
 
         fetchData();
     }

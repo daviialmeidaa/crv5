@@ -12,6 +12,11 @@ router.get('/', authMiddleware, async (req, res) => {
             return res.status(503).json({ error: 'Servidor SQL Server (Supra) indisponível no momento.' });
         }
 
+        // 1. Buscar os códigos de clientes que possuem títulos na base local
+        const pgResult = await pgPool.query(`SELECT DISTINCT cod_cliente FROM titulos WHERE cod_cliente IS NOT NULL`);
+        const validClientCodes = new Set(pgResult.rows.map(row => String(row.cod_cliente).trim()));
+
+        // 2. Buscar os clientes no Supra
         const result = await pool.request().query(`
             SELECT 
                 [Código] AS codigo, 
@@ -23,10 +28,15 @@ router.get('/', authMiddleware, async (req, res) => {
             FROM SGC.dbo.bi_cadastro_clientes
         `);
 
-        res.json(result.recordset);
+        // 3. Filtrar em memória para retornar apenas clientes com vendas
+        const filteredClients = result.recordset.filter(client => {
+            return validClientCodes.has(String(client.codigo).trim());
+        });
+
+        res.json(filteredClients);
     } catch (err) {
-        console.error('Erro ao buscar clientes no Supra:', err);
-        res.status(500).json({ error: 'Erro ao buscar dados do Supra.' });
+        console.error('Erro ao buscar clientes:', err);
+        res.status(500).json({ error: 'Erro ao buscar dados de clientes.' });
     }
 });
 // Buscar um cliente específico no Supra
