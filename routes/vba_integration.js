@@ -22,6 +22,38 @@ const vbaAuthMiddleware = (req, res, next) => {
     next();
 };
 
+// ==========================================
+// Helpers de Formatação VBA -> PostgreSQL
+// ==========================================
+const parseVBADate = (val) => {
+    if (!val || val.toString().trim() === '') return null;
+    let str = val.toString().trim();
+    if (str.includes('/')) {
+        const parts = str.split('/');
+        if (parts.length >= 3) {
+            let d = parts[0].padStart(2, '0');
+            let m = parts[1].padStart(2, '0');
+            let y = parts[2].substring(0, 4);
+            return `${y}-${m}-${d}`;
+        }
+    }
+    return str;
+};
+
+const parseVBATime = (val) => {
+    if (!val || val.toString().trim() === '') return null;
+    let str = val.toString().trim().replace(',', '.');
+    if (str.includes(':')) return str;
+    if (!isNaN(parseFloat(str)) && parseFloat(str) < 1) {
+        const totalSeconds = Math.round(parseFloat(str) * 86400);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return str;
+};
+
 router.use(vbaAuthMiddleware);
 
 // ==========================================
@@ -53,16 +85,14 @@ router.post('/agenda_licitacoes', async (req, res) => {
         const values = [
             empresa, pregao, modalidade, orgao, uf,
             categoria, objeto, portal, observacoes_status,
-            data_cadastro || null, data_limite || null, hora_limite || null,
-            data_lances || null, hora_lances || null, antecedencia !== undefined ? antecedencia : null
+            parseVBADate(data_cadastro), parseVBADate(data_limite), parseVBATime(hora_limite),
+            parseVBADate(data_lances), parseVBATime(hora_lances), antecedencia !== undefined && antecedencia !== '' ? antecedencia : null
         ];
 
         const result = await pgPool.query(query, values);
         
         // --- INÍCIO: Log de Notificação (Criação) ---
-        const dataStr = data_lances ? data_lances.split('T')[0].split('-').reverse().join('/') : 'N/A';
-        const horaStr = hora_lances ? hora_lances.substring(0, 5) : 'N/A';
-        const msg = `O ${req.user.nome} acaba de inserir a agenda do pregão ${pregao || 'Sem Nº'} para o dia ${dataStr} às ${horaStr}.`;
+        const msg = `O ${req.user.nome} acaba de inserir a agenda do pregão ${pregao || 'Sem Nº'}.`;
         
         // created_by vai como nulo (ou o ID do admin se preferir)
         await pgPool.query(
@@ -104,8 +134,8 @@ router.put('/agenda_licitacoes/:chave', async (req, res) => {
         const values = [
             empresa, pregao, modalidade, orgao, uf,
             categoria, objeto, portal, observacoes_status,
-            data_cadastro || null, data_limite || null, hora_limite || null,
-            data_lances || null, hora_lances || null, antecedencia !== undefined ? antecedencia : null,
+            parseVBADate(data_cadastro), parseVBADate(data_limite), parseVBATime(hora_limite),
+            parseVBADate(data_lances), parseVBATime(hora_lances), antecedencia !== undefined && antecedencia !== '' ? antecedencia : null,
             chave
         ];
 
