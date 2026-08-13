@@ -73,27 +73,27 @@
     // Controle de Acesso Baseado em Permissões (RBAC)
     const permissions = user.permissions || {};
     
-    if (currentPath === '/contas_a_receber' && !permissions.canViewCR) {
+    if (currentPath === '/contas_a_receber' && user.role !== 'ADMIN' && !permissions.canViewCR) {
         window.location.replace('/403');
         return;
     }
     
-    if (currentPath.startsWith('/clientes') && !permissions.canViewClientes) {
+    if (currentPath.startsWith('/clientes') && user.role !== 'ADMIN' && !permissions.canViewClientes) {
         window.location.replace('/403');
         return;
     }
     
-    if ((currentPath === '/itens_arrematados' || currentPath === '/agenda_licitacoes') && !permissions.canViewLC) {
+    if ((currentPath === '/itens_arrematados' || currentPath === '/agenda_licitacoes') && user.role !== 'ADMIN' && !permissions.canViewLC) {
         window.location.replace('/403');
         return;
     }
     
-    if (currentPath === '/usuarios' && !permissions.canViewUsers) {
+    if (currentPath === '/usuarios' && user.role !== 'ADMIN' && !permissions.canViewUsers) {
         window.location.replace('/403');
         return;
     }
 
-    if (currentPath === '/cadastro_usuario' && !permissions.canCreateUsers) {
+    if (currentPath === '/cadastro_usuario' && user.role !== 'ADMIN' && !permissions.canCreateUsers) {
         window.location.replace('/403');
         return;
     }

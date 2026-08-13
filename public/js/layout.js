@@ -51,10 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 return canAccess;
             };
             
-            const canCR = hideLink('/contas_a_receber', perms.canViewCR);
-            const canClientes = hideLink('/clientes', perms.canViewClientes);
-            const canLC = hideLink('/itens_arrematados', perms.canViewLC);
-            hideLink('/agenda_licitacoes', perms.canViewLC);
+            const isAdmin = currentUser.role?.trim().toUpperCase() === 'ADMIN';
+            const canCR = hideLink('/contas_a_receber', perms.canViewCR || isAdmin);
+            const canClientes = hideLink('/clientes', perms.canViewClientes || isAdmin);
+            const canLC = hideLink('/itens_arrematados', perms.canViewLC || isAdmin);
+            hideLink('/agenda_licitacoes', perms.canViewLC || isAdmin);
             
             // Oculta grupos inteiros se não houver permissão
             if (!canCR && !canClientes) {
@@ -66,9 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (groupLicitacoes) groupLicitacoes.style.display = 'none';
             }
 
-            hideLink('/usuarios', perms.canViewUsers);
-            hideLink('/cadastro_usuario', perms.canCreateUsers);
-            hideLink('/reset-heroku', perms.canResetHeroku || currentUser.role === 'ADMIN');
+            hideLink('/usuarios', perms.canViewUsers || isAdmin);
+            hideLink('/cadastro_usuario', perms.canCreateUsers || isAdmin);
+            hideLink('/reset-heroku', perms.canResetHeroku || isAdmin);
         } catch(e) {
             console.error('Erro ao fazer parse do usuário local', e);
         }
