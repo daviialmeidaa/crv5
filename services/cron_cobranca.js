@@ -105,7 +105,7 @@ async function runCobrancaCronLogic() {
             const count = user.agendamentos.length;
             
             // 1. Notificação de Sistema (notifications)
-            const actionId = `AGENDAMENTO_COB_${todayStr}_${userId}`;
+            const actionId = `AG_${userId}`;
             const plural = count === 1 ? 'agendamento' : 'agendamentos';
             
             let notificacaoTexto = `⏰ Lembrete: Você tem ${count} ${plural} para hoje:\n\n`;
@@ -120,13 +120,13 @@ async function runCobrancaCronLogic() {
 
             // Remove duplicatas se o cron rodar 2x
             await pgPool.query(
-                `DELETE FROM notifications WHERE module = 'COBRANCA' AND action = $1 AND user_id = $2`,
-                [actionId, userId]
+                `DELETE FROM notifications WHERE module = 'COBRANCA' AND action = $1`,
+                [actionId]
             );
 
             // Insere
             await pgPool.query(
-                `INSERT INTO notifications (module, action, message, created_by, user_id) VALUES ($1, $2, $3, NULL, $4)`,
+                `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
                 ['COBRANCA', actionId, notificacaoTexto.trim(), userId]
             );
             
