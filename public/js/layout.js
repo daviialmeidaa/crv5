@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const canCR = hideLink('/contas_a_receber', perms.canViewCR);
             const canClientes = hideLink('/clientes', perms.canViewClientes);
             const canLC = hideLink('/itens_arrematados', perms.canViewLC);
+            hideLink('/agenda_licitacoes', perms.canViewLC);
             
             // Oculta grupos inteiros se não houver permissão
             if (!canCR && !canClientes) {
@@ -66,8 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             hideLink('/usuarios', perms.canViewUsers);
-            hideLink('/cadastro_usuario', perms.canManageUsers);
-            hideLink('/reset-heroku', currentUser.role === 'ADMIN');
+            hideLink('/cadastro_usuario', perms.canCreateUsers);
+            hideLink('/reset-heroku', perms.canResetHeroku || currentUser.role === 'ADMIN');
         } catch(e) {
             console.error('Erro ao fazer parse do usuário local', e);
         }
@@ -213,6 +214,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 profileMenu.classList.add('hidden');
             }
         });
+        
+        // Injetar item "Perfis de Usuário" apenas para ADMIN
+        try {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                if (user && (user.role?.trim().toUpperCase() === 'ADMIN' || (user.permissions && user.permissions.canManageRoles))) {
+                    // Encontrar o separador antes do botão Sair (ou o próprio botão Sair)
+                    const logoutBtn = profileMenu.querySelector('a.text-red-600');
+                    if (logoutBtn) {
+                        const link = document.createElement('a');
+                        link.href = '/perfis';
+                        link.className = 'block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors';
+                        link.textContent = 'Perfis de Usuário';
+                        
+                        // Inserir antes do Logout
+                        profileMenu.insertBefore(link, logoutBtn.previousElementSibling || logoutBtn);
+                    }
+                }
+            }
+        } catch(e) {}
         
         // Lógica de Logout
         const logoutBtn = profileMenu.querySelector('a.text-red-600');

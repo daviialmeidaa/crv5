@@ -83,7 +83,7 @@
         return;
     }
     
-    if (currentPath === '/itens_arrematados' && !permissions.canViewLC) {
+    if ((currentPath === '/itens_arrematados' || currentPath === '/agenda_licitacoes') && !permissions.canViewLC) {
         window.location.replace('/403');
         return;
     }
@@ -93,12 +93,17 @@
         return;
     }
 
-    if (currentPath === '/cadastro_usuario' && !permissions.canManageUsers) {
+    if (currentPath === '/cadastro_usuario' && !permissions.canCreateUsers) {
         window.location.replace('/403');
         return;
     }
 
-    if (currentPath === '/reset-heroku' && user.role !== 'ADMIN') {
+    if (currentPath === '/perfis' && user.role !== 'ADMIN' && !permissions.canManageRoles) {
+        window.location.replace('/403');
+        return;
+    }
+
+    if (currentPath === '/reset-heroku' && user.role !== 'ADMIN' && !permissions.canResetHeroku) {
         window.location.replace('/403');
         return;
     }
