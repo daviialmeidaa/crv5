@@ -62,6 +62,7 @@ router.use(vbaAuthMiddleware);
 router.post('/agenda_licitacoes', async (req, res) => {
     try {
         const { 
+            chave,
             empresa, pregao, modalidade, orgao, uf, 
             categoria, objeto, portal, observacoes_status, 
             data_cadastro, data_limite, hora_limite, 
@@ -70,19 +71,20 @@ router.post('/agenda_licitacoes', async (req, res) => {
 
         const query = `
             INSERT INTO agenda_licitacoes."AGENDA_LICITACOES" (
-                empresa, pregao, modalidade, orgao, uf, 
+                "CHAVE", empresa, pregao, modalidade, orgao, uf, 
                 categoria, objeto, portal, observacoes_status, 
                 data_cadastro, data_limite, hora_limite, 
                 data_lances, hora_lances, antecedencia
             ) VALUES (
                 $1, $2, $3, $4, $5, 
-                $6, $7, $8, $9, 
-                $10, $11, $12, 
-                $13, $14, $15
+                $6, $7, $8, $9, $10,
+                $11, $12, $13, 
+                $14, $15, $16
             ) RETURNING *
         `;
 
         const values = [
+            chave,
             empresa, pregao, modalidade, orgao, uf,
             categoria, objeto, portal, observacoes_status,
             parseVBADate(data_cadastro), parseVBADate(data_limite), parseVBATime(hora_limite),
