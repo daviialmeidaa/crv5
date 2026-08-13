@@ -8,8 +8,10 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "scheduler:agenda": "node scripts/run_cron_agenda_standalone.js",
+    "scheduler:cobranca": "node scripts/run_cron_cobranca_standalone.js",
     "scheduler:agenda:friday": "node scripts/run_cron_agenda_friday.js",
-    "postinstall": "node scripts/patch-node-sped-pdf.js"
+    "postinstall": "node scripts/patch-node-sped-pdf.js",
+    "patch-pdf": "node scripts/patch-node-sped-pdf.js"
   },
   "keywords": [],
   "author": "",
