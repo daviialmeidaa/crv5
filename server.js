@@ -97,6 +97,12 @@ app.get('/403', (req, res) => {
 const cron = require('node-cron');
 const { runSync } = require('./services/syncService');
 const { initAgendaCron } = require('./services/cron_agenda');
+const { initCobrancaCron, initCobrancaLiveReminders } = require('./services/cron_cobranca');
+
+// Iniciar os Cron Jobs
+initAgendaCron();
+initCobrancaCron();
+initCobrancaLiveReminders();
 
 // Iniciando o servidor
 app.listen(PORT, () => {

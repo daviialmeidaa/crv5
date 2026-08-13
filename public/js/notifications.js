@@ -23,6 +23,7 @@
     let notifications = [];
     let unreadCount = 0;
     let previousUnreadCount = 0;
+    let previousNewestUnreadId = 0;
     let isFirstLoad = true;
 
     // Áudio pré-carregado (com cache-buster para forçar o navegador a pegar o arquivo novo)
@@ -238,12 +239,15 @@
     }
 
     function renderNotifications() {
-        unreadCount = notifications.filter(n => !n.is_read).length;
+        const unreadNotifs = notifications.filter(n => !n.is_read);
+        unreadCount = unreadNotifs.length;
+        let newestUnreadId = unreadCount > 0 ? Math.max(...unreadNotifs.map(n => n.id)) : 0;
         
-        if (!isFirstLoad && unreadCount > previousUnreadCount) {
+        if (!isFirstLoad && (unreadCount > previousUnreadCount || newestUnreadId > previousNewestUnreadId)) {
             playNotificationSound();
         }
         previousUnreadCount = unreadCount;
+        previousNewestUnreadId = newestUnreadId;
         isFirstLoad = false;
         
         if (unreadCount > 0) {
@@ -252,8 +256,8 @@
             badge.classList.add('hidden');
         }
 
-        const notifsSistema = notifications.filter(n => n.module !== 'AGENDA');
-        const notifsAgenda = notifications.filter(n => n.module === 'AGENDA');
+        const notifsSistema = notifications.filter(n => n.module !== 'AGENDA' && n.module !== 'COBRANCA');
+        const notifsAgenda = notifications.filter(n => n.module === 'AGENDA' || n.module === 'COBRANCA');
 
         const unreadSistemaCount = notifsSistema.filter(n => !n.is_read).length;
         const unreadAgendamentosCount = notifsAgenda.filter(n => !n.is_read).length;
@@ -277,7 +281,9 @@
                 
                 // Avatar
                 let avatarHtml = '';
-                if (n.avatar_url && n.avatar_url !== 'null' && n.avatar_url.trim() !== '') {
+                if (n.module === 'AGENDA' || n.module === 'COBRANCA') {
+                    avatarHtml = `<img src="/assets/images/simbolo.png" class="w-8 h-8 rounded-full object-contain p-1 bg-white border border-gray-200 dark:border-steel-700 dark:bg-steel-800">`;
+                } else if (n.avatar_url && n.avatar_url !== 'null' && n.avatar_url.trim() !== '') {
                     avatarHtml = `<img src="${n.avatar_url}" class="w-8 h-8 rounded-full object-cover">`;
                 } else if (!n.created_by_name) {
                     avatarHtml = `<img src="/assets/images/simbolo.png" class="w-8 h-8 rounded-full object-contain p-1 bg-white border border-gray-200 dark:border-steel-700 dark:bg-steel-800">`;
