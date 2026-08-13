@@ -168,3 +168,12 @@ As seguintes regras foram consolidadas para garantir uma experiência premium un
 ## Evoluções na Arquitetura de Dados
 1. **Prazos e Status (Itens Arrematados):** Entendeu-se que campos burocráticos de licitação (Data Proposta, Vigência, Status) pertencem ao ciclo de vida do **Contrato** como um todo, e não a cada produto de forma isolada. Modais de edição devem isolar esses campos em uma sessão separada e, ao salvar, replicar os valores para todos os itens atrelados ao mesmo contrato.
 2. **Filtragem Otimizada (Memória vs BD):** Ao exibir listagens puras vindas do Supra (como o `/api/clientes`), se a regra de negócio exigir exibir **apenas** clientes que já tiveram movimentação, não se deve sobrecarregar o SQL Server com cruzamentos complexos. O padrão correto é fazer um `SELECT DISTINCT` na base local (PostgreSQL), carregar os códigos em um `Set` no Javascript (Node.js) e utilizar `.filter()` na memória do servidor antes de devolver a resposta, garantindo performance excelente.
+
+## Integração Temporária com Legado (VBA)
+Atualmente, existe uma API temporária para o sistema VBA (`/api/vba/agenda_licitacoes`) autenticada por **API Key**. Ela serve como espelho (Shadowing) enquanto o Access não é desativado.
+- **Chave no `.env`:** `VBA_API_KEY`
+
+### Como Desligar a API (Quando o VBA for aposentado):
+1. Remover o import e `app.use('/api/vba', ...)` do arquivo `server.js`.
+2. Excluir o arquivo `routes/vba_integration.js`.
+3. Remover a variável `VBA_API_KEY` das variáveis de ambiente de produção (Heroku e local).

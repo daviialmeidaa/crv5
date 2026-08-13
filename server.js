@@ -27,6 +27,7 @@ app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/agenda_licitacoes', require('./routes/agenda_licitacoes'));
 app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/heroku', require('./routes/heroku'));
+app.use('/api/vba', require('./routes/vba_integration'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
