@@ -216,4 +216,96 @@ function initCobrancaCron() {
     console.log('Cron Job de Cobrança iniciado (Seg-Sex às 08h, Horário de Brasília).');
 }
 
-module.exports = { initCobrancaCron, runCobrancaCronLogic };
+async function runCobrancaLiveRemindersLogic() {
+    try {
+        const now = new Date();
+        // Calcula hora atual em Brasília e soma 10 minutos
+        const brtString = now.toLocaleString("en-US", { timeZone: "America/Sao_Paulo" });
+        const targetTime = new Date(new Date(brtString).getTime() + 10 * 60000);
+        
+        const targetHours = String(targetTime.getHours()).padStart(2, '0');
+        const targetMinutes = String(targetTime.getMinutes()).padStart(2, '0');
+        const targetTimeStr = `${targetHours}:${targetMinutes}:00`;
+
+        const query = `
+            SELECT 
+                h.id, 
+                h.codigo_cliente, 
+                h.tipo_contato, 
+                h.agendamento_tipo_retorno_contato,
+                h.created_by
+            FROM historico_cobranca h
+            WHERE h.has_agendamento = true 
+              AND h.agendamento_data_contato = CURRENT_DATE
+              AND h.agendamento_hora_contato = $1
+        `;
+        
+        const pgResult = await pgPool.query(query, [targetTimeStr]);
+        
+        if (pgResult.rows.length === 0) {
+            return;
+        }
+
+        // Buscar nomes no SGC
+        const clientCodes = [...new Set(pgResult.rows.map(r => r.codigo_cliente))];
+        const sqlPool = await getPool();
+        let clientMap = {};
+        
+        if (sqlPool && clientCodes.length > 0) {
+            const clientCodesStr = clientCodes.join(',');
+            const sqlQuery = `
+                SELECT [Código] AS codigo, [Nome_Razão_Social] AS razaoSocial, [Nome_Fantasia] AS nomeFantasia 
+                FROM SGC.dbo.bi_cadastro_clientes 
+                WHERE [Código] IN (${clientCodesStr})
+            `;
+            try {
+                const sqlResult = await sqlPool.request().query(sqlQuery);
+                sqlResult.recordset.forEach(c => {
+                    clientMap[c.codigo] = c.razaoSocial || c.nomeFantasia || '';
+                });
+            } catch (err) {
+                console.error('[Live Reminders] Erro SQL:', err);
+            }
+        }
+
+        for (const row of pgResult.rows) {
+            const clienteNome = clientMap[row.codigo_cliente] || 'Cliente não encontrado';
+            const motivo = row.agendamento_tipo_retorno_contato || 'Contato';
+            const msg = `⏰ Lembrete iminente: Faltam 10 minutos para o agendamento de cobrança!\n\n• Cliente: ${row.codigo_cliente} - ${clienteNome}\n  Motivo: ${motivo}`;
+            
+            // action = REM_1234 (assim o JS puxa a cor roxa e ícone de relógio se der match em REMINDER)
+            // Espera, no JS a validação é startsWith('REMINDER'), então precisa ser REMINDER_1234
+            // Como varchar tem tamanho 20, REMINDER_ tem 9 chars. ID pode ter até 11. Perfeito.
+            const actionId = `REMINDER_${row.id}`.substring(0, 20);
+
+            // Evitar duplicatas caso rode duas vezes no mesmo minuto
+            await pgPool.query(
+                `DELETE FROM notifications WHERE module = 'COBRANCA' AND action = $1`,
+                [actionId]
+            );
+
+            await pgPool.query(
+                `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
+                ['COBRANCA', actionId, msg, row.created_by]
+            );
+        }
+
+        eventBus.emit('refresh');
+        
+    } catch (error) {
+        console.error('Erro no cron live reminders:', error);
+    }
+}
+
+function initCobrancaLiveReminders() {
+    // Roda todo minuto de Seg a Sex
+    cron.schedule('* * * * 1-5', () => {
+        runCobrancaLiveRemindersLogic();
+    }, {
+        scheduled: true,
+        timezone: "America/Sao_Paulo"
+    });
+    console.log('Cron Job de Lembretes (10min) iniciado (Seg-Sex a cada minuto).');
+}
+
+module.exports = { initCobrancaCron, runCobrancaCronLogic, initCobrancaLiveReminders };
