@@ -978,8 +978,8 @@ const AL = (() => {
         // Initialize Custom Dropdowns
         const ufs = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
         const modalidadeOps = ["Pregão Eletrônico", "Pregão Presencial", "Dispensa", "Cotação Eletrônica", "Convite", "Concorrência"];
-        const portalOps = ["Comprasnet", "Compras.MG", "PE. INTEGRADO", "Compras.SC", "Banco do Brasil - Antigo", "Banco do Brasil - Novo", "COMPRAS.RJ", "COMPRAS.AM", "COTAÇÕES.SC", "FUNDEP", "FAMESP/SP", "PUBLINEXO", "DISPENSA.SC", "E-MAIL", "BBM NET", "BLL", "Compras Públicas", "Banrrisul", "Licitanet"];
-        const categoriaOps = ["OPME", "Descartável", "Misto"];
+        const portalOps = ["Comprasnet", "Compras.MG", "PE. INTEGRADO", "Compras.SC", "Banco do Brasil - Antigo", "Banco do Brasil - Novo", "COMPRAS.RJ", "COMPRAS.AM", "COTAÇÕES.SC", "FUNDEP", "FAMESP/SP", "PUBLINEXO", "DISPENSA.SC", "E-MAIL", "BBM NET", "BLL", "Compras Públicas", "Banrrisul", "Licitanet", "Outros"];
+        const categoriaOps = ["OPME", "Descartável", "Misto", "Serviços Médicos"];
         
         setupCustomDropdown('formUF', 'ufDropdown', 'ufList').setOptions(ufs);
         setupCustomDropdown('formModalidade', 'modalidadeDropdown', 'modalidadeList').setOptions(modalidadeOps);
