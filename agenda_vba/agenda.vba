@@ -248,6 +248,15 @@ Sub insert_Database()
 ' ----------------------------------------------------
 ' INTEGRAÇÃO HEROKU (API Node.js) - SHADOWING (INSERT)
 ' ----------------------------------------------------
+    ' NOVO: Pegando o ID real gerado pelo Access
+    Dim rsIdentity As ADODB.Recordset
+    Set rsIdentity = cn.Execute("SELECT @@IDENTITY")
+    Dim newId As String
+    newId = Trim(CStr(rsIdentity.Fields(0).Value))
+    rsIdentity.Close
+    
+    Cells(i, 1).Value = newId
+
     On Error Resume Next
     Dim http As Object
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
@@ -255,6 +264,7 @@ Sub insert_Database()
     apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes"
     Dim jsonPayload As String
     jsonPayload = "{ " & _
+        """chave"": """ & newId & """, " & _
         """empresa"": """ & SanitizeJSON(CStr(empresa)) & """, " & _
         """pregao"": """ & SanitizeJSON(CStr(pregao)) & """, " & _
         """modalidade"": """ & SanitizeJSON(CStr(modalidade)) & """, " & _
@@ -454,7 +464,7 @@ Sub update_Database()
     Dim http As Object
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     Dim apiUrl As String
-    apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes/" & chave
+    apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes/" & Trim(CStr(chave))
     Dim jsonPayload As String
     jsonPayload = "{ " & _
         """empresa"": """ & SanitizeJSON(CStr(empresa)) & """, " & _
@@ -564,7 +574,7 @@ Sub Delete_BML()
     Dim http As Object
     Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     Dim apiUrl As String
-    apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes/" & chave
+    apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes/" & Trim(CStr(chave))
     http.Open "DELETE", apiUrl, False
     http.setRequestHeader "x-api-key", "KiX185M2ojzoQFONvQT2TYkPMRU3ltF4"
     http.Send
