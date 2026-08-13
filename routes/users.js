@@ -143,51 +143,56 @@ router.post('/', authMiddleware, requirePermission('canManageUsers'), async (req
             to: email,
             subject: 'Bem vindo ao HUB - Nexomed',
             html: `
-            <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; padding: 40px 20px; margin: 0;">
-                <div style="max-width: 750px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding: 40px 20px; margin: 0;">
+                <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
                     
-                    <!-- Header -->
-                    <div style="padding: 32px 32px 0 32px;">
-                        <div style="display: inline-block; padding: 6px 12px; background-color: #e0f2f1; color: #00838F; border-radius: 9999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
-                            HUB de Ferramentas
-                        </div>
-                        <h1 style="color: #111827; font-size: 24px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.2;">
-                            Bem-vindo(a) ao HUB de Ferramentas da Nexomed 👋
-                        </h1>
-                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0;">
-                            Olá, <strong>${nome}</strong>! Sua conta de acesso foi criada com sucesso pelo administrador do sistema.
-                        </p>
+                    <!-- Header with Logo -->
+                    <div style="background-color: #111827; padding: 24px 32px; text-align: center; border-bottom: 4px solid #0097A7;">
+                        <img src="https://hub.nexomed.com.br/assets/images/logo.png" alt="Nexomed" style="height: 32px; display: inline-block; outline: none; text-decoration: none;">
                     </div>
 
-                    <!-- Credenciais Box -->
-                    <div style="padding: 32px;">
-                        <h3 style="color: #374151; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 12px 0;">
-                            🔒 Suas Credenciais
-                        </h3>
+                    <!-- Content -->
+                    <div style="padding: 40px 32px;">
+                        <h1 style="color: #111827; font-size: 22px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.3;">
+                            Bem-vindo(a) à Nexomed
+                        </h1>
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                            Olá, <strong>${nome}</strong>.<br><br>
+                            Sua conta para acesso ao HUB de Ferramentas da Nexomed, acaba de ser criada. Abaixo estão suas credenciais para realizar o primeiro acesso.
+                        </p>
                         
-                        <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px;">
-                            <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 13px;">E-mail (Login):</p>
-                            <p style="margin: 0 0 16px 0; color: #111827; font-size: 15px; font-weight: 600;">${email}</p>
-                            
-                            <p style="margin: 0 0 4px 0; color: #6b7280; font-size: 13px;">Senha provisória:</p>
-                            <p style="margin: 0; color: #0097A7; font-size: 18px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">${generatedPassword}</p>
+                        <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 24px; margin-bottom: 24px;">
+                            <h3 style="color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 16px 0;">
+                                Detalhes do Acesso
+                            </h3>
+                            <table width="100%" cellpadding="0" cellspacing="0" style="border: none;">
+                                <tr>
+                                    <td style="padding: 0 0 12px 0; color: #6b7280; font-size: 14px; width: 80px;">Usuário:</td>
+                                    <td style="padding: 0 0 12px 0; color: #111827; font-size: 14px; font-weight: 600;">${email}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 0; color: #6b7280; font-size: 14px;">Senha:</td>
+                                    <td style="padding: 0; color: #0097A7; font-size: 16px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;">${generatedPassword}</td>
+                                </tr>
+                            </table>
                         </div>
 
-                        <div style="margin-top: 24px; padding: 12px 16px; background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
-                            <p style="margin: 0; color: #b45309; font-size: 13px; line-height: 1.5;">
-                                ⚠️ No seu primeiro acesso, o sistema exigirá que você cadastre uma nova senha pessoal definitiva por questões de segurança.
+                        <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin-bottom: 32px;">
+                            <p style="margin: 0; color: #b45309; font-size: 14px; line-height: 1.5;">
+                                <strong>Aviso de Segurança:</strong> Por razões de segurança, o sistema exigirá a alteração desta senha provisória no seu primeiro login.
                             </p>
                         </div>
                         
-                        <div style="margin-top: 32px; text-align: center;">
-                            <a href="${appUrl}/?force_logout=1" style="display: inline-block; background-color: #0097A7; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">Acessar o Sistema</a>
+                        <div style="text-align: center;">
+                            <a href="${appUrl}/?force_logout=1" style="display: inline-block; background-color: #0097A7; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 6px; font-weight: 600; font-size: 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">Acessar o Sistema</a>
                         </div>
                     </div>
 
                     <!-- Footer -->
-                    <div style="background-color: #f3f4f6; padding: 20px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
-                        <p style="color: #6b7280; font-size: 12px; margin: 0;">
-                            Este é um e-mail automático gerado pelo sistema interno Nexomed.<br>Por favor, não responda.
+                    <div style="background-color: #f9fafb; padding: 24px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.5; margin: 0;">
+                            © ${new Date().getFullYear()} Nexomed. Todos os direitos reservados.<br>
+                            Esta é uma mensagem automática. Por favor, não responda.
                         </p>
                     </div>
                 </div>

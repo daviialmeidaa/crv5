@@ -73,31 +73,45 @@ async function runAgendaCronLogic(options = {}) {
             const formatBidHtml = (item) => {
                 const horaStr = item.hora_lances ? item.hora_lances.substring(0, 5) : '--:--';
                 return `<tr style="border-bottom: 1px solid #e5e7eb;">
-                            <td style="padding: 10px; font-weight: bold; color: #0097A7; white-space: nowrap;">${horaStr}</td>
-                            <td style="padding: 10px; font-weight: 600; word-break: break-word;">${item.pregao || '-'}</td>
-                            <td style="padding: 10px; color: #374151; word-break: break-word;">${item.orgao || '-'}</td>
-                            <td style="padding: 10px; color: #374151; text-align: center;">${item.uf || '-'}</td>
-                            <td style="padding: 10px; color: #374151; word-break: break-word;">${item.categoria || '-'}</td>
-                            <td style="padding: 10px; color: #374151; word-break: break-word;">${item.portal || '-'}</td>
+                            <td style="padding: 12px 16px; font-weight: 600; color: #0097A7; white-space: nowrap;">${horaStr}</td>
+                            <td style="padding: 12px 16px; font-weight: 600; color: #111827; word-break: break-word;">${item.pregao || '-'}</td>
+                            <td style="padding: 12px 16px; color: #4b5563; word-break: break-word;">${item.orgao || '-'}</td>
+                            <td style="padding: 12px 16px; color: #4b5563; text-align: center;">${item.uf || '-'}</td>
+                            <td style="padding: 12px 16px; color: #4b5563; word-break: break-word;">${item.categoria || '-'}</td>
+                            <td style="padding: 12px 16px; color: #4b5563; word-break: break-word;">${item.portal || '-'}</td>
                         </tr>`;
             };
 
             let emailHtml = `
-                <div style="font-family: 'Inter', Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #1f2937; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
-                    <h2 style="color: #00838F; border-bottom: 2px solid #0097A7; padding-bottom: 10px;">Lembrete de Licitações</h2>
-                    <p style="font-size: 16px; line-height: 1.5;">Olá, esse e-mail é um lembrete oficial de que ${diaTexto}, <strong>${dateFormatted}</strong>, teremos os seguintes pregões agendados:</p>
+            <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding: 40px 20px; margin: 0;">
+                <div style="max-width: 800px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                    
+                    <!-- Header with Logo -->
+                    <div style="background-color: #111827; padding: 24px 32px; text-align: center; border-bottom: 4px solid #0097A7;">
+                        <img src="https://hub.nexomed.com.br/assets/images/logo.png" alt="Nexomed" style="height: 32px; display: inline-block; outline: none; text-decoration: none;">
+                    </div>
+
+                    <!-- Content -->
+                    <div style="padding: 40px 32px;">
+                        <h1 style="color: #111827; font-size: 22px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.3;">
+                            Agenda de Licitações
+                        </h1>
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                            Olá.<br><br>
+                            Este é um lembrete oficial de que ${diaTexto}, <strong>${dateFormatted}</strong>, teremos os seguintes pregões agendados.
+                        </p>
             `;
 
             const tableHeader = `
-                <table style="width: 100%; table-layout: fixed; border-collapse: collapse; margin-top: 10px; font-size: 13px; text-align: left;">
+                <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; text-align: left;">
                     <thead>
-                        <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                            <th style="padding: 10px; color: #4b5563; width: 10%;">Hora</th>
-                            <th style="padding: 10px; color: #4b5563; width: 15%;">Pregão</th>
-                            <th style="padding: 10px; color: #4b5563; width: 35%;">Órgão</th>
-                            <th style="padding: 10px; color: #4b5563; text-align: center; width: 8%;">UF</th>
-                            <th style="padding: 10px; color: #4b5563; width: 15%;">Categoria</th>
-                            <th style="padding: 10px; color: #4b5563; width: 17%;">Portal</th>
+                        <tr style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                            <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 10%;">Hora</th>
+                            <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 15%;">Pregão</th>
+                            <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 35%;">Órgão</th>
+                            <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; text-align: center; width: 8%;">UF</th>
+                            <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 15%;">Categoria</th>
+                            <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 17%;">Portal</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -105,33 +119,47 @@ async function runAgendaCronLogic(options = {}) {
 
             if (nexomedBids.length > 0) {
                 emailHtml += `
-                    <div style="background-color: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; overflow-x: auto;">
-                        <h3 style="color: #0097A7; margin-top: 0; margin-bottom: 10px;">Nexomed:</h3>
-                        ${tableHeader}
-                            ${nexomedBids.map(formatBidHtml).join('')}
-                        </tbody>
-                        </table>
-                    </div>
+                        <h3 style="color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 16px 0;">
+                            Unidade Nexomed
+                        </h3>
+                        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0; margin-bottom: 24px; overflow: hidden;">
+                            ${tableHeader}
+                                ${nexomedBids.map(formatBidHtml).join('')}
+                            </tbody>
+                            </table>
+                        </div>
                 `;
             }
 
             if (bmlBids.length > 0) {
                 emailHtml += `
-                    <div style="background-color: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; overflow-x: auto;">
-                        <h3 style="color: #0097A7; margin-top: 0; margin-bottom: 10px;">BML:</h3>
-                        ${tableHeader}
-                            ${bmlBids.map(formatBidHtml).join('')}
-                        </tbody>
-                        </table>
-                    </div>
+                        <h3 style="color: #374151; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin: 24px 0 16px 0;">
+                            Unidade BML
+                        </h3>
+                        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0; margin-bottom: 24px; overflow: hidden;">
+                            ${tableHeader}
+                                ${bmlBids.map(formatBidHtml).join('')}
+                            </tbody>
+                            </table>
+                        </div>
                 `;
             }
 
             emailHtml += `
-                    <p style="margin-top: 30px; font-size: 16px; font-weight: bold; text-align: center; color: #111827;">
-                        ☕ Já busque o seu café e vamos pra cima! Boa sorte nas disputas!
-                    </p>
+                        <div style="text-align: center; margin-top: 32px;">
+                            <p style="color: #111827; font-size: 14px; font-weight: 500; margin: 0;">Bom trabalho e excelentes disputas!</p>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="background-color: #f9fafb; padding: 24px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.5; margin: 0;">
+                            © ${new Date().getFullYear()} Nexomed. Todos os direitos reservados.<br>
+                            Esta é uma mensagem automática. Por favor, não responda.
+                        </p>
+                    </div>
                 </div>
+            </div>
             `;
 
             let destinatarios = [];

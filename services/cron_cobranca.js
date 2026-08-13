@@ -138,14 +138,14 @@ async function runCobrancaCronLogic() {
                     const obsHtml = ag.agendamento_nota_contato ? `<br><span style="color: #6b7280; font-size: 12px;"><i>Obs: ${ag.agendamento_nota_contato}</i></span>` : '';
                     
                     return `<tr style="border-bottom: 1px solid #e5e7eb;">
-                                <td style="padding: 10px; font-weight: bold; color: #0097A7; white-space: nowrap; vertical-align: top;">${horaStr}</td>
-                                <td style="padding: 10px; color: #374151; word-break: break-word; vertical-align: top;">
-                                    <strong>${ag.codigo_cliente} - ${ag.razaoSocial}</strong>${nomeFantasiaHtml}
+                                <td style="padding: 12px 16px; font-weight: 600; color: #0097A7; white-space: nowrap; vertical-align: top;">${horaStr}</td>
+                                <td style="padding: 12px 16px; color: #111827; font-weight: 500; word-break: break-word; vertical-align: top;">
+                                    ${ag.codigo_cliente} - ${ag.razaoSocial}${nomeFantasiaHtml}
                                 </td>
-                                <td style="padding: 10px; color: #374151; word-break: break-word; vertical-align: top;">${ag.agendamento_tipo_retorno_contato || '-'}${obsHtml}</td>
-                                <td style="padding: 10px; color: #374151; word-break: break-word; vertical-align: top;">${ag.pessoa_contatada || '-'}</td>
-                                <td style="padding: 10px; color: #374151; font-size: 12px; word-break: break-word; vertical-align: top;">
-                                    ${ag.tipo_contato || '-'} <br> <span style="color: #4b5563;">${ag.resultado_contato || '-'}</span>
+                                <td style="padding: 12px 16px; color: #4b5563; word-break: break-word; vertical-align: top;">${ag.agendamento_tipo_retorno_contato || '-'}${obsHtml}</td>
+                                <td style="padding: 12px 16px; color: #4b5563; word-break: break-word; vertical-align: top;">${ag.pessoa_contatada || '-'}</td>
+                                <td style="padding: 12px 16px; color: #4b5563; font-size: 12px; word-break: break-word; vertical-align: top;">
+                                    ${ag.tipo_contato || '-'} <br> <span style="color: #6b7280;">${ag.resultado_contato || '-'}</span>
                                 </td>
                             </tr>`;
                 };
@@ -153,19 +153,33 @@ async function runCobrancaCronLogic() {
                 const dateFormatted = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 
                 let emailHtml = `
-                    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #1f2937; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
-                        <h2 style="color: #00838F; border-bottom: 2px solid #0097A7; padding-bottom: 10px;">Agenda de Cobrança</h2>
-                        <p style="font-size: 16px; line-height: 1.5;">Olá <strong>${user.nome}</strong>, você tem <strong>${count} ${plural}</strong> para hoje, <strong>${dateFormatted}</strong>:</p>
+            <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f3f4f6; padding: 40px 20px; margin: 0;">
+                <div style="max-width: 800px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                    
+                    <!-- Header with Logo -->
+                    <div style="background-color: #111827; padding: 24px 32px; text-align: center; border-bottom: 4px solid #0097A7;">
+                        <img src="https://hub.nexomed.com.br/assets/images/logo.png" alt="Nexomed" style="height: 32px; display: inline-block; outline: none; text-decoration: none;">
+                    </div>
+
+                    <!-- Content -->
+                    <div style="padding: 40px 32px;">
+                        <h1 style="color: #111827; font-size: 22px; font-weight: 700; margin: 0 0 16px 0; line-height: 1.3;">
+                            Agenda de Cobrança
+                        </h1>
+                        <p style="color: #4b5563; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                            Olá, <strong>${user.nome}</strong>.<br><br>
+                            Você possui <strong>${count} ${plural}</strong> para hoje, <strong>${dateFormatted}</strong>.
+                        </p>
                         
-                        <div style="background-color: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; overflow-x: auto;">
+                        <div style="background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 0; margin-bottom: 24px; overflow: hidden;">
                             <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; text-align: left;">
                                 <thead>
-                                    <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                                        <th style="padding: 10px; color: #4b5563; width: 10%;">Hora</th>
-                                        <th style="padding: 10px; color: #4b5563; width: 35%;">Cliente</th>
-                                        <th style="padding: 10px; color: #4b5563; width: 25%;">Motivo / Obs</th>
-                                        <th style="padding: 10px; color: #4b5563; width: 15%;">Falar com</th>
-                                        <th style="padding: 10px; color: #4b5563; width: 15%;">Contato Anterior</th>
+                                    <tr style="background-color: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                                        <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 10%;">Hora</th>
+                                        <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 35%;">Cliente</th>
+                                        <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 25%;">Motivo / Obs</th>
+                                        <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 15%;">Falar com</th>
+                                        <th style="padding: 12px 16px; color: #4b5563; font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; width: 15%;">Contato Anterior</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -174,10 +188,20 @@ async function runCobrancaCronLogic() {
                             </table>
                         </div>
                         
-                        <p style="margin-top: 30px; font-size: 15px; text-align: center; color: #111827;">
-                            Bom trabalho e excelentes negociações! 🚀
+                        <div style="text-align: center; margin-top: 32px;">
+                            <p style="color: #111827; font-size: 14px; font-weight: 500; margin: 0;">Bom trabalho e excelentes negociações!</p>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="background-color: #f9fafb; padding: 24px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
+                        <p style="color: #6b7280; font-size: 13px; line-height: 1.5; margin: 0;">
+                            © ${new Date().getFullYear()} Nexomed. Todos os direitos reservados.<br>
+                            Esta é uma mensagem automática. Por favor, não responda.
                         </p>
                     </div>
+                </div>
+            </div>
                 `;
 
                 // Dispatch Email
