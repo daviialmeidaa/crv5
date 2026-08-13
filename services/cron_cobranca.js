@@ -1,0 +1,219 @@
+const cron = require('node-cron');
+const pgPool = require('../db/pgConnection');
+const { getPool } = require('../db/connection');
+const nodemailer = require('nodemailer');
+const eventBus = require('./eventBus');
+
+const transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+        user: 'davi.almeida@iebtinnovation.com',
+        pass: process.env.GMAIL_APP_PASSWORD
+    }
+});
+
+async function runCobrancaCronLogic() {
+    try {
+        // Busca agendamentos de cobrança de hoje, integrando com o usuário criador e com o contato
+        const query = `
+            SELECT 
+                h.id, 
+                h.codigo_cliente, 
+                h.tipo_contato, 
+                h.resultado_contato, 
+                h.descritivo_contato, 
+                h.agendamento_data_contato, 
+                h.agendamento_hora_contato, 
+                h.agendamento_tipo_retorno_contato, 
+                h.agendamento_nota_contato,
+                h.created_by,
+                u.nome AS usuario_nome,
+                u.email AS usuario_email,
+                c.nome_contato AS pessoa_contatada
+            FROM historico_cobranca h
+            JOIN users u ON h.created_by = u.id
+            LEFT JOIN agenda_contatos c ON h.agenda_contato_id = c.id
+            WHERE h.has_agendamento = true 
+              AND h.agendamento_data_contato = CURRENT_DATE
+            ORDER BY h.agendamento_hora_contato ASC
+        `;
+        
+        const pgResult = await pgPool.query(query);
+        
+        if (pgResult.rows.length === 0) {
+            console.log('[Cobrança Cron] Nenhum agendamento para hoje.');
+            return;
+        }
+
+        // Recupera nomes dos clientes do SGC em lote
+        const clientCodes = [...new Set(pgResult.rows.map(r => r.codigo_cliente))];
+        const sqlPool = await getPool();
+        let clientMap = {};
+        
+        if (sqlPool && clientCodes.length > 0) {
+            const clientCodesStr = clientCodes.join(',');
+            const sqlQuery = `
+                SELECT 
+                    [Código] AS codigo, 
+                    [Nome_Razão_Social] AS razaoSocial, 
+                    [Nome_Fantasia] AS nomeFantasia 
+                FROM SGC.dbo.bi_cadastro_clientes 
+                WHERE [Código] IN (${clientCodesStr})
+            `;
+            try {
+                const sqlResult = await sqlPool.request().query(sqlQuery);
+                sqlResult.recordset.forEach(c => {
+                    clientMap[c.codigo] = {
+                        razaoSocial: c.razaoSocial || '',
+                        nomeFantasia: c.nomeFantasia || ''
+                    };
+                });
+            } catch (err) {
+                console.error('[Cobrança Cron] Erro ao buscar clientes no SQL Server:', err);
+            }
+        }
+
+        // Agrupa resultados por usuário criador (created_by)
+        const userSchedules = {};
+        
+        for (const row of pgResult.rows) {
+            const userId = row.created_by;
+            if (!userSchedules[userId]) {
+                userSchedules[userId] = {
+                    nome: row.usuario_nome,
+                    email: row.usuario_email,
+                    agendamentos: []
+                };
+            }
+            
+            const clientData = clientMap[row.codigo_cliente] || { razaoSocial: 'Cliente não encontrado', nomeFantasia: '' };
+            
+            userSchedules[userId].agendamentos.push({
+                ...row,
+                razaoSocial: clientData.razaoSocial,
+                nomeFantasia: clientData.nomeFantasia
+            });
+        }
+        
+        // Gera Notificação e Email para cada usuário separadamente
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        for (const userId in userSchedules) {
+            const user = userSchedules[userId];
+            const count = user.agendamentos.length;
+            
+            // 1. Notificação de Sistema (notifications)
+            const actionId = `AGENDAMENTO_COB_${todayStr}_${userId}`;
+            const plural = count === 1 ? 'agendamento' : 'agendamentos';
+            
+            let notificacaoTexto = `⏰ Lembrete: Você tem ${count} ${plural} para hoje:\n\n`;
+            
+            user.agendamentos.forEach(ag => {
+                const horaStr = ag.agendamento_hora_contato ? ag.agendamento_hora_contato.substring(0, 5) : '--:--';
+                const motivo = ag.agendamento_tipo_retorno_contato || 'Sem motivo especificado';
+                const obs = ag.agendamento_nota_contato ? ` - Obs: ${ag.agendamento_nota_contato}` : '';
+                
+                notificacaoTexto += `• Cliente: ${ag.codigo_cliente} - ${ag.razaoSocial}\n  Ligar às ${horaStr} | Motivo: ${motivo}${obs}\n\n`;
+            });
+
+            // Remove duplicatas se o cron rodar 2x
+            await pgPool.query(
+                `DELETE FROM notifications WHERE module = 'COBRANCA' AND action = $1 AND user_id = $2`,
+                [actionId, userId]
+            );
+
+            // Insere
+            await pgPool.query(
+                `INSERT INTO notifications (module, action, message, created_by, user_id) VALUES ($1, $2, $3, NULL, $4)`,
+                ['COBRANCA', actionId, notificacaoTexto.trim(), userId]
+            );
+            
+            // 2. Email HTML Responsivo e Elegante
+            if (user.email) {
+                const formatAgendamentoHtml = (ag) => {
+                    const horaStr = ag.agendamento_hora_contato ? ag.agendamento_hora_contato.substring(0, 5) : '--:--';
+                    const nomeFantasiaHtml = ag.nomeFantasia ? `<br><small style="color: #6b7280; font-size: 11px;">${ag.nomeFantasia}</small>` : '';
+                    const obsHtml = ag.agendamento_nota_contato ? `<br><span style="color: #6b7280; font-size: 12px;"><i>Obs: ${ag.agendamento_nota_contato}</i></span>` : '';
+                    
+                    return `<tr style="border-bottom: 1px solid #e5e7eb;">
+                                <td style="padding: 10px; font-weight: bold; color: #0097A7; white-space: nowrap; vertical-align: top;">${horaStr}</td>
+                                <td style="padding: 10px; color: #374151; word-break: break-word; vertical-align: top;">
+                                    <strong>${ag.codigo_cliente} - ${ag.razaoSocial}</strong>${nomeFantasiaHtml}
+                                </td>
+                                <td style="padding: 10px; color: #374151; word-break: break-word; vertical-align: top;">${ag.agendamento_tipo_retorno_contato || '-'}${obsHtml}</td>
+                                <td style="padding: 10px; color: #374151; word-break: break-word; vertical-align: top;">${ag.pessoa_contatada || '-'}</td>
+                                <td style="padding: 10px; color: #374151; font-size: 12px; word-break: break-word; vertical-align: top;">
+                                    ${ag.tipo_contato || '-'} <br> <span style="color: #4b5563;">${ag.resultado_contato || '-'}</span>
+                                </td>
+                            </tr>`;
+                };
+
+                const dateFormatted = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+                let emailHtml = `
+                    <div style="font-family: 'Inter', Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #1f2937; background-color: #f9fafb; padding: 20px; border-radius: 8px;">
+                        <h2 style="color: #00838F; border-bottom: 2px solid #0097A7; padding-bottom: 10px;">Agenda de Cobrança</h2>
+                        <p style="font-size: 16px; line-height: 1.5;">Olá <strong>${user.nome}</strong>, você tem <strong>${count} ${plural}</strong> para hoje, <strong>${dateFormatted}</strong>:</p>
+                        
+                        <div style="background-color: white; padding: 15px; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 20px; overflow-x: auto;">
+                            <table style="width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 13px; text-align: left;">
+                                <thead>
+                                    <tr style="background-color: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                                        <th style="padding: 10px; color: #4b5563; width: 10%;">Hora</th>
+                                        <th style="padding: 10px; color: #4b5563; width: 35%;">Cliente</th>
+                                        <th style="padding: 10px; color: #4b5563; width: 25%;">Motivo / Obs</th>
+                                        <th style="padding: 10px; color: #4b5563; width: 15%;">Falar com</th>
+                                        <th style="padding: 10px; color: #4b5563; width: 15%;">Contato Anterior</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${user.agendamentos.map(formatAgendamentoHtml).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <p style="margin-top: 30px; font-size: 15px; text-align: center; color: #111827;">
+                            Bom trabalho e excelentes negociações! 🚀
+                        </p>
+                    </div>
+                `;
+
+                // Dispatch Email
+                let toEmail = process.env.NODE_ENV === 'production' ? user.email : 'davifreitasdealmeida@gmail.com';
+                
+                try {
+                    await transporter.sendMail({
+                        from: '"Nexomed Cobrança" <davi.almeida@iebtinnovation.com>',
+                        to: toEmail,
+                        subject: `AGENDAMENTOS DE COBRANÇA PARA HOJE (${count})`,
+                        html: emailHtml
+                    });
+                    console.log(`[Cobrança Cron] E-mail enviado com sucesso para ${toEmail}`);
+                } catch (emailErr) {
+                    console.error(`[Cobrança Cron] Falha ao enviar e-mail para ${toEmail}:`, emailErr);
+                }
+            }
+        }
+        
+        eventBus.emit('refresh');
+        
+    } catch (error) {
+        console.error('Erro no cron de agendamentos de cobrança:', error);
+    }
+}
+
+function initCobrancaCron() {
+    cron.schedule('0 8 * * 1-5', () => {
+        console.log('[Cobrança Cron] Iniciando rotina diária de notificações de agendamentos...');
+        runCobrancaCronLogic();
+    }, {
+        scheduled: true,
+        timezone: "America/Sao_Paulo"
+    });
+
+    console.log('Cron Job de Cobrança iniciado (Seg-Sex às 08h, Horário de Brasília).');
+}
+
+module.exports = { initCobrancaCron, runCobrancaCronLogic };
