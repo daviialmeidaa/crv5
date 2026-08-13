@@ -177,3 +177,18 @@ Atualmente, existe uma API temporária para o sistema VBA (`/api/vba/agenda_lici
 1. Remover o import e `app.use('/api/vba', ...)` do arquivo `server.js`.
 2. Excluir o arquivo `routes/vba_integration.js`.
 3. Remover a variável `VBA_API_KEY` das variáveis de ambiente de produção (Heroku e local).
+
+## Motor de Agendamento e Notificações (Cobrança)
+O sistema possui um motor autônomo (Cron Jobs) construído em `services/cron_cobranca.js` para alertar os usuários sobre compromissos agendados no CRM de cobranças. Ele é dividido em duas estratégias distintas de execução:
+
+1. **Sumário Diário (Heroku Scheduler / One-Off Dyno):**
+   - **Objetivo:** Disparar um e-mail matinal consolidado às 08:00h (Horário de Brasília) contendo a lista completa de todos os contatos que o usuário precisa realizar no dia.
+   - **Gatilho:** Não roda em loop no código da aplicação. É acionado externamente via `npm run scheduler:cobranca` (configurado no painel do Heroku Scheduler).
+   - **Estética:** O e-mail utiliza `nodemailer` para gerar uma estrutura HTML Premium com formatação tabular clara (Código, Razão Social, Fantasia, Motivo) para o usuário se organizar sem nem precisar abrir o sistema.
+
+2. **Lembretes em Tempo Real (Node-Cron Interno):**
+   - **Objetivo:** Alertar o usuário no painel do sistema **exatamente 10 minutos antes** da hora exata do compromisso.
+   - **Gatilho:** Roda nativamente atrelado à memória do próprio servidor web (`server.js`) utilizando `node-cron` (`* * * * 1-5`).
+   - **Mecânica:** A cada virada de minuto, a lógica calcula `Hora de Brasília Atual + 10 minutos` e faz um *polling* pontual no banco de dados. Caso exista um *match* exato de data e minuto na tabela `historico_cobranca`, insere uma notificação na tabela `notifications` com ação prefixada por `REMINDER_`.
+   - **UX:** A notificação aciona o SSE (`eventBus.emit('refresh')`) que despacha o aviso para o navegador do usuário instantaneamente, renderizando a interface de alerta com a tag visual roxa 🟪 e ícone de relógio na aba "Agendamentos". A UI tocará um alarme sonoro unicamente quando o ID da notificação mais recente aumentar.
+   - **Performance:** Como roda puramente no Backend, não existe nenhuma requisição de polling contínuo (AJAX) no client-side poluindo a aba Network do navegador. Apenas a via SSE pré-existente é utilizada.
