@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getRoleLevel = (role) => {
         if (!role) return 0;
         const upper = role.trim().toUpperCase();
-        if (upper === 'ADMIN') return 5;
+        if (upper === 'ADMIN') return 999;
         if (upper.startsWith('CR') || upper.startsWith('LC')) {
             const num = parseInt(upper.replace(/\D/g, ''));
             return isNaN(num) ? 0 : num;
@@ -18,28 +18,70 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const myLevel = getRoleLevel(currentUser.role);
 
-    const canInteractWithRole = (myRole, targetRole) => {
+    const canAssignRole = (myRole, targetRole) => {
         if (!myRole || !targetRole) return false;
+        const myUpper = myRole.trim().toUpperCase();
+        const targetUpper = targetRole.trim().toUpperCase();
+        
+        if (myUpper === 'ADMIN') return true;
+        if (targetUpper === 'ADMIN') return false; // Non-admins can't assign ADMIN
+
         const myLvl = getRoleLevel(myRole);
         const targetLvl = getRoleLevel(targetRole);
-        if (targetLvl > myLvl) return false;
-        if (myLvl < 4 && myRole.trim().toUpperCase() !== 'ADMIN') {
-            const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
-            const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
-            if (myPrefix !== targetPrefix) return false;
+
+        if (myLvl > 0) {
+            const myPrefix = myUpper.substring(0, 2);
+            const targetPrefix = targetUpper.substring(0, 2);
+            if (myPrefix === targetPrefix && targetLvl <= myLvl) return true;
+            return false;
         }
-        return true;
+
+        // Roles customizadas (level 0) podem atribuir outras roles customizadas, mas não CR/LC
+        if (targetLvl === 0) return true;
+        return false;
     };
 
-    // Ocultar as opções maiores do que o nível do usuário
-    const userRoleSelect = document.getElementById('userRole');
-    if (userRoleSelect && !isSuperAdmin) {
-        Array.from(userRoleSelect.options).forEach(opt => {
-            const isRestricted = !canInteractWithRole(currentUser.role, opt.value);
-            opt.disabled = isRestricted;
-            opt.hidden = isRestricted;
-        });
-    }
+    const loadRoles = async () => {
+        try {
+            const res = await fetch('/api/perfis', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (!res.ok) throw new Error('Falha ao buscar perfis');
+            const perfis = await res.json();
+            
+            const userRoleSelect = document.getElementById('userRole');
+            if (!userRoleSelect) return;
+            
+            userRoleSelect.innerHTML = '<option value="" disabled selected>Selecione um perfil...</option>';
+            
+            perfis.forEach(perfil => {
+                const opt = document.createElement('option');
+                opt.value = perfil.name;
+                opt.textContent = perfil.name;
+                
+                // Aplicar RBAC do frontend
+                if (!isSuperAdmin) {
+                    const isRestricted = !canAssignRole(currentUser.role, perfil.name);
+                    if (isRestricted) {
+                        opt.disabled = true;
+                        opt.hidden = true;
+                    }
+                }
+                
+                userRoleSelect.appendChild(opt);
+            });
+            
+        } catch (err) {
+            console.error(err);
+            const userRoleSelect = document.getElementById('userRole');
+            if (userRoleSelect) {
+                userRoleSelect.innerHTML = '<option value="" disabled selected>Erro ao carregar perfis</option>';
+            }
+        }
+    };
+    
+    // Iniciar carregamento dos perfis
+    loadRoles();
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();

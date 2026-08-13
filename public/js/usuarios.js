@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const getRoleLevel = (role) => {
         if (!role) return 0;
         const upper = role.trim().toUpperCase();
-        if (upper === 'ADMIN') return 5;
+        if (upper === 'ADMIN') return 999;
         if (upper.startsWith('CR') || upper.startsWith('LC')) {
             const num = parseInt(upper.replace(/\D/g, ''));
             return isNaN(num) ? 0 : num;
@@ -22,21 +22,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     const myLevel = getRoleLevel(currentUser.role);
 
-    const canInteractWithRole = (myRole, targetRole) => {
+    const canAssignRole = (myRole, targetRole) => {
         if (!myRole || !targetRole) return false;
+        const myUpper = myRole.trim().toUpperCase();
+        const targetUpper = targetRole.trim().toUpperCase();
         
-        // ADMIN é Deus, sempre pode interagir com tudo
-        if (myRole.trim().toUpperCase() === 'ADMIN') return true;
-        
+        if (myUpper === 'ADMIN') return true;
+        if (targetUpper === 'ADMIN') return false; // Non-admins can't assign ADMIN
+
         const myLvl = getRoleLevel(myRole);
         const targetLvl = getRoleLevel(targetRole);
-        if (targetLvl > myLvl) return false;
-        if (myLvl < 4) {
-            const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
-            const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
-            if (myPrefix !== targetPrefix) return false;
+
+        if (myLvl > 0) {
+            const myPrefix = myUpper.substring(0, 2);
+            const targetPrefix = targetUpper.substring(0, 2);
+            if (myPrefix === targetPrefix && targetLvl <= myLvl) return true;
+            return false;
         }
-        return true;
+
+        // Roles customizadas (level 0) podem atribuir outras roles customizadas, mas não CR/LC
+        if (targetLvl === 0) return true;
+        return false;
     };
 
     // Fechar modal
@@ -94,19 +100,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </span>
                 </td>
                 <td class="px-6 py-4 text-right">
-                    ${(canManageUsers && canInteractWithRole(currentUser.role, user.role)) ? `
+                    ${(canManageUsers && canAssignRole(currentUser.role, user.role)) ? `
                     <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onclick="window.openEditModal(${user.id})" class="p-1.5 text-steel-400 hover:text-nexo-600 hover:bg-nexo-50 dark:hover:bg-steel-700 rounded transition-colors" title="Editar Usuário">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                         </button>
-                        <button onclick="window.deleteUser(${user.id})" class="p-1.5 text-steel-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-steel-700 rounded transition-colors" title="Excluir Usuário">
+                        <button onclick="window.deleteUser(${user.id}, '${user.nome}')" class="p-1.5 text-steel-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" title="Excluir Usuário">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
-                    </div>` : '<span class="text-xs text-steel-400 italic">Restrito</span>'}
+                    </div>
+                    ` : '<span class="text-xs text-steel-400 italic">Restrito</span>'}
                 </td>
             </tr>
         `).join('');
     };
+
+    let loadedRoles = [];
+    const loadRoles = async () => {
+        try {
+            const res = await fetch('/api/perfis', {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            });
+            if (!res.ok) throw new Error('Falha ao buscar perfis');
+            loadedRoles = await res.json();
+            
+            const editRoleSelect = document.getElementById('editRole');
+            if (!editRoleSelect) return;
+            
+            editRoleSelect.innerHTML = '<option value="" disabled>Selecione um perfil...</option>';
+            
+            loadedRoles.forEach(perfil => {
+                const opt = document.createElement('option');
+                opt.value = perfil.name;
+                opt.textContent = perfil.name;
+                editRoleSelect.appendChild(opt);
+            });
+        } catch(e) {
+            console.error(e);
+        }
+    };
+    loadRoles();
 
     window.openEditModal = (id) => {
         const user = usersList.find(u => u.id === id);
@@ -115,16 +148,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('editUserId').value = user.id;
         document.getElementById('editName').value = user.nome;
         document.getElementById('editEmail').value = user.email;
-        document.getElementById('editRole').value = user.role;
-        // Se o usuário logado não for ADMIN, não pode setar outro como ADMIN
+        
         const editRoleSelect = document.getElementById('editRole');
-        if (!isSuperAdmin) {
-            Array.from(editRoleSelect.options).forEach(opt => {
-                const isRestricted = !canInteractWithRole(currentUser.role, opt.value);
-                opt.disabled = isRestricted;
-                opt.hidden = isRestricted;
-            });
-        }
+        editRoleSelect.innerHTML = '';
+        loadedRoles.forEach(role => {
+            const opt = document.createElement('option');
+            opt.value = role.name;
+            opt.textContent = role.name;
+            const isRestricted = !canAssignRole(currentUser.role, role.name) && role.name.trim().toUpperCase() !== user.role.trim().toUpperCase();
+            opt.disabled = isRestricted;
+            opt.hidden = isRestricted;
+            editRoleSelect.appendChild(opt);
+        });
+        editRoleSelect.value = user.role;
         
         editModal.classList.remove('hidden');
         setTimeout(() => {

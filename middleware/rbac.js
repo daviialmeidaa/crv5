@@ -1,13 +1,19 @@
-const rolePermissions = {
-    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true },
-    'CR1':   { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: true, canViewClientes: false },
-    'CR2':   { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: true, canViewClientes: true },
-    'CR3':   { canViewCR: true, canViewLC: true,  canViewUsers: true, canManageUsers: true, canViewClientes: true },
-    'CR4':   { canViewCR: true, canViewLC: true,  canViewUsers: true, canManageUsers: true, canViewClientes: true },
-    'LC1':   { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: false },
-    'LC2':   { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: false },
-    'LC3':   { canViewCR: true,  canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true },
-    'LC4':   { canViewCR: true,  canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true }
+let rolePermissionsCache = {
+    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true }
+};
+
+const loadCustomRoles = async (pgPool) => {
+    try {
+        const result = await pgPool.query('SELECT name, permissions FROM roles');
+        const newCache = {};
+        result.rows.forEach(row => {
+            newCache[row.name] = row.permissions;
+        });
+        rolePermissionsCache = newCache;
+        console.log('[RBAC] Perfis de usuário (Roles) carregados na memória com sucesso.');
+    } catch (err) {
+        console.error('[RBAC] Erro ao carregar perfis na memória:', err);
+    }
 };
 
 const getRoleLevel = (role) => {
@@ -18,7 +24,8 @@ const getRoleLevel = (role) => {
         const num = parseInt(upper.replace(/\D/g, ''));
         return isNaN(num) ? 0 : num;
     }
-    return 0;
+    // Para roles customizadas (ex: ESTAGIARIO_LC), o nível hierárquico padrão é 0 (menor privilégio para gerir outros)
+    return 0; 
 };
 
 const canInteractWithRole = (myRole, targetRole) => {
@@ -34,6 +41,7 @@ const canInteractWithRole = (myRole, targetRole) => {
     if (targetLevel > myLevel) return false;
     
     // Rule 2: If my level < 4 (and not ADMIN), I can only manage my own department (CR or LC)
+    // Para custom roles, o prefix não será igual, barrando interações perigosas
     if (myLevel < 4) {
         const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
         const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
@@ -44,7 +52,7 @@ const canInteractWithRole = (myRole, targetRole) => {
 };
 
 const getPermissionsForRole = (role) => {
-    return rolePermissions[role] || rolePermissions['CR1']; // Default fallback
+    return rolePermissionsCache[role] || { canViewCR: false, canViewLC: false, canViewUsers: false, canManageUsers: false, canViewClientes: false };
 };
 
 const requirePermission = (permissionKey) => {
@@ -53,7 +61,22 @@ const requirePermission = (permissionKey) => {
             return res.status(403).json({ error: 'Acesso negado. Usuário não autenticado corretamente.' });
         }
         
-        if (req.user.permissions[permissionKey]) {
+        if (req.user.role === 'ADMIN' || req.user.permissions[permissionKey]) {
+            next();
+        } else {
+            return res.status(403).json({ error: 'Acesso negado. Você não tem permissão para esta ação.' });
+        }
+    };
+};
+
+const requireAnyPermission = (permissionKeys) => {
+    return (req, res, next) => {
+        if (!req.user || !req.user.permissions) {
+            return res.status(403).json({ error: 'Acesso negado. Usuário não autenticado corretamente.' });
+        }
+        
+        const hasAny = permissionKeys.some(key => req.user.permissions[key]);
+        if (req.user.role === 'ADMIN' || hasAny) {
             next();
         } else {
             return res.status(403).json({ error: 'Acesso negado. Você não tem permissão para esta ação.' });
@@ -62,9 +85,10 @@ const requirePermission = (permissionKey) => {
 };
 
 module.exports = {
-    rolePermissions,
+    loadCustomRoles,
     getRoleLevel,
     canInteractWithRole,
     getPermissionsForRole,
-    requirePermission
+    requirePermission,
+    requireAnyPermission
 };

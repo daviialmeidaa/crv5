@@ -29,6 +29,7 @@ app.use('/api/agenda_licitacoes', require('./routes/agenda_licitacoes'));
 app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/heroku', require('./routes/heroku'));
 app.use('/api/vba', require('./routes/vba_integration'));
+app.use('/api/perfis', require('./routes/perfis'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
@@ -38,6 +39,11 @@ app.get('/', (req, res) => {
 // Nova rota para Contas a Receber
 app.get('/contas_a_receber', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'contas_a_receber.html'));
+});
+
+// Nova rota para Perfis
+app.get('/perfis', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'perfis.html'));
 });
 
 // Nova rota para Cobrança (Clientes)
@@ -99,17 +105,21 @@ const { runSync } = require('./services/syncService');
 const { initAgendaCron } = require('./services/cron_agenda');
 const { initCobrancaCron, initCobrancaLiveReminders } = require('./services/cron_cobranca');
 
+const pgPool = require('./db/pgConnection');
+const { loadCustomRoles } = require('./middleware/rbac');
+
 // Iniciar os Cron Jobs
 initAgendaCron();
 initCobrancaCron();
 initCobrancaLiveReminders();
 
 // Iniciando o servidor
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando na porta ${PORT}`);
-    console.log(`🔗 Acesse: http://localhost:${PORT}`);
-    
-    // A inicialização do Cron da Agenda foi removida daqui, pois o Heroku Scheduler é o responsável pelos disparos.
+loadCustomRoles(pgPool).then(() => {
+    app.listen(PORT, () => {
+        console.log(`🚀 Servidor rodando na porta ${PORT}`);
+        console.log(`🔗 Acesse: http://localhost:${PORT}`);
+        
+        // A inicialização do Cron da Agenda foi removida daqui, pois o Heroku Scheduler é o responsável pelos disparos.
 
     // Configura o Cron Job para rodar a cada 15 minutos
     cron.schedule('*/15 * * * *', async () => {
@@ -119,5 +129,6 @@ app.listen(PORT, () => {
         } catch (err) {
             console.error('❌ Falha no Cron Job de Sincronização:', err.message);
         }
+    });
     });
 });
