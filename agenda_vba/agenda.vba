@@ -1,3 +1,110 @@
+Sub read_Database()
+    
+    'Calcula
+    ActiveSheet.Calculate
+    'Desabilita atualização de tela
+    Application.ScreenUpdating = False
+    'Desativa modo automático de cálculo
+    Application.Calculation = xlManual
+    
+    Sheets("Agenda").Unprotect ("B1I2O3")
+
+    
+'ConexaoDB = "Provider=Microsoft.ACE.OLEDB.12.0 ;Data Source=C:\Users\Davi Almeida\Documents\TESTE BANCO\Teste Agenda.accdb;Persist Security Info=False;"
+
+    Dim sql As String
+    Dim cn As ADODB.Connection
+    Dim rs As ADODB.Recordset
+
+    Dim i As Integer
+
+'define a conexão com o banco de dados Northwind.mdb
+    Set cn = New ADODB.Connection
+    cn.ConnectionString = "Provider=Microsoft.ACE.OLEDB.12.0 ;Data Source=\\10.0.0.2\SupraSGC\BD_Ferramentas\BD_Ferramentas_Novas\AGENDA_LICITACOES.accdb;Persist Security Info=False;"
+    cn.Open
+
+'define um novo objeto recordset
+    Set rs = New ADODB.Recordset
+
+'define a instrução sql
+    sql = "SELECT * FROM AGENDA_LICITACAO"
+
+
+'gera o recordset para o sql sobre a conexao definida
+    rs.Open sql, cn
+    
+'primeira linha a partir do cabeçalho
+    i = 3
+
+    Sheets("Agenda").Select
+
+    If Not rs.EOF Then
+        Do While Not rs.EOF
+     
+            Cells(i, 1).Value = rs(0)
+            Cells(i, 2).Value = rs(1)
+            Cells(i, 3).Value = rs(2)
+            Cells(i, 4).Value = rs(3)
+            Cells(i, 5).Value = rs(4)
+            Cells(i, 6).Value = rs(5)
+            Cells(i, 7).Value = rs(6)
+            Cells(i, 8).Value = rs(7)
+            Cells(i, 9).Value = rs(8)
+            Cells(i, 10).Value = rs(9)
+            Cells(i, 11).Value = rs(10)
+            Cells(i, 12).Value = rs(11)
+            Cells(i, 13).Value = rs(12)
+            Cells(i, 14).Value = rs(13)
+            Cells(i, 15).Value = rs(14)
+            'Cells(i, 16).Value = rs(15)
+                
+            rs.MoveNext
+            i = i + 1
+            
+        Loop
+    End If
+
+    Range("A3:Q5000").Select
+    With Selection.Font
+        .ColorIndex = xlAutomatic
+        .TintAndShade = 0
+    End With
+    
+'---------------------------------------------------------------------------------------
+'REPINTANDO O TEXTO DE PRETO
+
+    Application.Goto Reference:="R5000C1"
+    Range("A5000:Q5000").Select
+    Range(Selection, Selection.End(xlUp)).Select
+    Range(Selection, Selection.End(xlUp)).Select
+    Range("A3:Q5000").Select
+    Range("A5000").Activate
+    
+    With Selection.Font
+        .ThemeColor = xlThemeColorLight1
+        .TintAndShade = 0
+    End With
+  
+    Sheets("Agenda").Select
+    
+    Call adjusting_Date
+    
+    Call OrganizaDataLances
+    
+    Sheets("Agenda").Protect "B1I2O3", DrawingObjects:=True, Contents:=True, Scenarios:=True _
+        , AllowSorting:=True, AllowFiltering:=True, AllowUsingPivotTables:=True
+  
+    
+    Sheets("Agenda").Select
+    Range("A2").Select
+    Range("A2").Select
+    Selection.End(xlDown).Select
+
+    Application.Calculation = xlAutomatic 'Ativa modo automático de cálculo
+        Application.ScreenUpdating = True 'Habilita atualização de tela
+
+End Sub
+
 Sub insert_Database()
 
 'Calcula
@@ -143,9 +250,9 @@ Sub insert_Database()
 ' ----------------------------------------------------
     On Error Resume Next
     Dim http As Object
-    Set http = CreateObject("MSXML2.ServerXMLHTTP.6.0")
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     Dim apiUrl As String
-    apiUrl = "https://nexomed-crv5.herokuapp.com/api/vba/agenda_licitacoes"
+    apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes"
     Dim jsonPayload As String
     jsonPayload = "{ " & _
         """empresa"": """ & SanitizeJSON(CStr(empresa)) & """, " & _
@@ -166,11 +273,13 @@ Sub insert_Database()
     "}"
     http.Open "POST", apiUrl, False
     http.setRequestHeader "Content-Type", "application/json"
-    http.setRequestHeader "x-api-key", "sua_chave_secreta_vba_aqui"
-    http.send jsonPayload
+    http.setRequestHeader "x-api-key", "KiX185M2ojzoQFONvQT2TYkPMRU3ltF4"
+    http.Send jsonPayload
     Set http = Nothing
     On Error GoTo 0
 ' ----------------------------------------------------
+
+
     
     Next i
     'DisparaEmail = EnviaEmail(bodyemaildatalimite, bodyemailhoralimite)
@@ -343,9 +452,9 @@ Sub update_Database()
 ' ----------------------------------------------------
     On Error Resume Next
     Dim http As Object
-    Set http = CreateObject("MSXML2.ServerXMLHTTP.6.0")
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     Dim apiUrl As String
-    apiUrl = "https://nexomed-crv5.herokuapp.com/api/vba/agenda_licitacoes/" & chave
+    apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes/" & chave
     Dim jsonPayload As String
     jsonPayload = "{ " & _
         """empresa"": """ & SanitizeJSON(CStr(empresa)) & """, " & _
@@ -366,11 +475,13 @@ Sub update_Database()
     "}"
     http.Open "PUT", apiUrl, False
     http.setRequestHeader "Content-Type", "application/json"
-    http.setRequestHeader "x-api-key", "sua_chave_secreta_vba_aqui"
-    http.send jsonPayload
+    http.setRequestHeader "x-api-key", "KiX185M2ojzoQFONvQT2TYkPMRU3ltF4"
+    http.Send jsonPayload
     Set http = Nothing
     On Error GoTo 0
 ' ----------------------------------------------------
+
+
 
     End If
     
@@ -451,15 +562,17 @@ Sub Delete_BML()
 ' ----------------------------------------------------
     On Error Resume Next
     Dim http As Object
-    Set http = CreateObject("MSXML2.ServerXMLHTTP.6.0")
+    Set http = CreateObject("WinHttp.WinHttpRequest.5.1")
     Dim apiUrl As String
-    apiUrl = "https://nexomed-crv5.herokuapp.com/api/vba/agenda_licitacoes/" & chave
+    apiUrl = "https://hub.nexomed.com.br/api/vba/agenda_licitacoes/" & chave
     http.Open "DELETE", apiUrl, False
-    http.setRequestHeader "x-api-key", "sua_chave_secreta_vba_aqui"
-    http.send
+    http.setRequestHeader "x-api-key", "KiX185M2ojzoQFONvQT2TYkPMRU3ltF4"
+    http.Send
     Set http = Nothing
     On Error GoTo 0
 ' ----------------------------------------------------
+
+
     
     End If
         
@@ -513,3 +626,11 @@ Function SanitizeJSON(ByVal text As String) As String
     res = Replace(res, vbTab, " ")
     SanitizeJSON = res
 End Function
+
+
+Sub Delete_Form_BML()
+
+Shield.Show
+
+End Sub
+
