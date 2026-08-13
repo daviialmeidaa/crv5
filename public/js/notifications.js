@@ -279,6 +279,8 @@
                 let avatarHtml = '';
                 if (n.avatar_url && n.avatar_url !== 'null' && n.avatar_url.trim() !== '') {
                     avatarHtml = `<img src="${n.avatar_url}" class="w-8 h-8 rounded-full object-cover">`;
+                } else if (!n.created_by_name) {
+                    avatarHtml = `<img src="/assets/images/simbolo.png" class="w-8 h-8 rounded-full object-contain p-1 bg-white border border-gray-200 dark:border-steel-700 dark:bg-steel-800">`;
                 } else {
                     const parts = (n.created_by_name || 'Sis').trim().split(' ');
                     const inits = parts.length > 1 ? parts[0][0] + (parts[parts.length - 1][0] || '') : parts[0][0];
