@@ -37,6 +37,7 @@ async function runCobrancaCronLogic() {
             LEFT JOIN agenda_contatos c ON h.agenda_contato_id = c.id
             WHERE h.has_agendamento = true 
               AND h.agendamento_data_contato = CURRENT_DATE
+              AND u.first_access IS NOT TRUE
             ORDER BY h.agendamento_hora_contato ASC
         `;
         
