@@ -166,7 +166,7 @@ async function runAgendaCronLogic(options = {}) {
             
             if (process.env.NODE_ENV === 'production') {
                 const usersRes = await pgPool.query(
-                    `SELECT email FROM users WHERE role IN ('ADMIN', 'LC1', 'LC2', 'LC3', 'LC4') AND email IS NOT NULL AND first_access IS NOT TRUE`
+                    `SELECT u.email FROM users u JOIN roles r ON u.role = r.name WHERE u.email IS NOT NULL AND u.first_access IS NOT TRUE AND (r.name = 'ADMIN' OR r.permissions->>'canReceiveEmailsLC' = 'true')`
                 );
                 destinatarios = usersRes.rows.map(u => u.email);
             } else {

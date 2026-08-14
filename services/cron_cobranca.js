@@ -34,10 +34,12 @@ async function runCobrancaCronLogic() {
                 c.nome_contato AS pessoa_contatada
             FROM historico_cobranca h
             JOIN users u ON h.created_by = u.id
+            JOIN roles r ON u.role = r.name
             LEFT JOIN agenda_contatos c ON h.agenda_contato_id = c.id
             WHERE h.has_agendamento = true 
               AND h.agendamento_data_contato = CURRENT_DATE
               AND u.first_access IS NOT TRUE
+              AND (r.name = 'ADMIN' OR r.permissions->>'canReceiveEmailsCR' = 'true')
             ORDER BY h.agendamento_hora_contato ASC
         `;
         

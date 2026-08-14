@@ -1,4 +1,3 @@
-// Dicionário das Permissões mapeadas no sistema
 const SYSTEM_PERMISSIONS = [
     { id: 'canViewCR', name: 'Módulo Contas a Receber' },
     { id: 'canViewLC', name: 'Módulo Licitações' },
@@ -7,7 +6,9 @@ const SYSTEM_PERMISSIONS = [
     { id: 'canCreateUsers', name: 'Módulo Usuários (Criação)' },
     { id: 'canViewClientes', name: 'Módulo Clientes / Cobrança' },
     { id: 'canManageRoles', name: 'Módulo Perfis de Acesso' },
-    { id: 'canResetHeroku', name: 'Ferramenta de Reset do Heroku' }
+    { id: 'canResetHeroku', name: 'Ferramenta de Reset do Heroku' },
+    { id: 'canReceiveEmailsLC', name: 'Notificações: E-mails de Licitações' },
+    { id: 'canReceiveEmailsCR', name: 'Notificações: E-mails de Cobrança' }
 ];
 
 const PerfisModule = (() => {
