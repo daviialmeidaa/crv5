@@ -253,7 +253,7 @@ router.put('/:chave', async (req, res) => {
                 if (changes.length > 0) {
                     const userName = req.user && req.user.nome ? req.user.nome : 'Usuário';
                     const userId = req.user ? req.user.id : null;
-                    const msg = `O ${userName} acaba de alterar ${changes.join(', ')} no contrato ${saved.COD_CONTRATO_CONCAT || '-'}.`;
+                    const msg = `${userName} acaba de alterar ${changes.join(', ')} no contrato ${saved.COD_CONTRATO_CONCAT || '-'}.`;
                     await pgPool.query('INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)', ['ITENS_ARREMATADOS', 'UPDATE', msg, userId]);
                     eventBus.emit('refresh');
                 }

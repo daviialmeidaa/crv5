@@ -98,7 +98,7 @@ router.post('/agenda_licitacoes', async (req, res) => {
         const parsedHora = parseVBATime(hora_lances);
         const dataStr = parsedData ? parsedData.split('-').reverse().join('/') : 'N/A';
         const horaStr = parsedHora ? parsedHora.substring(0, 5) : 'N/A';
-        const msg = `O ${req.user.nome} acaba de inserir a agenda do pregão ${pregao || 'Sem Nº'} da empresa ${empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
+        const msg = `${req.user.nome} acaba de inserir a agenda do pregão ${pregao || 'Sem Nº'} da empresa ${empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
         
         // created_by vai como nulo (ou o ID do admin se preferir)
         await pgPool.query(
@@ -171,7 +171,7 @@ router.put('/agenda_licitacoes/:chave', async (req, res) => {
                 const dataStr = newDateISO ? newDateISO.split('-').reverse().join('/') : 'N/A';
                 const horaStr = newHour ? newHour.substring(0, 5) : 'N/A';
                 
-                const msg = `O ${req.user.nome} acaba de alterar a data do pregão ${newData.pregao || 'Sem Nº'} da empresa ${newData.empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
+                const msg = `${req.user.nome} acaba de alterar a data do pregão ${newData.pregao || 'Sem Nº'} da empresa ${newData.empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
                 
                 await pgPool.query(
                     `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,

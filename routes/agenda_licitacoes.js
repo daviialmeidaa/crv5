@@ -118,7 +118,7 @@ router.post('/', async (req, res) => {
         if (req.user && req.user.id) {
             const dataStr = data_lances ? data_lances.split('T')[0].split('-').reverse().join('/') : 'N/A';
             const horaStr = hora_lances ? hora_lances.substring(0, 5) : 'N/A';
-            const msg = `O(a) ${req.user.nome} acaba de inserir a agenda do pregão ${pregao || 'Sem Nº'} da empresa ${empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
+            const msg = `${req.user.nome} acaba de inserir a agenda do pregão ${pregao || 'Sem Nº'} da empresa ${empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
             
             await pgPool.query(
                 `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
@@ -192,7 +192,7 @@ router.put('/:chave', async (req, res) => {
                 const dataStr = newDateISO ? newDateISO.split('-').reverse().join('/') : 'N/A';
                 const horaStr = newHour ? newHour.substring(0, 5) : 'N/A';
                 
-                const msg = `O(a) ${req.user.nome} acaba de alterar a data do pregão ${newData.pregao || 'Sem Nº'} da empresa ${newData.empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
+                const msg = `${req.user.nome} acaba de alterar a data do pregão ${newData.pregao || 'Sem Nº'} da empresa ${newData.empresa || 'N/A'} para o dia ${dataStr} às ${horaStr}.`;
                 
                 await pgPool.query(
                     `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
