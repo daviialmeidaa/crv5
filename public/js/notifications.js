@@ -41,6 +41,66 @@
         }
     }
 
+    // Funcionalidades de redundância visual (Flashing e OS Push)
+    let originalTitle = document.title;
+    let titleInterval = null;
+    let isTitleFlashing = false;
+
+    function startTitleFlashing(count) {
+        if (isTitleFlashing) clearInterval(titleInterval);
+        isTitleFlashing = true;
+        let showNew = true;
+        const alertMsg = count > 1 ? `(${count}) Novas Notificações!` : `(1) Nova Notificação!`;
+        titleInterval = setInterval(() => {
+            document.title = showNew ? alertMsg : originalTitle;
+            showNew = !showNew;
+        }, 1000);
+    }
+
+    function stopTitleFlashing() {
+        if (isTitleFlashing) {
+            clearInterval(titleInterval);
+            document.title = originalTitle;
+            isTitleFlashing = false;
+        }
+    }
+
+    // Para o flashing se o usuário interagir com a página
+    window.addEventListener('focus', stopTitleFlashing);
+    document.addEventListener('click', stopTitleFlashing);
+
+    // Solicita permissão para Push Notifications Nativas
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+
+    function showPushNotification(newNotifs) {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        if (newNotifs.length === 0) return;
+
+        const latest = newNotifs[0];
+        const title = "Nexomed ERP - Notificação";
+        const rawMessage = latest.message.replace(/<[^>]*>?/gm, '').trim(); // Remove tags HTML
+        const body = newNotifs.length === 1 
+            ? (rawMessage.length > 80 ? rawMessage.substring(0, 80) + '...' : rawMessage)
+            : `Você tem ${newNotifs.length} novas notificações.`;
+            
+        const n = new Notification(title, {
+            body: body,
+            icon: '/assets/images/simbolo.png'
+        });
+        
+        n.onclick = function () {
+            window.focus();
+            this.close();
+            const dropdown = document.getElementById('notifDropdown');
+            const toggleBtn = document.getElementById('notifToggleBtn');
+            if (dropdown && dropdown.classList.contains('hidden') && toggleBtn) {
+                toggleBtn.click();
+            }
+        };
+    }
+
     // 0. Injetar Estilos (Scrollbar customizado)
     if (!document.getElementById('notif-styles')) {
         const style = document.createElement('style');
@@ -245,6 +305,14 @@
         
         if (!isFirstLoad && (unreadCount > previousUnreadCount || newestUnreadId > previousNewestUnreadId)) {
             playNotificationSound();
+            
+            // Só dispara o alerta visual se a aba não estiver em foco ativo
+            if (document.visibilityState !== 'visible' || !document.hasFocus()) {
+                startTitleFlashing(unreadCount);
+                
+                const newUnreadNotifs = unreadNotifs.filter(n => n.id > previousNewestUnreadId);
+                showPushNotification(newUnreadNotifs);
+            }
         }
         previousUnreadCount = unreadCount;
         previousNewestUnreadId = newestUnreadId;
@@ -254,6 +322,7 @@
             badge.classList.remove('hidden');
         } else {
             badge.classList.add('hidden');
+            stopTitleFlashing(); // Limpa o título se zerar as notificações
         }
 
         const notifsSistema = notifications.filter(n => n.module !== 'AGENDA' && n.module !== 'COBRANCA');
@@ -337,8 +406,11 @@
 
     // Reconecta se a conexão cair quando o usuário voltar para a aba
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && window.notifEventSource && window.notifEventSource.readyState === EventSource.CLOSED) {
-            connectSSE();
+        if (document.visibilityState === 'visible') {
+            stopTitleFlashing();
+            if (window.notifEventSource && window.notifEventSource.readyState === EventSource.CLOSED) {
+                connectSSE();
+            }
         }
     });
 })();
