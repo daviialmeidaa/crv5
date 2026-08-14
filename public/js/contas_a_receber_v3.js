@@ -87,9 +87,9 @@ const ContasGrid = (function () {
                 valor: row.valor_nota ? row.valor_nota.toString() : '0.00',
                 boletoEmitido: row.boleto_emitido || 'Não',
                 valorRecebido: row.valor_deposito ? row.valor_deposito.toString() : '0.00',
-                dataEmissao: row.data_emissao ? row.data_emissao.split('T')[0] : '-',
-                dataVencimento: row.data_vencimento ? row.data_vencimento.split('T')[0] : '-',
-                dataPagamento: row.data_pagamento ? row.data_pagamento.split('T')[0] : '-',
+                dataEmissao: row.data_emissao || '-',
+                dataVencimento: row.data_vencimento || '-',
+                dataPagamento: row.data_pagamento || '-',
                 status: (() => {
                     const raw = row.status ? row.status.trim() : '';
                     if (raw.toUpperCase() === 'PAGO') return 'PAGO';
@@ -213,7 +213,13 @@ const ContasGrid = (function () {
 
     function formatDate(val) {
         if (val === '-' || !val) return '-';
-        const parts = val.split('-');
+        if (typeof val === 'string' && val.includes('T')) {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) {
+                return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+            }
+        }
+        const parts = String(val).split('T')[0].split('-');
         if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
         return val;
     }
@@ -450,41 +456,35 @@ const ContasGrid = (function () {
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                 
                 filteredVals.forEach(val => {
-                    if (val === '-' || !val) {
-                        if (!tree['-']) tree['-'] = {};
-                        if (!tree['-']['-']) tree['-']['-'] = [];
-                        tree['-']['-'].push(val);
-                        return;
+                    let y, m, d;
+                    
+                    if (val && val.includes('T')) {
+                        const dt = new Date(val);
+                        if (!isNaN(dt.getTime())) {
+                            y = dt.getUTCFullYear().toString();
+                            m = dt.getUTCMonth() + 1;
+                            d = dt.getUTCDate().toString().padStart(2, '0');
+                        }
                     }
                     
-                    let y, m, d;
-                    const valStr = String(val);
-                    
-                    if (valStr.includes('-') && valStr.split('-').length >= 3) {
-                        const datePart = valStr.split('T')[0];
-                        const parts = datePart.split('-');
+                    if (!y && val && val !== '-') {
+                        const parts = String(val).split('T')[0].split('-');
                         if (parts.length === 3) {
-                            [y, m, d] = parts;
-                        }
-                    } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
-                        const datePart = valStr.split(' ')[0];
-                        const parts = datePart.split('/');
-                        if (parts.length === 3) {
-                            d = parts[0];
-                            m = parts[1];
-                            y = parts[2];
+                            y = parts[0];
+                            m = parseInt(parts[1], 10);
+                            d = parts[2];
                         }
                     }
 
-                    if (!y || !m || !d || isNaN(y) || isNaN(m) || isNaN(d)) {
-                        if (!tree['Outros']) tree['Outros'] = {};
-                        if (!tree['Outros']['-']) tree['Outros']['-'] = [];
-                        tree['Outros']['-'].push(val);
-                        return;
+                    if (y && m && d) {       
+                        if (!tree[y]) tree[y] = {};
+                        if (!tree[y][m]) tree[y][m] = [];
+                        tree[y][m].push(val);
+                    } else {
+                        if (!tree['-']) tree['-'] = {};
+                        if (!tree['-']['-']) tree['-']['-'] = [];
+                        tree['-']['-'].push(val);
                     }
-                    if (!tree[y]) tree[y] = {};
-                    if (!tree[y][m]) tree[y][m] = [];
-                    tree[y][m].push(val);
                 });
 
                 Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
@@ -948,9 +948,16 @@ const ContasGrid = (function () {
                     if (col.type === 'currency' && val !== '-' && val !== null) {
                         val = parseFloat(val) || 0;
                     } else if (col.type === 'date' && val !== '-' && val !== null) {
-                        const parts = val.split('-');
-                        if (parts.length === 3) {
-                            val = `${parts[2]}/${parts[1]}/${parts[0]}`; // Formato BR (DD/MM/YYYY)
+                        if (String(val).includes('T')) {
+                            const d = new Date(val);
+                            if (!isNaN(d.getTime())) {
+                                val = d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                            }
+                        } else {
+                            const parts = String(val).split('T')[0].split('-');
+                            if (parts.length === 3) {
+                                val = `${parts[2]}/${parts[1]}/${parts[0]}`; // Formato BR (DD/MM/YYYY)
+                            }
                         }
                     }
                     
