@@ -413,20 +413,31 @@ function toggleFilter(filterKey, value, containerId, label) {
 
 // ═══════════ FILTER ENGINE ═══════════
 
+function isEmissaoInPeriod(t) {
+    if (!activeFilters.ano.length && !activeFilters.mes.length) return true;
+    const dt = t.data_emissao ? new Date(t.data_emissao) : null;
+    if (!dt) return false;
+    if (activeFilters.ano.length && !activeFilters.ano.includes(dt.getFullYear().toString())) return false;
+    if (activeFilters.mes.length && !activeFilters.mes.includes((dt.getMonth() + 1).toString())) return false;
+    return true;
+}
+
+function isPagamentoInPeriod(t) {
+    if (!activeFilters.ano.length && !activeFilters.mes.length) return true;
+    if (!t.data_pagamento) return false;
+    const y = t.data_pagamento.substring(0, 4);
+    const m = parseInt(t.data_pagamento.substring(5, 7)).toString();
+    if (activeFilters.ano.length && !activeFilters.ano.includes(y)) return false;
+    if (activeFilters.mes.length && !activeFilters.mes.includes(m)) return false;
+    return true;
+}
+
 function applyFilters() {
     filteredData = rawData.filter(t => {
         if (activeFilters.empresa.length && !activeFilters.empresa.includes(t.empresa)) return false;
         if (activeFilters.status.length && !activeFilters.status.includes(t.status)) return false;
         if (activeFilters.esfera.length && !activeFilters.esfera.includes(t.esfera)) return false;
         if (activeFilters.uf.length && !activeFilters.uf.includes(t.uf)) return false;
-
-        if (activeFilters.ano.length || activeFilters.mes.length) {
-            const dt = t.data_emissao ? new Date(t.data_emissao) : null;
-            if (!dt) return false;
-            if (activeFilters.ano.length && !activeFilters.ano.includes(dt.getFullYear().toString())) return false;
-            if (activeFilters.mes.length && !activeFilters.mes.includes((dt.getMonth() + 1).toString())) return false;
-        }
-
         return true;
     });
 
@@ -444,11 +455,15 @@ function updateDashboard() {
         const valorNota = parseFloat(t.valor_nota) || 0;
         const valorDep = parseFloat(t.valor_deposito) || 0;
         
-        totalVendido += valorNota;
-        totalRecebido += valorDep;
+        if (isEmissaoInPeriod(t)) {
+            totalVendido += valorNota;
+            if (!t.data_pagamento || (t.status || '').toUpperCase() === 'PENDENTE' || (t.status || '').toUpperCase() === 'ATRASADO') {
+                totalAberto += valorNota;
+            }
+        }
         
-        if ((t.status || '').toUpperCase() === 'PENDENTE' || !valorDep) {
-            totalAberto += valorNota;
+        if (isPagamentoInPeriod(t)) {
+            totalRecebido += valorDep;
         }
     });
 
@@ -507,8 +522,10 @@ function renderChartTopContratos() {
     filteredData.forEach(t => {
         let val = 0;
         if (isAberto) {
+            if (!isEmissaoInPeriod(t)) return;
             val = parseFloat(t.valor_nota) || 0;
         } else {
+            if (!isPagamentoInPeriod(t)) return;
             val = parseFloat(t.valor_deposito) || 0;
         }
         if (val > 0) {
@@ -609,8 +626,10 @@ function renderChartTopClientes() {
     filteredData.forEach(t => {
         let val = 0;
         if (isAberto) {
+            if (!isEmissaoInPeriod(t)) return;
             val = parseFloat(t.valor_nota) || 0;
         } else {
+            if (!isPagamentoInPeriod(t)) return;
             val = parseFloat(t.valor_deposito) || 0;
         }
         if (val > 0) {
@@ -717,6 +736,7 @@ function renderChartBancos() {
     BANCOS_VALIDOS.forEach(b => group[b] = 0);
 
     filteredData.forEach(t => {
+        if (!isPagamentoInPeriod(t)) return;
         const b = (t.banco || '').trim().toUpperCase();
         if (!BANCOS_VALIDOS.includes(b)) return; // Ignorar bancos fora da lista
         const val = parseFloat(t.valor_deposito) || 0;
@@ -801,6 +821,7 @@ function renderChartGauge(metaValor, recebidoNoMes) {
 function renderChartEsfera() {
     const group = {};
     filteredData.forEach(t => {
+        if (!isPagamentoInPeriod(t)) return;
         const e = (t.esfera || 'N/I').trim();
         if (e === 'N/I' || e === '-') return;
         const val = parseFloat(t.valor_deposito) || 0;
@@ -853,17 +874,22 @@ function renderChartEsfera() {
 function renderChartEvolucao() {
     const temporal = {};
     filteredData.forEach(t => {
-        if (!t.data_emissao) return;
-        const dt = new Date(t.data_emissao);
-        const key = `${dt.getFullYear()}-${(dt.getMonth()+1).toString().padStart(2,'0')}`;
+        if (t.data_pagamento && isPagamentoInPeriod(t)) {
+            const y = t.data_pagamento.substring(0, 4);
+            const m = t.data_pagamento.substring(5, 7);
+            const key = `${y}-${m}`;
+            if (!temporal[key]) temporal[key] = { recebido: 0, aberto: 0 };
+            temporal[key].recebido += (parseFloat(t.valor_deposito) || 0);
+        }
 
-        if (!temporal[key]) temporal[key] = { recebido: 0, aberto: 0 };
-        const valorNota = parseFloat(t.valor_nota) || 0;
-        const valorDep = parseFloat(t.valor_deposito) || 0;
+        if (t.data_emissao && isEmissaoInPeriod(t)) {
+            const dt = new Date(t.data_emissao);
+            const key = `${dt.getFullYear()}-${(dt.getMonth()+1).toString().padStart(2,'0')}`;
+            if (!temporal[key]) temporal[key] = { recebido: 0, aberto: 0 };
 
-        temporal[key].recebido += valorDep;
-        if ((t.status || '').toUpperCase() === 'PENDENTE' || !valorDep) {
-            temporal[key].aberto += valorNota;
+            if (!t.data_pagamento || (t.status || '').toUpperCase() === 'PENDENTE' || (t.status || '').toUpperCase() === 'ATRASADO') {
+                temporal[key].aberto += (parseFloat(t.valor_nota) || 0);
+            }
         }
     });
 
