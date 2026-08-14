@@ -79,7 +79,7 @@
         if (newNotifs.length === 0) return;
 
         const latest = newNotifs[0];
-        const title = "Nexomed ERP - Notificação";
+        const title = "HUB Nexomed - Notificação";
         const rawMessage = latest.message.replace(/<[^>]*>?/gm, '').trim(); // Remove tags HTML
         const body = newNotifs.length === 1 
             ? (rawMessage.length > 80 ? rawMessage.substring(0, 80) + '...' : rawMessage)
