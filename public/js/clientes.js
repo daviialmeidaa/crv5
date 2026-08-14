@@ -344,8 +344,11 @@ const ClientesGrid = (() => {
                 <span class="font-medium text-steel-700 dark:text-gray-300">(Selecionar Tudo)</span>
             `;
             selectAllDiv.querySelector('input').onclick = (e) => {
-                if (e.target.checked) filteredVals.forEach(v => tempSelected.add(v));
-                else filteredVals.forEach(v => tempSelected.delete(v));
+                if (e.target.checked) {
+                    filteredVals.forEach(v => tempSelected.add(v));
+                } else {
+                    tempSelected.clear(); // Limpa totalmente para facilitar nova seleção
+                }
                 renderCheckboxes(term);
             };
             listContainer.appendChild(selectAllDiv);
@@ -378,13 +381,27 @@ const ClientesGrid = (() => {
         };
         
         modal.querySelector('#btnApplyFilter').onclick = () => {
-            const hasAll = uniqueValues.every(v => tempSelected.has(v));
-            if (hasAll && !tempSelected.has('__NONE__')) {
+            const term = searchInput.value.trim().toLowerCase();
+            let finalSet = new Set(tempSelected);
+
+            // UX Inteligente: Se o usuário clicou em Aplicar com uma pesquisa ativa E não havia desmarcado nada 
+            // (ou seja, tempSelected tem tudo), assumimos que ele quer filtrar apenas os resultados daquela pesquisa.
+            if (term && uniqueValues.every(v => tempSelected.has(v))) {
+                finalSet.clear();
+                uniqueValues.forEach(v => {
+                    if (String(v).toLowerCase().includes(term)) {
+                        finalSet.add(v);
+                    }
+                });
+            }
+
+            const hasAll = uniqueValues.every(v => finalSet.has(v));
+            if (hasAll && !finalSet.has('__NONE__')) {
                 delete state.filters[columnKey];
-            } else if (tempSelected.size === 0) {
+            } else if (finalSet.size === 0) {
                 state.filters[columnKey] = new Set(['__NONE__']);
             } else {
-                state.filters[columnKey] = new Set(tempSelected);
+                state.filters[columnKey] = finalSet;
             }
             closeFilterModal();
             processData();
