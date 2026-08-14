@@ -122,7 +122,7 @@ router.post('/', async (req, res) => {
             
             await pgPool.query(
                 `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
-                ['AGENDA', 'INSERT', msg, req.user.id]
+                ['AGENDA_LICITACOES', 'INSERT', msg, req.user.id]
             ).catch(err => console.error('Erro ao registrar notificação (POST /agenda):', err));
             eventBus.emit('refresh');
         }
@@ -196,7 +196,7 @@ router.put('/:chave', async (req, res) => {
                 
                 await pgPool.query(
                     `INSERT INTO notifications (module, action, message, created_by) VALUES ($1, $2, $3, $4)`,
-                    ['AGENDA', 'UPDATE', msg, req.user.id]
+                    ['AGENDA_LICITACOES', 'UPDATE', msg, req.user.id]
                 ).catch(err => console.error('Erro ao registrar notificação (PUT /agenda):', err));
                 eventBus.emit('refresh');
             }
