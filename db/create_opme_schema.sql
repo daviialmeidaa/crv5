@@ -4,7 +4,7 @@ CREATE SCHEMA IF NOT EXISTS opme;
 -- Tabela Pai: Contratos
 CREATE TABLE opme.Contratos (
     id SERIAL PRIMARY KEY,
-    id_contrato VARCHAR(255) UNIQUE NOT NULL,
+    id_contrato VARCHAR(255) NOT NULL,
     material VARCHAR(255),
     cod_cliente INTEGER,
     cliente VARCHAR(255),
@@ -19,7 +19,7 @@ CREATE TABLE opme.Contratos (
 -- Tabela Filha: Unidades
 CREATE TABLE opme.Unidades (
     id SERIAL PRIMARY KEY,
-    contrato VARCHAR(255) REFERENCES opme.Contratos(id_contrato) ON UPDATE CASCADE ON DELETE CASCADE,
+    contrato VARCHAR(255),
     cod_cliente INTEGER,
     hospital VARCHAR(255),
     sigla VARCHAR(50)
@@ -28,7 +28,7 @@ CREATE TABLE opme.Unidades (
 -- Tabela Filha: BancoCodigos
 CREATE TABLE opme.BancoCodigos (
     id SERIAL PRIMARY KEY,
-    contrato VARCHAR(255) REFERENCES opme.Contratos(id_contrato) ON UPDATE CASCADE ON DELETE CASCADE,
+    contrato VARCHAR(255),
     cod_bio INTEGER,
     cod_fab VARCHAR(255),
     produto VARCHAR(255),
@@ -40,7 +40,7 @@ CREATE TABLE opme.BancoCodigos (
 -- Tabela Filha: SaldoAta
 CREATE TABLE opme.SaldoAta (
     id SERIAL PRIMARY KEY,
-    contrato VARCHAR(255) REFERENCES opme.Contratos(id_contrato) ON UPDATE CASCADE ON DELETE CASCADE,
+    contrato VARCHAR(255),
     item_ata VARCHAR(255),
     descricao_item TEXT,
     quantidade_ata INTEGER,
@@ -53,7 +53,7 @@ CREATE TABLE opme.SaldoAta (
 -- Tabela Filha: SaldoAtaHospital
 CREATE TABLE opme.SaldoAtaHospital (
     id SERIAL PRIMARY KEY,
-    contrato VARCHAR(255) REFERENCES opme.Contratos(id_contrato) ON UPDATE CASCADE ON DELETE CASCADE,
+    contrato VARCHAR(255),
     unidade VARCHAR(255),
     item_ata VARCHAR(255),
     descricao_item TEXT,
@@ -67,10 +67,10 @@ CREATE TABLE opme.SaldoAtaHospital (
 -- Tabela Filha: Cirurgias
 CREATE TABLE opme.Cirurgias (
     id SERIAL PRIMARY KEY,
-    contrato VARCHAR(255) REFERENCES opme.Contratos(id_contrato) ON UPDATE CASCADE ON DELETE CASCADE,
+    contrato VARCHAR(255),
     acao VARCHAR(255),
     paciente VARCHAR(255),
-    local_cirurgias VARCHAR(255),
+    local_cirurgia VARCHAR(255),
     cod_cliente INTEGER,
     data_cirurgia TIMESTAMP,
     cod_bio INTEGER,

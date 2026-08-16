@@ -50,7 +50,7 @@ TABLES = [
     },
     {
         "name": "Cirurgias",
-        "columns": ["id", "contrato", "acao", "paciente", "local_cirurgias", "cod_cliente", "data_cirurgia", "cod_bio", "classificacao", "produto", "descricao_personalizada", "quantidade_utilizada", "lote", "prontuario", "medico", "crm", "valor_unitario", "valor_total", "item_pregao", "empenho", "autorizacao", "pedido", "retorno_consignacao", "status_expedicao", "autorizacao_opme", "nota_fiscal"]
+        "columns": ["id", "contrato", "acao", "paciente", "local_cirurgia", "cod_cliente", "data_cirurgia", "cod_bio", "classificacao", "produto", "descricao_personalizada", "quantidade_utilizada", "lote", "prontuario", "medico", "crm", "valor_unitario", "valor_total", "item_pregao", "empenho", "autorizacao", "pedido", "retorno_consignacao", "status_expedicao", "autorizacao_opme", "nota_fiscal"]
     }
 ]
 
@@ -126,8 +126,23 @@ def main():
                     """
                 
                 # A função execute_values é altamente otimizada para milhares de linhas
-                execute_values(cursor_pg, upsert_sql, access_data)
-                conn_pg.commit()
+                try:
+                    execute_values(cursor_pg, upsert_sql, access_data)
+                    conn_pg.commit()
+                except Exception as batch_error:
+                    conn_pg.rollback()
+                    print(f" > ⚠️ Erro durante o envio em lote. Analisando linha por linha para achar o culpado...")
+                    for row in access_data:
+                        try:
+                            cursor_pg.execute(upsert_sql, row)
+                        except Exception as row_error:
+                            conn_pg.rollback()
+                            print(f"\n🚨 DADO PROBLEMÁTICO ENCONTRADO!")
+                            print(f"Tabela: {table_name}")
+                            print(f"Erro do Postgres: {row_error}")
+                            print(f"Conteúdo da Linha: {row}")
+                            break # Para no primeiro erro para facilitar a leitura
+                    raise batch_error # Repassa o erro para parar o script
                 
         print("\n✅ SINCRONIZAÇÃO CONCLUÍDA COM SUCESSO!")
         
