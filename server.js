@@ -109,8 +109,8 @@ const pgPool = require('./db/pgConnection');
 const { loadCustomRoles } = require('./middleware/rbac');
 
 // Iniciar os Cron Jobs
-initAgendaCron();
-initCobrancaCron();
+// initAgendaCron(); // Removido para evitar duplicidade com o script standalone (Heroku/OS Scheduler)
+// initCobrancaCron(); // Removido para evitar duplicidade com o script standalone (Heroku/OS Scheduler)
 initCobrancaLiveReminders();
 
 // Iniciando o servidor
