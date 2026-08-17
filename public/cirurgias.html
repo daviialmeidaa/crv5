@@ -5,10 +5,9 @@
     <script src="/js/auth_guard.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil | Nexomed</title>
+    <title>Cirurgias OPME | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -51,7 +50,7 @@
         
         /* Layout Fixos (Sidebar) */
         aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; } /* w-20 */
+        body.sidebar-collapsed aside { width: 5rem !important; }
         body.sidebar-collapsed .sidebar-text { display: none; }
         body.sidebar-collapsed .logo-full { display: none; }
         body.sidebar-collapsed .logo-mini { display: block; }
@@ -68,10 +67,30 @@
             padding-left: 0;
             padding-right: 0;
         }
-        
         .logo-mini { display: none; }
+        
+        /* Tabela */
+        .table-container { max-height: calc(100vh - 310px); }
+        
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); border-radius: 8px; }
+        .dark .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        
+        /* Animações */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-up { animation: fadeInUp 0.3s ease-out; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .animate-fadeIn { animation: fadeIn 0.15s ease-out; }
+
+        @keyframes slideIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        .slide-in { animation: slideIn 0.2s ease-out; }
     </style>
-    <!-- Aplicar tema antes de renderizar (evita flash) -->
+    <!-- Aplicar tema antes de renderizar -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -171,21 +190,21 @@
                 <!-- Grupo OPME -->
                 <div class="sidebar-group" id="menu-group-opme">
                     <button
-                        class="w-full flex items-center justify-between px-4 py-2.5 text-steel-400 hover:text-white hover:bg-white/5 rounded-lg font-medium transition-colors sidebar-group-btn">
+                        class="w-full flex items-center justify-between px-4 py-2.5 text-nexo-400 font-semibold rounded-lg bg-nexo-500/10 transition-colors sidebar-group-btn">
                         <div class="flex items-center gap-3">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.5 8c0-3.5 1.5-5 5.5-5s5.5 1.5 5.5 5M6.5 11h11M6.5 11c0 4 2 6 5.5 6s5.5-2 5.5-6M9.5 14h5M3 21c0-4.5 3-7 5.5-7l3.5 2 3.5-2c2.5 0 5.5 2.5 5.5 7" />
                             </svg>
                             <span class="sidebar-text truncate text-[14.5px]">Opme</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style="transform: rotate(90deg)"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
-                    <div class="sidebar-submenu hidden pl-[44px] pr-4 py-1 space-y-1">
+                    <div class="sidebar-submenu pl-[44px] pr-4 py-1 space-y-1">
                         <a href="/cirurgias"
-                            class="flex items-center gap-2 py-2 text-[14px] font-medium text-steel-400 hover:text-white transition-colors sidebar-text">
+                            class="flex items-center gap-2 py-2 text-[14px] font-semibold text-nexo-400 transition-colors sidebar-text">
                             <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Cirurgias
                         </a>
@@ -205,7 +224,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
-                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Meu Perfil</h2>
+                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Cirurgias (OPME)</h2>
             </div>
             
             <div class="flex items-center gap-4">
@@ -224,7 +243,6 @@
                     <button id="profileDropdownBtn" class="flex items-center gap-2 focus:outline-none">
                         <div class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">U</div>
                     </button>
-                    <!-- Dropdown Menu -->
                     <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
                         <div class="px-4 py-2 border-b border-gray-100 dark:border-steel-700 mb-1">
                             <p class="text-sm font-medium text-steel-800 dark:text-gray-100 truncate">Usuário Logado</p>
@@ -242,126 +260,118 @@
         </header>
 
         <!-- Content Area -->
-        <div class="flex-1 overflow-auto p-6">
-            <div class="max-w-3xl mx-auto bg-white dark:bg-steel-800 rounded-xl shadow-sm border border-gray-200 dark:border-steel-700 overflow-hidden">
-                <div class="px-8 py-6 border-b border-gray-100 dark:border-steel-700 bg-gray-50 dark:bg-steel-800/50">
-                    <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Informações Pessoais</h3>
-                    <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Gerencie os detalhes do seu perfil e preferências de conta.</p>
+        <div class="flex-1 p-6 overflow-hidden flex flex-col">
+            
+            <!-- Sistema de Abas -->
+            <div class="flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
+                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-nexo-500 text-nexo-500 dark:text-nexo-400 transition-colors" data-tab="contratos" onclick="OPME.switchTab('contratos')">
+                    Contratos
+                </button>
+                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="cirurgias" onclick="OPME.switchTab('cirurgias')">
+                    Cirurgias
+                </button>
+                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="unidades" onclick="OPME.switchTab('unidades')">
+                    Unidades
+                </button>
+                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="saldoata" onclick="OPME.switchTab('saldoata')">
+                    Saldo Ata
+                </button>
+                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="saldoatahospital" onclick="OPME.switchTab('saldoatahospital')">
+                    Saldo Ata Hospital
+                </button>
+                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="bancocodigos" onclick="OPME.switchTab('bancocodigos')">
+                    Banco de Códigos
+                </button>
+            </div>
+
+            <!-- Banner de Contrato Selecionado -->
+            <div id="contractBanner" class="hidden mb-4 px-4 py-3 rounded-xl bg-nexo-500/10 dark:bg-nexo-900/20 border border-nexo-500/30 dark:border-nexo-700/30 flex items-center justify-between fade-in-up">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-nexo-600 dark:text-nexo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/>
+                    </svg>
+                    <span class="text-sm font-semibold text-nexo-700 dark:text-nexo-300">Contrato:</span>
+                    <span id="contractBannerText" class="text-sm text-steel-700 dark:text-gray-300 font-medium truncate"></span>
+                </div>
+                <button onclick="OPME.clearContract()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-steel-500 dark:text-steel-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-all shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    Voltar para Contratos
+                </button>
+            </div>
+
+            <!-- Tabela -->
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up" style="animation-delay: 0.15s">
+                
+                <!-- Loading overlay -->
+                <div id="tableLoading" class="absolute inset-0 bg-white/80 dark:bg-steel-800/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center rounded-xl">
+                    <svg class="animate-spin h-8 w-8 text-nexo-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p class="text-sm text-steel-500 dark:text-steel-400">Carregando dados...</p>
+                </div>
+
+                <!-- Container com overflow -->
+                <div class="table-container custom-scrollbar overflow-auto flex-1">
+                    <table class="w-full text-left border-collapse min-w-max">
+                        <thead id="opmeTableHead" class="sticky top-0 z-20 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)]">
+                            <!-- Headers gerados pelo JS -->
+                        </thead>
+                        <tbody id="opmeTableBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm text-steel-700 dark:text-gray-300">
+                            <tr><td colspan="10" class="p-6 text-center text-steel-400">Iniciando o Data Grid...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <div class="p-8">
-                    <form id="profileForm" class="space-y-6">
-                        <!-- Avatar Section -->
-                        <div class="flex items-center gap-6">
-                            <div class="relative group cursor-pointer" onclick="document.getElementById('avatarUpload').click()">
-                                <div id="profileAvatarDisplay" class="w-24 h-24 rounded-full bg-nexo-600 flex items-center justify-center text-3xl font-bold text-white shadow-md overflow-hidden">
-                                    <span id="profileInitials">U</span>
-                                </div>
-                                <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                </div>
-                                <input type="file" id="avatarUpload" class="hidden" accept="image/*">
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-200">Foto de Perfil</h4>
-                                <p class="text-xs text-steel-500 dark:text-steel-400 mt-1">JPG, GIF ou PNG. Máximo de 2MB.</p>
-                                <button type="button" onclick="document.getElementById('avatarUpload').click()" class="mt-3 px-4 py-1.5 border border-gray-300 dark:border-steel-600 rounded-lg text-sm font-medium text-steel-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Alterar foto</button>
-                            </div>
-                        </div>
-
-                        <hr class="border-gray-100 dark:border-steel-700">
-
-                        <!-- Campos -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="col-span-1 md:col-span-2">
-                                <label for="profileName" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Nome Completo</label>
-                                <input type="text" id="profileName" class="w-full px-4 py-2.5 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all shadow-sm">
-                            </div>
-
-                            <div class="col-span-1 md:col-span-2">
-                                <label for="profileEmail" class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Endereço de E-mail</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <svg class="h-5 w-5 text-steel-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                                        </svg>
-                                    </div>
-                                    <input type="email" id="profileEmail" disabled class="w-full pl-10 px-4 py-2.5 bg-gray-100 dark:bg-steel-800 border border-gray-200 dark:border-steel-700 rounded-lg text-steel-500 dark:text-steel-400 cursor-not-allowed shadow-sm focus:outline-none">
-                                </div>
-                                <p class="text-xs text-steel-400 mt-1.5">Seu e-mail é sua chave de acesso e não pode ser alterado.</p>
-                            </div>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <div class="flex justify-end pt-4">
-                            <button type="submit" class="px-6 py-2.5 bg-nexo-600 hover:bg-nexo-700 text-white font-medium rounded-lg shadow-sm shadow-nexo-500/30 transition-all active:scale-95 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                                Salvar Alterações
-                            </button>
-                        </div>
-                    </form>
+                <!-- Paginação -->
+                <div class="px-6 py-3 border-t border-gray-100 dark:border-steel-700 bg-white dark:bg-steel-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <span id="resultsCount" class="text-xs text-steel-500 dark:text-steel-400">Carregando...</span>
+                    <div class="flex items-center gap-1" id="paginationContainer">
+                        <!-- Botões de paginação injetados pelo JS -->
+                    </div>
                 </div>
             </div>
+
         </div>
 
         <!-- Footer -->
-        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200">
+        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 mt-auto shrink-0">
             <p class="text-xs text-steel-400">
                 &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
             </p>
         </footer>
     </main>
 
-    <script>
-        document.getElementById('footerYear').textContent = new Date().getFullYear();
+    <!-- ========================================== -->
+    <!-- Modal de Detalhes (Genérico) -->
+    <!-- ========================================== -->
+    <div id="detailModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity" onclick="OPME.closeDetailModal()"></div>
         
-        // Simulação de carregamento do auth (para manter o padrão do template)
-        document.addEventListener('DOMContentLoaded', () => {
-            document.body.classList.remove('loading-auth');
-        });
-    </script>
-    <!-- Modal de Crop de Imagem -->
-    <div id="cropModal" class="fixed inset-0 z-[70] flex items-center justify-center hidden">
-        <div class="fixed inset-0 bg-steel-900/60 backdrop-blur-sm transition-opacity" id="cropModalOverlay"></div>
-        <div class="relative bg-white dark:bg-steel-800 rounded-xl shadow-2xl max-w-lg w-full p-6 transform transition-all scale-95 opacity-0 mx-4 border border-gray-100 dark:border-steel-700 flex flex-col h-[500px]" id="cropModalContent">
-            
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-steel-800 dark:text-gray-100">Ajustar Foto</h3>
-                <button type="button" id="cropCancelBtn" class="text-steel-400 hover:text-steel-600 dark:hover:text-gray-200 transition-colors focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-200 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
+                <h3 id="detailModalTitle" class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Detalhes
+                </h3>
+                <button onclick="OPME.closeDetailModal()" class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
-            </div>
-            
-            <div class="flex-1 bg-black/10 dark:bg-black/40 rounded-lg overflow-hidden flex items-center justify-center relative">
-                <img id="imageToCrop" src="" alt="Ajuste a imagem" class="max-w-full max-h-full block">
             </div>
 
-            <div class="mt-4 flex items-center justify-between">
-                <div class="flex gap-2">
-                    <button type="button" id="cropZoomIn" class="p-2 rounded-lg bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors focus:outline-none" title="Aumentar Zoom">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path></svg>
-                    </button>
-                    <button type="button" id="cropZoomOut" class="p-2 rounded-lg bg-gray-100 dark:bg-steel-700 text-steel-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-steel-600 transition-colors focus:outline-none" title="Diminuir Zoom">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"></path></svg>
-                    </button>
-                </div>
-                
-                <button type="button" id="cropApplyBtn" class="px-5 py-2 bg-nexo-600 hover:bg-nexo-700 text-white rounded-lg font-medium shadow-sm transition-colors focus:outline-none">
-                    Aplicar
-                </button>
+            <!-- Body do Modal -->
+            <div id="detailModalBody" class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <!-- Conteúdo injetado via JS -->
             </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+    <script>
+        document.getElementById('footerYear').textContent = new Date().getFullYear();
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.remove('loading-auth');
+        });
+    </script>
     <script src="/js/theme.js"></script>
     <script src="/js/layout.js"></script>
-    <script src="/js/perfil.js"></script>
+    <script src="/js/cirurgias.js"></script>
 </body>
 </html>

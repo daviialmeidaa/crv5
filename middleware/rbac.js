@@ -1,5 +1,5 @@
 let rolePermissionsCache = {
-    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true }
+    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true, canViewOPME: true }
 };
 
 const loadCustomRoles = async (pgPool) => {
@@ -20,7 +20,7 @@ const getRoleLevel = (role) => {
     if (!role) return 0;
     const upper = role.trim().toUpperCase();
     if (upper === 'ADMIN') return 5;
-    if (upper.startsWith('CR') || upper.startsWith('LC')) {
+    if (upper.startsWith('CR') || upper.startsWith('LC') || upper.startsWith('OPME')) {
         const num = parseInt(upper.replace(/\D/g, ''));
         return isNaN(num) ? 0 : num;
     }
@@ -40,11 +40,11 @@ const canInteractWithRole = (myRole, targetRole) => {
     // Rule 1: Cannot manage higher levels
     if (targetLevel > myLevel) return false;
     
-    // Rule 2: If my level < 4 (and not ADMIN), I can only manage my own department (CR or LC)
+    // Rule 2: If my level < 4 (and not ADMIN), I can only manage my own department (CR, LC, OPME)
     // Para custom roles, o prefix não será igual, barrando interações perigosas
     if (myLevel < 4) {
-        const myPrefix = myRole.trim().toUpperCase().substring(0, 2);
-        const targetPrefix = targetRole.trim().toUpperCase().substring(0, 2);
+        const myPrefix = myRole.trim().toUpperCase().replace(/[\d_]/g, '');
+        const targetPrefix = targetRole.trim().toUpperCase().replace(/[\d_]/g, '');
         if (myPrefix !== targetPrefix) return false;
     }
     
@@ -52,7 +52,7 @@ const canInteractWithRole = (myRole, targetRole) => {
 };
 
 const getPermissionsForRole = (role) => {
-    return rolePermissionsCache[role] || { canViewCR: false, canViewLC: false, canViewUsers: false, canManageUsers: false, canViewClientes: false };
+    return rolePermissionsCache[role] || { canViewCR: false, canViewLC: false, canViewUsers: false, canManageUsers: false, canViewClientes: false, canViewOPME: false };
 };
 
 const requirePermission = (permissionKey) => {
