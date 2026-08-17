@@ -19,6 +19,7 @@ const OPME = (() => {
             { key: 'inicio_ata', label: 'Início', type: 'date' },
             { key: 'termino_ata', label: 'Término', type: 'date' },
             { key: '_deadline', label: 'Deadline', type: 'deadline' },
+            { key: 'actions', label: 'Ações', type: 'actions' }
         ],
         cirurgias: [
             { key: 'acao', label: 'Ação' },
@@ -155,7 +156,30 @@ const OPME = (() => {
             if (dl.days === null) return '';
             return dl.days > 0 ? 'text-emerald-600 dark:text-emerald-400 font-semibold' : 'text-red-600 dark:text-red-400 font-semibold';
         }
+        if (col.type === 'actions') {
+            return 'w-24';
+        }
         return '';
+    }
+
+    // ==========================================
+    // 3.5 Fetch KPIs
+    // ==========================================
+    async function fetchKpis() {
+        try {
+            const response = await fetch('/api/opme/kpis', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (!response.ok) throw new Error('Erro ao buscar KPIs');
+            const data = await response.json();
+            
+            document.getElementById('kpiCirurgiasRealizadas').textContent = Number(data.cirurgias_realizadas || 0).toLocaleString('pt-BR');
+            document.getElementById('kpiCirurgiasEmAberto').textContent = Number(data.cirurgias_em_aberto || 0).toLocaleString('pt-BR');
+            document.getElementById('kpiTotalRealizado').textContent = formatCurrency(data.total_cirurgias_realizadas);
+            document.getElementById('kpiTotalAFaturar').textContent = formatCurrency(data.total_cirurgias_a_faturar);
+        } catch (error) {
+            console.error('Erro ao carregar KPIs:', error);
+        }
     }
 
     // ==========================================
@@ -285,7 +309,7 @@ const OPME = (() => {
                         <span>${col.label}</span>
                         ${arrow ? `<span class="ml-1 text-nexo-400">${arrow}</span>` : ''}
                     </div>
-                    ${col.key !== '_deadline' ? `
+                    ${(col.key !== '_deadline' && col.type !== 'actions') ? `
                     <button class="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded transition-all ${filterColor}"
                             onclick="event.stopPropagation(); OPME.openFilter('${col.key}')">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -315,18 +339,39 @@ const OPME = (() => {
         let html = '';
         state.viewData.forEach((row, idx) => {
             const isContratosTab = state.currentTab === 'contratos';
-            const cursorClass = 'cursor-pointer';
+            const cursorClass = isContratosTab ? '' : 'cursor-pointer';
             const hoverClass = 'hover:bg-nexo-50/50 dark:hover:bg-nexo-900/10';
+            const clickHandler = isContratosTab ? '' : `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-colors duration-150 border-b border-gray-100 dark:border-steel-700/50 ${idx % 2 === 0 ? 'bg-white dark:bg-steel-800' : 'bg-gray-50/50 dark:bg-steel-800/60'}"
-                         onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')">`;
+                         ${clickHandler}>`;
             
             cols.forEach(col => {
-                const val = formatCell(col.key === '_deadline' ? null : row[col.key], col, row);
-                const extraClass = getCellClass(col, row);
-                const alignClass = (col.type === 'currency' || col.type === 'number' || col.type === 'deadline') ? 'text-right' : 'text-center';
-                
-                html += `<td class="px-3 py-3 text-[13px] text-steel-700 dark:text-gray-300 ${alignClass} whitespace-nowrap ${extraClass}">${val}</td>`;
+                if (col.type === 'actions') {
+                    const isInactive = row.inativo;
+                    const toggleColor = isInactive ? 'text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30' : 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30';
+                    const toggleIcon = isInactive ? 
+                        `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>` : 
+                        `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>`;
+                    const toggleTitle = isInactive ? 'Ativar Contrato' : 'Desativar Contrato';
+
+                    html += `<td class="px-3 py-3 text-center w-24">
+                        <div class="flex items-center justify-center gap-2">
+                            <button onclick="event.stopPropagation(); OPME.selectContractByIdx(${idx})" class="p-1.5 text-steel-500 hover:text-nexo-600 hover:bg-nexo-50 dark:text-steel-400 dark:hover:text-nexo-400 dark:hover:bg-steel-700 rounded-lg transition-colors" title="Acessar Contrato">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </button>
+                            <button onclick="event.stopPropagation(); OPME.toggleContractStatus(${row.id}, ${isInactive})" class="p-1.5 rounded-lg transition-colors ${toggleColor}" title="${toggleTitle}">
+                                ${toggleIcon}
+                            </button>
+                        </div>
+                    </td>`;
+                } else {
+                    const val = formatCell(col.key === '_deadline' ? null : row[col.key], col, row);
+                    const extraClass = getCellClass(col, row);
+                    const alignClass = (col.type === 'currency' || col.type === 'number' || col.type === 'deadline') ? 'text-right' : 'text-center';
+                    
+                    html += `<td class="px-3 py-3 text-[13px] text-steel-700 dark:text-gray-300 ${alignClass} whitespace-nowrap ${extraClass}">${val}</td>`;
+                }
             });
             html += '</tr>';
         });
@@ -561,6 +606,12 @@ const OPME = (() => {
             btn.classList.add('hover:text-nexo-400', 'hover:border-nexo-300');
         });
 
+        // Ocultar KPIs e mostrar Container de Abas
+        const kpisContainer = document.getElementById('kpisContainer');
+        const tabsContainer = document.getElementById('tabsContainer');
+        if (kpisContainer) kpisContainer.classList.add('hidden');
+        if (tabsContainer) tabsContainer.classList.remove('hidden');
+
         // Mostrar banner
         const banner = document.getElementById('contractBanner');
         if (banner) {
@@ -573,6 +624,35 @@ const OPME = (() => {
         switchTab('cirurgias');
     }
 
+    function selectContractByIdx(idx) {
+        const row = state.viewData[idx];
+        if (row) selectContract(row);
+    }
+
+    async function toggleContractStatus(id, currentStatus) {
+        if (!confirm(`Deseja realmente ${currentStatus ? 'ativar' : 'desativar'} este contrato?`)) return;
+        
+        try {
+            const response = await fetch(`/api/opme/contratos/${id}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({ inativo: !currentStatus })
+            });
+            
+            if (!response.ok) throw new Error('Erro ao alterar status');
+            
+            // Recarregar dados
+            fetchData();
+            fetchKpis();
+        } catch (error) {
+            console.error(error);
+            alert('Não foi possível alterar o status do contrato.');
+        }
+    }
+
     function clearContract() {
         state.selectedContract = null;
 
@@ -581,6 +661,12 @@ const OPME = (() => {
             btn.classList.add('opacity-40', 'cursor-not-allowed');
             btn.classList.remove('hover:text-nexo-400', 'hover:border-nexo-300');
         });
+
+        // Mostrar KPIs e ocultar Container de Abas
+        const kpisContainer = document.getElementById('kpisContainer');
+        const tabsContainer = document.getElementById('tabsContainer');
+        if (kpisContainer) kpisContainer.classList.remove('hidden');
+        if (tabsContainer) tabsContainer.classList.add('hidden');
 
         // Esconder banner
         const banner = document.getElementById('contractBanner');
@@ -663,6 +749,7 @@ const OPME = (() => {
     // 14. Inicialização
     // ==========================================
     function init() {
+        fetchKpis();
         fetchData();
     }
 
@@ -679,5 +766,7 @@ const OPME = (() => {
         handleRowClick,
         closeDetailModal,
         goToPage,
+        selectContractByIdx,
+        toggleContractStatus
     };
 })();

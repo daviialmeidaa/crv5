@@ -31,6 +31,54 @@ router.get('/contratos', async (req, res) => {
 });
 
 // ==========================================
+// PUT /api/opme/contratos/:id/status
+// ==========================================
+router.put('/contratos/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { inativo } = req.body;
+        
+        await pgPool.query(
+            'UPDATE opme.contratos SET inativo = $1 WHERE id = $2',
+            [inativo, id]
+        );
+        
+        res.json({ success: true, message: 'Status do contrato atualizado com sucesso' });
+    } catch (err) {
+        console.error('[OPME] Erro ao atualizar status do contrato:', err.message);
+        res.status(500).json({ error: 'Erro ao atualizar status do contrato' });
+    }
+});
+
+// ==========================================
+// GET /api/opme/kpis
+// ==========================================
+router.get('/kpis', async (req, res) => {
+    try {
+        const result = await pgPool.query(`
+            SELECT 
+                COUNT(DISTINCT c.paciente || c.data_cirurgia) FILTER (WHERE c.acao = 'CIRURGIA') AS cirurgias_realizadas,
+                COUNT(DISTINCT c.paciente || c.data_cirurgia) FILTER (WHERE c.acao = 'CIRURGIA' AND (c.nota_fiscal IS NULL OR c.nota_fiscal = '' OR c.nota_fiscal = '0')) AS cirurgias_em_aberto,
+                SUM(c.valor_total) FILTER (WHERE c.acao = 'CIRURGIA') AS total_cirurgias_realizadas,
+                SUM(c.valor_total) FILTER (WHERE c.acao = 'CIRURGIA' AND (c.nota_fiscal IS NULL OR c.nota_fiscal = '' OR c.nota_fiscal = '0')) AS total_cirurgias_a_faturar
+            FROM opme.cirurgias c
+            JOIN opme.contratos ct ON c.contrato = ct.id_contrato
+            WHERE ct.inativo = false;
+        `);
+        
+        res.json(result.rows[0] || {
+            cirurgias_realizadas: 0,
+            cirurgias_em_aberto: 0,
+            total_cirurgias_realizadas: 0,
+            total_cirurgias_a_faturar: 0
+        });
+    } catch (err) {
+        console.error('[OPME] Erro ao buscar KPIs:', err.message);
+        res.status(500).json({ error: 'Erro ao buscar KPIs' });
+    }
+});
+
+// ==========================================
 // GET /api/opme/cirurgias?contrato=BIO687
 // ==========================================
 router.get('/cirurgias', async (req, res) => {
