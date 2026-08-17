@@ -52,6 +52,8 @@ async function runSync(onProgress = () => {}) {
                 contrato = EXCLUDED.contrato,
                 empenho = EXCLUDED.empenho,
                 valor_deposito = EXCLUDED.valor_deposito,
+                data_emissao = EXCLUDED.data_emissao,
+                data_vencimento = EXCLUDED.data_vencimento,
                 data_pagamento = EXCLUDED.data_pagamento,
                 status = EXCLUDED.status,
                 banco = EXCLUDED.banco,
@@ -79,7 +81,7 @@ async function runSync(onProgress = () => {}) {
 
             // Buscar TODOS os documentos locais desta empresa para comparação
             const localDocsResult = await pgPool.query(`
-                SELECT documento, status, valor_deposito, data_vencimento, data_pagamento 
+                SELECT documento, status, valor_deposito, data_emissao, data_vencimento, data_pagamento 
                 FROM titulos 
                 WHERE empresa = $1
             `, [emp.id]);
@@ -125,8 +127,14 @@ async function runSync(onProgress = () => {}) {
                     const oldValor = parseFloat(localRecord.valor_deposito) || 0;
                     const newValor = parseFloat(row.Valor_recebido) || 0;
                     
+                    const oldEmissao = formatDateStr(localRecord.data_emissao);
+                    const newEmissao = safeDate(row.Data_emissão);
+                    
+                    const oldVenc = formatDateStr(localRecord.data_vencimento);
+                    const newVenc = safeDate(row.Data_vencimento);
+
                     const oldPag = formatDateStr(localRecord.data_pagamento);
-                    const newPag = formatDateStr(row.Data_quitação);
+                    const newPag = safeDate(row.Data_quitação);
                     
                     const oldCliente = (localRecord.cliente || '').trim().toUpperCase();
                     const newCliente = (row.Nome_Fornecedor || '').trim().toUpperCase();
@@ -149,6 +157,8 @@ async function runSync(onProgress = () => {}) {
                     if (
                         oldStatus !== newStatus || 
                         oldValor !== newValor || 
+                        oldEmissao !== newEmissao ||
+                        oldVenc !== newVenc ||
                         oldPag !== newPag ||
                         oldCliente !== newCliente ||
                         oldEsfera !== newEsfera ||
@@ -159,14 +169,21 @@ async function runSync(onProgress = () => {}) {
                         empResult.updated++;
                     }
                 }
-                const values = [
-                    emp.id, row.Núm_NF, numDoc, row.Cód_Fornecedor,
-                    row.Nome_Fornecedor, normEsfera, row.UF, normContrato,
-                    row.Numero_Empenho_publico, row.Valor_parcela || 0, row.Valor_recebido || 0,
-                    row.Data_emissão, row.Data_vencimento, row.Data_quitação,
-                    status, row.Nome_cta_débito,
-                    row.retem_imposto_renda == 1 ? 'Sim' : 'Não'
-                ];
+                    const safeDate = (d) => {
+                        if (!d) return null;
+                        const dObj = new Date(d);
+                        if (isNaN(dObj)) return null;
+                        return dObj.toISOString().split('T')[0];
+                    };
+
+                    const values = [
+                        emp.id, row.Núm_NF, numDoc, row.Cód_Fornecedor,
+                        row.Nome_Fornecedor, normEsfera, row.UF, normContrato,
+                        row.Numero_Empenho_publico, row.Valor_parcela || 0, row.Valor_recebido || 0,
+                        safeDate(row.Data_emissão), safeDate(row.Data_vencimento), safeDate(row.Data_quitação),
+                        status, row.Nome_cta_débito,
+                        row.retem_imposto_renda == 1 ? 'Sim' : 'Não'
+                    ];
                 
                 upsertValues.push(values);
             }
