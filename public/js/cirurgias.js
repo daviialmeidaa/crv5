@@ -239,11 +239,13 @@ const OPME = (() => {
         // 5.1 Filtros
         state.filteredData = state.rawData.filter(row => {
             for (let key in state.filters) {
-                const selected = state.filters[key];
-                if (selected && selected.size > 0) {
-                    if (selected.has('__NONE__')) return false;
-                    const val = row[key] !== null && row[key] !== undefined ? String(row[key]).trim() : '-';
-                    if (!selected.has(val)) return false;
+                const selectedValues = state.filters[key];
+                if (selectedValues && selectedValues.size > 0) {
+                    if (selectedValues.has('__NONE__')) return false;
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '-';
+                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -307,28 +309,30 @@ const OPME = (() => {
         const thead = document.getElementById('opmeTableHead');
         if (!thead) return;
 
-        let html = '<tr>';
+        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
         cols.forEach(col => {
-            const isSorted = state.sort.key === col.key;
-            const arrow = isSorted ? (state.sort.dir === 'asc' ? '↑' : '↓') : '';
-            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0;
-            const filterColor = hasFilter ? 'text-nexo-400' : 'text-steel-400 dark:text-steel-500 opacity-0 group-hover:opacity-100';
+            const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
+            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
+            const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
+            const isFiltered = hasFilter || hasNoneFilter;
+            const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
             html += `
-                <th class="group relative px-3 py-3 h-[50px] text-center text-[11px] font-semibold uppercase tracking-wider text-steel-500 dark:text-steel-400 whitespace-normal break-words cursor-pointer select-none border-b border-gray-200 dark:border-steel-700 bg-gray-50 dark:bg-steel-800/50 transition-colors hover:bg-gray-100 dark:hover:bg-steel-700/50"
+                <th class="px-3 py-2 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[70px] select-none relative align-middle"
                      data-col="${col.key}">
-                    <div class="flex items-center justify-center w-full h-full" onclick="OPME.handleSort('${col.key}')">
-                        <span>${col.label}</span>
-                        ${arrow ? `<span class="ml-1 text-nexo-400">${arrow}</span>` : ''}
+                    <div class="flex items-center justify-center gap-1.5 w-full h-full px-4">
+                        <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
+                            ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
+                        </div>
+                        ${(col.key !== '_deadline' && col.type !== 'actions') ? `
+                        <button onclick="event.stopPropagation(); OPME.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none flex-shrink-0 ${filterColor} absolute right-2 top-1/2 -translate-y-1/2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+                            </svg>
+                        </button>` : ''}
                     </div>
-                    ${(col.key !== '_deadline' && col.type !== 'actions') ? `
-                    <button class="absolute right-1 top-1/2 -translate-y-1/2 p-1 rounded transition-all ${filterColor}"
-                            onclick="event.stopPropagation(); OPME.openFilter('${col.key}')">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
-                        </svg>
-                    </button>` : ''}
-                </th>`;
+                </th>
+            `;
         });
         html += '</tr>';
         thead.innerHTML = html;
@@ -453,124 +457,364 @@ const OPME = (() => {
     // ==========================================
     // 8. Filtros (Dropdown com Checkboxes)
     // ==========================================
-    function openFilter(colKey) {
-        closeFilter();
+    function openFilter(event, colKey) {
+        event.stopPropagation();
+        closeFilter(); // Fecha anterior se existir
 
         const cols = tabColumns[state.currentTab];
         const col = cols.find(c => c.key === colKey);
         if (!col) return;
 
-        // Coletar valores únicos
-        const valuesSet = new Set();
-        state.rawData.forEach(row => {
-            let val = row[colKey];
-            if (col.type === 'date') val = formatDate(val);
-            else val = val !== null && val !== undefined && val !== '' ? String(val).trim() : '-';
-            valuesSet.add(val);
+        // Coleta valores únicos para essa coluna respeitando os filtros já aplicados (Cascata)
+        const preFilteredData = state.rawData.filter(row => {
+            for (let key in state.filters) {
+                if (key === colKey) continue;
+                const selectedValues = state.filters[key];
+                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '-';
+                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
+                        return false; 
+                    }
+                }
+            }
+            return true;
         });
-        const sortedValues = [...valuesSet].sort((a, b) => {
+
+        // Valores brutos, mapeados para '-' se vazios
+        const rawValuesMapped = preFilteredData.map(row => {
+            return row[colKey] !== null && row[colKey] !== undefined && row[colKey] !== '' ? row[colKey] : '-';
+        });
+
+        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
             if (a === '-') return 1;
-            if (b === '-') return 1;
-            return a.localeCompare(b, 'pt-BR');
+            if (b === '-') return -1;
+            return String(a).localeCompare(String(b), 'pt-BR');
         });
 
-        const selected = state.filters[colKey] || new Set();
-        const allSelected = selected.size === 0;
-
-        // Encontrar a posição do th
-        const th = document.querySelector(`th[data-col="${colKey}"]`);
-        if (!th) return;
-        const rect = th.getBoundingClientRect();
+        if (!state.filters[colKey]) {
+            state.filters[colKey] = new Set();
+        }
 
         const modal = document.createElement('div');
         modal.id = 'filterModal';
-        modal.className = 'fixed z-50';
-        modal.style.top = `${rect.bottom + 4}px`;
-        modal.style.left = `${Math.max(8, rect.left - 60)}px`;
+        modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm animate-fade-in-up';
 
-        let listHtml = '';
-        sortedValues.forEach(val => {
-            const checked = allSelected || selected.has(val) ? 'checked' : '';
-            const escaped = val.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-            listHtml += `
-                <label class="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 cursor-pointer text-sm text-steel-700 dark:text-gray-300 transition-colors">
-                    <input type="checkbox" value="${escaped}" ${checked} class="filter-cb rounded border-gray-300 dark:border-steel-600 text-nexo-500 focus:ring-nexo-400 focus:ring-offset-0">
-                    <span class="truncate">${val}</span>
-                </label>`;
-        });
+        modal.addEventListener('click', (e) => e.stopPropagation());
+
+        const rect = event.currentTarget.getBoundingClientRect();
+        let left = rect.left;
+        if (left + 256 > window.innerWidth) left = window.innerWidth - 266;
+
+        modal.style.top = `${rect.bottom + window.scrollY + 8}px`;
+        modal.style.left = `${left}px`;
 
         modal.innerHTML = `
-            <div class="bg-white dark:bg-steel-800 rounded-xl shadow-2xl border border-gray-200 dark:border-steel-700 w-64 max-h-80 flex flex-col overflow-hidden animate-fadeIn">
-                <div class="px-3 py-2 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between">
-                    <span class="text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">${col.label}</span>
-                    <button onclick="OPME.closeFilter()" class="p-1 rounded hover:bg-gray-100 dark:hover:bg-steel-700 text-steel-400">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <label class="flex items-center gap-2 px-3 py-2 border-b border-gray-100 dark:border-steel-700 cursor-pointer text-sm font-medium text-nexo-600 dark:text-nexo-400">
-                    <input type="checkbox" id="filterSelectAll" ${allSelected ? 'checked' : ''} class="rounded border-gray-300 dark:border-steel-600 text-nexo-500 focus:ring-nexo-400 focus:ring-offset-0">
-                    <span>(Selecionar Tudo)</span>
-                </label>
-                <div class="overflow-y-auto custom-scrollbar flex-1">
-                    ${listHtml}
-                </div>
-                <div class="px-3 py-2 border-t border-gray-100 dark:border-steel-700">
-                    <button onclick="OPME.applyFilter('${colKey}')" class="w-full py-1.5 bg-nexo-600 hover:bg-nexo-700 text-white text-sm font-medium rounded-lg transition-colors">Aplicar</button>
-                </div>
-            </div>`;
+            <div class="p-3 border-b border-gray-100 dark:border-steel-700">
+                <input type="text" id="filterSearchInput" placeholder="Pesquisar..." class="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded outline-none focus:ring-1 focus:ring-nexo-500 text-steel-700 dark:text-gray-200">
+            </div>
+            <div class="flex-1 max-h-48 overflow-y-auto p-2 custom-scrollbar" id="filterCheckboxList">
+            </div>
+            <div class="p-3 border-t border-gray-100 dark:border-steel-700 flex justify-between bg-gray-50 dark:bg-steel-800/50 rounded-b-lg">
+                <button id="btnClearFilter" class="text-xs text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 font-medium">Limpar</button>
+                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium shadow-sm transition-colors">Aplicar</button>
+            </div>
+        `;
 
         document.body.appendChild(modal);
-        activeFilterModal = colKey;
+        activeFilterModal = modal;
 
-        // Select All toggle
-        const selectAllCb = modal.querySelector('#filterSelectAll');
-        const checkboxes = modal.querySelectorAll('.filter-cb');
-        selectAllCb.addEventListener('change', () => {
-            checkboxes.forEach(cb => cb.checked = selectAllCb.checked);
-        });
+        const listContainer = modal.querySelector('#filterCheckboxList');
+        const searchInput = modal.querySelector('#filterSearchInput');
 
-        // Click outside
-        setTimeout(() => {
-            document.addEventListener('click', handleFilterOutsideClick);
-        }, 10);
-    }
-
-    function handleFilterOutsideClick(e) {
-        const modal = document.getElementById('filterModal');
-        if (modal && !modal.contains(e.target) && !e.target.closest('th')) {
-            closeFilter();
-        }
-    }
-
-    function closeFilter() {
-        const modal = document.getElementById('filterModal');
-        if (modal) modal.remove();
-        activeFilterModal = null;
-        document.removeEventListener('click', handleFilterOutsideClick);
-    }
-
-    function applyFilter(colKey) {
-        const modal = document.getElementById('filterModal');
-        if (!modal) return;
-
-        const selectAll = modal.querySelector('#filterSelectAll');
-        if (selectAll && selectAll.checked) {
-            delete state.filters[colKey];
-        } else {
-            const checked = modal.querySelectorAll('.filter-cb:checked');
-            if (checked.length === 0) {
-                state.filters[colKey] = new Set(['__NONE__']);
+        const tempSelected = new Set(state.filters[colKey]);
+        if (tempSelected.size === 0 || tempSelected.has('__NONE__')) {
+            if (!tempSelected.has('__NONE__')) {
+                uniqueValues.forEach(v => tempSelected.add(v));
             } else {
-                const values = new Set();
-                checked.forEach(cb => values.add(cb.value));
-                state.filters[colKey] = values;
+                tempSelected.clear();
             }
         }
 
-        closeFilter();
-        state.pagination.current = 1;
-        processData();
+        let expandedState = {};
+
+        function renderCheckboxes(searchTerm = '') {
+            listContainer.innerHTML = '';
+            
+            const filteredVals = uniqueValues.filter(v => {
+                if (!searchTerm) return true;
+                let displayVal = v;
+                if (col.type === 'currency') displayVal = formatCurrency(v);
+                if (col.type === 'date') displayVal = formatDate(v);
+                return String(displayVal).toLowerCase().includes(searchTerm.toLowerCase());
+            });
+
+            if (filteredVals.length === 0) {
+                listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
+                return;
+            }
+
+            const allChecked = filteredVals.length > 0 && filteredVals.every(v => tempSelected.has(v));
+            const selectAllDiv = document.createElement('div');
+            selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
+            selectAllDiv.innerHTML = `
+                <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${allChecked ? 'checked' : ''}>
+                <span class="font-medium text-steel-700 dark:text-gray-300">(Selecionar Tudo)</span>
+            `;
+            selectAllDiv.querySelector('input').onclick = (e) => {
+                if (e.target.checked) {
+                    filteredVals.forEach(v => tempSelected.add(v));
+                } else {
+                    filteredVals.forEach(v => tempSelected.delete(v));
+                }
+                renderCheckboxes(searchTerm);
+            };
+            listContainer.appendChild(selectAllDiv);
+
+            if (col.type === 'date' && !searchTerm) {
+                const tree = {};
+                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                
+                filteredVals.forEach(val => {
+                    let y, m, d;
+                    if (val && String(val).includes('T')) {
+                        const dt = new Date(val);
+                        if (!isNaN(dt.getTime())) {
+                            y = dt.getUTCFullYear().toString();
+                            m = dt.getUTCMonth() + 1;
+                            d = dt.getUTCDate().toString().padStart(2, '0');
+                        }
+                    } else if (val && String(val).includes('-') && val !== '-') {
+                        const parts = String(val).split('T')[0].split('-');
+                        if (parts.length === 3) {
+                            y = parts[0];
+                            m = parseInt(parts[1], 10);
+                            d = parts[2];
+                        }
+                    }
+
+                    if (y && m && d) {       
+                        if (!tree[y]) tree[y] = {};
+                        if (!tree[y][m]) tree[y][m] = [];
+                        tree[y][m].push(val);
+                    } else {
+                        if (!tree['-']) tree['-'] = {};
+                        if (!tree['-']['-']) tree['-']['-'] = [];
+                        tree['-']['-'].push(val);
+                    }
+                });
+
+                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
+                    const yearDiv = document.createElement('div');
+                    yearDiv.className = 'pl-1';
+                    
+                    let yearAllChecked = true;
+                    let yearAnyChecked = false;
+                    const yearVals = [];
+                    Object.keys(tree[year]).forEach(m => tree[year][m].forEach(v => {
+                        yearVals.push(v);
+                        if (tempSelected.has(v)) yearAnyChecked = true;
+                        else yearAllChecked = false;
+                    }));
+
+                    const yHeader = document.createElement('div');
+                    yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
+                    yHeader.innerHTML = `
+                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                        <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
+                        <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
+                    `;
+                    
+                    const yCb = yHeader.querySelector('input');
+                    yCb.indeterminate = yearAnyChecked && !yearAllChecked;
+                    
+                    const mContainer = document.createElement('div');
+                    mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
+                    
+                    yHeader.onclick = (e) => {
+                        if (e.target === yCb) return;
+                        const isHidden = mContainer.classList.contains('hidden');
+                        expandedState[year] = isHidden;
+                        mContainer.classList.toggle('hidden');
+                        yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
+                    };
+                    
+                    if (expandedState[year]) {
+                        mContainer.classList.remove('hidden');
+                        yHeader.querySelector('span').textContent = '-';
+                    }
+
+                    yCb.onclick = (e) => {
+                        e.stopPropagation();
+                        const isChecked = e.target.checked;
+                        yearVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
+                        renderCheckboxes(searchTerm);
+                    };
+
+                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
+                        const monthVals = tree[year][month];
+                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
+                        
+                        let monthAllChecked = true;
+                        let monthAnyChecked = false;
+                        monthVals.forEach(v => {
+                            if (tempSelected.has(v)) monthAnyChecked = true;
+                            else monthAllChecked = false;
+                        });
+
+                        const mHeader = document.createElement('div');
+                        mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+                        mHeader.innerHTML = `
+                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                            <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
+                            <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
+                        `;
+
+                        const mCb = mHeader.querySelector('input');
+                        mCb.indeterminate = monthAnyChecked && !monthAllChecked;
+
+                        const dContainer = document.createElement('div');
+                        dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
+                        
+                        const monthKey = `${year}-${month}`;
+                        mHeader.onclick = (e) => {
+                            if (e.target === mCb) return;
+                            const isHidden = dContainer.classList.contains('hidden');
+                            expandedState[monthKey] = isHidden;
+                            dContainer.classList.toggle('hidden');
+                            mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
+                        };
+                        
+                        if (expandedState[monthKey]) {
+                            dContainer.classList.remove('hidden');
+                            mHeader.querySelector('span').textContent = '-';
+                        }
+
+                        mCb.onclick = (e) => {
+                            e.stopPropagation();
+                            const isChecked = e.target.checked;
+                            monthVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
+                            renderCheckboxes(searchTerm);
+                        };
+
+                        monthVals.forEach(val => {
+                            const isChecked = tempSelected.has(val);
+                            const dHeader = document.createElement('div');
+                            dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+                            let displayVal = formatDate(val);
+                            
+                            const valStr = String(val);
+                            if (valStr.includes('-') && valStr.split('-').length >= 3) {
+                                const datePart = valStr.split('T')[0];
+                                if (datePart.split('-').length === 3) {
+                                    displayVal = datePart.split('-')[2];
+                                }
+                            } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
+                                const datePart = valStr.split(' ')[0];
+                                if (datePart.split('/').length === 3) {
+                                    displayVal = datePart.split('/')[0];
+                                }
+                            }
+                            dHeader.innerHTML = `
+                                <div class="w-3"></div>
+                                <input type="checkbox" value="${val}" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                                <span class="truncate text-steel-500 dark:text-gray-500 text-[11px]">${displayVal}</span>
+                            `;
+                            const dCb = dHeader.querySelector('input');
+                            dHeader.onclick = (e) => {
+                                if (e.target !== dCb) dCb.checked = !dCb.checked;
+                                if (dCb.checked) tempSelected.add(val);
+                                else tempSelected.delete(val);
+                                renderCheckboxes(searchTerm);
+                            };
+                            dContainer.appendChild(dHeader);
+                        });
+
+                        mContainer.appendChild(mHeader);
+                        mContainer.appendChild(dContainer);
+                    });
+
+                    yearDiv.appendChild(yHeader);
+                    yearDiv.appendChild(mContainer);
+                    listContainer.appendChild(yearDiv);
+                });
+            } else {
+                filteredVals.forEach(val => {
+                    const isChecked = tempSelected.has(val);
+
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
+
+                    let displayVal = val;
+                    if (col.type === 'currency') displayVal = formatCurrency(val);
+                    if (col.type === 'date') displayVal = formatDate(val);
+
+                    div.innerHTML = `
+                        <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
+                        <span class="truncate text-steel-600 dark:text-gray-400 text-xs" title="${displayVal}">${displayVal}</span>
+                    `;
+
+                    const checkbox = div.querySelector('input');
+                    div.onclick = (e) => {
+                        if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
+
+                        if (checkbox.checked) {
+                            tempSelected.add(val);
+                        } else {
+                            tempSelected.delete(val);
+                        }
+                        renderCheckboxes(searchTerm);
+                    };
+
+                    listContainer.appendChild(div);
+                });
+            }
+        }
+
+        renderCheckboxes();
+        searchInput.focus();
+
+        let hasTyped = false;
+        searchInput.addEventListener('input', (e) => {
+            if (!hasTyped && e.target.value.length > 0) {
+                tempSelected.clear();
+                hasTyped = true;
+            }
+            renderCheckboxes(e.target.value);
+        });
+
+        modal.querySelector('#btnApplyFilter').onclick = () => {
+            if (tempSelected.size === uniqueValues.length) {
+                state.filters[colKey].clear();
+            } else if (tempSelected.size === 0) {
+                state.filters[colKey] = new Set(['__NONE__']);
+            } else {
+                state.filters[colKey] = new Set(tempSelected);
+            }
+            state.pagination.current = 1;
+            processData();
+            closeFilter();
+        };
+
+        modal.querySelector('#btnClearFilter').onclick = () => {
+            state.filters[colKey].clear();
+            state.pagination.current = 1;
+            processData();
+            closeFilter();
+        };
     }
+
+    function closeFilter() {
+        if (activeFilterModal) {
+            activeFilterModal.remove();
+            activeFilterModal = null;
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (activeFilterModal && !activeFilterModal.contains(e.target)) {
+            closeFilter();
+        }
+    });
 
     // ==========================================
     // 9. Sort
@@ -781,7 +1025,6 @@ const OPME = (() => {
         handleSort,
         openFilter,
         closeFilter,
-        applyFilter,
         switchTab,
         clearContract,
         handleRowClick,
