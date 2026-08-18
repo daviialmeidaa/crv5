@@ -1,6 +1,7 @@
 const SYSTEM_PERMISSIONS = [
     { id: 'canViewCR', name: 'Módulo Contas a Receber' },
     { id: 'canViewLC', name: 'Módulo Licitações' },
+    { id: 'canViewOPME', name: 'Módulo OPME' },
     { id: 'canViewUsers', name: 'Módulo Usuários (Leitura)' },
     { id: 'canManageUsers', name: 'Gestão de Usuários (Edição)' },
     { id: 'canCreateUsers', name: 'Módulo Usuários (Criação)' },

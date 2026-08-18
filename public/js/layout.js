@@ -56,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const canClientes = hideLink('/clientes', perms.canViewClientes || isAdmin);
             const canLC = hideLink('/itens_arrematados', perms.canViewLC || isAdmin);
             hideLink('/agenda_licitacoes', perms.canViewLC || isAdmin);
+            const canOPME = hideLink('/cirurgias', perms.canViewOPME || isAdmin);
             
             // Oculta grupos inteiros se não houver permissão
             if (!canCR && !canClientes) {
@@ -65,6 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!canLC) {
                 const groupLicitacoes = document.getElementById('menu-group-licitacoes');
                 if (groupLicitacoes) groupLicitacoes.style.display = 'none';
+            }
+            if (!canOPME) {
+                const groupOPME = document.getElementById('menu-group-opme');
+                if (groupOPME) groupOPME.style.display = 'none';
             }
 
             hideLink('/usuarios', perms.canViewUsers || isAdmin);
