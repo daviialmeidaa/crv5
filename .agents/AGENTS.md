@@ -91,12 +91,17 @@ As métricas do Dashboard obedecem a uma matemática estrita baseada na tabela d
 
 ## Controle de Acesso Baseado em Papéis (RBAC)
 - O sistema abandonou flags booleanas para administradores. Agora, existe a coluna `role` na tabela `users` do PostgreSQL, mapeada para um modelo estrito de níveis de permissão no backend (`middleware/rbac.js`).
-- **Nomenclatura de Níveis:** Os papéis atuais são `ADMIN`, `CR1` a `CR4` e `LC1` a `LC4`. As regras são definidas de forma explícita por flags booleanas no payload do token: `canViewCR`, `canViewLC`, `canViewUsers`, `canManageUsers`.
-- Os agentes e o frontend nunca devem referenciar "se o usuário é admin", mas sim verificar a permissão específica exigida para o contexto de exibição ou ação (ex: ocultar um link via JS lendo `user.permissions.canViewCR`).
+- **Nomenclatura de Níveis:** Os papéis atuais seguem a estrutura de departamentalização:
+  - `ADMIN` (Acesso Total)
+  - Contas a Receber: `CR1`, `CR2`, `CR3`, `CR4`
+  - Licitações: `LC1`, `LC2`, `LC3`, `LC4`
+  - Órteses e Próteses (OPME): `OPME1`, `OPME2`, `OPME3`, `OPME4`
+- As regras de visibilidade são definidas de forma explícita por flags booleanas no payload do token: `canViewCR`, `canViewLC`, `canViewOPME`, `canViewUsers`, `canManageUsers`, `canViewClientes`.
+- Os agentes e o frontend nunca devem referenciar "se o usuário é admin", mas sim verificar a permissão específica exigida para o contexto de exibição ou ação (ex: ocultar um link via JS lendo `user.permissions.canViewOPME`).
 
 ## Navegação Lateral (Sidebar e Submenus)
-- **Estrutura Expandível:** Os links no menu lateral (Sidebar) agora estão agrupados sob blocos lógicos principais (Ex: `Financeiro` e `Licitações`) categorizados em cabeçalhos (Ex: `MAIN` e `HUB`).
-- A visibilidade de blocos completos é gerenciada dinamicamente pelo `public/js/layout.js`, que utiliza os IDs dos grupos (como `menu-group-financeiro` ou `menu-group-licitacoes`) para omitir itens da tela caso o usuário não possua permissão (RBAC) para ver qualquer item interno do bloco.
+- **Estrutura Expandível:** Os links no menu lateral (Sidebar) agora estão agrupados sob blocos lógicos principais (Ex: `Financeiro`, `Licitações`, `OPME`) categorizados em cabeçalhos (Ex: `MAIN` e `HUB`).
+- A visibilidade de blocos completos é gerenciada dinamicamente pelo `public/js/layout.js`, que utiliza os IDs dos grupos (como `menu-group-financeiro` ou `menu-group-opme`) para omitir itens da tela caso o usuário não possua permissão (RBAC) para ver qualquer item interno do bloco.
 - **Abertura Inteligente de Submenus:** A mecânica de expansão/colapso (`sidebar-submenu`, `.hidden`) é tratada globalmente via JS (`layout.js`), MAS na montagem inicial do HTML (build-time/server-side), o grupo que contém a página atual ativa DEVE ser renderizado já aberto (sem a classe `hidden`) e com a rotação do Chevron em `90deg`.
 - **Rotação do Chevron:** O ícone de seta (`sidebar-chevron`) é desenhado nativamente apontando para a direita (`d="M9 5l7 7-7 7"`). Quando o submenu está aberto, o JS aplica a rotação `transform: rotate(90deg)` (apontando para baixo). O estado fechado retorna a `rotate(0deg)`.
 - **Estética "Sash" (Design Premium):** Botões e links da sidebar NÃO usam fundos sólidos pesados. Quando uma rota está ativa, ela deve utilizar tipografia Semibold na cor primária (`text-nexo-400`) e um background sutil de 10% de opacidade (`bg-nexo-500/10`). Ícones internos de submenu usam um marcador circular vazado (`span` vazio com borda `border-current`).
@@ -200,3 +205,47 @@ Todos os e-mails disparados pelo sistema (Boas-Vindas de novos usuários, Cron d
 3. **Tom e Linguagem:** A linguagem deve ser corporativa e neutra. Emojis devem ser evitados em e-mails formais de credenciais ou relatórios. Textos soltos e descontraídos devem ser substituídos por frases objetivas e profissionais.
 4. **Data-Grids em E-mails:** Tabelas de dados devem usar estilização limpa e profissional: `border-collapse: collapse`, linhas divisórias suaves (`border-bottom: 1px solid #e5e7eb`), cabeçalhos discretos (`text-transform: uppercase`, texto cinza `color: #4b5563`, fundo `#f9fafb`) e dados alinhados de forma escaneável.
 5. **Rodapé Padronizado:** Todos os e-mails devem terminar com o bloco claro e automático: `© Ano Atual Nexomed. Todos os direitos reservados. Esta é uma mensagem automática. Por favor, não responda.`
+
+## Módulo OPME — Órteses, Próteses e Materiais Especiais
+O módulo OPME é o terceiro pilar do Hub, acessível via o grupo `Opme` na sidebar (ID: `menu-group-opme`). Ele gerencia contratos de consignação, cirurgias e estoque de materiais hospitalares, substituindo uma planilha VBA legada integrada com Microsoft Access.
+
+### Fonte de Dados e Sincronização (Access → PostgreSQL)
+- **Origem:** A base de dados primária do OPME reside em um arquivo Microsoft Access (`.accdb`) localizado no servidor Windows da empresa. Um script Python externo (`sync_opme.py`) executa a sincronização Access → PostgreSQL via `pyodbc` (driver Access Engine 64-bit) usando UPSERT em lote (`execute_values`).
+- **Agendamento:** O `sync_opme.py` é disparado automaticamente pelo **System Scheduler** do Windows de segunda a sexta, das 08h às 18h.
+- **Schema PostgreSQL:** Todas as tabelas residem no schema `opme` (separação lógica do schema `public` principal do sistema).
+- **Sem Foreign Keys:** As constraints de FK no schema `opme` foram **deliberadamente removidas** para espelhar o comportamento permissivo do Access, que aceita registros órfãos e duplicidades. A integridade referencial é gerenciada pela planilha VBA de origem, não pelo banco relacional.
+- **Colunas TEXT:** As colunas de texto das tabelas OPME foram convertidas de `VARCHAR(255)` para `TEXT` no PostgreSQL para evitar erros de truncamento durante a sincronização de dados que excedem 255 caracteres no Access.
+
+### Estrutura de Tabelas (Schema `opme`)
+
+| Tabela | Chave de Relacionamento | Descrição |
+|---|---|---|
+| `contratos` | `id_contrato` (ex: `BIO687`, `BML962`) | Tabela pai com dados do contrato: material, cliente, UF, pregão, total da ata, datas de início/término, flag `inativo` |
+| `cirurgias` | `contrato` → `contratos.id_contrato` | Registros de cirurgias realizadas: paciente, local, data, produto utilizado, médico, CRM, valores, NF, empenho (~18k registros) |
+| `unidades` | `contrato` → `contratos.id_contrato` | Hospitais/unidades vinculados ao contrato: cod_cliente, hospital, sigla |
+| `saldoata` | `contrato` → `contratos.id_contrato` | Saldo consolidado da ata: item, descrição, quantidade, valores, saldo restante |
+| `saldoatahospital` | `contrato` → `contratos.id_contrato` | Saldo da ata desagregado por hospital/unidade |
+| `bancocodigos` | `contrato` → `contratos.id_contrato` | Catálogo de produtos: cod_bio, cod_fab, produto, descrição, classificação, item_ata (~5k registros) |
+
+### API Backend (`routes/opme.js`)
+- **Autenticação:** `authMiddleware` + `requirePermission('canViewOPME')` aplicados globalmente no router.
+- **Endpoints (todos GET, somente leitura):**
+  - `/api/opme/contratos` — Lista contratos. Query param `?inativo=true` para incluir inativos.
+  - `/api/opme/cirurgias?contrato=BIO687` — Cirurgias filtradas por contrato.
+  - `/api/opme/unidades?contrato=BIO687` — Unidades do contrato.
+  - `/api/opme/saldo-ata?contrato=BIO687` — Saldo da ata.
+  - `/api/opme/saldo-ata-hospital?contrato=BIO687` — Saldo por hospital.
+  - `/api/opme/banco-codigos?contrato=BIO687` — Banco de códigos.
+- **Segurança:** Todas as queries usam parâmetros posicionais (`$1`) para prevenir SQL injection.
+
+### Diretrizes da Tela de Cirurgias (`/cirurgias`)
+A rota `/cirurgias` (arquivo `public/cirurgias.html`, controller `public/js/cirurgias.js`) implementa um sistema de abas que espelha as abas da planilha VBA original. As seguintes regras foram consolidadas:
+
+1. **Sistema de 6 Abas:** A barra de abas horizontal renderiza os botões: `Contratos` | `Cirurgias` | `Unidades` | `Saldo Ata` | `Saldo Ata Hospital` | `Banco de Códigos`. A aba ativa recebe borda inferior `border-nexo-500` e texto `text-nexo-500`. As demais ficam em `text-steel-500 border-transparent`.
+2. **Abas Bloqueadas até Seleção:** As abas 2–6 iniciam com `opacity-40 cursor-not-allowed` e só são habilitadas quando o usuário seleciona um contrato na aba principal. A seleção é feita clicando em qualquer linha do grid de Contratos.
+3. **Banner de Contrato Selecionado:** Ao selecionar um contrato, um banner sutil aparece acima da tabela (`bg-nexo-500/10 border-nexo-500/30`) exibindo o código, material e cliente. O botão "Voltar para Contratos" (ícone ✕) limpa a seleção e retorna à aba Contratos.
+4. **Navegação Contratos → Cirurgias:** O clique numa linha da aba Contratos automaticamente seta o `selectedContract` no estado global e redireciona para a aba Cirurgias com os dados já filtrados por aquele `id_contrato`.
+5. **Deadline (Campo Virtual):** A coluna "Deadline" na aba Contratos não existe no banco. Ela é calculada em tempo real como `termino_ata - hoje` em dias, exibindo o resultado com cores condicionais: verde (`text-emerald-600`) para positivo e vermelho (`text-red-600`) para negativo/vencido.
+6. **Grid e Filtros:** Cada aba possui seu próprio array de colunas (`tabColumns`). O grid herda a mesma mecânica consolidada do projeto: filtros por checkbox com dropdown posicionado abaixo do cabeçalho, ordenação por clique, paginação minimalista e ícone de funil flutuante (`absolute right-1 top-1/2 -translate-y-1/2`).
+7. **Modal de Detalhes:** O clique em qualquer linha (exceto na aba Contratos, onde o clique seleciona o contrato) abre um modal genérico (`#detailModal`) com todos os campos da linha renderizados em layout chave-valor (2 colunas, `dl/dt/dd`). O modal usa `backdrop-blur-sm` e animação `scale-95 → scale-100`.
+8. **Controller JS (IIFE `OPME`):** O arquivo `public/js/cirurgias.js` encapsula toda a lógica no namespace `OPME` (padrão IIFE idêntico ao `IA` de itens arrematados). Estado global: `rawData`, `filteredData`, `viewData`, `filters`, `sort`, `pagination`, `currentTab`, `selectedContract`.

@@ -44,7 +44,7 @@ router.post('/', requirePermission('canManageRoles'), async (req, res) => {
         // Se for ADMIN, não permite remover nenhuma permissão vital
         let finalPermissions = permissions;
         if (upperName === 'ADMIN') {
-            finalPermissions = { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true, canCreateUsers: true, canManageRoles: true, canResetHeroku: true };
+            finalPermissions = { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true, canCreateUsers: true, canManageRoles: true, canResetHeroku: true, canViewOPME: true };
         }
 
         await pgPool.query(`

@@ -30,6 +30,7 @@ app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/heroku', require('./routes/heroku'));
 app.use('/api/vba', require('./routes/vba_integration'));
 app.use('/api/perfis', require('./routes/perfis'));
+app.use('/api/opme', require('./routes/opme'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
@@ -67,6 +68,10 @@ app.get('/agenda_licitacoes', (req, res) => {
 });
 
 // Nova rota para Dashboard
+app.get('/cirurgias', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'cirurgias.html'));
+});
+
 app.get('/dashboard', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });

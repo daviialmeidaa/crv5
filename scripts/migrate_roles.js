@@ -1,6 +1,6 @@
 const pgPool = require('../db/pgConnection');
 const rolePermissions = {
-    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true, canCreateUsers: true, canManageRoles: true, canResetHeroku: true, canReceiveEmailsLC: true, canReceiveEmailsCR: true },
+    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true, canCreateUsers: true, canManageRoles: true, canResetHeroku: true, canReceiveEmailsLC: true, canReceiveEmailsCR: true, canViewOPME: true },
     'CR1': { canViewCR: true, canViewLC: false, canViewUsers: false, canManageUsers: false, canViewClientes: false, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: false, canReceiveEmailsCR: true },
     'CR2': { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: false, canViewClientes: true, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: false, canReceiveEmailsCR: true },
     'CR3': { canViewCR: true, canViewLC: false, canViewUsers: true, canManageUsers: false, canViewClientes: true, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: false, canReceiveEmailsCR: true },
@@ -8,7 +8,11 @@ const rolePermissions = {
     'LC1': { canViewCR: false, canViewLC: true, canViewUsers: false, canManageUsers: false, canViewClientes: false, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: true, canReceiveEmailsCR: false },
     'LC2': { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: false, canViewClientes: false, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: true, canReceiveEmailsCR: false },
     'LC3': { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: false, canViewClientes: true, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: true, canReceiveEmailsCR: false },
-    'LC4': { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: false, canViewClientes: true, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: true, canReceiveEmailsCR: false }
+    'LC4': { canViewCR: false, canViewLC: true, canViewUsers: true, canManageUsers: false, canViewClientes: true, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: true, canReceiveEmailsCR: false, canViewOPME: false },
+    'OPME1': { canViewCR: false, canViewLC: false, canViewUsers: false, canManageUsers: false, canViewClientes: false, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: false, canReceiveEmailsCR: false, canViewOPME: true },
+    'OPME2': { canViewCR: false, canViewLC: false, canViewUsers: true, canManageUsers: false, canViewClientes: false, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: false, canReceiveEmailsCR: false, canViewOPME: true },
+    'OPME3': { canViewCR: false, canViewLC: false, canViewUsers: true, canManageUsers: false, canViewClientes: true, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: false, canReceiveEmailsCR: false, canViewOPME: true },
+    'OPME4': { canViewCR: false, canViewLC: false, canViewUsers: true, canManageUsers: false, canViewClientes: true, canCreateUsers: false, canManageRoles: false, canResetHeroku: false, canReceiveEmailsLC: false, canReceiveEmailsCR: false, canViewOPME: true }
 };
 
 async function migrateRoles() {

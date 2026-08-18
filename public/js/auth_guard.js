@@ -88,6 +88,11 @@
         return;
     }
     
+    if (currentPath === '/cirurgias' && user.role !== 'ADMIN' && !permissions.canViewOPME) {
+        window.location.replace('/403');
+        return;
+    }
+    
     if (currentPath === '/usuarios' && user.role !== 'ADMIN' && !permissions.canViewUsers) {
         window.location.replace('/403');
         return;
