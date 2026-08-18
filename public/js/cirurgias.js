@@ -1039,7 +1039,9 @@ const OPME = (() => {
     // ==========================================
     // 15. Lógica do Modal de Cirurgias (Agrupado)
     // ==========================================
-    function openCirurgiaModal(row) {
+    let unidadesCache = [];
+
+    async function openCirurgiaModal(row) {
         // Agrupar itens da mesma cirurgia
         const items = state.rawData.filter(r => 
             r.contrato === row.contrato && 
@@ -1064,13 +1066,49 @@ const OPME = (() => {
         // Preencher Campos Globais
         document.getElementById('fcContrato').value = ref.contrato || '';
         document.getElementById('fcAcao').value = ref.acao || '';
-        document.getElementById('fcLocal').value = ref.local_cirurgia || '';
         document.getElementById('fcPaciente').value = ref.paciente || '';
-        document.getElementById('fcData').value = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
         document.getElementById('fcProntuario').value = ref.prontuario || '';
         document.getElementById('fcMedico').value = ref.medico || '';
         document.getElementById('fcCRM').value = ref.crm || '';
         document.getElementById('fcCodCliente').value = ref.cod_cliente || '';
+
+        // Buscar e preencher Unidades (Local da Cirurgia)
+        try {
+            if (ref.contrato) {
+                const resUnidades = await fetch(`/api/opme/unidades?contrato=${ref.contrato}`, {
+                    headers: { 'Authorization': `Bearer ${getToken()}` }
+                });
+                if (resUnidades.ok) {
+                    unidadesCache = await resUnidades.json();
+                    const localSelect = document.getElementById('fcLocal');
+                    localSelect.innerHTML = '<option value="">Selecione...</option>';
+                    unidadesCache.forEach(u => {
+                        localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
+                    });
+                    localSelect.value = ref.local_cirurgia || '';
+                    
+                    // Event listener para auto-preencher Cod. Cliente ao alterar o Local
+                    localSelect.onchange = function() {
+                        const selectedOption = localSelect.options[localSelect.selectedIndex];
+                        const codCliente = selectedOption.getAttribute('data-cod');
+                        if (codCliente) {
+                            document.getElementById('fcCodCliente').value = codCliente;
+                        }
+                    };
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao carregar unidades:', err);
+        }
+
+        // Configurar o datepicker customizado e inicializá-content
+        const dataInput = document.getElementById('fcData');
+        dataInput.value = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
+        if (typeof window.CustomDatepicker !== 'undefined') {
+            window.CustomDatepicker.init(dataInput);
+        } else if (typeof window.initCustomDatepickers === 'function') {
+            window.initCustomDatepickers();
+        }
 
         // Preencher Faturamento e Status
         document.getElementById('fcEmpenho').value = ref.empenho || '';
@@ -1110,57 +1148,90 @@ const OPME = (() => {
     function renderProductBlock(item, idx) {
         const container = document.getElementById('cirurgiaProductsContainer');
         const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
+        const titleText = item.produto || 'NOVO PRODUTO';
+        const loteText = item.lote ? `- LOTE / ITEM ${item.lote}` : '';
         
         const block = document.createElement('div');
-        block.className = 'bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-700 rounded-lg p-4 product-block transition-colors';
+        block.className = 'produto-box product-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
         
         block.innerHTML = `
             ${idHtml}
-            <div class="flex items-center justify-between mb-3">
-                <h5 class="text-xs font-semibold text-steel-700 dark:text-gray-300 flex items-center gap-2">
-                    <svg class="w-4 h-4 text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                    PRODUTO #${idx + 1}
-                </h5>
-                <button type="button" onclick="OPME.removeCirurgiaProduct(this)" class="text-steel-400 hover:text-red-500 transition-colors p-1" title="Remover Produto da Interface">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
+            <!-- Header (Collapsible) -->
+            <div class="accordion-header flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-steel-700/60 select-none" onclick="OPME.toggleCirurgiaProduct(this)">
+                <div class="flex items-center gap-2">
+                    <svg class="accordion-icon w-4 h-4 text-steel-400 transition-transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <span class="prod-title-text text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">${titleText}</span>
+                    <span class="lote-title-suffix text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wide ml-1">${loteText}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="event.stopPropagation(); OPME.removeCirurgiaProduct(this)" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                        Remover
+                    </button>
+                </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div>
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Cód. Bio</label>
-                    <input type="number" class="prod-cod-bio w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none" value="${item.cod_bio || ''}">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Tipo de Cirurgia</label>
-                    <input type="text" class="prod-tipo w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none uppercase" value="${item.classificacao || ''}">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Produto</label>
-                    <input type="text" class="prod-nome w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none" value="${item.produto || ''}">
-                </div>
-                <div class="md:col-span-4">
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Descrição Personalizada</label>
-                    <input type="text" class="prod-desc w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none" value="${item.descricao_personalizada || ''}">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Quantidade</label>
-                    <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none text-right" value="${item.quantidade_utilizada || 0}">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Lote</label>
-                    <input type="text" class="prod-lote w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none uppercase" value="${item.lote || ''}">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Valor Unitário</label>
-                    <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none text-right" value="${item.valor_unitario !== null ? item.valor_unitario : ''}">
-                </div>
-                <div>
-                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Valor Total</label>
-                    <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-tot w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none text-right font-semibold" value="${item.valor_total !== null ? item.valor_total : ''}">
+            
+            <!-- Body -->
+            <div class="accordion-body hidden">
+                <div class="p-4 space-y-4">
+                    <div class="flex gap-4">
+                        <!-- Coluna Esquerda (50%) — Grid 2x3 -->
+                        <div class="w-1/2 grid grid-cols-2 gap-3 h-full content-start">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Bio</label>
+                                <input type="number" class="prod-cod-bio w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.cod_bio || ''}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Tipo de Cirurgia</label>
+                                <input type="text" class="prod-tipo w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.classificacao || ''}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote</label>
+                                <input type="text" oninput="this.closest('.produto-box').querySelector('.lote-title-suffix').textContent = this.value ? '- LOTE / ITEM ' + this.value : '';" class="prod-lote w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase" value="${item.lote || ''}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Quantidade</label>
+                                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all text-right" value="${item.quantidade_utilizada || 0}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
+                                <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all text-right" value="${item.valor_unitario !== null ? item.valor_unitario : ''}">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
+                                <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-tot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all text-right font-semibold" value="${item.valor_total !== null ? item.valor_total : ''}">
+                            </div>
+                        </div>
+
+                        <!-- Coluna Direita (50%) — Produto + Descrição -->
+                        <div class="w-1/2 flex flex-col gap-3 h-full">
+                            <div class="flex-1 flex flex-col">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Produto</label>
+                                <input type="text" oninput="this.closest('.produto-box').querySelector('.prod-title-text').textContent = this.value || 'NOVO PRODUTO';" class="prod-nome w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all flex-1" value="${item.produto || ''}">
+                            </div>
+                            <div class="flex-1 flex flex-col">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Descrição Personalizada</label>
+                                <textarea class="prod-desc w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none flex-1" style="min-height: 48px;">${item.descricao_personalizada || ''}</textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
         container.appendChild(block);
+    }
+
+    function toggleCirurgiaProduct(headerEl) {
+        const body = headerEl.nextElementSibling;
+        const icon = headerEl.querySelector('svg');
+        body.classList.toggle('hidden');
+        if (body.classList.contains('hidden')) {
+            icon.classList.remove('rotate-180');
+        } else {
+            icon.classList.add('rotate-180');
+        }
     }
 
     function addCirurgiaProduct() {
@@ -1316,6 +1387,7 @@ const OPME = (() => {
         closeDetailModal,
         openCirurgiaModal,
         closeCirurgiaModal,
+        toggleCirurgiaProduct,
         addCirurgiaProduct,
         removeCirurgiaProduct,
         calculateTotalCirurgia,

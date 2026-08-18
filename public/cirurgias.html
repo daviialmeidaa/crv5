@@ -437,7 +437,9 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Local da Cirurgia</label>
-                                <input type="text" id="fcLocal" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <select id="fcLocal" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                    <option value="">Selecione...</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -455,7 +457,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data da Cirurgia</label>
-                                <input type="date" id="fcData" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <input type="date" id="fcData" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Prontuário</label>
@@ -588,6 +590,7 @@
         });
     </script>
     <script src="/js/theme.js"></script>
+    <script src="/js/components/datepicker.js"></script>
     <script src="/js/layout.js"></script>
     <script src="/js/cirurgias.js"></script>
 </body>
