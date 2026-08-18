@@ -364,20 +364,88 @@ router.get('/saldo-ata', async (req, res) => {
 router.get('/saldo-ata-hospital', async (req, res) => {
     try {
         const { contrato } = req.query;
-        let query = 'SELECT * FROM opme.saldoatahospital';
+        let query = `
+            SELECT 
+                s.*,
+                COALESCE(c.qtd_utilizada, 0) AS quantidade_utilizada,
+                s.quantidade_ata - COALESCE(c.qtd_utilizada, 0) AS saldo
+            FROM opme.saldoatahospital s
+            LEFT JOIN (
+                SELECT contrato, item_pregao, local_cirurgia, SUM(quantidade_utilizada) as qtd_utilizada
+                FROM opme.cirurgias
+                WHERE acao = 'CIRURGIA'
+                GROUP BY contrato, item_pregao, local_cirurgia
+            ) c ON s.contrato = c.contrato AND s.item_ata = c.item_pregao AND s.unidade = c.local_cirurgia
+        `;
         const params = [];
         
         if (contrato) {
-            query += ' WHERE contrato = $1';
+            query += ' WHERE s.contrato = $1';
             params.push(contrato);
         }
-        query += ' ORDER BY id';
+        query += ' ORDER BY s.id';
         
         const result = await pgPool.query(query, params);
         res.json(result.rows);
     } catch (err) {
         console.error('[OPME] Erro ao buscar saldo ata hospital:', err.message);
         res.status(500).json({ error: 'Erro ao buscar saldo ata hospital' });
+    }
+});
+
+// ==========================================
+// POST /api/opme/saldo-ata-hospital
+// ==========================================
+router.post('/saldo-ata-hospital', async (req, res) => {
+    const { items } = req.body;
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Nenhum item enviado.' });
+    }
+
+    try {
+        await pgPool.query('BEGIN');
+        
+        for (const item of items) {
+            const { contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total } = item;
+            await pgPool.query(
+                `INSERT INTO opme.saldoatahospital (contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total]
+            );
+        }
+
+        await pgPool.query('COMMIT');
+        res.json({ message: 'Itens de saldo ata hospital inseridos com sucesso.' });
+    } catch (err) {
+        await pgPool.query('ROLLBACK');
+        console.error('[OPME] Erro ao inserir itens de saldo ata hospital:', err.message);
+        res.status(500).json({ error: 'Erro ao inserir itens de saldo ata hospital.' });
+    }
+});
+
+// ==========================================
+// PUT /api/opme/saldo-ata-hospital/:id
+// ==========================================
+router.put('/saldo-ata-hospital/:id', async (req, res) => {
+    const { id } = req.params;
+    const { contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total } = req.body;
+    
+    try {
+        const result = await pgPool.query(
+            `UPDATE opme.saldoatahospital 
+             SET contrato = $1, unidade = $2, item_ata = $3, descricao_item = $4, quantidade_ata = $5, valor_unitario = $6, valor_total = $7
+             WHERE id = $8 RETURNING *`,
+            [contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total, id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Item não encontrado.' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('[OPME] Erro ao atualizar item de saldo ata hospital:', err.message);
+        res.status(500).json({ error: 'Erro ao atualizar item de saldo ata hospital.' });
     }
 });
 
