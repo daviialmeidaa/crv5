@@ -269,6 +269,61 @@ router.put('/unidades/:id', async (req, res) => {
     }
 });
 // ==========================================
+// POST /api/opme/saldo-ata
+// ==========================================
+router.post('/saldo-ata', async (req, res) => {
+    const { items } = req.body;
+    if (!items || !Array.isArray(items)) {
+        return res.status(400).json({ error: 'Payload deve conter um array "items".' });
+    }
+
+    try {
+        await pgPool.query('BEGIN');
+        
+        for (const item of items) {
+            const { contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total } = item;
+            await pgPool.query(
+                `INSERT INTO opme.saldoata (contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total)
+                 VALUES ($1, $2, $3, $4, $5, $6)`,
+                [contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total]
+            );
+        }
+
+        await pgPool.query('COMMIT');
+        res.json({ message: 'Itens de saldo ata inseridos com sucesso.' });
+    } catch (err) {
+        await pgPool.query('ROLLBACK');
+        console.error('[OPME] Erro ao inserir itens de saldo ata:', err.message);
+        res.status(500).json({ error: 'Erro ao inserir itens de saldo ata.' });
+    }
+});
+
+// ==========================================
+// PUT /api/opme/saldo-ata/:id
+// ==========================================
+router.put('/saldo-ata/:id', async (req, res) => {
+    const { id } = req.params;
+    const { contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total } = req.body;
+    
+    try {
+        const result = await pgPool.query(
+            `UPDATE opme.saldoata 
+             SET contrato = $1, item_ata = $2, descricao_item = $3, quantidade_ata = $4, valor_unitario = $5, valor_total = $6
+             WHERE id = $7 RETURNING *`,
+            [contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total, id]
+        );
+        
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: 'Item não encontrado.' });
+        }
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('[OPME] Erro ao atualizar item de saldo ata:', err.message);
+        res.status(500).json({ error: 'Erro ao atualizar item de saldo ata.' });
+    }
+});
+
+// ==========================================
 // GET /api/opme/saldo-ata?contrato=BIO687
 // ==========================================
 router.get('/saldo-ata', async (req, res) => {

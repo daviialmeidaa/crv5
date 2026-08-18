@@ -2,6 +2,19 @@
  * Cirurgias OPME - Frontend Controller
  * Sistema de abas com grids filtráveis: Contratos, Cirurgias, Unidades, Saldo Ata, Saldo Ata Hospital, Banco de Códigos.
  */
+
+function formatCurrencyLive(input) {
+    let value = input.value.replace(/\D/g, "");
+    if (!value) {
+        input.value = "";
+        return;
+    }
+    value = (parseInt(value) / 100).toFixed(2) + "";
+    value = value.replace(".", ",");
+    value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+    input.value = "R$ " + value;
+}
+
 const OPME = (() => {
 
     function showToast(message, type = 'success') {
@@ -972,6 +985,16 @@ const OPME = (() => {
             }
         }
 
+        // Controle do botão Inserir Item Ata
+        const btnSaldoAta = document.getElementById('btnNewSaldoAta');
+        if (btnSaldoAta) {
+            if (tabId === 'saldoata') {
+                btnSaldoAta.classList.remove('hidden');
+            } else {
+                btnSaldoAta.classList.add('hidden');
+            }
+        }
+
         fetchData();
     }
 
@@ -1104,6 +1127,8 @@ const OPME = (() => {
             openCirurgiaModal(row);
         } else if (tab === 'unidades') {
             openUnidadeModal(idx);
+        } else if (tab === 'saldoata') {
+            openSaldoAtaModal(idx);
         } else {
             openDetailModal(row, tab);
         }
@@ -1908,6 +1933,251 @@ const OPME = (() => {
         }
     }
 
+    // ==========================================
+    // 16. Modal de Saldo Ata
+    // ==========================================
+    let currentSaldoAtaEditId = null;
+
+    function openSaldoAtaModal(idx) {
+        const modal = document.getElementById('modalSaldoAta');
+        const title = document.getElementById('saldoAtaModalTitle');
+        const form = document.getElementById('saldoAtaForm');
+        const container = document.getElementById('saldoAtaProductsContainer');
+        const btnAdd = document.getElementById('btnAdicionarSaldoAtaBlock');
+
+        form.reset();
+        container.innerHTML = '';
+        document.getElementById('fcSaldoAtaContrato').value = state.selectedContract ? state.selectedContract.id_contrato : '';
+
+        if (idx !== null && idx !== undefined) {
+            // Modo Edição
+            const item = state.viewData[idx];
+            if (!item) return;
+            currentSaldoAtaEditId = item.id;
+            title.innerHTML = `
+                <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Editar Item Ata
+            `;
+            btnAdd.classList.add('hidden'); // Ocultar botão de adicionar múltiplos no modo edição
+            renderSaldoAtaBlock(item, 0, false); // Renderiza apenas 1 bloco sem botão de remover
+        } else {
+            // Modo Criação
+            currentSaldoAtaEditId = null;
+            title.innerHTML = `
+                <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                Novo Item de Ata
+            `;
+            btnAdd.classList.remove('hidden');
+            renderSaldoAtaBlock({}, 0, true); // Renderiza 1 bloco inicial
+        }
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.modal-content').classList.add('scale-100', 'opacity-100');
+        });
+    }
+
+    function closeSaldoAtaModal() {
+        const modal = document.getElementById('modalSaldoAta');
+        const content = modal.querySelector('.modal-content');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            currentSaldoAtaEditId = null;
+        }, 300);
+    }
+
+    function toggleSaldoAtaProduct(header) {
+        const body = header.nextElementSibling;
+        const icon = header.querySelector('.accordion-icon');
+        if (body.classList.contains('hidden')) {
+            body.classList.remove('hidden');
+            icon.classList.remove('-rotate-90');
+        } else {
+            body.classList.add('hidden');
+            icon.classList.add('-rotate-90');
+        }
+    }
+
+    function renderSaldoAtaBlock(item, idx, canRemove) {
+        const container = document.getElementById('saldoAtaProductsContainer');
+        const block = document.createElement('div');
+        block.className = 'saldoata-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
+        
+        let removeBtnHtml = '';
+        if (canRemove) {
+            removeBtnHtml = `
+                <button type="button" onclick="event.stopPropagation(); OPME.removeSaldoAtaProduct(this)" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Item">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    Remover
+                </button>
+            `;
+        }
+
+        block.innerHTML = `
+            <div class="accordion-header flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-steel-700/60 select-none" onclick="OPME.toggleSaldoAtaProduct(this)">
+                <div class="flex items-center gap-2">
+                    <svg class="accordion-icon w-4 h-4 text-steel-400 transition-transform ${item.id ? '' : '-rotate-90'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <span class="text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">ITEM ATA ${item.item_ata ? '- ' + item.item_ata : ''}</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    ${removeBtnHtml}
+                </div>
+            </div>
+            
+            <div class="accordion-body ${item.id ? '' : 'hidden'}">
+                <div class="p-4 flex gap-4">
+                    <!-- Coluna da Esquerda (50%) -->
+                    <div class="w-1/2 grid grid-cols-2 gap-4">
+                        <!-- Linha 1 -->
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Item Ata</label>
+                            <input type="text" class="sa-item-ata w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase" value="${item.item_ata || ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Qtde Ata</label>
+                            <input type="number" step="0.01" oninput="OPME.calculateTotalSaldoAta(this)" class="sa-qtde w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.quantidade_ata || ''}">
+                        </div>
+                        <!-- Linha 2 -->
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Unitário</label>
+                            <input type="text" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAta(this)" class="sa-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario) : ''}">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Total</label>
+                            <input type="text" readonly class="sa-vlrtot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total) : ''}">
+                        </div>
+                    </div>
+                    
+                    <!-- Coluna da Direita (50%) -->
+                    <div class="w-1/2 flex flex-col">
+                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Descrição do Item</label>
+                        <textarea class="sa-descricao custom-scrollbar w-full flex-1 px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase resize-none">${item.descricao_item || ''}</textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(block);
+        
+        if (!item.id) {
+            // Expandir automaticamente o último se for novo e fechar os outros
+            const allBodies = container.querySelectorAll('.accordion-body');
+            allBodies.forEach(b => {
+                b.classList.add('hidden');
+                b.previousElementSibling.querySelector('.accordion-icon').classList.add('-rotate-90');
+            });
+            const lastBody = block.querySelector('.accordion-body');
+            lastBody.classList.remove('hidden');
+            lastBody.previousElementSibling.querySelector('.accordion-icon').classList.remove('-rotate-90');
+        }
+    }
+
+    function addSaldoAtaProduct() {
+        renderSaldoAtaBlock({}, 0, true);
+    }
+
+    function removeSaldoAtaProduct(btn) {
+        btn.closest('.saldoata-block').remove();
+    }
+
+    function calculateTotalSaldoAta(input) {
+        const block = input.closest('.saldoata-block');
+        const qtdeStr = block.querySelector('.sa-qtde').value;
+        const qtde = parseFloat(qtdeStr) || 0;
+        
+        const vlrUnStr = block.querySelector('.sa-vlrunit').value;
+        const vlrUn = parseCurrency(vlrUnStr) || 0;
+        
+        const total = qtde * vlrUn;
+        block.querySelector('.sa-vlrtot').value = formatCurrencyInput(total);
+    }
+
+    async function saveSaldoAta() {
+        const contrato = document.getElementById('fcSaldoAtaContrato').value;
+        if (!contrato) return showToast('Selecione um contrato antes de salvar.', 'warning');
+
+        const blocks = document.querySelectorAll('.saldoata-block');
+        if (blocks.length === 0) return showToast('Adicione pelo menos um item.', 'warning');
+
+        let items = [];
+        let hasError = false;
+
+        blocks.forEach(block => {
+            const item_ata = block.querySelector('.sa-item-ata').value.trim();
+            const descricao_item = block.querySelector('.sa-descricao').value.trim();
+            const quantidade_ata = parseFloat(block.querySelector('.sa-qtde').value) || 0;
+            const valor_unitario = parseCurrency(block.querySelector('.sa-vlrunit').value) || 0;
+            const valor_total = parseCurrency(block.querySelector('.sa-vlrtot').value) || 0;
+
+            items.push({
+                contrato,
+                item_ata,
+                descricao_item,
+                quantidade_ata,
+                valor_unitario,
+                valor_total
+            });
+        });
+
+        if (hasError) return;
+
+        try {
+            const btn = document.querySelector('#modalSaldoAta button:last-child');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = 'Aguarde...';
+            btn.disabled = true;
+
+            let url = '/api/opme/saldo-ata';
+            let method = 'POST';
+            let bodyData = { items };
+
+            if (currentSaldoAtaEditId) {
+                url = `/api/opme/saldo-ata/${currentSaldoAtaEditId}`;
+                method = 'PUT';
+                bodyData = items[0]; // Na edição, enviamos apenas 1 objeto, não um array
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify(bodyData)
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Erro ao salvar item(s)');
+            }
+
+            showToast(`Item(s) ${currentSaldoAtaEditId ? 'atualizado' : 'cadastrado'}(s) com sucesso!`, 'success');
+            closeSaldoAtaModal();
+            fetchData(); // Recarrega o grid
+
+        } catch (err) {
+            console.error('[OPME] Erro:', err);
+            showToast(err.message, 'error');
+        } finally {
+            const btn = document.querySelector('#modalSaldoAta button:last-child');
+            btn.innerHTML = `
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Salvar
+            `;
+            btn.disabled = false;
+        }
+    }
+
     // API pública
     return {
         openContratoModal,
@@ -1938,6 +2208,13 @@ const OPME = (() => {
         goToPage,
         selectContractByIdx,
         toggleContractStatus,
+        openSaldoAtaModal,
+        closeSaldoAtaModal,
+        toggleSaldoAtaProduct,
+        addSaldoAtaProduct,
+        removeSaldoAtaProduct,
+        calculateTotalSaldoAta,
+        saveSaldoAta,
         closeAccessContractModal: () => {
             contractToAccess = null;
             document.getElementById('accessContractModal').classList.add('hidden');
