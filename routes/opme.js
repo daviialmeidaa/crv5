@@ -13,8 +13,12 @@ router.use(requirePermission('canViewOPME'));
 // ==========================================
 router.get('/contratos', async (req, res) => {
     try {
-        const includeInactive = req.query.inativo === 'true';
-        const whereClause = includeInactive ? '' : 'WHERE inativo = false';
+        let whereClause = 'WHERE inativo = false';
+        if (req.query.inativos_only === 'true') {
+            whereClause = 'WHERE inativo = true';
+        } else if (req.query.inativo === 'true') {
+            whereClause = '';
+        }
         
         const result = await pgPool.query(`
             SELECT id, id_contrato, material, cod_cliente, cliente, uf, pregao, 

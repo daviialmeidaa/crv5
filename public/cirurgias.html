@@ -262,6 +262,16 @@
         <!-- Content Area -->
         <div class="flex-1 p-6 overflow-hidden flex flex-col">
             
+            <!-- Abas Principais (Ativos / Inativos) -->
+            <div id="mainTabsContainer" class="flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
+                <button class="main-tab px-4 py-2.5 text-sm font-medium border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 transition-colors" data-main-tab="contratos" onclick="OPME.switchTab('contratos')">
+                    Contratos Ativos
+                </button>
+                <button class="main-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 hover:text-steel-700 dark:text-steel-400 dark:hover:text-steel-300 transition-colors" data-main-tab="contratos_inativos" onclick="OPME.switchTab('contratos_inativos')">
+                    Contratos Inativos
+                </button>
+            </div>
+
             <!-- KPIs Dashboard (Apenas Contratos) -->
             <div id="kpisContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 fade-in-up">
                 <!-- Cirurgias Realizadas -->

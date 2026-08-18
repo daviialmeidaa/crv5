@@ -21,6 +21,19 @@ const OPME = (() => {
             { key: '_deadline', label: 'Deadline', type: 'deadline' },
             { key: 'actions', label: 'Ações', type: 'actions' }
         ],
+        contratos_inativos: [
+            { key: 'id_contrato', label: 'Contrato' },
+            { key: 'material', label: 'Material' },
+            { key: 'cod_cliente', label: 'Cód. Cliente', type: 'number' },
+            { key: 'cliente', label: 'Cliente' },
+            { key: 'uf', label: 'UF' },
+            { key: 'pregao', label: 'Pregão' },
+            { key: 'total_ata', label: 'Total Ata', type: 'currency' },
+            { key: 'inicio_ata', label: 'Início', type: 'date' },
+            { key: 'termino_ata', label: 'Término', type: 'date' },
+            { key: '_deadline', label: 'Deadline', type: 'deadline' },
+            { key: 'actions', label: 'Ações', type: 'actions' }
+        ],
         cirurgias: [
             { key: 'acao', label: 'Ação' },
             { key: 'paciente', label: 'Paciente' },
@@ -84,6 +97,7 @@ const OPME = (() => {
     // Mapeamento aba -> endpoint
     const tabEndpoints = {
         contratos: '/api/opme/contratos',
+        contratos_inativos: '/api/opme/contratos',
         cirurgias: '/api/opme/cirurgias',
         unidades: '/api/opme/unidades',
         saldoata: '/api/opme/saldo-ata',
@@ -232,7 +246,9 @@ const OPME = (() => {
             const params = new URLSearchParams();
 
             if (state.currentTab === 'contratos') {
-                // Contratos não filtra por contrato (exibe todos)
+                // Contratos não filtra por contrato (exibe todos ativos)
+            } else if (state.currentTab === 'contratos_inativos') {
+                params.set('inativos_only', 'true');
             } else if (state.selectedContract) {
                 params.set('contrato', state.selectedContract.id_contrato);
             }
@@ -380,7 +396,7 @@ const OPME = (() => {
 
         let html = '';
         state.viewData.forEach((row, idx) => {
-            const isContratosTab = state.currentTab === 'contratos';
+            const isContratosTab = state.currentTab === 'contratos' || state.currentTab === 'contratos_inativos';
             const cursorClass = 'cursor-pointer';
             const hoverClass = 'h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
             const clickHandler = `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
@@ -862,7 +878,7 @@ const OPME = (() => {
     // 10. Navegação de Abas
     // ==========================================
     function switchTab(tabId) {
-        if (tabId !== 'contratos' && !state.selectedContract) return;
+        if (tabId !== 'contratos' && tabId !== 'contratos_inativos' && !state.selectedContract) return;
 
         state.currentTab = tabId;
         state.sort = { key: null, dir: 'desc' };
@@ -878,6 +894,29 @@ const OPME = (() => {
             btn.classList.toggle('border-transparent', !isActive);
             btn.classList.toggle('text-steel-500', !isActive);
         });
+
+        // Atualizar UI das abas principais
+        if (tabId === 'contratos' || tabId === 'contratos_inativos') {
+            document.querySelectorAll('.main-tab').forEach(btn => {
+                const isActive = btn.dataset.mainTab === tabId;
+                btn.classList.toggle('border-nexo-500', isActive);
+                btn.classList.toggle('text-nexo-600', isActive);
+                btn.classList.toggle('dark:text-nexo-400', isActive);
+                btn.classList.toggle('border-transparent', !isActive);
+                btn.classList.toggle('text-steel-500', !isActive);
+                btn.classList.toggle('hover:text-steel-700', !isActive);
+                btn.classList.toggle('dark:hover:text-steel-300', !isActive);
+            });
+            
+            const kpisContainer = document.getElementById('kpisContainer');
+            if (kpisContainer) {
+                if (tabId === 'contratos_inativos') {
+                    kpisContainer.classList.add('hidden');
+                } else {
+                    kpisContainer.classList.remove('hidden');
+                }
+            }
+        }
 
         // Controle do botão Inserir Cirurgia
         const btnNew = document.getElementById('btnNewCirurgia');
@@ -903,8 +942,10 @@ const OPME = (() => {
 
         // Ocultar KPIs e mostrar Container de Abas
         const kpisContainer = document.getElementById('kpisContainer');
+        const mainTabsContainer = document.getElementById('mainTabsContainer');
         const tabsContainer = document.getElementById('tabsContainer');
         if (kpisContainer) kpisContainer.classList.add('hidden');
+        if (mainTabsContainer) mainTabsContainer.classList.add('hidden');
         if (tabsContainer) tabsContainer.classList.remove('hidden');
 
         // Mostrar banner
@@ -912,6 +953,17 @@ const OPME = (() => {
         if (banner) {
             const label = `${row.id_contrato} — ${(row.material || '').trim()} — ${(row.cliente || '').trim().substring(0, 60)}`;
             document.getElementById('contractBannerText').textContent = label;
+            
+            const badgeId = 'contractInactiveBadge';
+            let badge = document.getElementById(badgeId);
+            if (row.inativo) {
+                if (!badge) {
+                    document.getElementById('contractBannerText').insertAdjacentHTML('afterend', `<span id="${badgeId}" class="ml-3 px-2 py-0.5 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded text-[10px] font-bold tracking-wider align-middle">INATIVO</span>`);
+                }
+            } else if (badge) {
+                badge.remove();
+            }
+
             banner.classList.remove('hidden');
         }
 
@@ -978,15 +1030,19 @@ const OPME = (() => {
 
         // Mostrar KPIs e ocultar Container de Abas
         const kpisContainer = document.getElementById('kpisContainer');
+        const mainTabsContainer = document.getElementById('mainTabsContainer');
         const tabsContainer = document.getElementById('tabsContainer');
-        if (kpisContainer) kpisContainer.classList.remove('hidden');
+        if (mainTabsContainer) mainTabsContainer.classList.remove('hidden');
         if (tabsContainer) tabsContainer.classList.add('hidden');
 
         // Esconder banner
         const banner = document.getElementById('contractBanner');
         if (banner) banner.classList.add('hidden');
 
-        switchTab('contratos');
+        // Volta para a aba que estávamos antes de entrar no detalhe (ativos ou inativos)
+        // Por padrão vamos forçar voltar pra aba de contratos ativos se a atual não for inativos
+        const targetTab = document.querySelector('.main-tab[data-main-tab="contratos_inativos"]').classList.contains('text-nexo-600') ? 'contratos_inativos' : 'contratos';
+        switchTab(targetTab);
     }
 
     // ==========================================
@@ -996,7 +1052,7 @@ const OPME = (() => {
         const row = state.viewData[idx];
         if (!row) return;
 
-        if (tab === 'contratos') {
+        if (tab === 'contratos' || tab === 'contratos_inativos') {
             contractToAccess = row;
             document.getElementById('accessContractModalText').textContent = `Tem certeza que deseja acessar o contrato ${row.id_contrato}?`;
             document.getElementById('accessContractModal').classList.remove('hidden');
