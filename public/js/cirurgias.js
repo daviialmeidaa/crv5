@@ -503,7 +503,7 @@ const OPME = (() => {
                 html += `<span class="px-2 text-steel-400 text-sm">…</span>`;
             } else {
                 const isActive = p === current;
-                html += `<button onclick="OPME.goToPage(${p})" class="w-8 h-8 rounded-lg text-sm font-medium transition-colors ${isActive ? 'bg-nexo-500 text-white shadow-sm' : 'text-steel-600 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700'}">${p}</button>`;
+                html += `<button onclick="OPME.goToPage(${p})" class="px-3 py-1 text-sm font-medium rounded transition-colors ${isActive ? 'bg-nexo-50 dark:bg-nexo-900/30 text-nexo-600 dark:text-nexo-400' : 'text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700'}">${p}</button>`;
             }
         });
 
