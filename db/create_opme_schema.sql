@@ -5,6 +5,7 @@ CREATE SCHEMA IF NOT EXISTS opme;
 CREATE TABLE opme.Contratos (
     id SERIAL PRIMARY KEY,
     id_contrato VARCHAR(255) NOT NULL,
+    empresa VARCHAR(255),
     material VARCHAR(255),
     cod_cliente INTEGER,
     cliente VARCHAR(255),
@@ -22,7 +23,10 @@ CREATE TABLE opme.Unidades (
     contrato VARCHAR(255),
     cod_cliente INTEGER,
     hospital VARCHAR(255),
-    sigla VARCHAR(50)
+    sigla VARCHAR(50),
+    ir BOOLEAN DEFAULT FALSE,
+    aliquota DOUBLE PRECISION DEFAULT 0,
+    observacoes TEXT
 );
 
 -- Tabela Filha: BancoCodigos
@@ -92,4 +96,12 @@ CREATE TABLE opme.Cirurgias (
     status_expedicao VARCHAR(255),
     autorizacao_opme VARCHAR(255),
     nota_fiscal VARCHAR(255)
+);
+
+-- Tabela Filha: Observacoes
+CREATE TABLE IF NOT EXISTS opme.Observacoes (
+    id SERIAL PRIMARY KEY,
+    contrato VARCHAR(255),
+    cirurgia VARCHAR(255) UNIQUE,
+    observacao TEXT
 );

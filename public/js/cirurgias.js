@@ -102,6 +102,9 @@ const OPME = (() => {
             { key: 'cod_cliente', label: 'Cód. Cliente', type: 'number' },
             { key: 'hospital', label: 'Hospital' },
             { key: 'sigla', label: 'Sigla' },
+            { key: 'ir', label: 'IR', type: 'boolean' },
+            { key: 'aliquota', label: 'Alíquota', type: 'percent' },
+            { key: 'observacoes', label: 'Observações' },
         ],
         saldoata: [
             { key: 'item_ata', label: 'Item Ata' },
@@ -228,6 +231,9 @@ const OPME = (() => {
     function formatCell(val, col, row) {
         if (col.type === 'currency') return formatCurrency(val);
         if (col.type === 'date') return formatDate(val);
+        if (col.type === 'boolean') {
+            return val ? `<span class="inline-block w-3 h-3 rounded-full bg-nexo-500 shadow-sm" title="Sim"></span>` : `<span class="inline-block w-3 h-3 rounded-full bg-steel-300 dark:bg-steel-600 shadow-sm" title="Não"></span>`;
+        }
         if (col.type === 'deadline') {
             const dl = calcDeadline(row.termino_ata);
             return dl.label;
@@ -236,6 +242,10 @@ const OPME = (() => {
             if (val === null || val === undefined) return '-';
             if (col.key === 'cod_cliente' || col.key === 'cod_bio') return String(val);
             return Number(val).toLocaleString('pt-BR');
+        }
+        if (col.type === 'percent') {
+            if (val === null || val === undefined || val === 0 || val === '0') return '-';
+            return `${String(val).replace('.', ',')}%`;
         }
         return val !== null && val !== undefined && val !== '' ? String(val).trim() : '-';
     }
@@ -391,7 +401,7 @@ const OPME = (() => {
         const thead = document.getElementById('opmeTableHead');
         if (!thead) return;
 
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
+        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[11px] font-medium">';
         cols.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
@@ -400,9 +410,9 @@ const OPME = (() => {
             const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
             html += `
-                <th class="px-3 py-2 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[70px] select-none relative align-middle"
+                <th class="px-2 py-1.5 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[46px] select-none relative align-middle"
                      data-col="${col.key}">
-                    <div class="flex items-center justify-center gap-1.5 w-full h-full px-4">
+                    <div class="flex items-center justify-center gap-1 w-full h-full px-3">
                         <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
@@ -438,7 +448,7 @@ const OPME = (() => {
         state.viewData.forEach((row, idx) => {
             const isContratosTab = state.currentTab === 'contratos' || state.currentTab === 'contratos_inativos';
             const cursorClass = 'cursor-pointer';
-            const hoverClass = 'h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
+            const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 relative z-0 hover:z-10 group';
             const clickHandler = `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
@@ -469,12 +479,29 @@ const OPME = (() => {
                     let alignClass = 'text-center';
                     let wrapClass = 'whitespace-nowrap';
 
+                    // Colunas textuais longas: quebra + line-clamp de 3 linhas
                     if (col.key === 'produto' || col.key === 'descricao_personalizada' || col.key === 'descricao_item') {
                         alignClass = 'text-left';
-                        wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[450px]';
+                        wrapClass = 'max-w-[280px]';
                     }
+
+                    if (col.key === 'observacoes') {
+                        alignClass = 'text-left';
+                        wrapClass = 'max-w-[220px]';
+                    }
+
+                    if (col.key === 'cliente' || col.key === 'material' || col.key === 'hospital') {
+                        alignClass = 'text-left';
+                        wrapClass = 'max-w-[200px]';
+                    }
+
+                    // Aplicar line-clamp nas colunas com max-w
+                    const needsClamp = wrapClass.includes('max-w');
+                    const cellContent = needsClamp 
+                        ? `<span class="line-clamp-3">${val}</span>` 
+                        : val;
                     
-                    html += `<td class="px-3 py-3 text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
+                    html += `<td class="px-2 py-2 text-[12px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${cellContent}</td>`;
                 }
             });
             html += '</tr>';
@@ -1228,6 +1255,9 @@ const OPME = (() => {
         editingCirurgiaItems = []; // Flag de que é inserção
 
         const modal = document.getElementById('cirurgiaModal');
+        
+        switchCirurgiaModalTab('dados');
+        document.getElementById('fcCirurgiaObservacoes').value = '';
         const titleSpan = document.getElementById('cirurgiaModalSubtitle');
         const btnSave = document.getElementById('btnSaveCirurgia');
         const btnDelete = document.getElementById('btnDeleteCirurgia');
@@ -1311,6 +1341,7 @@ const OPME = (() => {
         form.reset();
         
         const inputId = document.getElementById('fcContratoId');
+        const inputEmpresa = document.getElementById('fcContratoEmpresa');
 
         if (idx !== null) {
             // Edit mode
@@ -1321,6 +1352,10 @@ const OPME = (() => {
             inputId.value = row.id_contrato || '';
             inputId.readOnly = true;
             inputId.classList.add('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
+
+            inputEmpresa.value = row.empresa || '';
+            inputEmpresa.disabled = true;
+            inputEmpresa.classList.add('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
             
             document.getElementById('fcContratoMaterial').value = row.material || '';
             document.getElementById('fcContratoCodCliente').value = row.cod_cliente || '';
@@ -1340,8 +1375,23 @@ const OPME = (() => {
             // New mode
             editingContratoId = null;
             titleSpan.textContent = 'Novo Contrato';
+            
+            inputId.value = '';
             inputId.readOnly = false;
             inputId.classList.remove('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
+
+            inputEmpresa.value = '';
+            inputEmpresa.disabled = false;
+            inputEmpresa.classList.remove('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
+            
+            document.getElementById('fcContratoMaterial').value = '';
+            document.getElementById('fcContratoCodCliente').value = '';
+            document.getElementById('fcContratoCliente').value = '';
+            document.getElementById('fcContratoUf').value = '';
+            document.getElementById('fcContratoPregao').value = '';
+            document.getElementById('fcContratoTotalAta').value = '';
+            document.getElementById('fcContratoInicio').value = '';
+            document.getElementById('fcContratoTermino').value = '';
         }
 
         modal.classList.remove('hidden');
@@ -1372,8 +1422,9 @@ const OPME = (() => {
     async function saveContrato() {
         const payload = {
             id_contrato: document.getElementById('fcContratoId').value.toUpperCase(),
+            empresa: document.getElementById('fcContratoEmpresa').value,
             material: document.getElementById('fcContratoMaterial').value.toUpperCase(),
-            cod_cliente: document.getElementById('fcContratoCodCliente').value,
+            cod_cliente: document.getElementById('fcContratoCodCliente').value || null,
             cliente: document.getElementById('fcContratoCliente').value.toUpperCase(),
             uf: document.getElementById('fcContratoUf').value,
             pregao: document.getElementById('fcContratoPregao').value.toUpperCase(),
@@ -1444,11 +1495,21 @@ const OPME = (() => {
             document.getElementById('fcUnidadeCodCliente').value = row.cod_cliente || '';
             document.getElementById('fcUnidadeHospital').value = row.hospital || '';
             document.getElementById('fcUnidadeSigla').value = row.sigla || '';
+            
+            document.getElementById('fcUnidadeIR').checked = !!row.ir;
+            document.getElementById('fcUnidadeAliquota').value = row.aliquota || '';
+            document.getElementById('fcUnidadeObservacoes').value = row.observacoes || '';
+            toggleIRObservacoes();
         } else {
             // New mode
             editingUnidadeId = null;
             titleSpan.textContent = 'Nova Unidade';
             inputContrato.value = state.selectedContract ? state.selectedContract.id_contrato : '';
+            
+            document.getElementById('fcUnidadeIR').checked = false;
+            document.getElementById('fcUnidadeAliquota').value = '';
+            document.getElementById('fcUnidadeObservacoes').value = '';
+            toggleIRObservacoes();
         }
         
         modal.classList.remove('hidden');
@@ -1476,12 +1537,25 @@ const OPME = (() => {
         }, 300);
     }
 
+    function toggleIRObservacoes() {
+        const isChecked = document.getElementById('fcUnidadeIR').checked;
+        const obsContainer = document.getElementById('unidadeObsContainer');
+        if (isChecked) {
+            obsContainer.classList.remove('hidden');
+        } else {
+            obsContainer.classList.add('hidden');
+        }
+    }
+
     async function saveUnidade() {
         const payload = {
             contrato: document.getElementById('fcUnidadeContrato').value.toUpperCase(),
             cod_cliente: document.getElementById('fcUnidadeCodCliente').value,
             hospital: document.getElementById('fcUnidadeHospital').value.toUpperCase(),
-            sigla: document.getElementById('fcUnidadeSigla').value.toUpperCase()
+            sigla: document.getElementById('fcUnidadeSigla').value.toUpperCase(),
+            ir: document.getElementById('fcUnidadeIR').checked,
+            aliquota: parseFloat(document.getElementById('fcUnidadeAliquota').value.replace(',', '.')) || 0,
+            observacoes: document.getElementById('fcUnidadeObservacoes').value
         };
 
         if (!payload.contrato) {
@@ -1514,6 +1588,38 @@ const OPME = (() => {
         }
     }
 
+    function switchCirurgiaModalTab(tabId) {
+        document.getElementById('cirurgiaTabDados').classList.add('hidden');
+        document.getElementById('cirurgiaTabDados').classList.remove('block');
+        document.getElementById('cirurgiaTabObs').classList.add('hidden');
+        document.getElementById('cirurgiaTabObs').classList.remove('block');
+
+        document.getElementById('tabBtnCirurgiaDados').classList.remove('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+        document.getElementById('tabBtnCirurgiaDados').classList.add('border-transparent', 'text-steel-500');
+        document.getElementById('tabBtnCirurgiaObs').classList.remove('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+        document.getElementById('tabBtnCirurgiaObs').classList.add('border-transparent', 'text-steel-500');
+
+        if (tabId === 'dados') {
+            document.getElementById('cirurgiaTabDados').classList.remove('hidden');
+            document.getElementById('cirurgiaTabDados').classList.add('block');
+            document.getElementById('tabBtnCirurgiaDados').classList.remove('border-transparent', 'text-steel-500');
+            document.getElementById('tabBtnCirurgiaDados').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+        } else if (tabId === 'obs') {
+            document.getElementById('cirurgiaTabObs').classList.remove('hidden');
+            document.getElementById('cirurgiaTabObs').classList.add('block');
+            document.getElementById('tabBtnCirurgiaObs').classList.remove('border-transparent', 'text-steel-500');
+            document.getElementById('tabBtnCirurgiaObs').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+            // Auto-resize quando a aba se torna visível
+            setTimeout(() => {
+                const ta = document.getElementById('fcCirurgiaObservacoes');
+                if (ta) {
+                    ta.style.height = 'auto';
+                    ta.style.height = ta.scrollHeight + 'px';
+                }
+            }, 50);
+        }
+    }
+
     async function openCirurgiaModal(row) {
         // Agrupar itens da mesma cirurgia
         const items = state.rawData.filter(r => 
@@ -1535,6 +1641,28 @@ const OPME = (() => {
         document.getElementById('cirurgiaProductsContainer').innerHTML = '';
 
         titleSpan.textContent = `${ref.paciente} (${formatDate(ref.data_cirurgia)})`;
+
+        switchCirurgiaModalTab('dados');
+        document.getElementById('fcCirurgiaObservacoes').value = '';
+        document.getElementById('fcCirurgiaObservacoes').style.height = 'auto';
+        document.getElementById('fcCirurgiaObservacoes').oninput = function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        };
+
+        // Gerar Observação dinamicamente a partir dos dados atuais
+        const dateStr = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
+        try {
+            const obsRes = await fetch(`/api/opme/observacoes/generate?contrato=${encodeURIComponent(ref.contrato)}&paciente=${encodeURIComponent(ref.paciente)}&data_cirurgia=${encodeURIComponent(dateStr)}`, {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if(obsRes.ok) {
+                const obsData = await obsRes.json();
+                document.getElementById('fcCirurgiaObservacoes').value = obsData.observacao || '';
+            }
+        } catch(e) {
+            console.error('Erro ao gerar observação', e);
+        }
 
         // Preencher Campos Globais
         document.getElementById('fcContrato').value = ref.contrato || '';
@@ -1601,6 +1729,7 @@ const OPME = (() => {
 
         if (canEditCirurgia) {
             btnSave.classList.remove('hidden');
+            btnSave.textContent = 'Salvar';
         } else {
             btnSave.classList.add('hidden');
         }
@@ -1862,6 +1991,23 @@ const OPME = (() => {
 
             if (!res.ok) throw new Error('Erro ao salvar cirurgia');
             
+            // Salvar Observação (somente na EDIÇÃO — na criação o backend gera automaticamente)
+            if (!isCreating) {
+                const dateStr = commonData.data_cirurgia;
+                const cirurgiaId = `${commonData.contrato}_${commonData.paciente}_${dateStr}`.toUpperCase().replace(/\s+/g, '_');
+                const observacao = document.getElementById('fcCirurgiaObservacoes').value;
+                if (cirurgiaId && cirurgiaId.length > 5) {
+                    await fetch('/api/opme/observacoes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getToken()}`
+                        },
+                        body: JSON.stringify({ contrato: commonData.contrato, cirurgia: cirurgiaId, observacao })
+                    }).catch(e => console.error('Erro ao salvar observação', e));
+                }
+            }
+
             showToast(isCreating ? 'Cirurgia criada com sucesso' : 'Cirurgia atualizada com sucesso', 'success');
             closeCirurgiaModal();
             fetchData(); // Recarrega os dados para atualizar a grid
@@ -2482,10 +2628,12 @@ const OPME = (() => {
         openUnidadeModal,
         closeUnidadeModal,
         saveUnidade,
+        toggleIRObservacoes,
         handleSort,
         openFilter,
         closeFilter,
         switchTab,
+        switchCirurgiaModalTab,
         clearContract,
         handleRowClick,
         closeDetailModal,

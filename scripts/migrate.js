@@ -84,6 +84,7 @@ async function runMigrations() {
             CREATE TABLE IF NOT EXISTS opme.Contratos (
                 id SERIAL PRIMARY KEY,
                 id_contrato VARCHAR(255) NOT NULL,
+                empresa VARCHAR(255),
                 material VARCHAR(255),
                 cod_cliente INTEGER,
                 cliente VARCHAR(255),
@@ -100,7 +101,9 @@ async function runMigrations() {
                 contrato VARCHAR(255),
                 cod_cliente INTEGER,
                 hospital VARCHAR(255),
-                sigla VARCHAR(50)
+                sigla VARCHAR(50),
+                ir BOOLEAN DEFAULT FALSE,
+                observacoes TEXT
             );
 
             CREATE TABLE IF NOT EXISTS opme.BancoCodigos (
@@ -166,6 +169,24 @@ async function runMigrations() {
                 status_expedicao VARCHAR(255),
                 autorizacao_opme VARCHAR(255),
                 nota_fiscal VARCHAR(255)
+            );
+        `);
+
+        console.log('Verificando colunas extras na tabela opme.Contratos e opme.Unidades...');
+        await client.query(`
+            ALTER TABLE opme.Contratos ADD COLUMN IF NOT EXISTS empresa VARCHAR(255);
+            ALTER TABLE opme.Unidades ADD COLUMN IF NOT EXISTS ir BOOLEAN DEFAULT FALSE;
+            ALTER TABLE opme.Unidades ADD COLUMN IF NOT EXISTS aliquota DOUBLE PRECISION DEFAULT 0;
+            ALTER TABLE opme.Unidades ADD COLUMN IF NOT EXISTS observacoes TEXT;
+        `);
+
+        console.log('Verificando/Criando tabela de Observações (Cirurgias)...');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS opme.Observacoes (
+                id SERIAL PRIMARY KEY,
+                contrato VARCHAR(255),
+                cirurgia VARCHAR(255) UNIQUE,
+                observacao TEXT
             );
         `);
 
