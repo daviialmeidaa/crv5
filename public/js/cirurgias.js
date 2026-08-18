@@ -1397,7 +1397,7 @@ const OPME = (() => {
     async function saveContrato() {
         const payload = {
             id_contrato: document.getElementById('fcContratoId').value.toUpperCase(),
-            empresa: document.getElementById('fcContratoEmpresa').value.toUpperCase(),
+            empresa: document.getElementById('fcContratoEmpresa').value,
             material: document.getElementById('fcContratoMaterial').value.toUpperCase(),
             cod_cliente: document.getElementById('fcContratoCodCliente').value || null,
             cliente: document.getElementById('fcContratoCliente').value.toUpperCase(),
