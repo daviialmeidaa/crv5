@@ -116,6 +116,8 @@ const OPME = (() => {
     };
 
     let editingCirurgiaItems = [];
+    let contractToAccess = null;
+    let contractToToggle = null;
     let userRole = '';
     try {
         const u = JSON.parse(localStorage.getItem('user'));
@@ -180,6 +182,7 @@ const OPME = (() => {
         }
         if (col.type === 'number') {
             if (val === null || val === undefined) return '-';
+            if (col.key === 'cod_cliente' || col.key === 'cod_bio') return String(val);
             return Number(val).toLocaleString('pt-BR');
         }
         return val !== null && val !== undefined && val !== '' ? String(val).trim() : '-';
@@ -378,9 +381,9 @@ const OPME = (() => {
         let html = '';
         state.viewData.forEach((row, idx) => {
             const isContratosTab = state.currentTab === 'contratos';
-            const cursorClass = isContratosTab ? '' : 'cursor-pointer';
+            const cursorClass = 'cursor-pointer';
             const hoverClass = 'h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
-            const clickHandler = isContratosTab ? '' : `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
+            const clickHandler = `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
                          ${clickHandler}>`;
@@ -396,9 +399,6 @@ const OPME = (() => {
 
                     html += `<td class="px-3 py-3 text-center align-middle w-24">
                         <div class="flex items-center justify-center gap-2">
-                            <button onclick="event.stopPropagation(); OPME.selectContractByIdx(${idx})" class="p-1.5 text-steel-500 hover:text-nexo-600 hover:bg-nexo-50 dark:text-steel-400 dark:hover:text-nexo-400 dark:hover:bg-steel-700 rounded-lg transition-colors" title="Acessar Contrato">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                            </button>
                             <button onclick="event.stopPropagation(); OPME.toggleContractStatus(${row.id}, ${isInactive})" class="p-1.5 rounded-lg transition-colors ${toggleColor}" title="${toggleTitle}">
                                 ${toggleIcon}
                             </button>
@@ -924,10 +924,22 @@ const OPME = (() => {
         if (row) selectContract(row);
     }
 
-    async function toggleContractStatus(id, currentStatus) {
-        if (!confirm(`Deseja realmente ${currentStatus ? 'ativar' : 'desativar'} este contrato?`)) return;
+    function toggleContractStatus(id, currentStatus) {
+        contractToToggle = { id, currentStatus };
+        document.getElementById('toggleContractModalText').textContent = `Deseja realmente ${currentStatus ? 'ativar' : 'desativar'} este contrato?`;
+        document.getElementById('toggleContractModal').classList.remove('hidden');
+    }
+
+    async function confirmToggleContract() {
+        if (!contractToToggle) return;
+        const { id, currentStatus } = contractToToggle;
         
         try {
+            const btn = document.getElementById('btnConfirmToggle');
+            const originalText = btn.textContent;
+            btn.textContent = 'Aguarde...';
+            btn.disabled = true;
+
             const response = await fetch(`/api/opme/contratos/${id}/status`, {
                 method: 'PUT',
                 headers: {
@@ -942,9 +954,16 @@ const OPME = (() => {
             // Recarregar dados
             fetchData();
             fetchKpis();
+            
+            document.getElementById('toggleContractModal').classList.add('hidden');
+            contractToToggle = null;
+            btn.textContent = originalText;
+            btn.disabled = false;
         } catch (error) {
             console.error(error);
-            alert('Não foi possível alterar o status do contrato.');
+            showToast('Não foi possível alterar o status do contrato.', 'error');
+            document.getElementById('btnConfirmToggle').textContent = 'Confirmar';
+            document.getElementById('btnConfirmToggle').disabled = false;
         }
     }
 
@@ -978,7 +997,9 @@ const OPME = (() => {
         if (!row) return;
 
         if (tab === 'contratos') {
-            selectContract(row);
+            contractToAccess = row;
+            document.getElementById('accessContractModalText').textContent = `Tem certeza que deseja acessar o contrato ${row.id_contrato}?`;
+            document.getElementById('accessContractModal').classList.remove('hidden');
         } else if (tab === 'cirurgias') {
             openCirurgiaModal(row);
         } else {
@@ -1592,6 +1613,22 @@ const OPME = (() => {
         fetchProdutoInfo,
         goToPage,
         selectContractByIdx,
-        toggleContractStatus
+        toggleContractStatus,
+        closeAccessContractModal: () => {
+            contractToAccess = null;
+            document.getElementById('accessContractModal').classList.add('hidden');
+        },
+        confirmAccessContract: () => {
+            if (contractToAccess) {
+                selectContract(contractToAccess);
+                contractToAccess = null;
+                document.getElementById('accessContractModal').classList.add('hidden');
+            }
+        },
+        closeToggleContractModal: () => {
+            contractToToggle = null;
+            document.getElementById('toggleContractModal').classList.add('hidden');
+        },
+        confirmToggleContract
     };
 })();
