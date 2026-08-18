@@ -429,11 +429,16 @@
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Contrato</label>
-                                <input type="text" id="fcContrato" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <input type="text" id="fcContrato" disabled tabindex="-1" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Ação</label>
-                                <input type="text" id="fcAcao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <select id="fcAcao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    <option value="">Selecione...</option>
+                                    <option value="CIRURGIA">CIRURGIA</option>
+                                    <option value="RETORNO">RETORNO</option>
+                                    <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                                </select>
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Local da Cirurgia</label>
@@ -475,7 +480,7 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cod. Cliente</label>
-                                <input type="number" id="fcCodCliente" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <input type="number" id="fcCodCliente" readonly tabindex="-1" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all pointer-events-none">
                             </div>
                         </div>
                     </div>
@@ -518,22 +523,30 @@
                                 <input type="number" id="fcPedido" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nota Fiscal</label>
-                                <input type="text" id="fcNotaFiscal" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status Retorno Consignação</label>
+                                <select id="fcRetornoConsignacao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    <option value="">Selecione...</option>
+                                    <option value="AGUARDANDO">AGUARDANDO</option>
+                                    <option value="FEITO">FEITO</option>
+                                </select>
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status Retorno Consignação</label>
-                                <input type="text" id="fcRetornoConsignacao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
-                            </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status Expedição</label>
                                 <input type="text" id="fcStatusExpedicao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status Autorização OPME</label>
-                                <input type="text" id="fcAutorizacaoOpme" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <select id="fcAutorizacaoOpme" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    <option value="">Selecione...</option>
+                                    <option value="NÃO FATURAR">NÃO FATURAR</option>
+                                    <option value="FATURAR">FATURAR</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nota Fiscal</label>
+                                <input type="text" id="fcNotaFiscal" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                         </div>
                     </div>
@@ -547,11 +560,11 @@
                     <span id="fcTotalGlobal" class="text-lg font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">R$ 0,00</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button type="button" onclick="OPME.closeCirurgiaModal()" class="px-4 py-2 text-sm font-medium text-steel-600 dark:text-steel-300 bg-white dark:bg-steel-700 border border-gray-200 dark:border-steel-600 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-600 transition-colors shadow-sm">
+                    <button type="button" onclick="OPME.closeCirurgiaModal()" class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
                         Cancelar
                     </button>
-                    <button type="button" id="btnSaveCirurgia" onclick="OPME.saveCirurgia()" class="hidden px-5 py-2 text-sm font-medium text-white bg-nexo-500 hover:bg-nexo-600 rounded-lg shadow-sm shadow-nexo-500/20 transition-all">
-                        Salvar Alterações
+                    <button type="button" id="btnSaveCirurgia" onclick="OPME.saveCirurgia()" class="hidden px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg shadow-sm transition-colors">
+                        Salvar
                     </button>
                 </div>
             </div>
