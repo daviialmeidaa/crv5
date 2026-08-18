@@ -879,6 +879,16 @@ const OPME = (() => {
             btn.classList.toggle('text-steel-500', !isActive);
         });
 
+        // Controle do botão Inserir Cirurgia
+        const btnNew = document.getElementById('btnNewCirurgia');
+        if (btnNew) {
+            if (tabId === 'cirurgias' && canEditCirurgia) {
+                btnNew.classList.remove('hidden');
+            } else {
+                btnNew.classList.add('hidden');
+            }
+        }
+
         fetchData();
     }
 
@@ -1055,6 +1065,82 @@ const OPME = (() => {
     // 15. Lógica do Modal de Cirurgias (Agrupado)
     // ==========================================
     let unidadesCache = [];
+
+    async function openNewCirurgiaModal() {
+        if (!state.selectedContract) return;
+
+        editingCirurgiaItems = []; // Flag de que é inserção
+
+        const modal = document.getElementById('cirurgiaModal');
+        const titleSpan = document.getElementById('cirurgiaModalSubtitle');
+        const btnSave = document.getElementById('btnSaveCirurgia');
+        const btnDelete = document.getElementById('btnDeleteCirurgia');
+
+        document.getElementById('cirurgiaForm').reset();
+        document.getElementById('cirurgiaProductsContainer').innerHTML = '';
+
+        titleSpan.textContent = `Nova Cirurgia - ${state.selectedContract.contrato}`;
+
+        // Preencher Campos Iniciais
+        document.getElementById('fcContrato').value = state.selectedContract.contrato || '';
+        
+        // Buscar e preencher Unidades (Local da Cirurgia)
+        try {
+            const resUnidades = await fetch(`/api/opme/unidades?contrato=${state.selectedContract.contrato}`, {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (resUnidades.ok) {
+                unidadesCache = await resUnidades.json();
+                const localSelect = document.getElementById('fcLocal');
+                localSelect.innerHTML = '<option value="">Selecione...</option>';
+                unidadesCache.forEach(u => {
+                    localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
+                });
+                
+                localSelect.onchange = function() {
+                    const selectedOption = localSelect.options[localSelect.selectedIndex];
+                    const codCliente = selectedOption.getAttribute('data-cod');
+                    if (codCliente) {
+                        document.getElementById('fcCodCliente').value = codCliente;
+                    } else {
+                        document.getElementById('fcCodCliente').value = '';
+                    }
+                };
+            }
+        } catch (err) {
+            console.error('Erro ao carregar unidades:', err);
+        }
+
+        const dataInput = document.getElementById('fcData');
+        if (typeof window.CustomDatepicker !== 'undefined') {
+            window.CustomDatepicker.init(dataInput);
+        } else if (typeof window.initCustomDatepickers === 'function') {
+            window.initCustomDatepickers();
+        }
+
+        // Adiciona um bloco vazio e limpa IDs
+        addCirurgiaProduct();
+
+        if (canEditCirurgia) {
+            btnSave.classList.remove('hidden');
+            btnSave.textContent = 'Criar Cirurgia';
+            document.querySelectorAll('#cirurgiaForm input:not([readonly]):not([disabled]), #cirurgiaForm select:not([readonly]):not([disabled])').forEach(el => el.disabled = false);
+        }
+        
+        if (btnDelete) btnDelete.classList.add('hidden');
+
+        // Resetar KPIs
+        document.getElementById('fcTotalGlobal').textContent = 'R$ 0,00';
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        const content = modal.querySelector('.modal-content');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
 
     async function openCirurgiaModal(row) {
         // Agrupar itens da mesma cirurgia
@@ -1385,6 +1471,8 @@ const OPME = (() => {
             itemsPayload.push(itemData);
         });
 
+        const isCreating = !editingCirurgiaItems || editingCirurgiaItems.length === 0;
+
         try {
             const btnSave = document.getElementById('btnSaveCirurgia');
             const originalText = btnSave.innerHTML;
@@ -1392,7 +1480,7 @@ const OPME = (() => {
             btnSave.disabled = true;
 
             const res = await fetch('/api/opme/cirurgias', {
-                method: 'PUT',
+                method: isCreating ? 'POST' : 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${getToken()}`
@@ -1402,12 +1490,18 @@ const OPME = (() => {
 
             if (!res.ok) throw new Error('Erro ao salvar cirurgia');
             
-            showToast('Cirurgia atualizada com sucesso', 'success');
+            showToast(isCreating ? 'Cirurgia criada com sucesso' : 'Cirurgia atualizada com sucesso', 'success');
             closeCirurgiaModal();
             fetchData(); // Recarrega os dados para atualizar a grid
+            
+            btnSave.innerHTML = originalText;
+            btnSave.disabled = false;
         } catch (err) {
             console.error(err);
             showToast('Falha ao salvar. Tente novamente.', 'error');
+            const btnSave = document.getElementById('btnSaveCirurgia');
+            btnSave.textContent = isCreating ? 'Criar Cirurgia' : 'Salvar';
+            btnSave.disabled = false;
         } finally {
             const btnSave = document.getElementById('btnSaveCirurgia');
             if (btnSave) {
@@ -1485,6 +1579,7 @@ const OPME = (() => {
         handleRowClick,
         closeDetailModal,
         openCirurgiaModal,
+        openNewCirurgiaModal,
         closeCirurgiaModal,
         toggleCirurgiaProduct,
         addCirurgiaProduct,

@@ -334,10 +334,16 @@
                     <span class="text-sm font-semibold text-nexo-700 dark:text-nexo-300">Contrato:</span>
                     <span id="contractBannerText" class="text-sm text-steel-700 dark:text-gray-300 font-medium truncate"></span>
                 </div>
-                <button onclick="OPME.clearContract()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-steel-500 dark:text-steel-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-all shadow-sm">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    Voltar para Contratos
-                </button>
+                <div class="flex items-center gap-2">
+                    <button id="btnNewCirurgia" onclick="OPME.openNewCirurgiaModal()" class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                        Inserir Cirurgia
+                    </button>
+                    <button onclick="OPME.clearContract()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-steel-500 dark:text-steel-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        Voltar para Contratos
+                    </button>
+                </div>
             </div>
 
             <!-- Tabela -->

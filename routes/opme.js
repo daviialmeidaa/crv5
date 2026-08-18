@@ -230,7 +230,59 @@ router.get('/produto-info', async (req, res) => {
         res.status(500).json({ error: 'Erro interno ao buscar informações do produto.' });
     }
 });
+// ==========================================
+// POST /api/opme/cirurgias
+// ==========================================
+router.post('/cirurgias', async (req, res) => {
+    const client = await pgPool.connect();
+    try {
+        const { items } = req.body;
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ error: 'Payload inválido. Esperado array "items".' });
+        }
 
+        await client.query('BEGIN');
+
+        for (const item of items) {
+            const fields = [];
+            const values = [];
+            const placeholders = [];
+            let i = 1;
+
+            const insertColumns = [
+                'contrato', 'acao', 'local_cirurgia', 'paciente', 'data_cirurgia', 
+                'prontuario', 'medico', 'crm', 'cod_cliente', 'empenho', 'autorizacao', 
+                'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
+                'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
+                'descricao_personalizada', 'quantidade_utilizada', 'lote', 
+                'valor_unitario', 'valor_total', 'item_pregao'
+            ];
+
+            for (const key of insertColumns) {
+                if (item[key] !== undefined) {
+                    fields.push(key);
+                    placeholders.push(`$${i}`);
+                    values.push(item[key] === '' ? null : item[key]);
+                    i++;
+                }
+            }
+
+            if (fields.length === 0) continue;
+
+            const query = `INSERT INTO opme.cirurgias (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
+            await client.query(query, values);
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'Cirurgia(s) criada(s) com sucesso' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[OPME] Erro ao criar cirurgias (POST):', err.message);
+        res.status(500).json({ error: 'Erro ao criar cirurgias' });
+    } finally {
+        client.release();
+    }
+});
 // ==========================================
 // PUT /api/opme/cirurgias
 // ==========================================
