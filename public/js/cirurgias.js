@@ -1259,13 +1259,18 @@ const OPME = (() => {
         
         form.reset();
         
+        const inputId = document.getElementById('fcContratoId');
+
         if (idx !== null) {
             // Edit mode
             const row = state.viewData[idx];
             editingContratoId = row.id;
             titleSpan.textContent = 'Editar Contrato: ' + (row.id_contrato || '');
             
-            document.getElementById('fcContratoId').value = row.id_contrato || '';
+            inputId.value = row.id_contrato || '';
+            inputId.readOnly = true;
+            inputId.classList.add('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
+            
             document.getElementById('fcContratoMaterial').value = row.material || '';
             document.getElementById('fcContratoCodCliente').value = row.cod_cliente || '';
             document.getElementById('fcContratoCliente').value = row.cliente || '';
@@ -1284,6 +1289,8 @@ const OPME = (() => {
             // New mode
             editingContratoId = null;
             titleSpan.textContent = 'Novo Contrato';
+            inputId.readOnly = false;
+            inputId.classList.remove('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
         }
 
         modal.classList.remove('hidden');
