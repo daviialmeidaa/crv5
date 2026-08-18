@@ -115,6 +115,14 @@ const OPME = (() => {
         selectedContract: null,
     };
 
+    let editingCirurgiaItems = [];
+    let userRole = '';
+    try {
+        const u = JSON.parse(localStorage.getItem('user'));
+        if (u && u.role) userRole = u.role;
+    } catch(e) {}
+    const canEditCirurgia = ['ADMIN', 'OPME3', 'OPME4'].includes(userRole);
+    const canDeleteCirurgia = ['ADMIN', 'OPME4'].includes(userRole);
     let activeFilterModal = null;
 
     // ==========================================
@@ -946,6 +954,8 @@ const OPME = (() => {
 
         if (tab === 'contratos') {
             selectContract(row);
+        } else if (tab === 'cirurgias') {
+            openCirurgiaModal(row);
         } else {
             openDetailModal(row, tab);
         }
@@ -1026,6 +1036,275 @@ const OPME = (() => {
 
     document.addEventListener('DOMContentLoaded', init);
 
+    // ==========================================
+    // 15. Lógica do Modal de Cirurgias (Agrupado)
+    // ==========================================
+    function openCirurgiaModal(row) {
+        // Agrupar itens da mesma cirurgia
+        const items = state.rawData.filter(r => 
+            r.contrato === row.contrato && 
+            r.paciente === row.paciente && 
+            r.data_cirurgia === row.data_cirurgia
+        );
+        
+        if (items.length === 0) return;
+        editingCirurgiaItems = items;
+
+        const ref = items[0]; // Referência para campos globais
+        const modal = document.getElementById('cirurgiaModal');
+        const titleSpan = document.getElementById('cirurgiaModalSubtitle');
+        const btnSave = document.getElementById('btnSaveCirurgia');
+        const btnDelete = document.getElementById('btnDeleteCirurgia');
+
+        document.getElementById('cirurgiaForm').reset();
+        document.getElementById('cirurgiaProductsContainer').innerHTML = '';
+
+        titleSpan.textContent = `${ref.paciente} (${formatDate(ref.data_cirurgia)})`;
+
+        // Preencher Campos Globais
+        document.getElementById('fcContrato').value = ref.contrato || '';
+        document.getElementById('fcAcao').value = ref.acao || '';
+        document.getElementById('fcLocal').value = ref.local_cirurgia || '';
+        document.getElementById('fcPaciente').value = ref.paciente || '';
+        document.getElementById('fcData').value = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
+        document.getElementById('fcProntuario').value = ref.prontuario || '';
+        document.getElementById('fcMedico').value = ref.medico || '';
+        document.getElementById('fcCRM').value = ref.crm || '';
+        document.getElementById('fcCodCliente').value = ref.cod_cliente || '';
+
+        // Preencher Faturamento e Status
+        document.getElementById('fcEmpenho').value = ref.empenho || '';
+        document.getElementById('fcAutorizacao').value = ref.autorizacao || '';
+        document.getElementById('fcPedido').value = ref.pedido || '';
+        document.getElementById('fcNotaFiscal').value = ref.nota_fiscal || '';
+        document.getElementById('fcRetornoConsignacao').value = ref.retorno_consignacao || '';
+        document.getElementById('fcStatusExpedicao').value = ref.status_expedicao || '';
+        document.getElementById('fcAutorizacaoOpme').value = ref.autorizacao_opme || '';
+
+        // Preencher Produtos
+        items.forEach((item, index) => {
+            renderProductBlock(item, index);
+        });
+
+        calculateTotalCirurgia();
+
+        if (canEditCirurgia) {
+            btnSave.classList.remove('hidden');
+        } else {
+            btnSave.classList.add('hidden');
+        }
+
+        if (canDeleteCirurgia) {
+            btnDelete.classList.remove('hidden');
+        } else {
+            btnDelete.classList.add('hidden');
+        }
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.modal-content').classList.add('scale-100', 'opacity-100');
+        });
+    }
+
+    function renderProductBlock(item, idx) {
+        const container = document.getElementById('cirurgiaProductsContainer');
+        const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
+        
+        const block = document.createElement('div');
+        block.className = 'bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-700 rounded-lg p-4 product-block transition-colors';
+        
+        block.innerHTML = `
+            ${idHtml}
+            <div class="flex items-center justify-between mb-3">
+                <h5 class="text-xs font-semibold text-steel-700 dark:text-gray-300 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    PRODUTO #${idx + 1}
+                </h5>
+                <button type="button" onclick="OPME.removeCirurgiaProduct(this)" class="text-steel-400 hover:text-red-500 transition-colors p-1" title="Remover Produto da Interface">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div>
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Cód. Bio</label>
+                    <input type="number" class="prod-cod-bio w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none" value="${item.cod_bio || ''}">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Tipo de Cirurgia</label>
+                    <input type="text" class="prod-tipo w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none uppercase" value="${item.classificacao || ''}">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Produto</label>
+                    <input type="text" class="prod-nome w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none" value="${item.produto || ''}">
+                </div>
+                <div class="md:col-span-4">
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Descrição Personalizada</label>
+                    <input type="text" class="prod-desc w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none" value="${item.descricao_personalizada || ''}">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Quantidade</label>
+                    <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none text-right" value="${item.quantidade_utilizada || 0}">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Lote</label>
+                    <input type="text" class="prod-lote w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none uppercase" value="${item.lote || ''}">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Valor Unitário</label>
+                    <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none text-right" value="${item.valor_unitario !== null ? item.valor_unitario : ''}">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-medium text-steel-500 uppercase tracking-wide mb-1">Valor Total</label>
+                    <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-tot w-full px-2.5 py-1.5 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded text-steel-800 dark:text-gray-200 focus:border-nexo-500 outline-none text-right font-semibold" value="${item.valor_total !== null ? item.valor_total : ''}">
+                </div>
+            </div>
+        `;
+        container.appendChild(block);
+    }
+
+    function addCirurgiaProduct() {
+        const currentCount = document.querySelectorAll('.product-block').length;
+        renderProductBlock({
+            quantidade_utilizada: 1,
+            valor_unitario: 0,
+            valor_total: 0
+        }, currentCount);
+    }
+
+    function removeCirurgiaProduct(btn) {
+        btn.closest('.product-block').remove();
+        calculateTotalCirurgia();
+    }
+
+    function calculateTotalCirurgia() {
+        let globalTotal = 0;
+        document.querySelectorAll('.product-block').forEach(block => {
+            const valInput = block.querySelector('.prod-vlr-tot');
+            const total = parseFloat(valInput.value) || 0;
+            globalTotal += total;
+        });
+        document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal);
+    }
+
+    function closeCirurgiaModal() {
+        const modal = document.getElementById('cirurgiaModal');
+        const content = modal.querySelector('.modal-content');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    async function saveCirurgia() {
+        if (!canEditCirurgia) return;
+
+        // Capturar globais
+        const commonData = {
+            contrato: document.getElementById('fcContrato').value,
+            acao: document.getElementById('fcAcao').value,
+            local_cirurgia: document.getElementById('fcLocal').value.toUpperCase(),
+            paciente: document.getElementById('fcPaciente').value.toUpperCase(),
+            data_cirurgia: document.getElementById('fcData').value,
+            prontuario: document.getElementById('fcProntuario').value,
+            medico: document.getElementById('fcMedico').value.toUpperCase(),
+            crm: document.getElementById('fcCRM').value.toUpperCase(),
+            cod_cliente: document.getElementById('fcCodCliente').value,
+            empenho: document.getElementById('fcEmpenho').value.toUpperCase(),
+            autorizacao: document.getElementById('fcAutorizacao').value.toUpperCase(),
+            pedido: document.getElementById('fcPedido').value,
+            nota_fiscal: document.getElementById('fcNotaFiscal').value.toUpperCase(),
+            retorno_consignacao: document.getElementById('fcRetornoConsignacao').value.toUpperCase(),
+            status_expedicao: document.getElementById('fcStatusExpedicao').value.toUpperCase(),
+            autorizacao_opme: document.getElementById('fcAutorizacaoOpme').value.toUpperCase(),
+        };
+
+        const itemsPayload = [];
+        document.querySelectorAll('.product-block').forEach(block => {
+            const idInput = block.querySelector('.prod-id');
+            const itemData = {
+                ...commonData, // Mesclar os dados comuns no item
+                cod_bio: block.querySelector('.prod-cod-bio').value,
+                classificacao: block.querySelector('.prod-tipo').value.toUpperCase(),
+                produto: block.querySelector('.prod-nome').value,
+                descricao_personalizada: block.querySelector('.prod-desc').value,
+                quantidade_utilizada: block.querySelector('.prod-qtde').value,
+                lote: block.querySelector('.prod-lote').value.toUpperCase(),
+                valor_unitario: block.querySelector('.prod-vlr-un').value,
+                valor_total: block.querySelector('.prod-vlr-tot').value
+            };
+            
+            if (idInput && idInput.value) {
+                itemData.id = idInput.value;
+            }
+            itemsPayload.push(itemData);
+        });
+
+        try {
+            const btnSave = document.getElementById('btnSaveCirurgia');
+            const originalText = btnSave.innerHTML;
+            btnSave.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+            btnSave.disabled = true;
+
+            const res = await fetch('/api/opme/cirurgias', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({ items: itemsPayload })
+            });
+
+            if (!res.ok) throw new Error('Erro ao salvar cirurgia');
+            
+            showToast('Cirurgia atualizada com sucesso', 'success');
+            closeCirurgiaModal();
+            fetchData(); // Recarrega os dados para atualizar a grid
+        } catch (err) {
+            console.error(err);
+            showToast('Falha ao salvar. Tente novamente.', 'error');
+        } finally {
+            const btnSave = document.getElementById('btnSaveCirurgia');
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = 'Salvar Alterações';
+            }
+        }
+    }
+
+    async function deleteCirurgia() {
+        if (!canDeleteCirurgia) return;
+        const ids = editingCirurgiaItems.map(i => i.id);
+        if (!ids.length) return;
+
+        if (!confirm('ATENÇÃO: Deseja realmente excluir TODOS os itens desta cirurgia? Esta ação não pode ser desfeita.')) return;
+
+        try {
+            const btnDelete = document.getElementById('btnDeleteCirurgia');
+            btnDelete.disabled = true;
+
+            const res = await fetch('/api/opme/cirurgias/batch-delete', {
+                method: 'POST', // ou DELETE dependendo de como o Express interpretar o body
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({ ids })
+            });
+
+            if (!res.ok) throw new Error('Erro ao excluir cirurgia');
+            
+            showToast('Cirurgia excluída com sucesso', 'success');
+            closeCirurgiaModal();
+            fetchData();
+        } catch (err) {
+            console.error(err);
+            showToast('Falha ao excluir a cirurgia.', 'error');
+        } finally {
+            const btnDelete = document.getElementById('btnDeleteCirurgia');
+            if (btnDelete) btnDelete.disabled = false;
+        }
+    }
+
     // API pública
     return {
         handleSort,
@@ -1035,6 +1314,13 @@ const OPME = (() => {
         clearContract,
         handleRowClick,
         closeDetailModal,
+        openCirurgiaModal,
+        closeCirurgiaModal,
+        addCirurgiaProduct,
+        removeCirurgiaProduct,
+        calculateTotalCirurgia,
+        saveCirurgia,
+        deleteCirurgia,
         goToPage,
         selectContractByIdx,
         toggleContractStatus

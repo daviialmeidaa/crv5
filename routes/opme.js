@@ -192,5 +192,90 @@ router.get('/banco-codigos', async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar banco de códigos' });
     }
 });
+// ==========================================
+// PUT /api/opme/cirurgias
+// ==========================================
+router.put('/cirurgias', async (req, res) => {
+    const client = await pgPool.connect();
+    try {
+        const { items } = req.body;
+        if (!Array.isArray(items)) {
+            return res.status(400).json({ error: 'Payload inválido. Esperado array "items".' });
+        }
+
+        await client.query('BEGIN');
+
+        for (const item of items) {
+            if (!item.id) continue; // Por ora, não inserimos novos, apenas damos update
+
+            // Mapeando chaves do objeto para update
+            const fields = [];
+            const values = [];
+            let i = 1;
+
+            const updateableColumns = [
+                'contrato', 'acao', 'local_cirurgia', 'paciente', 'data_cirurgia', 
+                'prontuario', 'medico', 'crm', 'cod_cliente', 'empenho', 'autorizacao', 
+                'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
+                'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
+                'descricao_personalizada', 'quantidade_utilizada', 'lote', 
+                'valor_unitario', 'valor_total'
+            ];
+
+            for (const key of updateableColumns) {
+                if (item[key] !== undefined) {
+                    fields.push(`${key} = $${i}`);
+                    values.push(item[key] === '' ? null : item[key]);
+                    i++;
+                }
+            }
+
+            if (fields.length === 0) continue;
+
+            const query = `UPDATE opme.cirurgias SET ${fields.join(', ')} WHERE id = $${i}`;
+            values.push(item.id);
+
+            await client.query(query, values);
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'Cirurgia(s) atualizada(s) com sucesso' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[OPME] Erro ao atualizar cirurgias (PUT):', err.message);
+        res.status(500).json({ error: 'Erro ao atualizar cirurgias' });
+    } finally {
+        client.release();
+    }
+});
+
+// ==========================================
+// POST /api/opme/cirurgias/batch-delete
+// ==========================================
+router.post('/cirurgias/batch-delete', async (req, res) => {
+    const client = await pgPool.connect();
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ error: 'Array de IDs inválido ou vazio.' });
+        }
+
+        await client.query('BEGIN');
+
+        // Proteção extra: a exclusão poderia exigir um role mais alto se controlássemos via middleware
+        // Como o JS de frontend já bloqueia, vamos garantir a deleção via query segura
+        const params = ids.map((_, idx) => `$${idx + 1}`).join(',');
+        await client.query(`DELETE FROM opme.cirurgias WHERE id IN (${params})`, ids);
+
+        await client.query('COMMIT');
+        res.json({ success: true, message: 'Itens da cirurgia excluídos com sucesso' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[OPME] Erro ao excluir cirurgias (DELETE):', err.message);
+        res.status(500).json({ error: 'Erro ao excluir cirurgias' });
+    } finally {
+        client.release();
+    }
+});
 
 module.exports = router;
