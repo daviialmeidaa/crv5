@@ -4,6 +4,31 @@
  */
 const OPME = (() => {
 
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-[200] transform transition-all duration-300 translate-y-10 opacity-0 flex items-center gap-2 ${
+            type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+        }`;
+        
+        const icon = type === 'success' 
+            ? '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
+            : '<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+            
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+        document.body.appendChild(toast);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.classList.remove('translate-y-10', 'opacity-0');
+        });
+        
+        // Remove after 4 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-y-10', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
     // ==========================================
     // 1. Definição de Colunas por Aba
     // ==========================================
@@ -415,6 +440,9 @@ const OPME = (() => {
 
                     html += `<td class="px-3 py-3 text-center align-middle w-24">
                         <div class="flex items-center justify-center gap-2">
+                            <button onclick="event.stopPropagation(); OPME.openContratoModal(${idx})" class="p-1.5 rounded-lg text-nexo-600 hover:bg-nexo-50 dark:text-nexo-400 dark:hover:bg-nexo-900/30 transition-colors" title="Editar Contrato">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            </button>
                             <button onclick="event.stopPropagation(); OPME.toggleContractStatus(${row.id}, ${isInactive})" class="p-1.5 rounded-lg transition-colors ${toggleColor}" title="${toggleTitle}">
                                 ${toggleIcon}
                             </button>
@@ -1219,6 +1247,121 @@ const OPME = (() => {
         }, 10);
     }
 
+    // ==========================================
+    // Contrato Modal Functions
+    // ==========================================
+    let editingContratoId = null;
+
+    function openContratoModal(idx = null) {
+        const modal = document.getElementById('contratoModal');
+        const titleSpan = document.getElementById('contratoModalTitle').querySelector('span');
+        const form = document.getElementById('contratoForm');
+        
+        form.reset();
+        
+        if (idx !== null) {
+            // Edit mode
+            const row = state.viewData[idx];
+            editingContratoId = row.id;
+            titleSpan.textContent = 'Editar Contrato: ' + (row.id_contrato || '');
+            
+            document.getElementById('fcContratoId').value = row.id_contrato || '';
+            document.getElementById('fcContratoMaterial').value = row.material || '';
+            document.getElementById('fcContratoCodCliente').value = row.cod_cliente || '';
+            document.getElementById('fcContratoCliente').value = row.cliente || '';
+            document.getElementById('fcContratoUf').value = row.uf || '';
+            document.getElementById('fcContratoPregao').value = row.pregao || '';
+            
+            if (row.total_ata) {
+                document.getElementById('fcContratoTotalAta').value = formatCurrency(row.total_ata).replace('R$ ', '');
+            } else {
+                document.getElementById('fcContratoTotalAta').value = '';
+            }
+
+            document.getElementById('fcContratoInicio').value = row.inicio_ata ? row.inicio_ata.split('T')[0] : '';
+            document.getElementById('fcContratoTermino').value = row.termino_ata ? row.termino_ata.split('T')[0] : '';
+        } else {
+            // New mode
+            editingContratoId = null;
+            titleSpan.textContent = 'Novo Contrato';
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        const content = modal.querySelector('.modal-content');
+        setTimeout(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeContratoModal() {
+        const modal = document.getElementById('contratoModal');
+        const content = modal.querySelector('.modal-content');
+        
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('contratoForm').reset();
+            editingContratoId = null;
+        }, 300);
+    }
+
+    async function saveContrato() {
+        const payload = {
+            id_contrato: document.getElementById('fcContratoId').value.toUpperCase(),
+            material: document.getElementById('fcContratoMaterial').value.toUpperCase(),
+            cod_cliente: document.getElementById('fcContratoCodCliente').value,
+            cliente: document.getElementById('fcContratoCliente').value.toUpperCase(),
+            uf: document.getElementById('fcContratoUf').value,
+            pregao: document.getElementById('fcContratoPregao').value.toUpperCase(),
+            total_ata: document.getElementById('fcContratoTotalAta').value,
+            inicio_ata: document.getElementById('fcContratoInicio').value,
+            termino_ata: document.getElementById('fcContratoTermino').value
+        };
+
+        if (!payload.id_contrato || !payload.cliente) {
+            showToast('Cód. Contrato e Cliente são obrigatórios', 'error');
+            return;
+        }
+
+        const btnSave = document.getElementById('btnSaveContrato');
+        const originalText = btnSave.textContent;
+        btnSave.disabled = true;
+        btnSave.textContent = 'Salvando...';
+
+        try {
+            const url = editingContratoId ? `/api/opme/contratos/${editingContratoId}` : '/api/opme/contratos';
+            const method = editingContratoId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Erro ao salvar contrato');
+
+            showToast(result.message, 'success');
+            closeContratoModal();
+            await fetchData();
+        } catch (err) {
+            console.error('Erro ao salvar contrato:', err);
+            showToast(err.message, 'error');
+        } finally {
+            btnSave.disabled = false;
+            btnSave.textContent = originalText;
+        }
+    }
+
     async function openCirurgiaModal(row) {
         // Agrupar itens da mesma cirurgia
         const items = state.rawData.filter(r => 
@@ -1648,6 +1791,9 @@ const OPME = (() => {
 
     // API pública
     return {
+        openContratoModal,
+        closeContratoModal,
+        saveContrato,
         handleSort,
         openFilter,
         closeFilter,

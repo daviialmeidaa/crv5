@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR" class="h-full">
+
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
     <script src="/js/auth_guard.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cirurgias OPME | Nexomed</title>
+    <title>Cirurgias | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -15,7 +16,7 @@
                 extend: {
                     colors: {
                         nexo: {
-                            50:  '#e0f7fa',
+                            50: '#e0f7fa',
                             100: '#b2ebf2',
                             200: '#80deea',
                             300: '#4dd0e1',
@@ -46,14 +47,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body.loading-auth { visibility: hidden; }
-        
+        body.loading-auth {
+            visibility: hidden;
+        }
+
         /* Layout Fixos (Sidebar) */
-        aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; }
-        body.sidebar-collapsed .sidebar-text { display: none; }
-        body.sidebar-collapsed .logo-full { display: none; }
-        body.sidebar-collapsed .logo-mini { display: block; }
+        aside {
+            transition: width 0.3s ease;
+        }
+
+        body.sidebar-collapsed aside {
+            width: 5rem !important;
+        }
+
+        body.sidebar-collapsed .sidebar-text {
+            display: none;
+        }
+
+        body.sidebar-collapsed .logo-full {
+            display: none;
+        }
+
+        body.sidebar-collapsed .logo-mini {
+            display: block;
+        }
 
         body.sidebar-collapsed aside h4 {
             text-align: center;
@@ -67,28 +84,92 @@
             padding-left: 0;
             padding-right: 0;
         }
-        .logo-mini { display: none; }
-        
-        /* Tabela */
-        .table-container { max-height: calc(100vh - 310px); }
-        
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); border-radius: 8px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
-        
-        /* Animações */
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .fade-in-up { animation: fadeInUp 0.3s ease-out; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fadeIn { animation: fadeIn 0.15s ease-out; }
 
-        @keyframes slideIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
-        .slide-in { animation: slideIn 0.2s ease-out; }
+        .logo-mini {
+            display: none;
+        }
+
+        /* Tabela */
+        .table-container {
+            max-height: calc(100vh - 310px);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 10px;
+            width: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 8px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        /* Animações */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in-up {
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .animate-fadeIn {
+            animation: fadeIn 0.15s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.2s ease-out;
+        }
     </style>
     <!-- Aplicar tema antes de renderizar -->
     <script>
@@ -97,11 +178,15 @@
         }
     </script>
 </head>
-<body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
-    
+
+<body
+    class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
+
     <!-- Sidebar -->
-    <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
-        <a href="/dashboard" class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
+    <aside
+        class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
+        <a href="/dashboard"
+            class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
             <img src="/assets/images/logo.png" alt="Nexomed" class="h-7 logo-full">
             <img src="/assets/images/simbolo.png" alt="NX" class="h-8 logo-mini mx-auto">
         </a>
@@ -124,7 +209,7 @@
             <!-- HUB -->
             <div class="space-y-1">
                 <h4 class="px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-steel-500/70 mb-3 mt-6">Hub</h4>
-                
+
                 <!-- Grupo Financeiro -->
                 <div class="sidebar-group" id="menu-group-financeiro">
                     <button
@@ -137,20 +222,22 @@
                             </svg>
                             <span class="sidebar-text truncate text-[14.5px]">Financeiro</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
+                            style="" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                     <div class="sidebar-submenu hidden pl-[44px] pr-4 py-1 space-y-1">
                         <a href="/contas_a_receber"
                             class="flex items-center gap-2 py-2 text-[14px] font-medium text-steel-400 hover:text-white transition-colors sidebar-text">
-                            <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
+                            <span
+                                class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Contas a Receber
                         </a>
                         <a href="/clientes"
                             class="flex items-center gap-2 py-2 text-[14px] font-medium text-steel-400 hover:text-white transition-colors sidebar-text">
-                            <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
+                            <span
+                                class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Cobrança
                         </a>
                     </div>
@@ -168,20 +255,22 @@
                             </svg>
                             <span class="sidebar-text truncate text-[14.5px]">Licitações</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
+                            style="" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                     <div class="sidebar-submenu hidden pl-[44px] pr-4 py-1 space-y-1">
                         <a href="/agenda_licitacoes"
                             class="flex items-center gap-2 py-2 text-[14px] font-medium text-steel-400 hover:text-white transition-colors sidebar-text">
-                            <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
+                            <span
+                                class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Agenda
                         </a>
                         <a href="/itens_arrematados"
                             class="flex items-center gap-2 py-2 text-[14px] font-medium text-steel-400 hover:text-white transition-colors sidebar-text">
-                            <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
+                            <span
+                                class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Itens Arrematados
                         </a>
                     </div>
@@ -192,20 +281,23 @@
                     <button
                         class="w-full flex items-center justify-between px-4 py-2.5 text-nexo-400 font-semibold rounded-lg bg-nexo-500/10 transition-colors sidebar-group-btn">
                         <div class="flex items-center gap-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M9 6h6M8 10h8M8 14h8M9 18h6" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 shrink-0 opacity-80" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 3v18M9 6h6M8 10h8M8 14h8M9 18h6" />
                             </svg>
                             <span class="sidebar-text truncate text-[14.5px]">Opme</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style="transform: rotate(90deg)"
-                            viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
+                            style="transform: rotate(90deg)" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
                     <div class="sidebar-submenu pl-[44px] pr-4 py-1 space-y-1">
                         <a href="/cirurgias"
                             class="flex items-center gap-2 py-2 text-[14px] font-semibold text-nexo-400 transition-colors sidebar-text">
-                            <span class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
+                            <span
+                                class="w-1.5 h-1.5 rounded-full border border-current opacity-60 flex-shrink-0"></span>
                             Cirurgias
                         </a>
                     </div>
@@ -217,43 +309,65 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
         <!-- Header -->
-        <header class="h-16 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-40 transition-colors duration-200 shrink-0">
+        <header
+            class="h-16 bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-40 transition-colors duration-200 shrink-0">
             <div class="flex items-center gap-4">
-                <button id="sidebarToggleBtn" class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                <button id="sidebarToggleBtn"
+                    class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
-                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Cirurgias (OPME)</h2>
+                <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Cirurgias</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- Dark Mode Toggle -->
-                <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
-                    <svg id="sunIcon" class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+                <button id="themeToggle"
+                    class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors"
+                    title="Alternar tema">
+                    <svg id="sunIcon" class="h-5 w-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
                     </svg>
-                    <svg id="moonIcon" class="h-5 w-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+                    <svg id="moonIcon" class="h-5 w-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
                     </svg>
                 </button>
 
                 <!-- Profile Dropdown -->
                 <div class="relative">
                     <button id="profileDropdownBtn" class="flex items-center gap-2 focus:outline-none">
-                        <div class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">U</div>
+                        <div
+                            class="w-10 h-10 overflow-hidden rounded-full bg-nexo-600 flex items-center justify-center text-sm font-bold text-white uppercase shadow-sm">
+                            U</div>
                     </button>
-                    <div id="profileDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
+                    <div id="profileDropdownMenu"
+                        class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-steel-800 rounded-lg shadow-lg border border-gray-100 dark:border-steel-700 py-1 z-50">
                         <div class="px-4 py-2 border-b border-gray-100 dark:border-steel-700 mb-1">
                             <p class="text-sm font-medium text-steel-800 dark:text-gray-100 truncate">Usuário Logado</p>
                             <p class="text-xs text-steel-500 dark:text-steel-400 truncate">usuario@nexomed.com</p>
                         </div>
-                        <a href="/perfil" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver Perfil</a>
-                        <a href="/cadastro_usuario" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Cadastrar Usuário</a>
-                        <a href="/usuarios" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Ver Usuários</a>
-                        <a href="/reset-heroku" class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Resetar Heroku</a>
+                        <a href="/perfil"
+                            class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">Ver
+                            Perfil</a>
+                        <a href="/cadastro_usuario"
+                            class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Cadastrar
+                            Usuário</a>
+                        <a href="/usuarios"
+                            class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Ver
+                            Usuários</a>
+                        <a href="/reset-heroku"
+                            class="block px-4 py-2 text-sm text-steel-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors admin-only">Resetar
+                            Heroku</a>
                         <div class="border-t border-gray-100 dark:border-steel-700 mt-1"></div>
-                        <a href="#" class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-steel-700 transition-colors font-medium">Sair</a>
+                        <a href="#"
+                            class="block px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-steel-700 transition-colors font-medium">Sair</a>
                     </div>
                 </div>
             </div>
@@ -261,127 +375,202 @@
 
         <!-- Content Area -->
         <div class="flex-1 p-6 overflow-hidden flex flex-col">
-            
+
             <!-- Abas Principais (Ativos / Inativos) -->
-            <div id="mainTabsContainer" class="flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
-                <button class="main-tab px-4 py-2.5 text-sm font-medium border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 transition-colors" data-main-tab="contratos" onclick="OPME.switchTab('contratos')">
-                    Contratos Ativos
-                </button>
-                <button class="main-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 hover:text-steel-700 dark:text-steel-400 dark:hover:text-steel-300 transition-colors" data-main-tab="contratos_inativos" onclick="OPME.switchTab('contratos_inativos')">
-                    Contratos Inativos
+            <div id="mainTabsContainer"
+                class="flex items-center justify-between gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
+                <div class="flex items-center gap-1">
+                    <button
+                        class="main-tab px-4 py-2.5 text-sm font-medium border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 transition-colors"
+                        data-main-tab="contratos" onclick="OPME.switchTab('contratos')">
+                        Contratos Ativos
+                    </button>
+                    <button
+                        class="main-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 hover:text-steel-700 dark:text-steel-400 dark:hover:text-steel-300 transition-colors"
+                        data-main-tab="contratos_inativos" onclick="OPME.switchTab('contratos_inativos')">
+                        Contratos Inativos
+                    </button>
+                </div>
+                <button id="btnNewContract" onclick="OPME.openContratoModal()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm mb-2">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Novo Contrato
                 </button>
             </div>
 
             <!-- KPIs Dashboard (Apenas Contratos) -->
             <div id="kpisContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 fade-in-up">
                 <!-- Cirurgias Realizadas -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-nexo-400 transition-all duration-300">
+                <div
+                    class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-nexo-400 transition-all duration-300">
                     <div>
-                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Cirurgias Realizadas</p>
-                        <h4 id="kpiCirurgiasRealizadas" class="text-2xl font-bold text-steel-800 dark:text-gray-100">-</h4>
+                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Cirurgias
+                            Realizadas</p>
+                        <h4 id="kpiCirurgiasRealizadas" class="text-2xl font-bold text-steel-800 dark:text-gray-100">-
+                        </h4>
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-nexo-50 dark:bg-steel-700/50 flex items-center justify-center text-nexo-500 group-hover:bg-nexo-500 group-hover:text-white transition-colors duration-300">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div
+                        class="w-12 h-12 rounded-full bg-nexo-50 dark:bg-steel-700/50 flex items-center justify-center text-nexo-500 group-hover:bg-nexo-500 group-hover:text-white transition-colors duration-300">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                 </div>
                 <!-- Cirurgias em Aberto -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-amber-400 transition-all duration-300">
+                <div
+                    class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-amber-400 transition-all duration-300">
                     <div>
-                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Cirurgias em Aberto</p>
-                        <h4 id="kpiCirurgiasEmAberto" class="text-2xl font-bold text-steel-800 dark:text-gray-100">-</h4>
+                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Cirurgias em
+                            Aberto</p>
+                        <h4 id="kpiCirurgiasEmAberto" class="text-2xl font-bold text-steel-800 dark:text-gray-100">-
+                        </h4>
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-amber-50 dark:bg-steel-700/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div
+                        class="w-12 h-12 rounded-full bg-amber-50 dark:bg-steel-700/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                 </div>
                 <!-- Total $ Cirurgias Realizadas -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-emerald-400 transition-all duration-300">
+                <div
+                    class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-emerald-400 transition-all duration-300">
                     <div>
-                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Total $ Realizado</p>
+                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Total $ Realizado
+                        </p>
                         <h4 id="kpiTotalRealizado" class="text-2xl font-bold text-steel-800 dark:text-gray-100">-</h4>
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-steel-700/50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div
+                        class="w-12 h-12 rounded-full bg-emerald-50 dark:bg-steel-700/50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors duration-300">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                 </div>
                 <!-- Total $ Cirurgias A Faturar -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-amber-400 transition-all duration-300">
+                <div
+                    class="bg-white dark:bg-steel-800 rounded-xl p-4 border border-gray-200 dark:border-steel-700 shadow-sm flex items-center justify-between group hover:-translate-y-1 hover:shadow-lg hover:border-amber-400 transition-all duration-300">
                     <div>
-                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Total $ A Faturar</p>
+                        <p class="text-xs font-semibold text-steel-500 uppercase tracking-wider mb-1">Total $ A Faturar
+                        </p>
                         <h4 id="kpiTotalAFaturar" class="text-2xl font-bold text-steel-800 dark:text-gray-100">-</h4>
                     </div>
-                    <div class="w-12 h-12 rounded-full bg-amber-50 dark:bg-steel-700/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div
+                        class="w-12 h-12 rounded-full bg-amber-50 dark:bg-steel-700/50 flex items-center justify-center text-amber-500 group-hover:bg-amber-500 group-hover:text-white transition-colors duration-300">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
                     </div>
                 </div>
             </div>
 
             <!-- Sistema de Abas (Apenas em Detalhes do Contrato) -->
-            <div id="tabsContainer" class="hidden flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
-                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="cirurgias" onclick="OPME.switchTab('cirurgias')">
+            <div id="tabsContainer"
+                class="hidden flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
+                <button
+                    class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="cirurgias" onclick="OPME.switchTab('cirurgias')">
                     Cirurgias
                 </button>
-                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="unidades" onclick="OPME.switchTab('unidades')">
+                <button
+                    class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="unidades" onclick="OPME.switchTab('unidades')">
                     Unidades
                 </button>
-                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="saldoata" onclick="OPME.switchTab('saldoata')">
+                <button
+                    class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="saldoata" onclick="OPME.switchTab('saldoata')">
                     Saldo Ata
                 </button>
-                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="saldoatahospital" onclick="OPME.switchTab('saldoatahospital')">
+                <button
+                    class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="saldoatahospital" onclick="OPME.switchTab('saldoatahospital')">
                     Saldo Ata Hospital
                 </button>
-                <button class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors" data-tab="bancocodigos" onclick="OPME.switchTab('bancocodigos')">
+                <button
+                    class="opme-tab px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="bancocodigos" onclick="OPME.switchTab('bancocodigos')">
                     Banco de Códigos
                 </button>
             </div>
 
             <!-- Banner de Contrato Selecionado -->
-            <div id="contractBanner" class="hidden mb-4 px-4 py-3 rounded-xl bg-nexo-500/10 dark:bg-nexo-900/20 border border-nexo-500/30 dark:border-nexo-700/30 flex items-center justify-between fade-in-up">
+            <div id="contractBanner"
+                class="hidden mb-4 px-4 py-3 rounded-xl bg-nexo-500/10 dark:bg-nexo-900/20 border border-nexo-500/30 dark:border-nexo-700/30 flex items-center justify-between fade-in-up">
                 <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5 text-nexo-600 dark:text-nexo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/>
+                    <svg class="w-5 h-5 text-nexo-600 dark:text-nexo-400 shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
                     </svg>
                     <span class="text-sm font-semibold text-nexo-700 dark:text-nexo-300">Contrato:</span>
-                    <span id="contractBannerText" class="text-sm text-steel-700 dark:text-gray-300 font-medium truncate"></span>
+                    <span id="contractBannerText"
+                        class="text-sm text-steel-700 dark:text-gray-300 font-medium truncate"></span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button id="btnNewCirurgia" onclick="OPME.openNewCirurgiaModal()" class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    <button id="btnNewCirurgia" onclick="OPME.openNewCirurgiaModal()"
+                        class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
                         Inserir Cirurgia
                     </button>
-                    <button onclick="OPME.clearContract()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-steel-500 dark:text-steel-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-all shadow-sm">
-                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <button onclick="OPME.clearContract()"
+                        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-steel-500 dark:text-steel-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                         Voltar para Contratos
                     </button>
                 </div>
             </div>
 
             <!-- Tabela -->
-            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up" style="animation-delay: 0.15s">
-                
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up"
+                style="animation-delay: 0.15s">
+
                 <!-- Loading overlay -->
-                <div id="tableLoading" class="absolute inset-0 bg-white/80 dark:bg-steel-800/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center rounded-xl">
-                    <svg class="animate-spin h-8 w-8 text-nexo-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <div id="tableLoading"
+                    class="absolute inset-0 bg-white/80 dark:bg-steel-800/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center rounded-xl">
+                    <svg class="animate-spin h-8 w-8 text-nexo-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
                     <p class="text-sm text-steel-500 dark:text-steel-400">Carregando dados...</p>
                 </div>
 
                 <!-- Container com overflow -->
                 <div class="table-container custom-scrollbar overflow-auto flex-1">
                     <table class="w-full text-left border-collapse min-w-max">
-                        <thead id="opmeTableHead" class="sticky top-0 z-20 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)]">
+                        <thead id="opmeTableHead"
+                            class="sticky top-0 z-20 bg-gray-50 dark:bg-steel-900 shadow-[0_1px_0_rgba(229,231,235,1)] dark:shadow-[0_1px_0_rgba(55,65,81,1)]">
                             <!-- Headers gerados pelo JS -->
                         </thead>
-                        <tbody id="opmeTableBody" class="divide-y divide-gray-100 dark:divide-steel-700 text-sm text-steel-700 dark:text-gray-300">
-                            <tr><td colspan="10" class="p-6 text-center text-steel-400">Iniciando o Data Grid...</td></tr>
+                        <tbody id="opmeTableBody"
+                            class="divide-y divide-gray-100 dark:divide-steel-700 text-sm text-steel-700 dark:text-gray-300">
+                            <tr>
+                                <td colspan="10" class="p-6 text-center text-steel-400">Iniciando o Data Grid...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
-                
+
                 <!-- Paginação -->
-                <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-white dark:bg-steel-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div
+                    class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-white dark:bg-steel-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <span class="text-xs text-steel-500 dark:text-steel-400">Registros por página:</span>
-                        <select id="itemsPerPage" class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-700 dark:text-gray-200 text-xs rounded px-2 py-1 outline-none focus:ring-1 focus:ring-nexo-500 transition-colors">
+                        <select id="itemsPerPage"
+                            class="bg-gray-50 dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-700 dark:text-gray-200 text-xs rounded px-2 py-1 outline-none focus:ring-1 focus:ring-nexo-500 transition-colors">
                             <option value="10">10</option>
                             <option value="25" selected>25</option>
                             <option value="50">50</option>
@@ -390,7 +579,8 @@
                             <option value="500">500</option>
                             <option value="1000">1000</option>
                         </select>
-                        <span id="resultsCount" class="text-xs text-steel-500 dark:text-steel-400 ml-2">Carregando...</span>
+                        <span id="resultsCount"
+                            class="text-xs text-steel-500 dark:text-steel-400 ml-2">Carregando...</span>
                     </div>
                     <div class="flex items-center gap-1" id="paginationContainer">
                         <!-- Botões de paginação injetados pelo JS -->
@@ -401,9 +591,12 @@
         </div>
 
         <!-- Footer -->
-        <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 mt-auto shrink-0">
+        <footer
+            class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 mt-auto shrink-0">
             <p class="text-xs text-steel-400">
-                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
+                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a
+                    href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer"
+                    class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
             </p>
         </footer>
     </main>
@@ -412,22 +605,37 @@
     <!-- Modal de Edição/Visualização de Cirurgia -->
     <!-- ========================================== -->
     <div id="cirurgiaModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
-        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity" onclick="OPME.closeCirurgiaModal()"></div>
-        
-        <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeCirurgiaModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
             <!-- Header do Modal -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
-                <h3 id="cirurgiaModalTitle" class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
-                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="cirurgiaModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                     Cirurgia: <span id="cirurgiaModalSubtitle"></span>
                 </h3>
                 <div class="flex items-center gap-3">
-                    <button id="btnDeleteCirurgia" onclick="OPME.deleteCirurgia()" class="hidden px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg transition-colors flex items-center gap-1.5">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    <button id="btnDeleteCirurgia" onclick="OPME.deleteCirurgia()"
+                        class="hidden px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg transition-colors flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                         Excluir
                     </button>
-                    <button onclick="OPME.closeCirurgiaModal()" class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <button onclick="OPME.closeCirurgiaModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -435,21 +643,27 @@
             <!-- Body do Modal (Formulário) -->
             <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
                 <form id="cirurgiaForm" onsubmit="event.preventDefault(); OPME.saveCirurgia();">
-                    
+
                     <!-- Seção: Identificação e Localização -->
-                    <div class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
-                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <div
+                        class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4
+                            class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
                             <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
                             Identificação da Cirurgia
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Contrato</label>
-                                <input type="text" id="fcContrato" disabled tabindex="-1" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Contrato</label>
+                                <input type="text" id="fcContrato" disabled tabindex="-1"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Ação</label>
-                                <select id="fcAcao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Ação</label>
+                                <select id="fcAcao"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                                     <option value="">Selecione...</option>
                                     <option value="CIRURGIA">CIRURGIA</option>
                                     <option value="RETORNO">RETORNO</option>
@@ -457,8 +671,10 @@
                                 </select>
                             </div>
                             <div class="md:col-span-2">
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Local da Cirurgia</label>
-                                <select id="fcLocal" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Local
+                                    da Cirurgia</label>
+                                <select id="fcLocal"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                                     <option value="">Selecione...</option>
                                 </select>
                             </div>
@@ -466,37 +682,51 @@
                     </div>
 
                     <!-- Seção: Dados Médicos -->
-                    <div class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
-                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <div
+                        class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4
+                            class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
                             <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
                             Dados Médicos e Paciente
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div class="md:col-span-2">
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nome do Paciente</label>
-                                <input type="text" id="fcPaciente" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nome do
+                                    Paciente</label>
+                                <input type="text" id="fcPaciente"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data da Cirurgia</label>
-                                <input type="date" id="fcData" class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Data da
+                                    Cirurgia</label>
+                                <input type="date" id="fcData"
+                                    class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Prontuário</label>
-                                <input type="text" id="fcProntuario" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Prontuário</label>
+                                <input type="text" id="fcProntuario"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                             </div>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                             <div class="md:col-span-2">
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Médico</label>
-                                <input type="text" id="fcMedico" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Médico</label>
+                                <input type="text" id="fcMedico"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">CRM</label>
-                                <input type="text" id="fcCRM" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">CRM</label>
+                                <input type="text" id="fcCRM"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cod. Cliente</label>
-                                <input type="number" id="fcCodCliente" readonly tabindex="-1" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all pointer-events-none">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cod.
+                                    Cliente</label>
+                                <input type="number" id="fcCodCliente" readonly tabindex="-1"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all pointer-events-none">
                             </div>
                         </div>
                     </div>
@@ -508,39 +738,53 @@
                                 <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
                                 Produtos / Itens
                             </h4>
-                            <button type="button" onclick="OPME.addCirurgiaProduct()" class="px-3 py-1.5 text-xs font-medium text-nexo-600 bg-nexo-50 hover:bg-nexo-100 dark:text-nexo-400 dark:bg-nexo-500/10 dark:hover:bg-nexo-500/20 rounded-lg transition-colors flex items-center gap-1.5 border border-nexo-200 dark:border-nexo-500/20">
-                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                            <button type="button" onclick="OPME.addCirurgiaProduct()"
+                                class="px-3 py-1.5 text-xs font-medium text-nexo-600 bg-nexo-50 hover:bg-nexo-100 dark:text-nexo-400 dark:bg-nexo-500/10 dark:hover:bg-nexo-500/20 rounded-lg transition-colors flex items-center gap-1.5 border border-nexo-200 dark:border-nexo-500/20">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
                                 Adicionar Produto
                             </button>
                         </div>
-                        
+
                         <div id="cirurgiaProductsContainer" class="space-y-3">
                             <!-- Produtos inseridos dinamicamente aqui via JS -->
                         </div>
                     </div>
 
                     <!-- Seção: Faturamento e Status -->
-                    <div class="mb-2 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
-                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                    <div
+                        class="mb-2 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4
+                            class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
                             <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
                             Faturamento e Status
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Empenho</label>
-                                <input type="text" id="fcEmpenho" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Empenho</label>
+                                <input type="text" id="fcEmpenho"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Autorização</label>
-                                <input type="text" id="fcAutorizacao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Autorização</label>
+                                <input type="text" id="fcAutorizacao"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Pedido</label>
-                                <input type="number" id="fcPedido" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <label
+                                    class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Pedido</label>
+                                <input type="number" id="fcPedido"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status Retorno Consignação</label>
-                                <select id="fcRetornoConsignacao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status
+                                    Retorno Consignação</label>
+                                <select id="fcRetornoConsignacao"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                                     <option value="">Selecione...</option>
                                     <option value="AGUARDANDO">AGUARDANDO</option>
                                     <option value="FEITO">FEITO</option>
@@ -549,20 +793,26 @@
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status Expedição</label>
-                                <input type="text" id="fcStatusExpedicao" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status
+                                    Expedição</label>
+                                <input type="text" id="fcStatusExpedicao"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status Autorização OPME</label>
-                                <select id="fcAutorizacaoOpme" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Status
+                                    Autorização OPME</label>
+                                <select id="fcAutorizacaoOpme"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
                                     <option value="">Selecione...</option>
                                     <option value="NÃO FATURAR">NÃO FATURAR</option>
                                     <option value="FATURAR">FATURAR</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nota Fiscal</label>
-                                <input type="text" id="fcNotaFiscal" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Nota
+                                    Fiscal</label>
+                                <input type="text" id="fcNotaFiscal"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
                         </div>
                     </div>
@@ -570,19 +820,163 @@
             </div>
 
             <!-- Footer do Modal -->
-            <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex items-center justify-between shrink-0">
+            <div
+                class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-3">
                     <span class="text-sm font-medium text-steel-600 dark:text-steel-400">Total da Cirurgia:</span>
-                    <span id="fcTotalGlobal" class="text-lg font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">R$ 0,00</span>
+                    <span id="fcTotalGlobal"
+                        class="text-lg font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">R$ 0,00</span>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button type="button" onclick="OPME.closeCirurgiaModal()" class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
+                    <button type="button" onclick="OPME.closeCirurgiaModal()"
+                        class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
                         Cancelar
                     </button>
-                    <button type="button" id="btnSaveCirurgia" onclick="OPME.saveCirurgia()" class="hidden px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg shadow-sm transition-colors">
+                    <button type="button" id="btnSaveCirurgia" onclick="OPME.saveCirurgia()"
+                        class="hidden px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg shadow-sm transition-colors">
                         Salvar
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========================================== -->
+    <!-- Modal de Edição/Inserção de Contrato -->
+    <!-- ========================================== -->
+    <div id="contratoModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeContratoModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="contratoModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Novo Contrato</span>
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="OPME.closeContratoModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body do Modal (Formulário) -->
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
+                <form id="contratoForm" onsubmit="event.preventDefault(); OPME.saveContrato();">
+                    
+                    <!-- Seção: Informações Básicas -->
+                    <div class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Dados do Contrato
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato *</label>
+                                <input type="text" id="fcContratoId" required
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Cliente</label>
+                                <input type="number" id="fcContratoCodCliente"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cliente *</label>
+                                <input type="text" id="fcContratoCliente" required
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Detalhes da Licitação -->
+                    <div class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Detalhes da Licitação
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Material</label>
+                                <input type="text" id="fcContratoMaterial"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">UF</label>
+                                <select id="fcContratoUf"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all custom-scrollbar">
+                                    <option value="">Selecione...</option>
+                                    <option value="AC">AC</option><option value="AL">AL</option>
+                                    <option value="AM">AM</option><option value="AP">AP</option>
+                                    <option value="BA">BA</option><option value="CE">CE</option>
+                                    <option value="DF">DF</option><option value="ES">ES</option>
+                                    <option value="GO">GO</option><option value="MA">MA</option>
+                                    <option value="MG">MG</option><option value="MS">MS</option>
+                                    <option value="MT">MT</option><option value="PA">PA</option>
+                                    <option value="PB">PB</option><option value="PE">PE</option>
+                                    <option value="PI">PI</option><option value="PR">PR</option>
+                                    <option value="RJ">RJ</option><option value="RN">RN</option>
+                                    <option value="RO">RO</option><option value="RR">RR</option>
+                                    <option value="RS">RS</option><option value="SC">SC</option>
+                                    <option value="SE">SE</option><option value="SP">SP</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Pregão</label>
+                                <input type="text" id="fcContratoPregao"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Total da Ata</label>
+                                <input type="text" id="fcContratoTotalAta" oninput="maskCurrency(this)"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Vigência -->
+                    <div class="mb-2 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Vigência
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Início</label>
+                                <input type="date" id="fcContratoInicio"
+                                    class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Término</label>
+                                <input type="date" id="fcContratoTermino"
+                                    class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div
+                class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex items-center justify-end shrink-0 gap-3">
+                <button type="button" onclick="OPME.closeContratoModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
+                    Cancelar
+                </button>
+                <button type="button" id="btnSaveContrato" onclick="OPME.saveContrato()"
+                    class="px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg shadow-sm transition-colors">
+                    Salvar
+                </button>
             </div>
         </div>
     </div>
@@ -591,17 +985,28 @@
     <!-- Modal de Detalhes (Genérico) -->
     <!-- ========================================== -->
     <div id="detailModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
-        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity" onclick="OPME.closeDetailModal()"></div>
-        
-        <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-200 scale-95 opacity-0">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeDetailModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-200 scale-95 opacity-0">
             <!-- Header do Modal -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
-                <h3 id="detailModalTitle" class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
-                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
+                <h3 id="detailModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                     Detalhes
                 </h3>
-                <button onclick="OPME.closeDetailModal()" class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
-                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                <button onclick="OPME.closeDetailModal()"
+                    class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </button>
             </div>
 
@@ -617,15 +1022,24 @@
     <!-- ========================================== -->
     <div id="accessContractModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
         <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="OPME.closeAccessContractModal()"></div>
-        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
-            <div class="w-14 h-14 rounded-full bg-nexo-50 dark:bg-nexo-900/30 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-7 h-7 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-nexo-50 dark:bg-nexo-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
             </div>
             <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Acessar Contrato</h3>
-            <p id="accessContractModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Tem certeza que deseja acessar este contrato?</p>
+            <p id="accessContractModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Tem certeza que
+                deseja acessar este contrato?</p>
             <div class="flex gap-3 justify-center">
-                <button onclick="OPME.closeAccessContractModal()" class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Não</button>
-                <button onclick="OPME.confirmAccessContract()" id="btnConfirmAccess" class="px-5 py-2 text-sm font-medium text-white bg-nexo-500 hover:bg-nexo-600 rounded-lg transition-colors shadow-sm">Sim</button>
+                <button onclick="OPME.closeAccessContractModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Não</button>
+                <button onclick="OPME.confirmAccessContract()" id="btnConfirmAccess"
+                    class="px-5 py-2 text-sm font-medium text-white bg-nexo-500 hover:bg-nexo-600 rounded-lg transition-colors shadow-sm">Sim</button>
             </div>
         </div>
     </div>
@@ -635,15 +1049,24 @@
     <!-- ========================================== -->
     <div id="toggleContractModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
         <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="OPME.closeToggleContractModal()"></div>
-        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
-            <div class="w-14 h-14 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
             </div>
             <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Alterar Status</h3>
-            <p id="toggleContractModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Deseja realmente alterar o status deste contrato?</p>
+            <p id="toggleContractModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Deseja realmente
+                alterar o status deste contrato?</p>
             <div class="flex gap-3 justify-center">
-                <button onclick="OPME.closeToggleContractModal()" class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
-                <button onclick="OPME.confirmToggleContract()" id="btnConfirmToggle" class="px-5 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm">Confirmar</button>
+                <button onclick="OPME.closeToggleContractModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="OPME.confirmToggleContract()" id="btnConfirmToggle"
+                    class="px-5 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm">Confirmar</button>
             </div>
         </div>
     </div>
@@ -653,15 +1076,24 @@
     <!-- ========================================== -->
     <div id="deleteModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
         <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="OPME.closeDeleteModal()"></div>
-        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
-            <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
             </div>
             <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Confirmar Exclusão</h3>
-            <p id="deleteModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Tem certeza que deseja excluir esta cirurgia? Esta ação não pode ser desfeita.</p>
+            <p id="deleteModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Tem certeza que deseja
+                excluir esta cirurgia? Esta ação não pode ser desfeita.</p>
             <div class="flex gap-3 justify-center">
-                <button onclick="OPME.closeDeleteModal()" class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
-                <button onclick="OPME.confirmDeleteCirurgia()" id="btnConfirmDelete" class="px-5 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm">Excluir</button>
+                <button onclick="OPME.closeDeleteModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="OPME.confirmDeleteCirurgia()" id="btnConfirmDelete"
+                    class="px-5 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm">Excluir</button>
             </div>
         </div>
     </div>
@@ -670,17 +1102,24 @@
     <!-- Modal de Erro do Banco de Códigos -->
     <!-- ========================================== -->
     <div id="errorModal" class="hidden fixed inset-0 z-[120] flex items-center justify-center">
-        <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="document.getElementById('errorModal').classList.add('hidden')"></div>
-        <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
-            <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm"
+            onclick="document.getElementById('errorModal').classList.add('hidden')"></div>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
             </div>
             <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Código não encontrado</h3>
-            <p class="text-sm text-steel-500 dark:text-steel-400 mb-6">O código informado não está cadastrado no Banco de Códigos do contrato.</p>
+            <p class="text-sm text-steel-500 dark:text-steel-400 mb-6">O código informado não está cadastrado no Banco
+                de Códigos do contrato.</p>
             <div class="flex justify-center">
-                <button onclick="document.getElementById('errorModal').classList.add('hidden')" class="px-6 py-2 text-sm font-medium text-white bg-nexo-500 hover:bg-nexo-600 rounded-lg transition-colors shadow-sm">Entendi</button>
+                <button onclick="document.getElementById('errorModal').classList.add('hidden')"
+                    class="px-6 py-2 text-sm font-medium text-white bg-nexo-500 hover:bg-nexo-600 rounded-lg transition-colors shadow-sm">Entendi</button>
             </div>
         </div>
     </div>
@@ -694,5 +1133,7 @@
     <script src="/js/components/datepicker.js"></script>
     <script src="/js/layout.js"></script>
     <script src="/js/cirurgias.js"></script>
+    <div id="toast" class="toast"></div>
 </body>
+
 </html>

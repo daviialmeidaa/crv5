@@ -25,7 +25,7 @@ router.get('/contratos', async (req, res) => {
                    total_ata, inicio_ata, termino_ata, inativo
             FROM opme.contratos
             ${whereClause}
-            ORDER BY id_contrato
+            ORDER BY id DESC
         `);
         res.json(result.rows);
     } catch (err) {
@@ -33,6 +33,69 @@ router.get('/contratos', async (req, res) => {
         res.status(500).json({ error: 'Erro ao buscar contratos' });
     }
 });
+// ==========================================
+// POST /api/opme/contratos
+// ==========================================
+router.post('/contratos', async (req, res) => {
+    try {
+        const { id_contrato, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
+        
+        if (!id_contrato || !cliente) {
+            return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
+        }
+
+        const totalNumeric = total_ata ? parseFloat(total_ata.toString().replace(/[^\d,-]/g, '').replace(',', '.')) : null;
+
+        const result = await pgPool.query(`
+            INSERT INTO opme.contratos 
+            (id_contrato, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false)
+            RETURNING id
+        `, [
+            id_contrato, material || null, cod_cliente || null, cliente, uf || null, 
+            pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
+            inicio_ata || null, termino_ata || null
+        ]);
+
+        res.json({ success: true, id: result.rows[0].id, message: 'Contrato criado com sucesso' });
+    } catch (err) {
+        console.error('[OPME] Erro ao criar contrato:', err.message);
+        res.status(500).json({ error: 'Erro ao criar contrato' });
+    }
+});
+
+// ==========================================
+// PUT /api/opme/contratos/:id
+// ==========================================
+router.put('/contratos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { id_contrato, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
+        
+        if (!id_contrato || !cliente) {
+            return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
+        }
+
+        const totalNumeric = total_ata ? parseFloat(total_ata.toString().replace(/[^\d,-]/g, '').replace(',', '.')) : null;
+
+        await pgPool.query(`
+            UPDATE opme.contratos SET 
+                id_contrato = $1, material = $2, cod_cliente = $3, cliente = $4, 
+                uf = $5, pregao = $6, total_ata = $7, inicio_ata = $8, termino_ata = $9
+            WHERE id = $10
+        `, [
+            id_contrato, material || null, cod_cliente || null, cliente, uf || null, 
+            pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
+            inicio_ata || null, termino_ata || null, id
+        ]);
+
+        res.json({ success: true, message: 'Contrato atualizado com sucesso' });
+    } catch (err) {
+        console.error('[OPME] Erro ao atualizar contrato:', err.message);
+        res.status(500).json({ error: 'Erro ao atualizar contrato' });
+    }
+});
+
 
 // ==========================================
 // PUT /api/opme/contratos/:id/status
