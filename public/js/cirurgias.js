@@ -24,16 +24,28 @@ const OPME = (() => {
         cirurgias: [
             { key: 'acao', label: 'Ação' },
             { key: 'paciente', label: 'Paciente' },
-            { key: 'local_cirurgia', label: 'Local' },
-            { key: 'data_cirurgia', label: 'Data', type: 'date' },
-            { key: 'cod_bio', label: 'Cód. Bio', type: 'number' },
-            { key: 'classificacao', label: 'Classificação' },
+            { key: 'local_cirurgia', label: 'Local da Cirurgia' },
+            { key: 'cod_cliente', label: 'Cod Cliente', type: 'number' },
+            { key: 'data_cirurgia', label: 'Data da Cirurgia', type: 'date' },
+            { key: 'cod_bio', label: 'Cod Bio', type: 'number' },
+            { key: 'classificacao', label: 'Tipo de Cirurgia' },
             { key: 'produto', label: 'Produto' },
-            { key: 'quantidade_utilizada', label: 'Qtde', type: 'number' },
-            { key: 'valor_unitario', label: 'Vlr. Unit.', type: 'currency' },
-            { key: 'valor_total', label: 'Vlr. Total', type: 'currency' },
+            { key: 'descricao_personalizada', label: 'Descrição Personalizada' },
+            { key: 'quantidade_utilizada', label: 'Quantidade Utilizada', type: 'number' },
+            { key: 'lote', label: 'Lote' },
+            { key: 'prontuario', label: 'Prontuário' },
             { key: 'medico', label: 'Médico' },
-            { key: 'nota_fiscal', label: 'NF' },
+            { key: 'crm', label: 'Crm' },
+            { key: 'valor_unitario', label: 'Valor Unitário', type: 'currency' },
+            { key: 'valor_total', label: 'Valor Total', type: 'currency' },
+            { key: 'item_pregao', label: 'Item do Pregão' },
+            { key: 'empenho', label: 'Empenho' },
+            { key: 'autorizacao', label: 'Autorização' },
+            { key: 'pedido', label: 'Pedido' },
+            { key: 'retorno_consignacao', label: 'Status Retorno Consignação' },
+            { key: 'status_expecicao', label: 'Status Expedição' },
+            { key: 'autorizacao_opme', label: 'Status Autorização Opme' },
+            { key: 'nota_fiscal', label: 'Nota Fiscal Faturada' },
         ],
         unidades: [
             { key: 'cod_cliente', label: 'Cód. Cliente', type: 'number' },
@@ -340,10 +352,10 @@ const OPME = (() => {
         state.viewData.forEach((row, idx) => {
             const isContratosTab = state.currentTab === 'contratos';
             const cursorClass = isContratosTab ? '' : 'cursor-pointer';
-            const hoverClass = 'hover:bg-nexo-50/50 dark:hover:bg-nexo-900/10';
+            const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
             const clickHandler = isContratosTab ? '' : `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
 
-            html += `<tr class="${cursorClass} ${hoverClass} transition-colors duration-150 border-b border-gray-100 dark:border-steel-700/50 ${idx % 2 === 0 ? 'bg-white dark:bg-steel-800' : 'bg-gray-50/50 dark:bg-steel-800/60'}"
+            html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
                          ${clickHandler}>`;
             
             cols.forEach(col => {
@@ -751,6 +763,15 @@ const OPME = (() => {
     function init() {
         fetchKpis();
         fetchData();
+
+        const selectLimit = document.getElementById('itemsPerPage');
+        if (selectLimit) {
+            selectLimit.addEventListener('change', (e) => {
+                state.pagination.limit = parseInt(e.target.value);
+                state.pagination.current = 1;
+                processData();
+            });
+        }
     }
 
     document.addEventListener('DOMContentLoaded', init);
