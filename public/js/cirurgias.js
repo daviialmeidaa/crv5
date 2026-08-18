@@ -1233,6 +1233,9 @@ const OPME = (() => {
         editingCirurgiaItems = []; // Flag de que é inserção
 
         const modal = document.getElementById('cirurgiaModal');
+        
+        switchCirurgiaModalTab('dados');
+        document.getElementById('fcCirurgiaObservacoes').value = '';
         const titleSpan = document.getElementById('cirurgiaModalSubtitle');
         const btnSave = document.getElementById('btnSaveCirurgia');
         const btnDelete = document.getElementById('btnDeleteCirurgia');
@@ -1560,6 +1563,30 @@ const OPME = (() => {
         }
     }
 
+    function switchCirurgiaModalTab(tabId) {
+        document.getElementById('cirurgiaTabDados').classList.add('hidden');
+        document.getElementById('cirurgiaTabDados').classList.remove('block');
+        document.getElementById('cirurgiaTabObs').classList.add('hidden');
+        document.getElementById('cirurgiaTabObs').classList.remove('block');
+
+        document.getElementById('tabBtnCirurgiaDados').classList.remove('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+        document.getElementById('tabBtnCirurgiaDados').classList.add('border-transparent', 'text-steel-500');
+        document.getElementById('tabBtnCirurgiaObs').classList.remove('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+        document.getElementById('tabBtnCirurgiaObs').classList.add('border-transparent', 'text-steel-500');
+
+        if (tabId === 'dados') {
+            document.getElementById('cirurgiaTabDados').classList.remove('hidden');
+            document.getElementById('cirurgiaTabDados').classList.add('block');
+            document.getElementById('tabBtnCirurgiaDados').classList.remove('border-transparent', 'text-steel-500');
+            document.getElementById('tabBtnCirurgiaDados').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+        } else if (tabId === 'obs') {
+            document.getElementById('cirurgiaTabObs').classList.remove('hidden');
+            document.getElementById('cirurgiaTabObs').classList.add('block');
+            document.getElementById('tabBtnCirurgiaObs').classList.remove('border-transparent', 'text-steel-500');
+            document.getElementById('tabBtnCirurgiaObs').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+        }
+    }
+
     async function openCirurgiaModal(row) {
         // Agrupar itens da mesma cirurgia
         const items = state.rawData.filter(r => 
@@ -1581,6 +1608,24 @@ const OPME = (() => {
         document.getElementById('cirurgiaProductsContainer').innerHTML = '';
 
         titleSpan.textContent = `${ref.paciente} (${formatDate(ref.data_cirurgia)})`;
+
+        switchCirurgiaModalTab('dados');
+        document.getElementById('fcCirurgiaObservacoes').value = '';
+
+        // Buscar Observação
+        const dateStr = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
+        const cirurgiaId = `${ref.contrato}_${ref.paciente}_${dateStr}`.toUpperCase().replace(/\s+/g, '_');
+        try {
+            const obsRes = await fetch(`/api/opme/observacoes/${cirurgiaId}`, {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if(obsRes.ok) {
+                const obsData = await obsRes.json();
+                document.getElementById('fcCirurgiaObservacoes').value = obsData.observacao || '';
+            }
+        } catch(e) {
+            console.error('Erro ao buscar observação', e);
+        }
 
         // Preencher Campos Globais
         document.getElementById('fcContrato').value = ref.contrato || '';
@@ -1647,6 +1692,7 @@ const OPME = (() => {
 
         if (canEditCirurgia) {
             btnSave.classList.remove('hidden');
+            btnSave.textContent = 'Salvar';
         } else {
             btnSave.classList.add('hidden');
         }
@@ -1908,6 +1954,21 @@ const OPME = (() => {
 
             if (!res.ok) throw new Error('Erro ao salvar cirurgia');
             
+            // Salvar Observação
+            const dateStr = commonData.data_cirurgia;
+            const cirurgiaId = `${commonData.contrato}_${commonData.paciente}_${dateStr}`.toUpperCase().replace(/\s+/g, '_');
+            const observacao = document.getElementById('fcCirurgiaObservacoes').value;
+            if (cirurgiaId && cirurgiaId.length > 5) {
+                await fetch('/api/opme/observacoes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getToken()}`
+                    },
+                    body: JSON.stringify({ contrato: commonData.contrato, cirurgia: cirurgiaId, observacao })
+                }).catch(e => console.error('Erro ao salvar observação', e));
+            }
+
             showToast(isCreating ? 'Cirurgia criada com sucesso' : 'Cirurgia atualizada com sucesso', 'success');
             closeCirurgiaModal();
             fetchData(); // Recarrega os dados para atualizar a grid
@@ -2533,6 +2594,7 @@ const OPME = (() => {
         openFilter,
         closeFilter,
         switchTab,
+        switchCirurgiaModalTab,
         clearContract,
         handleRowClick,
         closeDetailModal,

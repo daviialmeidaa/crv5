@@ -96,3 +96,11 @@ CREATE TABLE opme.Cirurgias (
     autorizacao_opme VARCHAR(255),
     nota_fiscal VARCHAR(255)
 );
+
+-- Tabela Filha: Observacoes
+CREATE TABLE IF NOT EXISTS opme.Observacoes (
+    id SERIAL PRIMARY KEY,
+    contrato VARCHAR(255),
+    cirurgia VARCHAR(255) UNIQUE,
+    observacao TEXT
+);

@@ -179,6 +179,16 @@ async function runMigrations() {
             ALTER TABLE opme.Unidades ADD COLUMN IF NOT EXISTS observacoes TEXT;
         `);
 
+        console.log('Verificando/Criando tabela de Observações (Cirurgias)...');
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS opme.Observacoes (
+                id SERIAL PRIMARY KEY,
+                contrato VARCHAR(255),
+                cirurgia VARCHAR(255) UNIQUE,
+                observacao TEXT
+            );
+        `);
+
         await client.query('COMMIT');
         console.log('✅ Migrações concluídas com sucesso!');
 

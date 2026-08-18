@@ -648,4 +648,48 @@ router.post('/cirurgias/batch-delete', async (req, res) => {
     }
 });
 
+// ==========================================
+// GET /api/opme/observacoes/:cirurgia
+// ==========================================
+router.get('/observacoes/:cirurgia', async (req, res) => {
+    try {
+        const { cirurgia } = req.params;
+        const result = await pgPool.query('SELECT observacao FROM opme.observacoes WHERE cirurgia = $1', [cirurgia]);
+        if (result.rows.length > 0) {
+            res.json({ observacao: result.rows[0].observacao });
+        } else {
+            res.json({ observacao: '' });
+        }
+    } catch (err) {
+        console.error('[OPME] Erro ao buscar observação da cirurgia:', err.message);
+        res.status(500).json({ error: 'Erro ao buscar observação' });
+    }
+});
+
+// ==========================================
+// POST /api/opme/observacoes
+// ==========================================
+router.post('/observacoes', async (req, res) => {
+    try {
+        const { contrato, cirurgia, observacao } = req.body;
+
+        if (!cirurgia) {
+            return res.status(400).json({ error: 'Identificador da cirurgia é obrigatório' });
+        }
+
+        // Upsert na tabela de observacoes
+        await pgPool.query(`
+            INSERT INTO opme.observacoes (contrato, cirurgia, observacao)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (cirurgia) DO UPDATE 
+            SET observacao = EXCLUDED.observacao, contrato = EXCLUDED.contrato
+        `, [contrato, cirurgia, observacao || '']);
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[OPME] Erro ao salvar observação da cirurgia:', err.message);
+        res.status(500).json({ error: 'Erro ao salvar observação' });
+    }
+});
+
 module.exports = router;
