@@ -460,6 +460,10 @@ const OPME = (() => {
                         alignClass = 'text-left';
                         wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[350px]';
                     }
+
+                    if (state.currentTab === 'unidades') {
+                        alignClass = 'text-center';
+                    }
                     
                     html += `<td class="px-3 py-3 text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
                 }
