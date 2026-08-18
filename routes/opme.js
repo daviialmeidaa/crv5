@@ -122,22 +122,41 @@ router.put('/contratos/:id/status', async (req, res) => {
 // ==========================================
 router.get('/kpis', async (req, res) => {
     try {
-        const result = await pgPool.query(`
+        const resultCirurgias = await pgPool.query(`
             SELECT 
                 COUNT(DISTINCT c.paciente || c.data_cirurgia) FILTER (WHERE c.acao = 'CIRURGIA') AS cirurgias_realizadas,
                 COUNT(DISTINCT c.paciente || c.data_cirurgia) FILTER (WHERE c.acao = 'CIRURGIA' AND (c.nota_fiscal IS NULL OR c.nota_fiscal = '' OR c.nota_fiscal = '0')) AS cirurgias_em_aberto,
                 SUM(c.valor_total) FILTER (WHERE c.acao = 'CIRURGIA') AS total_cirurgias_realizadas,
-                SUM(c.valor_total) FILTER (WHERE c.acao = 'CIRURGIA' AND (c.nota_fiscal IS NULL OR c.nota_fiscal = '' OR c.nota_fiscal = '0')) AS total_cirurgias_a_faturar
+                SUM(c.valor_total) FILTER (WHERE c.acao = 'CIRURGIA' AND (c.nota_fiscal IS NULL OR c.nota_fiscal = '' OR c.nota_fiscal = '0')) AS total_cirurgias_a_faturar,
+                SUM(c.valor_total) FILTER (WHERE c.acao = 'CIRURGIA' AND (c.nota_fiscal IS NOT NULL AND c.nota_fiscal != '' AND c.nota_fiscal != '0')) AS total_faturado
             FROM opme.cirurgias c
             JOIN opme.contratos ct ON c.contrato = ct.id_contrato
             WHERE ct.inativo = false;
         `);
+
+        const resultContratos = await pgPool.query(`
+            SELECT inativo, COUNT(*) as qtd
+            FROM opme.contratos
+            GROUP BY inativo;
+        `);
+
+        let ativos = 0;
+        let inativos = 0;
+        for (const row of resultContratos.rows) {
+            if (row.inativo === true) inativos = parseInt(row.qtd);
+            if (row.inativo === false) ativos = parseInt(row.qtd);
+        }
         
-        res.json(result.rows[0] || {
-            cirurgias_realizadas: 0,
-            cirurgias_em_aberto: 0,
-            total_cirurgias_realizadas: 0,
-            total_cirurgias_a_faturar: 0
+        const rowData = resultCirurgias.rows[0] || {};
+        
+        res.json({
+            cirurgias_realizadas: rowData.cirurgias_realizadas || 0,
+            cirurgias_em_aberto: rowData.cirurgias_em_aberto || 0,
+            total_cirurgias_realizadas: rowData.total_cirurgias_realizadas || 0,
+            total_cirurgias_a_faturar: rowData.total_cirurgias_a_faturar || 0,
+            total_faturado: rowData.total_faturado || 0,
+            contratos_ativos: ativos,
+            contratos_inativos: inativos
         });
     } catch (err) {
         console.error('[OPME] Erro ao buscar KPIs:', err.message);

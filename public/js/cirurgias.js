@@ -254,6 +254,8 @@ const OPME = (() => {
             document.getElementById('kpiCirurgiasEmAberto').textContent = Number(data.cirurgias_em_aberto || 0).toLocaleString('pt-BR');
             document.getElementById('kpiTotalRealizado').textContent = formatCurrency(data.total_cirurgias_realizadas);
             document.getElementById('kpiTotalAFaturar').textContent = formatCurrency(data.total_cirurgias_a_faturar);
+            document.getElementById('kpiTotalFaturado').textContent = formatCurrency(data.total_faturado);
+            document.getElementById('kpiContratos').textContent = `${data.contratos_ativos || 0} | ${data.contratos_inativos || 0}`;
         } catch (error) {
             console.error('Erro ao carregar KPIs:', error);
         }
