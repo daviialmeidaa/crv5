@@ -510,6 +510,97 @@ router.get('/produto-info', async (req, res) => {
     }
 });
 // ==========================================
+// Helper: Gerar texto de Observação automaticamente
+// ==========================================
+async function generateObservacaoText(pgPool, ref, items) {
+    try {
+        const contratoCod = ref.contrato;
+        const localSigla = ref.local_cirurgia;
+
+        // 1) Buscar dados do contrato (pregão, empresa)
+        const contratoRes = await pgPool.query(
+            'SELECT pregao, empresa FROM opme.contratos WHERE id_contrato = $1 LIMIT 1',
+            [contratoCod]
+        );
+        const contrato = contratoRes.rows[0] || {};
+        const pregao = contrato.pregao || '';
+        const empresa = contrato.empresa || '';
+
+        // 2) Buscar dados da unidade (hospital, sigla, ir, observacoes)
+        const unidadeRes = await pgPool.query(
+            'SELECT hospital, sigla, ir, observacoes FROM opme.unidades WHERE contrato = $1 AND sigla = $2 LIMIT 1',
+            [contratoCod, localSigla]
+        );
+        const unidade = unidadeRes.rows[0] || {};
+
+        // 3) Calcular valor total da cirurgia (somar valor_total de todos os itens)
+        let totalNota = 0;
+        for (const item of items) {
+            const vt = parseFloat(item.valor_total);
+            if (!isNaN(vt)) totalNota += vt;
+        }
+
+        // 4) Montar a primeira linha: CONTRATO | PE PREGAO | EMPENHO: xxx | AF: xxx
+        const partes = [contratoCod];
+        if (pregao) partes.push(`PE ${pregao}`);
+        if (ref.empenho) partes.push(`EMPENHO: ${ref.empenho}`);
+        if (ref.autorizacao) partes.push(`AF: ${ref.autorizacao}`);
+        let texto = partes.join(' | ');
+
+        // 5) Bloco de dados do paciente
+        texto += '\n';
+        texto += `\nPACIENTE: ${ref.paciente || ''}`;
+
+        // Formatar data para dd/mm/yyyy
+        let dataFormatada = '';
+        if (ref.data_cirurgia) {
+            const d = new Date(ref.data_cirurgia);
+            if (!isNaN(d.getTime())) {
+                dataFormatada = d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+            } else {
+                dataFormatada = ref.data_cirurgia;
+            }
+        }
+        texto += `\nDATA CIRURGIA: ${dataFormatada}`;
+
+        if (ref.medico) {
+            texto += `\nMÉDICO: ${ref.medico}`;
+        }
+        if (ref.crm) {
+            texto += `\nCRM: ${ref.crm}`;
+        }
+
+        // 6) Local da cirurgia
+        const nomeHospital = unidade.hospital || localSigla || '';
+        const siglaUnidade = unidade.sigla || '';
+        if (nomeHospital && siglaUnidade) {
+            texto += `\n\nLOCAL DA CIRURGIA: ${nomeHospital} - ${siglaUnidade}`;
+        } else if (nomeHospital) {
+            texto += `\n\nLOCAL DA CIRURGIA: ${nomeHospital}`;
+        }
+
+        // 7) Dados bancários conforme empresa
+        if (empresa === 'Nexomed') {
+            texto += '\nBANCO BRASIL, AG: 1614-4, CC: 101018-2';
+        } else if (empresa === 'Bml') {
+            texto += '\nBANCO BRASIL, AG: 1614-4, CC: 201018-6';
+        }
+
+        // 8) Se a unidade tem IR, mostrar observações da unidade + cálculo de 1,2%
+        if (unidade.ir === true && unidade.observacoes) {
+            const irValor = totalNota * 0.012;
+            const irFormatado = irValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            texto += `\n\n${unidade.observacoes} - ${irFormatado}`;
+        }
+
+        return texto.trim();
+    } catch (err) {
+        console.error('[OPME] Erro ao gerar observação automática:', err.message);
+        return '';
+    }
+}
+
+// ==========================================
 // POST /api/opme/cirurgias
 // ==========================================
 router.post('/cirurgias', async (req, res) => {
@@ -553,6 +644,30 @@ router.post('/cirurgias', async (req, res) => {
         }
 
         await client.query('COMMIT');
+
+        // ==========================================
+        // Gerar Observação Automática (após COMMIT)
+        // ==========================================
+        try {
+            const ref = items[0]; // Referência: dados comuns da cirurgia
+            const dateStr = ref.data_cirurgia ? String(ref.data_cirurgia).split('T')[0] : '';
+            const cirurgiaId = `${ref.contrato}_${ref.paciente}_${dateStr}`.toUpperCase().replace(/\s+/g, '_');
+
+            const obsTexto = await generateObservacaoText(pgPool, ref, items);
+
+            if (obsTexto && cirurgiaId.length > 5) {
+                await pgPool.query(`
+                    INSERT INTO opme.observacoes (contrato, cirurgia, observacao)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT (cirurgia) DO UPDATE
+                    SET observacao = EXCLUDED.observacao, contrato = EXCLUDED.contrato
+                `, [ref.contrato, cirurgiaId, obsTexto]);
+            }
+        } catch (obsErr) {
+            // Não falha a operação principal se a observação der erro
+            console.error('[OPME] Erro ao gerar observação automática (não-fatal):', obsErr.message);
+        }
+
         res.json({ success: true, message: 'Cirurgia(s) criada(s) com sucesso' });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -645,6 +760,40 @@ router.post('/cirurgias/batch-delete', async (req, res) => {
         res.status(500).json({ error: 'Erro ao excluir cirurgias' });
     } finally {
         client.release();
+    }
+});
+
+// ==========================================
+// GET /api/opme/observacoes/generate
+// Gera a observação on-the-fly a partir dos dados no banco
+// ==========================================
+router.get('/observacoes/generate', async (req, res) => {
+    try {
+        const { contrato, paciente, data_cirurgia } = req.query;
+
+        if (!contrato || !paciente || !data_cirurgia) {
+            return res.status(400).json({ error: 'Parâmetros contrato, paciente e data_cirurgia são obrigatórios' });
+        }
+
+        // Buscar os itens desta cirurgia no banco
+        const itemsRes = await pgPool.query(
+            `SELECT * FROM opme.cirurgias 
+             WHERE contrato = $1 AND paciente = $2 AND data_cirurgia::date = $3::date`,
+            [contrato, paciente, data_cirurgia]
+        );
+
+        if (itemsRes.rows.length === 0) {
+            return res.json({ observacao: '' });
+        }
+
+        const items = itemsRes.rows;
+        const ref = items[0];
+        const obsTexto = await generateObservacaoText(pgPool, ref, items);
+
+        res.json({ observacao: obsTexto });
+    } catch (err) {
+        console.error('[OPME] Erro ao gerar observação dinâmica:', err.message);
+        res.status(500).json({ error: 'Erro ao gerar observação' });
     }
 });
 

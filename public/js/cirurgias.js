@@ -1612,11 +1612,10 @@ const OPME = (() => {
         switchCirurgiaModalTab('dados');
         document.getElementById('fcCirurgiaObservacoes').value = '';
 
-        // Buscar Observação
+        // Gerar Observação dinamicamente a partir dos dados atuais
         const dateStr = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
-        const cirurgiaId = `${ref.contrato}_${ref.paciente}_${dateStr}`.toUpperCase().replace(/\s+/g, '_');
         try {
-            const obsRes = await fetch(`/api/opme/observacoes/${cirurgiaId}`, {
+            const obsRes = await fetch(`/api/opme/observacoes/generate?contrato=${encodeURIComponent(ref.contrato)}&paciente=${encodeURIComponent(ref.paciente)}&data_cirurgia=${encodeURIComponent(dateStr)}`, {
                 headers: { 'Authorization': `Bearer ${getToken()}` }
             });
             if(obsRes.ok) {
@@ -1624,7 +1623,7 @@ const OPME = (() => {
                 document.getElementById('fcCirurgiaObservacoes').value = obsData.observacao || '';
             }
         } catch(e) {
-            console.error('Erro ao buscar observação', e);
+            console.error('Erro ao gerar observação', e);
         }
 
         // Preencher Campos Globais
@@ -1954,19 +1953,21 @@ const OPME = (() => {
 
             if (!res.ok) throw new Error('Erro ao salvar cirurgia');
             
-            // Salvar Observação
-            const dateStr = commonData.data_cirurgia;
-            const cirurgiaId = `${commonData.contrato}_${commonData.paciente}_${dateStr}`.toUpperCase().replace(/\s+/g, '_');
-            const observacao = document.getElementById('fcCirurgiaObservacoes').value;
-            if (cirurgiaId && cirurgiaId.length > 5) {
-                await fetch('/api/opme/observacoes', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${getToken()}`
-                    },
-                    body: JSON.stringify({ contrato: commonData.contrato, cirurgia: cirurgiaId, observacao })
-                }).catch(e => console.error('Erro ao salvar observação', e));
+            // Salvar Observação (somente na EDIÇÃO — na criação o backend gera automaticamente)
+            if (!isCreating) {
+                const dateStr = commonData.data_cirurgia;
+                const cirurgiaId = `${commonData.contrato}_${commonData.paciente}_${dateStr}`.toUpperCase().replace(/\s+/g, '_');
+                const observacao = document.getElementById('fcCirurgiaObservacoes').value;
+                if (cirurgiaId && cirurgiaId.length > 5) {
+                    await fetch('/api/opme/observacoes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getToken()}`
+                        },
+                        body: JSON.stringify({ contrato: commonData.contrato, cirurgia: cirurgiaId, observacao })
+                    }).catch(e => console.error('Erro ao salvar observação', e));
+                }
             }
 
             showToast(isCreating ? 'Cirurgia criada com sucesso' : 'Cirurgia atualizada com sucesso', 'success');
