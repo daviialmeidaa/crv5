@@ -401,7 +401,7 @@ const OPME = (() => {
         const thead = document.getElementById('opmeTableHead');
         if (!thead) return;
 
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
+        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[11px] font-medium">';
         cols.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
@@ -410,9 +410,9 @@ const OPME = (() => {
             const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
             html += `
-                <th class="px-3 py-2 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[70px] select-none relative align-middle"
+                <th class="px-2 py-1.5 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[46px] select-none relative align-middle"
                      data-col="${col.key}">
-                    <div class="flex items-center justify-center gap-1.5 w-full h-full px-4">
+                    <div class="flex items-center justify-center gap-1 w-full h-full px-3">
                         <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
@@ -448,7 +448,7 @@ const OPME = (() => {
         state.viewData.forEach((row, idx) => {
             const isContratosTab = state.currentTab === 'contratos' || state.currentTab === 'contratos_inativos';
             const cursorClass = 'cursor-pointer';
-            const hoverClass = 'h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
+            const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 relative z-0 hover:z-10 group';
             const clickHandler = `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
@@ -479,17 +479,29 @@ const OPME = (() => {
                     let alignClass = 'text-center';
                     let wrapClass = 'whitespace-nowrap';
 
+                    // Colunas textuais longas: quebra + line-clamp de 3 linhas
                     if (col.key === 'produto' || col.key === 'descricao_personalizada' || col.key === 'descricao_item') {
                         alignClass = 'text-left';
-                        wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[450px]';
+                        wrapClass = 'max-w-[280px]';
                     }
 
                     if (col.key === 'observacoes') {
                         alignClass = 'text-left';
-                        wrapClass = 'whitespace-normal break-words max-w-[300px]';
+                        wrapClass = 'max-w-[220px]';
                     }
+
+                    if (col.key === 'cliente' || col.key === 'material' || col.key === 'hospital') {
+                        alignClass = 'text-left';
+                        wrapClass = 'max-w-[200px]';
+                    }
+
+                    // Aplicar line-clamp nas colunas com max-w
+                    const needsClamp = wrapClass.includes('max-w');
+                    const cellContent = needsClamp 
+                        ? `<span class="line-clamp-3">${val}</span>` 
+                        : val;
                     
-                    html += `<td class="px-3 py-3 text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
+                    html += `<td class="px-2 py-2 text-[12px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${cellContent}</td>`;
                 }
             });
             html += '</tr>';
