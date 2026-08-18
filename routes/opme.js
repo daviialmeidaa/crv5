@@ -329,14 +329,26 @@ router.put('/saldo-ata/:id', async (req, res) => {
 router.get('/saldo-ata', async (req, res) => {
     try {
         const { contrato } = req.query;
-        let query = 'SELECT * FROM opme.saldoata';
+        let query = `
+            SELECT 
+                s.*,
+                COALESCE(c.qtd_utilizada, 0) AS quantidade_utilizada,
+                s.quantidade_ata - COALESCE(c.qtd_utilizada, 0) AS saldo
+            FROM opme.saldoata s
+            LEFT JOIN (
+                SELECT contrato, item_pregao, SUM(quantidade_utilizada) as qtd_utilizada
+                FROM opme.cirurgias
+                WHERE acao = 'CIRURGIA'
+                GROUP BY contrato, item_pregao
+            ) c ON s.contrato = c.contrato AND s.item_ata = c.item_pregao
+        `;
         const params = [];
         
         if (contrato) {
-            query += ' WHERE contrato = $1';
+            query += ' WHERE s.contrato = $1';
             params.push(contrato);
         }
-        query += ' ORDER BY id';
+        query += ' ORDER BY s.id';
         
         const result = await pgPool.query(query, params);
         res.json(result.rows);
