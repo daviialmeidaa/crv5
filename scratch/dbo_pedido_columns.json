@@ -1,0 +1,902 @@
+[
+  {
+    "COLUMN_NAME": "codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "roma_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "clifor_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "tipoped_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "condpg_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "tran_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "cob_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "Vend_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "listapr_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "data",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "data_entrega",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_pedido_cliente",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 30,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_frete",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_desconto_acrescimo",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_desconto_acrescimo",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "percentual_desconto_acrescimo",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_servico",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_total",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "observacao",
+    "DATA_TYPE": "ntext",
+    "CHARACTER_MAXIMUM_LENGTH": 1073741823,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "observacao_interna",
+    "DATA_TYPE": "ntext",
+    "CHARACTER_MAXIMUM_LENGTH": 1073741823,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "descricao_servico",
+    "DATA_TYPE": "ntext",
+    "CHARACTER_MAXIMUM_LENGTH": 1073741823,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_calculo_lucro",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "margem_lucro",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_ipi",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "observacao_nota_fiscal",
+    "DATA_TYPE": "ntext",
+    "CHARACTER_MAXIMUM_LENGTH": 1073741823,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "ind_quitacao_romaneio",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_situacao",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "tipo_logradouro_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 10,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "logradouro_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 30,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "complemento_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 20,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "bairro_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 20,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "uf_sigla_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 2,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "cid_codigo_entrega",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "cep_entrega",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_frete",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fili_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "infi_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_cotacao",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "nome_destino_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 200,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "nome_contato",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 40,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_secundario",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_estoque",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_faturamento",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_nota_fiscal",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "quantidade_volume",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "especie_volume",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 30,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "marca_volume",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 20,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_volume",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 20,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "peso_bruto_volume",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "peso_liquido_volume",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "vend_codigo_2",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "ind_consumidor",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_pedido_empenho",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "cont_codigo_conta",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_veiculo_frete",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "quantidade_veiculo_frete",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_edital",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_edital",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 30,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "sequencial_edital",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_ultima_alteracao",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_ultimo_envio",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "ind_pedido_separacao_impresso",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "func_codigo_separador",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "func_codigo_conferente",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "percentual_desconto_acrescimo_comissao_cliente",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_liquido_comissao_cliente",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "percentual_comissao_cliente",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_comissao_cliente",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_icms_substituicao",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "vend_codigo_prescritor",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "duracao_contrato",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 30,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_termino_contrato",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fvped_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "latitude_emissao",
+    "DATA_TYPE": "decimal",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "longitude_emissao",
+    "DATA_TYPE": "decimal",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_pendente_financeiro",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "nome_destinatario_rotulo_entrega",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 200,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "ind_consultorio",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "ind_endereco_entrega_prescritor",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "data_atualizacao_status_ciashop",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "crmvis_clifor_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "crmvis_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_hora_baixa_expedicao",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "usuario_baixa_expedicao",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fk_solicitacao_pre_autorizacao",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "justificativa_ipsm",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 400,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fk_verificar_elegibilidade",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "fk_cid",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "ponto_referencia_entrega",
+    "DATA_TYPE": "varchar",
+    "CHARACTER_MAXIMUM_LENGTH": 100,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_outras_despesas_acessorias",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_base_calculo_icms_substituicao_reembolso",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_icms_substituicao_retido_reembolso",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_autorizacao_cartao",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 40,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "vend_codigo_substituto",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_rentabilidade",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "percentual_rentabilidade",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "margem_minima_rentabilidade",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "biocot_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_icms_fcp_uf_destino",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_icms_uf_destino",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_icms_uf_remetente",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_bonificado",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_operacao",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "id_emissao_nota_fiscal",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "id_fatura_origem",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "ind_transporte_proprio",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "ind_conferido_romaneio",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "ind_somar_vr_frete_cif_vr_pedido",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "valor_fcp_substituicao_tributaria",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "clifor_codigo_devolucao",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_empenho_compra_publica",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 22,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "protocolo_autorizacao_sin_solution",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "validade_protocolo_sin_solution",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "response_autorizacao_sin_solution",
+    "DATA_TYPE": "xml",
+    "CHARACTER_MAXIMUM_LENGTH": -1,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "ind_geracao_arquivo_nota_sin_solution",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_pedido_fidelizews",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "status_pedido_fidelize_canal_autorizador",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "ind_ipi_compor_base_icms",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "valor_desconto_acrescimo_condicao_pagamento",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_envio_dyo",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "situacao_pedido_dyo",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_pedido_dyo",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_cancelamento_dyo",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "empenho_numero_ordem_compra",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 15,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "empenho_numero_ordem_fornecimento",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 15,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "empenho_unidade_executora",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 20,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "empenho_valor_empenho",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_base_calculo_ipi",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_situacao_separacao",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "id_presenca_comprador",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "cnpj_intermediador_operacao",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 18,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "identificacao_plataforma_intermediador",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "id_operacao_intermediador",
+    "DATA_TYPE": "smallint",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "sequencia_romaneio",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "movest_codigo_transferencia_estoque",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "usu_codigo_edicao",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "empr_codigo",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "valor_base_calculo_icms",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_icms",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "valor_total_icms_dispensado",
+    "DATA_TYPE": "money",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_pedido_integracao",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "quantidade_total_produtos",
+    "DATA_TYPE": "float",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "numero_pedido",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 20,
+    "IS_NULLABLE": "NO"
+  },
+  {
+    "COLUMN_NAME": "data_confirmacao",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "prioridade_expedicao",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "cid_codigo_fato_gerador",
+    "DATA_TYPE": "int",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "versao_sistema",
+    "DATA_TYPE": "nvarchar",
+    "CHARACTER_MAXIMUM_LENGTH": 4000,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_receita",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "YES"
+  },
+  {
+    "COLUMN_NAME": "data_hora_registro",
+    "DATA_TYPE": "datetime",
+    "CHARACTER_MAXIMUM_LENGTH": null,
+    "IS_NULLABLE": "NO"
+  }
+]
