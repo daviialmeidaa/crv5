@@ -215,18 +215,18 @@ router.get('/unidades', async (req, res) => {
 // ==========================================
 router.post('/unidades', async (req, res) => {
     try {
-        const { contrato, cod_cliente, hospital, sigla } = req.body;
+        const { contrato, cod_cliente, hospital, sigla, ir, observacoes } = req.body;
         
         if (!contrato) {
             return res.status(400).json({ error: 'O Cód. Contrato é obrigatório' });
         }
 
         const query = `
-            INSERT INTO opme.unidades (contrato, cod_cliente, hospital, sigla)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO opme.unidades (contrato, cod_cliente, hospital, sigla, ir, observacoes)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *;
         `;
-        const values = [contrato, cod_cliente || null, hospital || null, sigla || null];
+        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, ir || false, observacoes || null];
         
         const result = await pgPool.query(query, values);
         res.status(201).json(result.rows[0]);
@@ -242,7 +242,7 @@ router.post('/unidades', async (req, res) => {
 router.put('/unidades/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { contrato, cod_cliente, hospital, sigla } = req.body;
+        const { contrato, cod_cliente, hospital, sigla, ir, observacoes } = req.body;
         
         if (!contrato) {
             return res.status(400).json({ error: 'O Cód. Contrato é obrigatório' });
@@ -250,11 +250,11 @@ router.put('/unidades/:id', async (req, res) => {
 
         const query = `
             UPDATE opme.unidades 
-            SET contrato = $1, cod_cliente = $2, hospital = $3, sigla = $4
-            WHERE id = $5
+            SET contrato = $1, cod_cliente = $2, hospital = $3, sigla = $4, ir = $5, observacoes = $6
+            WHERE id = $7
             RETURNING *;
         `;
-        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, id];
+        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, ir || false, observacoes || null, id];
         
         const result = await pgPool.query(query, values);
         

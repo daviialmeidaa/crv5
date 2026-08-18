@@ -23,9 +23,9 @@ Para cada produto incluído no pedido, deve-se inserir uma linha associando-a ao
 - **`quantidade_comercializacao`**: Quantidade total do item.
 - **`valor_unitario_comercializacao`**: Preço unitário fechado.
 
-### Tabela de Rastreabilidade: `dbo.pedido_item_lote`
-Muitos produtos de OPME exigem controle de lote de entrada e saída.
-- Amarra o lote físico (`lote_numero`) à linha exata do item (`pedit_codigo`).
+### Tabela de Rastreabilidade: `dbo.pedido_item_lote` (IGNORADA NO SEU CENÁRIO)
+~~Muitos produtos de OPME exigem controle de lote de entrada e saída.~~
+**Atenção:** Como o seu Supra ERP possui o parâmetro ativado que joga a exigência de lotes apenas para o processo de expedição, **não será necessário** interagir com esta tabela durante a criação do pedido pelo Hub. Isso simplifica dramaticamente o JSON de criação!
 
 ### Tabela de Auditoria: `dbo.pedido_follow_up`
 - Registra no diário do pedido o evento "Cadastrado" e vincula ao ID do Usuário (`usu_codigo`).

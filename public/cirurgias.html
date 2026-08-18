@@ -1182,6 +1182,21 @@
                                 <input type="text" id="fcUnidadeSigla"
                                     class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
                             </div>
+                            <div class="md:col-span-2 flex items-center justify-between bg-gray-50 dark:bg-steel-700/50 p-3 rounded-lg border border-gray-200 dark:border-steel-600">
+                                <div>
+                                    <label class="block text-sm font-medium text-steel-800 dark:text-gray-200">IR?</label>
+                                    <span class="text-xs text-steel-500 dark:text-steel-400">Marque se a unidade exige retenção de IR</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="fcUnidadeIR" class="sr-only peer" onchange="OPME.toggleIRObservacoes()">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-nexo-300 dark:peer-focus:ring-nexo-800 rounded-full peer dark:bg-steel-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-nexo-500"></div>
+                                </label>
+                            </div>
+                            <div class="md:col-span-2 hidden" id="unidadeObsContainer">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Observações</label>
+                                <textarea id="fcUnidadeObservacoes" rows="3"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all custom-scrollbar resize-none"></textarea>
+                            </div>
                         </div>
                     </div>
                 </form>

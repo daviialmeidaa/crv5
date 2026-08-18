@@ -22,7 +22,9 @@ CREATE TABLE opme.Unidades (
     contrato VARCHAR(255),
     cod_cliente INTEGER,
     hospital VARCHAR(255),
-    sigla VARCHAR(50)
+    sigla VARCHAR(50),
+    ir BOOLEAN DEFAULT FALSE,
+    observacoes TEXT
 );
 
 -- Tabela Filha: BancoCodigos

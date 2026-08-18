@@ -102,6 +102,8 @@ const OPME = (() => {
             { key: 'cod_cliente', label: 'Cód. Cliente', type: 'number' },
             { key: 'hospital', label: 'Hospital' },
             { key: 'sigla', label: 'Sigla' },
+            { key: 'ir', label: 'IR', type: 'boolean' },
+            { key: 'observacoes', label: 'Observações' },
         ],
         saldoata: [
             { key: 'item_ata', label: 'Item Ata' },
@@ -228,6 +230,9 @@ const OPME = (() => {
     function formatCell(val, col, row) {
         if (col.type === 'currency') return formatCurrency(val);
         if (col.type === 'date') return formatDate(val);
+        if (col.type === 'boolean') {
+            return val ? `<span class="inline-block w-3 h-3 rounded-full bg-nexo-500 shadow-sm" title="Sim"></span>` : `<span class="inline-block w-3 h-3 rounded-full bg-steel-300 dark:bg-steel-600 shadow-sm" title="Não"></span>`;
+        }
         if (col.type === 'deadline') {
             const dl = calcDeadline(row.termino_ata);
             return dl.label;
@@ -1444,11 +1449,19 @@ const OPME = (() => {
             document.getElementById('fcUnidadeCodCliente').value = row.cod_cliente || '';
             document.getElementById('fcUnidadeHospital').value = row.hospital || '';
             document.getElementById('fcUnidadeSigla').value = row.sigla || '';
+            
+            document.getElementById('fcUnidadeIR').checked = !!row.ir;
+            document.getElementById('fcUnidadeObservacoes').value = row.observacoes || '';
+            toggleIRObservacoes();
         } else {
             // New mode
             editingUnidadeId = null;
             titleSpan.textContent = 'Nova Unidade';
             inputContrato.value = state.selectedContract ? state.selectedContract.id_contrato : '';
+            
+            document.getElementById('fcUnidadeIR').checked = false;
+            document.getElementById('fcUnidadeObservacoes').value = '';
+            toggleIRObservacoes();
         }
         
         modal.classList.remove('hidden');
@@ -1476,12 +1489,24 @@ const OPME = (() => {
         }, 300);
     }
 
+    function toggleIRObservacoes() {
+        const isChecked = document.getElementById('fcUnidadeIR').checked;
+        const obsContainer = document.getElementById('unidadeObsContainer');
+        if (isChecked) {
+            obsContainer.classList.remove('hidden');
+        } else {
+            obsContainer.classList.add('hidden');
+        }
+    }
+
     async function saveUnidade() {
         const payload = {
             contrato: document.getElementById('fcUnidadeContrato').value.toUpperCase(),
             cod_cliente: document.getElementById('fcUnidadeCodCliente').value,
             hospital: document.getElementById('fcUnidadeHospital').value.toUpperCase(),
-            sigla: document.getElementById('fcUnidadeSigla').value.toUpperCase()
+            sigla: document.getElementById('fcUnidadeSigla').value.toUpperCase(),
+            ir: document.getElementById('fcUnidadeIR').checked,
+            observacoes: document.getElementById('fcUnidadeObservacoes').value
         };
 
         if (!payload.contrato) {
@@ -2482,6 +2507,7 @@ const OPME = (() => {
         openUnidadeModal,
         closeUnidadeModal,
         saveUnidade,
+        toggleIRObservacoes,
         handleSort,
         openFilter,
         closeFilter,
