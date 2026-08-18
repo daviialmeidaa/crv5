@@ -356,7 +356,7 @@ const OPME = (() => {
         state.viewData.forEach((row, idx) => {
             const isContratosTab = state.currentTab === 'contratos';
             const cursorClass = isContratosTab ? '' : 'cursor-pointer';
-            const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
+            const hoverClass = 'h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
             const clickHandler = isContratosTab ? '' : `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
@@ -371,7 +371,7 @@ const OPME = (() => {
                         `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>`;
                     const toggleTitle = isInactive ? 'Ativar Contrato' : 'Desativar Contrato';
 
-                    html += `<td class="px-3 py-3 text-center w-24">
+                    html += `<td class="px-3 py-3 text-center align-middle w-24">
                         <div class="flex items-center justify-center gap-2">
                             <button onclick="event.stopPropagation(); OPME.selectContractByIdx(${idx})" class="p-1.5 text-steel-500 hover:text-nexo-600 hover:bg-nexo-50 dark:text-steel-400 dark:hover:text-nexo-400 dark:hover:bg-steel-700 rounded-lg transition-colors" title="Acessar Contrato">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -384,9 +384,15 @@ const OPME = (() => {
                 } else {
                     const val = formatCell(col.key === '_deadline' ? null : row[col.key], col, row);
                     const extraClass = getCellClass(col, row);
-                    const alignClass = (col.type === 'currency' || col.type === 'number' || col.type === 'deadline') ? 'text-right' : 'text-center';
+                    let alignClass = (col.type === 'currency' || col.type === 'number' || col.type === 'deadline') ? 'text-right' : 'text-center';
+                    let wrapClass = 'whitespace-nowrap';
+
+                    if (col.key === 'produto' || col.key === 'descricao_personalizada') {
+                        alignClass = 'text-left';
+                        wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[350px]';
+                    }
                     
-                    html += `<td class="px-3 py-3 text-[13px] text-steel-700 dark:text-gray-300 ${alignClass} whitespace-nowrap ${extraClass}">${val}</td>`;
+                    html += `<td class="px-3 py-3 text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
                 }
             });
             html += '</tr>';
