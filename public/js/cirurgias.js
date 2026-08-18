@@ -466,16 +466,12 @@ const OPME = (() => {
                 } else {
                     const val = formatCell(col.key === '_deadline' ? null : row[col.key], col, row);
                     const extraClass = getCellClass(col, row);
-                    let alignClass = (col.type === 'currency' || col.type === 'number' || col.type === 'deadline') ? 'text-right' : 'text-center';
+                    let alignClass = 'text-center';
                     let wrapClass = 'whitespace-nowrap';
 
-                    if (col.key === 'produto' || col.key === 'descricao_personalizada') {
+                    if (col.key === 'produto' || col.key === 'descricao_personalizada' || col.key === 'descricao_item') {
                         alignClass = 'text-left';
-                        wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[350px]';
-                    }
-
-                    if (state.currentTab === 'unidades') {
-                        alignClass = 'text-center';
+                        wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[450px]';
                     }
                     
                     html += `<td class="px-3 py-3 text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
