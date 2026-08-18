@@ -193,6 +193,45 @@ router.get('/banco-codigos', async (req, res) => {
     }
 });
 // ==========================================
+// GET /api/opme/produto-info
+// Busca informações no bancocodigos e saldoata
+// ==========================================
+router.get('/produto-info', async (req, res) => {
+    try {
+        const { cod_bio, contrato } = req.query;
+        
+        if (!cod_bio || !contrato) {
+            return res.status(400).json({ error: 'Parâmetros cod_bio e contrato são obrigatórios.' });
+        }
+
+        const query = `
+            SELECT 
+                bc.classificacao,
+                bc.produto,
+                bc.descricao_personalizada,
+                bc.item_ata,
+                sa.valor_unitario
+            FROM opme.bancocodigos bc
+            LEFT JOIN opme.saldoata sa 
+                ON bc.contrato = sa.contrato AND bc.item_ata = sa.item_ata
+            WHERE bc.cod_bio = $1 AND bc.contrato = $2
+            LIMIT 1
+        `;
+
+        const result = await pgPool.query(query, [cod_bio, contrato]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Código não encontrado no banco de códigos do contrato.' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('[OPME] Erro ao buscar produto-info:', err.message);
+        res.status(500).json({ error: 'Erro interno ao buscar informações do produto.' });
+    }
+});
+
+// ==========================================
 // PUT /api/opme/cirurgias
 // ==========================================
 router.put('/cirurgias', async (req, res) => {

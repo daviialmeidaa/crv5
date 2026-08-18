@@ -137,6 +137,21 @@ const OPME = (() => {
         return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
+    function formatCurrencyInput(val) {
+        if (val === null || val === undefined || val === '') return '';
+        const num = parseFloat(val);
+        if (isNaN(num)) return '';
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function parseCurrency(val) {
+        if (!val) return null;
+        if (typeof val === 'number') return val;
+        const cleaned = String(val).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+    }
+
     function formatDate(val) {
         if (!val || val === '-') return '-';
         if (typeof val === 'string' && val.includes('-') && val.length >= 10) {
@@ -1148,13 +1163,16 @@ const OPME = (() => {
     function renderProductBlock(item, idx) {
         const container = document.getElementById('cirurgiaProductsContainer');
         const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
-        const titleText = item.produto || 'NOVO PRODUTO';
+        const itemPregaoHtml = `<input type="hidden" class="prod-item-pregao" value="${item.item_pregao || ''}">`;
+        const itemText = item.item_pregao ? ` - Item ${item.item_pregao}` : '';
+        const titleText = (item.produto || 'NOVO PRODUTO') + itemText;
         
         const block = document.createElement('div');
         block.className = 'produto-box product-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
         
         block.innerHTML = `
             ${idHtml}
+            ${itemPregaoHtml}
             <!-- Header (Collapsible) -->
             <div class="accordion-header flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-steel-700/60 select-none" onclick="OPME.toggleCirurgiaProduct(this)">
                 <div class="flex items-center gap-2">
@@ -1179,11 +1197,11 @@ const OPME = (() => {
                         <div class="w-1/2 grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Bio</label>
-                                <input type="number" class="prod-cod-bio w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.cod_bio || ''}">
+                                <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.cod_bio || ''}">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Tipo de Cirurgia</label>
-                                <input type="text" class="prod-tipo w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.classificacao || ''}">
+                                <input type="text" readonly tabindex="-1" class="prod-tipo w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all pointer-events-none" value="${item.classificacao || ''}">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote</label>
@@ -1195,11 +1213,11 @@ const OPME = (() => {
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
-                                <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all text-right" value="${item.valor_unitario !== null ? item.valor_unitario : ''}">
+                                <input type="text" readonly tabindex="-1" class="prod-vlr-un w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all text-right pointer-events-none" value="${formatCurrencyInput(item.valor_unitario)}">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
-                                <input type="number" step="0.01" oninput="OPME.calculateTotalCirurgia()" class="prod-vlr-tot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all text-right font-semibold" value="${item.valor_total !== null ? item.valor_total : ''}">
+                                <input type="text" readonly tabindex="-1" class="prod-vlr-tot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all text-right font-semibold pointer-events-none" value="${formatCurrencyInput(item.valor_total)}">
                             </div>
                         </div>
 
@@ -1207,11 +1225,11 @@ const OPME = (() => {
                         <div class="w-1/2 flex flex-col gap-3">
                             <div class="flex-1 flex flex-col">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Produto</label>
-                                <textarea oninput="this.closest('.produto-box').querySelector('.prod-title-text').textContent = this.value || 'NOVO PRODUTO';" class="prod-nome w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none flex-1" style="min-height: 48px;">${item.produto || ''}</textarea>
+                                <textarea readonly tabindex="-1" class="prod-nome w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all resize-none flex-1 pointer-events-none" style="min-height: 48px;">${item.produto || ''}</textarea>
                             </div>
                             <div class="flex-1 flex flex-col">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Descrição Personalizada</label>
-                                <textarea class="prod-desc w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none flex-1" style="min-height: 48px;">${item.descricao_personalizada || ''}</textarea>
+                                <textarea readonly tabindex="-1" class="prod-desc w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all resize-none flex-1 pointer-events-none" style="min-height: 48px;">${item.descricao_personalizada || ''}</textarea>
                             </div>
                         </div>
                     </div>
@@ -1249,11 +1267,69 @@ const OPME = (() => {
     function calculateTotalCirurgia() {
         let globalTotal = 0;
         document.querySelectorAll('.product-block').forEach(block => {
-            const valInput = block.querySelector('.prod-vlr-tot');
-            const total = parseFloat(valInput.value) || 0;
+            const qtdeInput = block.querySelector('.prod-qtde');
+            const vlrUnInput = block.querySelector('.prod-vlr-un');
+            const vlrTotInput = block.querySelector('.prod-vlr-tot');
+            
+            const qtde = parseFloat(qtdeInput.value) || 0;
+            const vlrUn = parseCurrency(vlrUnInput.value) || 0;
+            
+            const total = qtde * vlrUn;
+            vlrTotInput.value = formatCurrencyInput(total);
+            
             globalTotal += total;
         });
         document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal);
+    }
+
+    async function fetchProdutoInfo(input) {
+        const block = input.closest('.produto-box');
+        const codBio = input.value.trim();
+        const contrato = document.getElementById('fcContrato').value;
+
+        if (!codBio) return;
+        if (!contrato) {
+            showToast('Selecione um contrato antes de buscar o Cód. Bio.', 'warning');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/opme/produto-info?cod_bio=${encodeURIComponent(codBio)}&contrato=${encodeURIComponent(contrato)}`, {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+
+            if (res.status === 404) {
+                document.getElementById('errorModal').classList.remove('hidden');
+                // Limpa os campos
+                block.querySelector('.prod-tipo').value = '';
+                block.querySelector('.prod-nome').value = '';
+                block.querySelector('.prod-desc').value = '';
+                block.querySelector('.prod-vlr-un').value = '';
+                block.querySelector('.prod-item-pregao').value = '';
+                
+                block.querySelector('.prod-title-text').textContent = 'NOVO PRODUTO';
+                calculateTotalCirurgia();
+                return;
+            }
+
+            if (!res.ok) throw new Error('Erro ao buscar produto');
+
+            const data = await res.json();
+            
+            block.querySelector('.prod-tipo').value = data.classificacao || '';
+            block.querySelector('.prod-nome').value = data.produto || '';
+            block.querySelector('.prod-desc').value = data.descricao_personalizada || '';
+            block.querySelector('.prod-item-pregao').value = data.item_ata || '';
+            block.querySelector('.prod-vlr-un').value = formatCurrencyInput(data.valor_unitario);
+
+            const itemText = data.item_ata ? ` - Item ${data.item_ata}` : '';
+            block.querySelector('.prod-title-text').textContent = (data.produto || 'NOVO PRODUTO') + itemText;
+
+            calculateTotalCirurgia();
+        } catch (err) {
+            console.error(err);
+            showToast('Erro ao buscar informações do produto.', 'error');
+        }
     }
 
     function closeCirurgiaModal() {
@@ -1298,8 +1374,9 @@ const OPME = (() => {
                 descricao_personalizada: block.querySelector('.prod-desc').value,
                 quantidade_utilizada: block.querySelector('.prod-qtde').value,
                 lote: block.querySelector('.prod-lote').value.toUpperCase(),
-                valor_unitario: block.querySelector('.prod-vlr-un').value,
-                valor_total: block.querySelector('.prod-vlr-tot').value
+                valor_unitario: parseCurrency(block.querySelector('.prod-vlr-un').value),
+                valor_total: parseCurrency(block.querySelector('.prod-vlr-tot').value),
+                item_pregao: block.querySelector('.prod-item-pregao') ? block.querySelector('.prod-item-pregao').value || null : null
             };
             
             if (idInput && idInput.value) {
@@ -1417,6 +1494,7 @@ const OPME = (() => {
         deleteCirurgia,
         closeDeleteModal,
         confirmDeleteCirurgia,
+        fetchProdutoInfo,
         goToPage,
         selectContractByIdx,
         toggleContractStatus
