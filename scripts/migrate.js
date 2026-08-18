@@ -84,6 +84,7 @@ async function runMigrations() {
             CREATE TABLE IF NOT EXISTS opme.Contratos (
                 id SERIAL PRIMARY KEY,
                 id_contrato VARCHAR(255) NOT NULL,
+                empresa VARCHAR(255),
                 material VARCHAR(255),
                 cod_cliente INTEGER,
                 cliente VARCHAR(255),

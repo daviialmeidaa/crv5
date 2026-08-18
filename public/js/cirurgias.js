@@ -1316,6 +1316,7 @@ const OPME = (() => {
         form.reset();
         
         const inputId = document.getElementById('fcContratoId');
+        const inputEmpresa = document.getElementById('fcContratoEmpresa');
 
         if (idx !== null) {
             // Edit mode
@@ -1326,6 +1327,10 @@ const OPME = (() => {
             inputId.value = row.id_contrato || '';
             inputId.readOnly = true;
             inputId.classList.add('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
+
+            inputEmpresa.value = row.empresa || '';
+            inputEmpresa.disabled = true;
+            inputEmpresa.classList.add('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
             
             document.getElementById('fcContratoMaterial').value = row.material || '';
             document.getElementById('fcContratoCodCliente').value = row.cod_cliente || '';
@@ -1345,8 +1350,23 @@ const OPME = (() => {
             // New mode
             editingContratoId = null;
             titleSpan.textContent = 'Novo Contrato';
+            
+            inputId.value = '';
             inputId.readOnly = false;
             inputId.classList.remove('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
+
+            inputEmpresa.value = '';
+            inputEmpresa.disabled = false;
+            inputEmpresa.classList.remove('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
+            
+            document.getElementById('fcContratoMaterial').value = '';
+            document.getElementById('fcContratoCodCliente').value = '';
+            document.getElementById('fcContratoCliente').value = '';
+            document.getElementById('fcContratoUf').value = '';
+            document.getElementById('fcContratoPregao').value = '';
+            document.getElementById('fcContratoTotalAta').value = '';
+            document.getElementById('fcContratoInicio').value = '';
+            document.getElementById('fcContratoTermino').value = '';
         }
 
         modal.classList.remove('hidden');
@@ -1377,8 +1397,9 @@ const OPME = (() => {
     async function saveContrato() {
         const payload = {
             id_contrato: document.getElementById('fcContratoId').value.toUpperCase(),
+            empresa: document.getElementById('fcContratoEmpresa').value.toUpperCase(),
             material: document.getElementById('fcContratoMaterial').value.toUpperCase(),
-            cod_cliente: document.getElementById('fcContratoCodCliente').value,
+            cod_cliente: document.getElementById('fcContratoCodCliente').value || null,
             cliente: document.getElementById('fcContratoCliente').value.toUpperCase(),
             uf: document.getElementById('fcContratoUf').value,
             pregao: document.getElementById('fcContratoPregao').value.toUpperCase(),

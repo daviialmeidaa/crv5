@@ -38,7 +38,7 @@ router.get('/contratos', async (req, res) => {
 // ==========================================
 router.post('/contratos', async (req, res) => {
     try {
-        const { id_contrato, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
+        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
         
         if (!id_contrato || !cliente) {
             return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
@@ -48,11 +48,11 @@ router.post('/contratos', async (req, res) => {
 
         const result = await pgPool.query(`
             INSERT INTO opme.contratos 
-            (id_contrato, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false)
+            (id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false)
             RETURNING id
         `, [
-            id_contrato, material || null, cod_cliente || null, cliente, uf || null, 
+            id_contrato, empresa || null, material || null, cod_cliente || null, cliente, uf || null, 
             pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
             inicio_ata || null, termino_ata || null
         ]);
@@ -70,7 +70,7 @@ router.post('/contratos', async (req, res) => {
 router.put('/contratos/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { id_contrato, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
+        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
         
         if (!id_contrato || !cliente) {
             return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
@@ -80,11 +80,11 @@ router.put('/contratos/:id', async (req, res) => {
 
         await pgPool.query(`
             UPDATE opme.contratos SET 
-                id_contrato = $1, material = $2, cod_cliente = $3, cliente = $4, 
-                uf = $5, pregao = $6, total_ata = $7, inicio_ata = $8, termino_ata = $9
-            WHERE id = $10
+                id_contrato = $1, empresa = $2, material = $3, cod_cliente = $4, cliente = $5, 
+                uf = $6, pregao = $7, total_ata = $8, inicio_ata = $9, termino_ata = $10
+            WHERE id = $11
         `, [
-            id_contrato, material || null, cod_cliente || null, cliente, uf || null, 
+            id_contrato, empresa || null, material || null, cod_cliente || null, cliente, uf || null, 
             pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
             inicio_ata || null, termino_ata || null, id
         ]);
