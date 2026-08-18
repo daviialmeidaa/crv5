@@ -103,6 +103,7 @@ const OPME = (() => {
             { key: 'hospital', label: 'Hospital' },
             { key: 'sigla', label: 'Sigla' },
             { key: 'ir', label: 'IR', type: 'boolean' },
+            { key: 'aliquota', label: 'Alíquota', type: 'percent' },
             { key: 'observacoes', label: 'Observações' },
         ],
         saldoata: [
@@ -241,6 +242,10 @@ const OPME = (() => {
             if (val === null || val === undefined) return '-';
             if (col.key === 'cod_cliente' || col.key === 'cod_bio') return String(val);
             return Number(val).toLocaleString('pt-BR');
+        }
+        if (col.type === 'percent') {
+            if (val === null || val === undefined || val === 0 || val === '0') return '-';
+            return `${String(val).replace('.', ',')}%`;
         }
         return val !== null && val !== undefined && val !== '' ? String(val).trim() : '-';
     }
@@ -477,6 +482,11 @@ const OPME = (() => {
                     if (col.key === 'produto' || col.key === 'descricao_personalizada' || col.key === 'descricao_item') {
                         alignClass = 'text-left';
                         wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[450px]';
+                    }
+
+                    if (col.key === 'observacoes') {
+                        alignClass = 'text-left';
+                        wrapClass = 'whitespace-normal break-words max-w-[300px]';
                     }
                     
                     html += `<td class="px-3 py-3 text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
@@ -1475,6 +1485,7 @@ const OPME = (() => {
             document.getElementById('fcUnidadeSigla').value = row.sigla || '';
             
             document.getElementById('fcUnidadeIR').checked = !!row.ir;
+            document.getElementById('fcUnidadeAliquota').value = row.aliquota || '';
             document.getElementById('fcUnidadeObservacoes').value = row.observacoes || '';
             toggleIRObservacoes();
         } else {
@@ -1484,6 +1495,7 @@ const OPME = (() => {
             inputContrato.value = state.selectedContract ? state.selectedContract.id_contrato : '';
             
             document.getElementById('fcUnidadeIR').checked = false;
+            document.getElementById('fcUnidadeAliquota').value = '';
             document.getElementById('fcUnidadeObservacoes').value = '';
             toggleIRObservacoes();
         }
@@ -1530,6 +1542,7 @@ const OPME = (() => {
             hospital: document.getElementById('fcUnidadeHospital').value.toUpperCase(),
             sigla: document.getElementById('fcUnidadeSigla').value.toUpperCase(),
             ir: document.getElementById('fcUnidadeIR').checked,
+            aliquota: parseFloat(document.getElementById('fcUnidadeAliquota').value.replace(',', '.')) || 0,
             observacoes: document.getElementById('fcUnidadeObservacoes').value
         };
 
@@ -1584,6 +1597,14 @@ const OPME = (() => {
             document.getElementById('cirurgiaTabObs').classList.add('block');
             document.getElementById('tabBtnCirurgiaObs').classList.remove('border-transparent', 'text-steel-500');
             document.getElementById('tabBtnCirurgiaObs').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
+            // Auto-resize quando a aba se torna visível
+            setTimeout(() => {
+                const ta = document.getElementById('fcCirurgiaObservacoes');
+                if (ta) {
+                    ta.style.height = 'auto';
+                    ta.style.height = ta.scrollHeight + 'px';
+                }
+            }, 50);
         }
     }
 
@@ -1611,6 +1632,11 @@ const OPME = (() => {
 
         switchCirurgiaModalTab('dados');
         document.getElementById('fcCirurgiaObservacoes').value = '';
+        document.getElementById('fcCirurgiaObservacoes').style.height = 'auto';
+        document.getElementById('fcCirurgiaObservacoes').oninput = function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        };
 
         // Gerar Observação dinamicamente a partir dos dados atuais
         const dateStr = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';

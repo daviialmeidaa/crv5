@@ -25,6 +25,7 @@ CREATE TABLE opme.Unidades (
     hospital VARCHAR(255),
     sigla VARCHAR(50),
     ir BOOLEAN DEFAULT FALSE,
+    aliquota DOUBLE PRECISION DEFAULT 0,
     observacoes TEXT
 );
 

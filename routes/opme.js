@@ -215,18 +215,18 @@ router.get('/unidades', async (req, res) => {
 // ==========================================
 router.post('/unidades', async (req, res) => {
     try {
-        const { contrato, cod_cliente, hospital, sigla, ir, observacoes } = req.body;
+        const { contrato, cod_cliente, hospital, sigla, ir, aliquota, observacoes } = req.body;
         
         if (!contrato) {
             return res.status(400).json({ error: 'O Cód. Contrato é obrigatório' });
         }
 
         const query = `
-            INSERT INTO opme.unidades (contrato, cod_cliente, hospital, sigla, ir, observacoes)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO opme.unidades (contrato, cod_cliente, hospital, sigla, ir, aliquota, observacoes)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *;
         `;
-        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, ir || false, observacoes || null];
+        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, ir || false, aliquota || 0, observacoes || null];
         
         const result = await pgPool.query(query, values);
         res.status(201).json(result.rows[0]);
@@ -242,7 +242,7 @@ router.post('/unidades', async (req, res) => {
 router.put('/unidades/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { contrato, cod_cliente, hospital, sigla, ir, observacoes } = req.body;
+        const { contrato, cod_cliente, hospital, sigla, ir, aliquota, observacoes } = req.body;
         
         if (!contrato) {
             return res.status(400).json({ error: 'O Cód. Contrato é obrigatório' });
@@ -250,11 +250,11 @@ router.put('/unidades/:id', async (req, res) => {
 
         const query = `
             UPDATE opme.unidades 
-            SET contrato = $1, cod_cliente = $2, hospital = $3, sigla = $4, ir = $5, observacoes = $6
-            WHERE id = $7
+            SET contrato = $1, cod_cliente = $2, hospital = $3, sigla = $4, ir = $5, aliquota = $6, observacoes = $7
+            WHERE id = $8
             RETURNING *;
         `;
-        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, ir || false, observacoes || null, id];
+        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, ir || false, aliquota || 0, observacoes || null, id];
         
         const result = await pgPool.query(query, values);
         
@@ -526,9 +526,9 @@ async function generateObservacaoText(pgPool, ref, items) {
         const pregao = contrato.pregao || '';
         const empresa = contrato.empresa || '';
 
-        // 2) Buscar dados da unidade (hospital, sigla, ir, observacoes)
+        // 2) Buscar dados da unidade (hospital, sigla, ir, aliquota, observacoes)
         const unidadeRes = await pgPool.query(
-            'SELECT hospital, sigla, ir, observacoes FROM opme.unidades WHERE contrato = $1 AND sigla = $2 LIMIT 1',
+            'SELECT hospital, sigla, ir, aliquota, observacoes FROM opme.unidades WHERE contrato = $1 AND sigla = $2 LIMIT 1',
             [contratoCod, localSigla]
         );
         const unidade = unidadeRes.rows[0] || {};
@@ -586,11 +586,13 @@ async function generateObservacaoText(pgPool, ref, items) {
             texto += '\nBANCO BRASIL, AG: 1614-4, CC: 201018-6';
         }
 
-        // 8) Se a unidade tem IR, mostrar observações da unidade + cálculo de 1,2%
+        // 8) Se a unidade tem IR, mostrar observações da unidade + cálculo pela alíquota
         if (unidade.ir === true && unidade.observacoes) {
-            const irValor = totalNota * 0.012;
-            const irFormatado = irValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-            texto += `\n\n${unidade.observacoes} - ${irFormatado}`;
+            const aliquota = parseFloat(unidade.aliquota) || 0;
+            const irValor = totalNota * (aliquota / 100);
+            const aliquotaStr = String(aliquota).replace('.', ',');
+            const irFormatado = irValor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 5 });
+            texto += `\n\n${unidade.observacoes} de ${aliquotaStr}% = R$ ${irFormatado}`;
         }
 
         return texto.trim();

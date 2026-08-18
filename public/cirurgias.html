@@ -630,7 +630,7 @@
             onclick="OPME.closeCirurgiaModal()"></div>
 
         <div
-            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
             <!-- Header do Modal -->
             <div
                 class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
@@ -857,14 +857,14 @@
                     </div> <!-- Fim Aba: Dados da Cirurgia -->
 
                     <!-- Aba: Observações -->
-                    <div id="cirurgiaTabObs" class="hidden h-full min-h-[300px]">
-                        <div class="bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm h-full flex flex-col">
+                    <div id="cirurgiaTabObs" class="hidden">
+                        <div class="bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
                             <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
                                 <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
                                 Observações Gerais
                             </h4>
-                            <textarea id="fcCirurgiaObservacoes" rows="12"
-                                class="w-full flex-1 px-3 py-3 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none custom-scrollbar"
+                            <textarea id="fcCirurgiaObservacoes"
+                                class="w-full px-3 py-3 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none overflow-hidden"
                                 placeholder="Digite as observações desta cirurgia..."></textarea>
                         </div>
                     </div> <!-- Fim Aba: Observações -->
@@ -1234,6 +1234,13 @@
                                 </label>
                             </div>
                             <div class="md:col-span-2 hidden" id="unidadeObsContainer">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Alíquota (%)</label>
+                                        <input type="text" id="fcUnidadeAliquota" placeholder="Ex: 1,2"
+                                            class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    </div>
+                                </div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Observações</label>
                                 <textarea id="fcUnidadeObservacoes" rows="3"
                                     class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all custom-scrollbar resize-none"></textarea>

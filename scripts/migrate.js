@@ -176,6 +176,7 @@ async function runMigrations() {
         await client.query(`
             ALTER TABLE opme.Contratos ADD COLUMN IF NOT EXISTS empresa VARCHAR(255);
             ALTER TABLE opme.Unidades ADD COLUMN IF NOT EXISTS ir BOOLEAN DEFAULT FALSE;
+            ALTER TABLE opme.Unidades ADD COLUMN IF NOT EXISTS aliquota DOUBLE PRECISION DEFAULT 0;
             ALTER TABLE opme.Unidades ADD COLUMN IF NOT EXISTS observacoes TEXT;
         `);
 
