@@ -1079,14 +1079,14 @@ const OPME = (() => {
         document.getElementById('cirurgiaForm').reset();
         document.getElementById('cirurgiaProductsContainer').innerHTML = '';
 
-        titleSpan.textContent = `Nova Cirurgia - ${state.selectedContract.contrato}`;
+        titleSpan.textContent = `Nova Cirurgia - ${state.selectedContract.id_contrato}`;
 
         // Preencher Campos Iniciais
-        document.getElementById('fcContrato').value = state.selectedContract.contrato || '';
+        document.getElementById('fcContrato').value = state.selectedContract.id_contrato || '';
         
         // Buscar e preencher Unidades (Local da Cirurgia)
         try {
-            const resUnidades = await fetch(`/api/opme/unidades?contrato=${state.selectedContract.contrato}`, {
+            const resUnidades = await fetch(`/api/opme/unidades?contrato=${state.selectedContract.id_contrato}`, {
                 headers: { 'Authorization': `Bearer ${getToken()}` }
             });
             if (resUnidades.ok) {
