@@ -1149,7 +1149,6 @@ const OPME = (() => {
         const container = document.getElementById('cirurgiaProductsContainer');
         const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
         const titleText = item.produto || 'NOVO PRODUTO';
-        const loteText = item.lote ? `- LOTE / ITEM ${item.lote}` : '';
         
         const block = document.createElement('div');
         block.className = 'produto-box product-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
@@ -1161,7 +1160,6 @@ const OPME = (() => {
                 <div class="flex items-center gap-2">
                     <svg class="accordion-icon w-4 h-4 text-steel-400 transition-transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     <span class="prod-title-text text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">${titleText}</span>
-                    <span class="lote-title-suffix text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wide ml-1">${loteText}</span>
                 </div>
                 <div class="flex items-center gap-3">
                     <button type="button" onclick="event.stopPropagation(); OPME.removeCirurgiaProduct(this)" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
@@ -1178,7 +1176,7 @@ const OPME = (() => {
                 <div class="p-4 space-y-4">
                     <div class="flex gap-4">
                         <!-- Coluna Esquerda (50%) — Grid 2x3 -->
-                        <div class="w-1/2 grid grid-cols-2 gap-3 h-full content-start">
+                        <div class="w-1/2 grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Bio</label>
                                 <input type="number" class="prod-cod-bio w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.cod_bio || ''}">
@@ -1189,7 +1187,7 @@ const OPME = (() => {
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote</label>
-                                <input type="text" oninput="this.closest('.produto-box').querySelector('.lote-title-suffix').textContent = this.value ? '- LOTE / ITEM ' + this.value : '';" class="prod-lote w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase" value="${item.lote || ''}">
+                                <input type="text" class="prod-lote w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase" value="${item.lote || ''}">
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Quantidade</label>
@@ -1206,10 +1204,10 @@ const OPME = (() => {
                         </div>
 
                         <!-- Coluna Direita (50%) — Produto + Descrição -->
-                        <div class="w-1/2 flex flex-col gap-3 h-full">
+                        <div class="w-1/2 flex flex-col gap-3">
                             <div class="flex-1 flex flex-col">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Produto</label>
-                                <input type="text" oninput="this.closest('.produto-box').querySelector('.prod-title-text').textContent = this.value || 'NOVO PRODUTO';" class="prod-nome w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all flex-1" value="${item.produto || ''}">
+                                <textarea oninput="this.closest('.produto-box').querySelector('.prod-title-text').textContent = this.value || 'NOVO PRODUTO';" class="prod-nome w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none flex-1" style="min-height: 48px;">${item.produto || ''}</textarea>
                             </div>
                             <div class="flex-1 flex flex-col">
                                 <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Descrição Personalizada</label>
@@ -1342,19 +1340,42 @@ const OPME = (() => {
         }
     }
 
-    async function deleteCirurgia() {
+    function deleteCirurgia() {
         if (!canDeleteCirurgia) return;
         const ids = editingCirurgiaItems.map(i => i.id);
         if (!ids.length) return;
 
-        if (!confirm('ATENÇÃO: Deseja realmente excluir TODOS os itens desta cirurgia? Esta ação não pode ser desfeita.')) return;
+        const ref = editingCirurgiaItems[0];
+        const rawDate = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
+        let formattedDate = rawDate;
+        if (rawDate) {
+            const parts = rawDate.split('-');
+            formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        
+        const paciente = ref.paciente || '';
+        const contrato = ref.contrato || '';
+        const text = `Tem certeza que deseja excluir a cirurgia ${paciente} ${formattedDate} ${contrato}? Esta ação não pode ser desfeita.`;
+        
+        document.getElementById('deleteModalText').textContent = text;
+        document.getElementById('deleteModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden');
+    }
+
+    async function confirmDeleteCirurgia() {
+        if (!canDeleteCirurgia) return;
+        const ids = editingCirurgiaItems.map(i => i.id);
+        if (!ids.length) return;
 
         try {
-            const btnDelete = document.getElementById('btnDeleteCirurgia');
+            const btnDelete = document.getElementById('btnConfirmDelete');
             btnDelete.disabled = true;
 
             const res = await fetch('/api/opme/cirurgias/batch-delete', {
-                method: 'POST', // ou DELETE dependendo de como o Express interpretar o body
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${getToken()}`
@@ -1365,13 +1386,14 @@ const OPME = (() => {
             if (!res.ok) throw new Error('Erro ao excluir cirurgia');
             
             showToast('Cirurgia excluída com sucesso', 'success');
+            closeDeleteModal();
             closeCirurgiaModal();
             fetchData();
         } catch (err) {
             console.error(err);
             showToast('Falha ao excluir a cirurgia.', 'error');
         } finally {
-            const btnDelete = document.getElementById('btnDeleteCirurgia');
+            const btnDelete = document.getElementById('btnConfirmDelete');
             if (btnDelete) btnDelete.disabled = false;
         }
     }
@@ -1393,6 +1415,8 @@ const OPME = (() => {
         calculateTotalCirurgia,
         saveCirurgia,
         deleteCirurgia,
+        closeDeleteModal,
+        confirmDeleteCirurgia,
         goToPage,
         selectContractByIdx,
         toggleContractStatus
