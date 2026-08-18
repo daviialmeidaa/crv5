@@ -37,6 +37,7 @@ const ClienteDetalhe = (() => {
         { key: 'documento', label: 'Documento' },
         { key: 'valor', label: 'Valor', type: 'currency' },
         { key: 'dataVencimento', label: 'Data de Vencimento', type: 'date' },
+        { key: 'dataPagamento', label: 'Data de Pagamento', type: 'date' },
         { 
             key: 'diasAtraso', label: 'Dias de Atraso', type: 'number',
             render: (v) => {
@@ -211,6 +212,9 @@ const ClienteDetalhe = (() => {
             state.rawData = data.map(row => {
                 if (row.dataVencimento && row.dataVencimento.includes('T')) {
                     row.dataVencimento = row.dataVencimento.split('T')[0];
+                }
+                if (row.dataPagamento && row.dataPagamento.includes('T')) {
+                    row.dataPagamento = row.dataPagamento.split('T')[0];
                 }
 
                 if (row.status === 'ATRASADO' && row.dataVencimento) {

@@ -45,6 +45,9 @@ router.get('/stream', async (req, res) => {
                 FROM notifications n
                 LEFT JOIN users u ON n.created_by = u.id
                 LEFT JOIN notification_reads nr ON nr.notification_id = n.id AND nr.user_id = $1
+                WHERE n.module != 'COBRANCA' 
+                   OR n.created_by = $1 
+                   OR (SELECT email FROM users WHERE id = $1) = 'davi.almeida@iebtinnovation.com'
                 ORDER BY n.created_at DESC
                 LIMIT 50
             `;
@@ -98,6 +101,9 @@ router.get('/', async (req, res) => {
             FROM notifications n
             LEFT JOIN users u ON n.created_by = u.id
             LEFT JOIN notification_reads nr ON nr.notification_id = n.id AND nr.user_id = $1
+            WHERE n.module != 'COBRANCA' 
+               OR n.created_by = $1 
+               OR (SELECT email FROM users WHERE id = $1) = 'davi.almeida@iebtinnovation.com'
             ORDER BY n.created_at DESC
             LIMIT 50
         `;

@@ -99,6 +99,7 @@ router.get('/:id/notas', authMiddleware, async (req, res) => {
                 t.documento AS "documento",
                 t.valor_nota AS "valor",
                 t.data_vencimento AS "dataVencimento",
+                t.data_pagamento AS "dataPagamento",
                 t.status AS "status"
             FROM titulos t
             LEFT JOIN contratos c ON t.contrato = c.codigo_contrato
