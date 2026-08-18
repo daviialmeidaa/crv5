@@ -520,6 +520,13 @@
                         </svg>
                         Inserir Cirurgia
                     </button>
+                    <button id="btnNewUnidade" onclick="OPME.openUnidadeModal()"
+                        class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Inserir Unidade
+                    </button>
                     <button onclick="OPME.clearContract()"
                         class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-steel-500 dark:text-steel-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-all shadow-sm">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -1094,6 +1101,92 @@
                     class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
                 <button onclick="OPME.confirmDeleteCirurgia()" id="btnConfirmDelete"
                     class="px-5 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Unidade (OPME) -->
+    <!-- ========================================== -->
+    <div id="modalUnidade" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeUnidadeModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="unidadeModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>Nova Unidade</span>
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="OPME.closeUnidadeModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body do Modal (Formulário) -->
+            <div class="flex-1 overflow-y-auto p-6 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
+                <form id="unidadeForm" onsubmit="event.preventDefault(); OPME.saveUnidade();">
+                    
+                    <!-- Seção: Informações da Unidade -->
+                    <div class="bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Dados da Unidade
+                        </h4>
+                        
+                        <input type="hidden" id="fcUnidadeId">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato *</label>
+                                <input type="text" id="fcUnidadeContrato" required disabled
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-700/50 rounded-lg text-steel-500 dark:text-gray-400 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Cliente</label>
+                                <input type="number" id="fcUnidadeCodCliente"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Hospital</label>
+                                <input type="text" id="fcUnidadeHospital"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Sigla</label>
+                                <input type="text" id="fcUnidadeSigla"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div
+                class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex justify-end gap-3 shrink-0">
+                <button type="button" onclick="OPME.closeUnidadeModal()"
+                    class="px-4 py-2 text-sm font-medium text-steel-600 dark:text-steel-300 hover:bg-gray-100 dark:hover:bg-steel-700 rounded-lg transition-colors">
+                    Cancelar
+                </button>
+                <button type="button" onclick="OPME.saveUnidade()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Salvar
+                </button>
             </div>
         </div>
     </div>

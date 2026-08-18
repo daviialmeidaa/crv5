@@ -211,6 +211,64 @@ router.get('/unidades', async (req, res) => {
 });
 
 // ==========================================
+// POST /api/opme/unidades
+// ==========================================
+router.post('/unidades', async (req, res) => {
+    try {
+        const { contrato, cod_cliente, hospital, sigla } = req.body;
+        
+        if (!contrato) {
+            return res.status(400).json({ error: 'O Cód. Contrato é obrigatório' });
+        }
+
+        const query = `
+            INSERT INTO opme.unidades (contrato, cod_cliente, hospital, sigla)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *;
+        `;
+        const values = [contrato, cod_cliente || null, hospital || null, sigla || null];
+        
+        const result = await pgPool.query(query, values);
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('[OPME] Erro ao criar unidade:', err.message);
+        res.status(500).json({ error: 'Erro ao criar unidade' });
+    }
+});
+
+// ==========================================
+// PUT /api/opme/unidades/:id
+// ==========================================
+router.put('/unidades/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { contrato, cod_cliente, hospital, sigla } = req.body;
+        
+        if (!contrato) {
+            return res.status(400).json({ error: 'O Cód. Contrato é obrigatório' });
+        }
+
+        const query = `
+            UPDATE opme.unidades 
+            SET contrato = $1, cod_cliente = $2, hospital = $3, sigla = $4
+            WHERE id = $5
+            RETURNING *;
+        `;
+        const values = [contrato, cod_cliente || null, hospital || null, sigla || null, id];
+        
+        const result = await pgPool.query(query, values);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Unidade não encontrada' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('[OPME] Erro ao atualizar unidade:', err.message);
+        res.status(500).json({ error: 'Erro ao atualizar unidade' });
+    }
+});
+// ==========================================
 // GET /api/opme/saldo-ata?contrato=BIO687
 // ==========================================
 router.get('/saldo-ata', async (req, res) => {

@@ -958,6 +958,16 @@ const OPME = (() => {
             }
         }
 
+        // Controle do botão Inserir Unidade
+        const btnUnidade = document.getElementById('btnNewUnidade');
+        if (btnUnidade) {
+            if (tabId === 'unidades') {
+                btnUnidade.classList.remove('hidden');
+            } else {
+                btnUnidade.classList.add('hidden');
+            }
+        }
+
         fetchData();
     }
 
@@ -1088,6 +1098,8 @@ const OPME = (() => {
             document.getElementById('accessContractModal').classList.remove('hidden');
         } else if (tab === 'cirurgias') {
             openCirurgiaModal(row);
+        } else if (tab === 'unidades') {
+            openUnidadeModal(idx);
         } else {
             openDetailModal(row, tab);
         }
@@ -1368,6 +1380,100 @@ const OPME = (() => {
         } finally {
             btnSave.disabled = false;
             btnSave.textContent = originalText;
+        }
+    }
+
+    // ==========================================
+    // Unidade Modal Functions
+    // ==========================================
+    let editingUnidadeId = null;
+
+    function openUnidadeModal(idx = null) {
+        const modal = document.getElementById('modalUnidade');
+        const titleSpan = document.getElementById('unidadeModalTitle').querySelector('span');
+        const form = document.getElementById('unidadeForm');
+        
+        form.reset();
+        
+        const inputContrato = document.getElementById('fcUnidadeContrato');
+        
+        if (idx !== null) {
+            // Edit mode
+            const row = state.viewData[idx];
+            editingUnidadeId = row.id;
+            titleSpan.textContent = 'Editar Unidade: ' + (row.sigla || row.hospital || row.id);
+            
+            inputContrato.value = row.contrato || '';
+            document.getElementById('fcUnidadeCodCliente').value = row.cod_cliente || '';
+            document.getElementById('fcUnidadeHospital').value = row.hospital || '';
+            document.getElementById('fcUnidadeSigla').value = row.sigla || '';
+        } else {
+            // New mode
+            editingUnidadeId = null;
+            titleSpan.textContent = 'Nova Unidade';
+            inputContrato.value = state.selectedContract ? state.selectedContract.id_contrato : '';
+        }
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        setTimeout(() => {
+            const content = modal.querySelector('.modal-content');
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeUnidadeModal() {
+        const modal = document.getElementById('modalUnidade');
+        const content = modal.querySelector('.modal-content');
+        
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('unidadeForm').reset();
+            editingUnidadeId = null;
+        }, 300);
+    }
+
+    async function saveUnidade() {
+        const payload = {
+            contrato: document.getElementById('fcUnidadeContrato').value.toUpperCase(),
+            cod_cliente: document.getElementById('fcUnidadeCodCliente').value,
+            hospital: document.getElementById('fcUnidadeHospital').value.toUpperCase(),
+            sigla: document.getElementById('fcUnidadeSigla').value.toUpperCase()
+        };
+
+        if (!payload.contrato) {
+            showToast('Cód. Contrato é obrigatório', 'error');
+            return;
+        }
+
+        try {
+            const url = editingUnidadeId ? `/api/opme/unidades/${editingUnidadeId}` : '/api/opme/unidades';
+            const method = editingUnidadeId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Erro ao salvar unidade');
+
+            showToast(editingUnidadeId ? 'Unidade atualizada com sucesso' : 'Unidade criada com sucesso', 'success');
+            closeUnidadeModal();
+            await fetchData();
+        } catch (err) {
+            console.error('Erro ao salvar unidade:', err);
+            showToast(err.message, 'error');
         }
     }
 
@@ -1803,6 +1909,9 @@ const OPME = (() => {
         openContratoModal,
         closeContratoModal,
         saveContrato,
+        openUnidadeModal,
+        closeUnidadeModal,
+        saveUnidade,
         handleSort,
         openFilter,
         closeFilter,
