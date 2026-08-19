@@ -597,10 +597,9 @@ const OPME = (() => {
     // 8.0 Seleção de Células (Estilo Excel - Soma + Arrasto)
     // ==========================================
     const selectedCells = new Set();
+    const SEL_CLASSES = ['ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20'];
     let isDragging = false;
     let dragStartCell = null;
-
-    const SEL_CLASSES = ['ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20'];
 
     function getCellId(td) {
         return `${td.closest('tr').rowIndex}-${td.cellIndex}`;
@@ -626,19 +625,57 @@ const OPME = (() => {
         const rMin = Math.min(r1, r2), rMax = Math.max(r1, r2);
         const cMin = Math.min(c1, c2), cMax = Math.max(c1, c2);
         const cells = [];
-        tbody.querySelectorAll('tr').forEach(tr => {
+        const rows = tbody.rows;
+        for (let i = 0; i < rows.length; i++) {
+            const tr = rows[i];
             if (tr.rowIndex >= rMin && tr.rowIndex <= rMax) {
-                Array.from(tr.children).forEach(td => {
-                    if (td.cellIndex >= cMin && td.cellIndex <= cMax) cells.push(td);
-                });
+                for (let j = cMin; j <= cMax; j++) {
+                    const cell = tr.cells[j];
+                    if (cell) cells.push(cell);
+                }
             }
-        });
+        }
         return cells;
     }
 
     function initCellSelection() {
         const tbody = document.getElementById('opmeTableBody');
         if (!tbody) return;
+
+        // Interceptar wheel para evitar zoom do navegador com Ctrl e forçar scroll
+        tbody.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const scrollContainer = tbody.closest('.custom-scrollbar') || tbody.closest('.overflow-auto') || window;
+                if (scrollContainer === window) {
+                    window.scrollBy({ top: e.deltaY, left: e.deltaX });
+                } else {
+                    scrollContainer.scrollTop += e.deltaY;
+                    scrollContainer.scrollLeft += e.deltaX;
+                }
+            }
+        }, { passive: false });
+
+        // Função de atualização de seleção refatorada
+        function updateDragSelection(td) {
+            if (!isDragging || !dragStartCell) return;
+            
+            // Limpar seleção do arrasto anterior (manter seleções pré-existentes)
+            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
+                cell.removeAttribute('data-drag-sel');
+                if (!cell.hasAttribute('data-pre-sel')) {
+                    deselectCell(cell);
+                }
+            });
+
+            // Selecionar retângulo
+            const cells = getCellsInRect(dragStartCell, td, tbody);
+            cells.forEach(cell => {
+                cell.setAttribute('data-drag-sel', '1');
+                selectCell(cell);
+            });
+            updateSelectionSumBar();
+        }
 
         // Ctrl+Click individual OU início de arrasto
         tbody.addEventListener('mousedown', (e) => {
@@ -652,6 +689,9 @@ const OPME = (() => {
 
             isDragging = true;
             dragStartCell = td;
+
+            // Marcar cells pré-selecionadas ao iniciar arrasto
+            tbody.querySelectorAll('td.ring-2').forEach(c => c.setAttribute('data-pre-sel', '1'));
 
             // Toggle individual (será recalculado se virar arrasto)
             if (selectedCells.has(getCellId(td))) {
@@ -670,21 +710,7 @@ const OPME = (() => {
             const td = e.target.closest('td');
             if (!td) return;
 
-            // Limpar seleção do arrasto anterior (manter seleções pré-existentes)
-            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
-                cell.removeAttribute('data-drag-sel');
-                if (!cell.hasAttribute('data-pre-sel')) {
-                    deselectCell(cell);
-                }
-            });
-
-            // Selecionar retângulo
-            const cells = getCellsInRect(dragStartCell, td, tbody);
-            cells.forEach(cell => {
-                cell.setAttribute('data-drag-sel', '1');
-                selectCell(cell);
-            });
-            updateSelectionSumBar();
+            updateDragSelection(td);
         });
 
         // Fim do arrasto
@@ -698,11 +724,6 @@ const OPME = (() => {
                     tbody.querySelectorAll('td[data-pre-sel]').forEach(td => td.removeAttribute('data-pre-sel'));
                 }
             }
-        });
-
-        // Marcar cells pré-selecionadas ao iniciar arrasto
-        tbody.addEventListener('mousedown', () => {
-            tbody.querySelectorAll('td.ring-2').forEach(td => td.setAttribute('data-pre-sel', '1'));
         });
 
         // Limpar seleção ao clicar fora (sem Ctrl)
