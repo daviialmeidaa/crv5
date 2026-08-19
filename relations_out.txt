@@ -1,0 +1,9 @@
+Connected
+Found 117 tables to check
+[+] Found 2 records in SGC2.dbo.pedido_item_fator_preco (column: pedit_ped_codigo)
+[+] Found 1 records in SGC2.dbo.comissao_venda (column: ped_codigo)
+[+] Found 2 records in SGC2.dbo.entrada_saida_mercadoria (column: pedit_ped_codigo)
+[+] Found 2 records in SGC2.dbo.pedido_item (column: ped_codigo)
+[+] Found 2 records in SGC2.dbo.pedido_item_lote (column: pedit_ped_codigo)
+[+] Found 1 records in SGC2.dbo.pedido (column: numero_pedido)
+[+] Found 4 records in SGC2.dbo.pedido_follow_up (column: ped_codigo)

@@ -2,7 +2,7 @@ const { sql, getPool } = require('../db/connection');
 async function run() {
     const pool = await getPool();
     const rows = await pool.request().query(`
-        SELECT name FROM SGC2.sys.views WHERE name LIKE '%nota_fiscal%' OR name LIKE '%pedido%'
+        SELECT ped_codigo, codigo FROM SGC2.dbo.pedido_item WHERE ped_codigo IN (32119, 32124)
     `);
     console.table(rows.recordset);
     process.exit(0);

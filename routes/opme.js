@@ -867,26 +867,68 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                     )
                 `);
 
-                const reqItemCode = new sql.Request(transaction);
-                const itemCodeRes = await reqItemCode.query(`SELECT ISNULL(MAX(codigo), 0) AS maxItemCode FROM ${dbName}.dbo.pedido_item WITH (UPDLOCK, SERIALIZABLE)`);
-                let novoItemCodigo = itemCodeRes.recordset[0].maxItemCode;
+                let novoItemCodigo = 0;
 
                 for (const item of items) {
                     novoItemCodigo++;
                     const prodCod = item.cod_bio || 0;
                     const qtd = item.quantidade_utilizada || 0;
-                    const vlr = item.valor_unitario || 0;
+                    
+                    // Fetch product details
+                    const reqProd = new sql.Request(transaction);
+                    const prodRes = await reqProd.query(`
+                        SELECT descricao, preco_venda, preco_custo, codigo_cst, unid_unidade 
+                        FROM ${dbName}.dbo.produto 
+                        WHERE codigo = '${prodCod}'
+                    `);
+                    
+                    let pDescricao = '';
+                    let pPrecoVenda = 0;
+                    let pPrecoCusto = 0;
+                    let pCst = '040';
+                    let pUnid = 'UN';
+
+                    if (prodRes.recordset.length > 0) {
+                        const p = prodRes.recordset[0];
+                        pDescricao = p.descricao || '';
+                        pPrecoVenda = p.preco_venda || 0;
+                        pPrecoCusto = p.preco_custo || 0;
+                        pCst = p.codigo_cst || '040';
+                        pUnid = p.unid_unidade || 'UN';
+                    }
+                    
+                    // Use item's price if > 0, else product's price
+                    let vlr = item.valor_unitario && parseFloat(item.valor_unitario) > 0 ? parseFloat(item.valor_unitario) : pPrecoVenda;
+                    
+                    // Clean description from quotes
+                    pDescricao = pDescricao.replace(/'/g, "''").trim();
                     
                     const reqItem = new sql.Request(transaction);
                     await reqItem.query(`
                         INSERT INTO ${dbName}.dbo.pedido_item (
                             codigo, ped_codigo, prod_codigo, quantidade, valor_unitario, 
                             quantidade_comercializacao, valor_unitario_comercializacao, descricao,
-                            unidade, unid_unidade_comercializacao
+                            unidade, unid_unidade_comercializacao,
+                            id_desconto_acrescimo, id_base_calculo_st, id_calculo_preco,
+                            id_metodo_calculo_preco_venda, codigo_cst, valor_custo, 
+                            valor_unitario_cadastro, preco_custo_produto,
+                            valor_frete, aliquota_icms, margem_lucro, valor_ipi, valor_outra_despesa,
+                            aliquota_reducao_icms, percentual_desconto_acrescimo, valor_desc_acresc_item,
+                            valor_desc_acresc_rateio, valor_base_calculo_icms_substituicao,
+                            valor_substituicao_tributaria, valor_despesa_acessoria_rateio, margem_valor_agregado,
+                            valor_unitario_sugerido
                         ) VALUES (
-                            ${novoItemCodigo}, ${novoCodigo}, ${prodCod}, ${qtd}, ${vlr},
-                            ${qtd}, ${vlr}, '',
-                            'UN', 'UN'
+                            ${novoItemCodigo}, ${novoCodigo}, '${prodCod}', ${qtd}, ${vlr},
+                            ${qtd}, ${vlr}, '${pDescricao}',
+                            '${pUnid}', '${pUnid}',
+                            1, 1, 4,
+                            1, '${pCst}', ${pPrecoCusto},
+                            ${pPrecoCusto}, ${pPrecoCusto},
+                            0, 0, 0, 0, 0,
+                            0, 0, 0,
+                            0, 0,
+                            0, 0, 0,
+                            ${pPrecoCusto}
                         )
                     `);
                 }
