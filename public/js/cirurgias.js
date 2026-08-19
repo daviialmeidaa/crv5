@@ -1261,6 +1261,7 @@ const OPME = (() => {
         const titleSpan = document.getElementById('cirurgiaModalSubtitle');
         const btnSave = document.getElementById('btnSaveCirurgia');
         const btnDelete = document.getElementById('btnDeleteCirurgia');
+        const btnGerarPedidoSupra = document.getElementById('btnGerarPedidoSupra');
 
         document.getElementById('cirurgiaForm').reset();
         document.getElementById('cirurgiaProductsContainer').innerHTML = '';
@@ -1314,6 +1315,7 @@ const OPME = (() => {
         }
         
         if (btnDelete) btnDelete.classList.add('hidden');
+        if (btnGerarPedidoSupra) btnGerarPedidoSupra.classList.add('hidden');
 
         // Resetar KPIs
         document.getElementById('fcTotalGlobal').textContent = 'R$ 0,00';
@@ -1636,6 +1638,7 @@ const OPME = (() => {
         const titleSpan = document.getElementById('cirurgiaModalSubtitle');
         const btnSave = document.getElementById('btnSaveCirurgia');
         const btnDelete = document.getElementById('btnDeleteCirurgia');
+        const btnGerarPedidoSupra = document.getElementById('btnGerarPedidoSupra');
 
         document.getElementById('cirurgiaForm').reset();
         document.getElementById('cirurgiaProductsContainer').innerHTML = '';
@@ -1738,6 +1741,12 @@ const OPME = (() => {
             btnDelete.classList.remove('hidden');
         } else {
             btnDelete.classList.add('hidden');
+        }
+
+        if (canEditCirurgia && !ref.pedido) {
+            btnGerarPedidoSupra.classList.remove('hidden');
+        } else {
+            btnGerarPedidoSupra.classList.add('hidden');
         }
 
         modal.classList.remove('hidden');
@@ -2026,6 +2035,66 @@ const OPME = (() => {
                 btnSave.disabled = false;
                 btnSave.innerHTML = 'Salvar Alterações';
             }
+        }
+    }
+
+    async function gerarPedidoSupra() {
+        if (!editingCirurgiaItems || editingCirurgiaItems.length === 0) return;
+        const ref = editingCirurgiaItems[0];
+        
+        if (ref.pedido) {
+            showToast('Esta cirurgia já possui pedido gerado.', 'warning');
+            return;
+        }
+
+        const btnGerar = document.getElementById('btnGerarPedidoSupra');
+        const originalText = btnGerar.innerHTML;
+        
+        try {
+            btnGerar.disabled = true;
+            btnGerar.innerHTML = `
+                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Gerando...
+            `;
+
+            const observacao = document.getElementById('fcCirurgiaObservacoes').value;
+            const dateStr = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
+
+            const response = await fetch('/api/opme/cirurgias/gerar-pedido', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({
+                    contrato: ref.contrato,
+                    paciente: ref.paciente,
+                    data_cirurgia: dateStr,
+                    observacao: observacao
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showToast(`Pedido Nº ${data.pedido} gerado com sucesso no Supra!`, 'success');
+                document.getElementById('fcPedido').value = data.pedido;
+                ref.pedido = data.pedido;
+                btnGerar.classList.add('hidden'); // Oculta o botão pois já tem pedido
+                fetchData(); // Atualiza a grid por trás
+            } else {
+                showToast(data.error || 'Erro ao gerar pedido.', 'error');
+            }
+
+        } catch (error) {
+            console.error('Erro ao gerar pedido Supra:', error);
+            showToast('Erro de conexão ao gerar pedido.', 'error');
+        } finally {
+            btnGerar.disabled = false;
+            btnGerar.innerHTML = originalText;
         }
     }
 
@@ -2645,6 +2714,7 @@ const OPME = (() => {
         removeCirurgiaProduct,
         calculateTotalCirurgia,
         saveCirurgia,
+        gerarPedidoSupra,
         deleteCirurgia,
         closeDeleteModal,
         confirmDeleteCirurgia,

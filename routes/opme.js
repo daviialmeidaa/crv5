@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pgPool = require('../db/pgConnection');
+const { sql, getPool } = require("../db/connection");
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { requirePermission } = require('../middleware/rbac');
 
@@ -762,6 +763,166 @@ router.post('/cirurgias/batch-delete', async (req, res) => {
         res.status(500).json({ error: 'Erro ao excluir cirurgias' });
     } finally {
         client.release();
+    }
+});
+// ==========================================
+// POST /api/opme/cirurgias/gerar-pedido
+// ==========================================
+router.post('/cirurgias/gerar-pedido', async (req, res) => {
+    try {
+        const { contrato, paciente, data_cirurgia, observacao } = req.body;
+        
+        if (!contrato || !paciente || !data_cirurgia) {
+            return res.status(400).json({ error: 'Contrato, Paciente e Data da Cirurgia são obrigatórios.' });
+        }
+
+        // 1. Salvar observação localmente (Upsert)
+        if (observacao !== undefined) {
+            const cirurgiaKey = `${paciente}_${data_cirurgia}`;
+            await pgPool.query(`
+                INSERT INTO opme.observacoes (contrato, cirurgia, observacao)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (cirurgia) DO UPDATE 
+                SET observacao = EXCLUDED.observacao, contrato = EXCLUDED.contrato
+            `, [contrato, cirurgiaKey, observacao]);
+        }
+
+        // 2. Buscar itens da cirurgia e info do contrato
+        const cirurgiaRes = await pgPool.query(`
+            SELECT c.*, ct.empresa 
+            FROM opme.cirurgias c
+            LEFT JOIN opme.contratos ct ON c.contrato = ct.id_contrato
+            WHERE c.contrato = $1 AND c.paciente = $2 AND c.data_cirurgia = $3
+        `, [contrato, paciente, data_cirurgia]);
+
+        const items = cirurgiaRes.rows;
+        if (items.length === 0) {
+            return res.status(404).json({ error: 'Nenhum item encontrado para esta cirurgia.' });
+        }
+
+        const ref = items[0];
+        if (ref.pedido) {
+            return res.status(400).json({ error: 'Esta cirurgia já possui um pedido gerado.' });
+        }
+
+        if (!ref.empresa) {
+            return res.status(400).json({ error: 'O contrato vinculado não possui empresa definida (Nexomed ou Bml).' });
+        }
+
+        let dbName, vendCodigo;
+        if (ref.empresa.toUpperCase() === 'NEXOMED') {
+            dbName = 'SGC';
+            vendCodigo = 4;
+        } else if (ref.empresa.toUpperCase() === 'BML') {
+            dbName = 'SGC2';
+            vendCodigo = 22;
+        } else {
+            return res.status(400).json({ error: 'Empresa inválida no contrato (deve ser Nexomed ou Bml).' });
+        }
+
+        const empenho = ref.autorizacao || ref.empenho || '';
+        const cliforCodigo = ref.cod_cliente || 0;
+        
+        const pool = await getPool();
+        let success = false;
+        let novoCodigo = 0;
+        let attempt = 1;
+        let lastError = null;
+
+        while (attempt <= 3 && !success) {
+            const transaction = new sql.Transaction(pool);
+            try {
+                await transaction.begin();
+
+                // Lock the table logic or just get MAX + 1. Using UPDLOCK + SERIALIZABLE ensures no one else can read MAX until we commit
+                const reqCode = new sql.Request(transaction);
+                const codeRes = await reqCode.query(`SELECT ISNULL(MAX(codigo), 0) + 1 AS newCode FROM ${dbName}.dbo.pedido WITH (UPDLOCK, SERIALIZABLE)`);
+                novoCodigo = codeRes.recordset[0].newCode;
+
+                const reqInsert = new sql.Request(transaction);
+                await reqInsert.query(`
+                    INSERT INTO ${dbName}.dbo.pedido (
+                        codigo, numero_pedido, clifor_codigo, data, tipoped_codigo, 
+                        vend_codigo, condpg_codigo, cob_codigo, id_situacao, numero_empenho_compra_publica,
+                        listapr_codigo, empr_codigo
+                    ) VALUES (
+                        ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), 57,
+                        ${vendCodigo}, 2, 1, 3, '${empenho}',
+                        1, 0
+                    )
+                `);
+
+                const reqItemCode = new sql.Request(transaction);
+                const itemCodeRes = await reqItemCode.query(`SELECT ISNULL(MAX(codigo), 0) AS maxItemCode FROM ${dbName}.dbo.pedido_item WITH (UPDLOCK, SERIALIZABLE)`);
+                let novoItemCodigo = itemCodeRes.recordset[0].maxItemCode;
+
+                for (const item of items) {
+                    novoItemCodigo++;
+                    const prodCod = item.cod_bio || 0;
+                    const qtd = item.quantidade_utilizada || 0;
+                    const vlr = item.valor_unitario || 0;
+                    
+                    const reqItem = new sql.Request(transaction);
+                    await reqItem.query(`
+                        INSERT INTO ${dbName}.dbo.pedido_item (
+                            codigo, ped_codigo, prod_codigo, quantidade, valor_unitario, 
+                            quantidade_comercializacao, valor_unitario_comercializacao, descricao,
+                            unidade, unid_unidade_comercializacao
+                        ) VALUES (
+                            ${novoItemCodigo}, ${novoCodigo}, ${prodCod}, ${qtd}, ${vlr},
+                            ${qtd}, ${vlr}, '',
+                            'UN', 'UN'
+                        )
+                    `);
+                }
+
+                // Follow-up 
+                const usuIdHub = 59; // ID placeholder for integration user
+                const reqFollow = new sql.Request(transaction);
+                await reqFollow.query(`
+                    INSERT INTO ${dbName}.dbo.pedido_follow_up (
+                        ped_codigo, data, usu_codigo, id_movimentacao, historico
+                    ) VALUES (
+                        ${novoCodigo}, GETDATE(), 
+                        ${usuIdHub}, 1, 'Gerado automaticamente via Hub'
+                    )
+                `);
+
+                await transaction.commit();
+                success = true;
+
+                // Salvar log no pgPool
+                await pgPool.query(`
+                    INSERT INTO opme.supra_logs (banco, metodo, tabela, log) 
+                    VALUES ($1, $2, $3, $4)
+                `, [dbName, 'INSERT', 'dbo.pedido', `Criado pedido ${novoCodigo} com ${items.length} itens. Cliente: ${cliforCodigo}`]);
+
+            } catch (err) {
+                if (transaction) {
+                    try { await transaction.rollback(); } catch(e) {}
+                }
+                lastError = err;
+                console.warn(`Tentativa ${attempt} falhou ao inserir no Supra: `, err.message);
+                attempt++;
+            }
+        }
+
+        if (!success) {
+            console.error('Falha ao gerar pedido após retentativas:', lastError);
+            return res.status(500).json({ error: 'Falha ao gerar pedido no ERP Supra.', details: lastError?.message });
+        }
+
+        // 3. Atualizar registros no PostgreSQL
+        await pgPool.query(`
+            UPDATE opme.cirurgias 
+            SET pedido = $1
+            WHERE contrato = $2 AND paciente = $3 AND data_cirurgia = $4
+        `, [novoCodigo.toString(), contrato, paciente, data_cirurgia]);
+
+        res.json({ success: true, pedido: novoCodigo });
+    } catch (err) {
+        console.error('[OPME] Erro geral ao criar pedido supra:', err);
+        res.status(500).json({ error: 'Erro interno ao criar pedido.', details: err.stack || err.message || String(err) });
     }
 });
 
