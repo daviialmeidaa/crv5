@@ -386,6 +386,7 @@ const OPME = (() => {
         renderTable();
         renderPagination();
         updateResultsCount();
+        updateClearFiltersButton();
     }
 
     // ==========================================
@@ -449,7 +450,7 @@ const OPME = (() => {
             const isContratosTab = state.currentTab === 'contratos' || state.currentTab === 'contratos_inativos';
             const cursorClass = 'cursor-pointer';
             const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 relative z-0 hover:z-10 group';
-            const clickHandler = `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
+            const clickHandler = `onclick="OPME.handleRowClick(event, ${idx}, '${state.currentTab}')"`;
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
                          ${clickHandler}>`;
@@ -568,6 +569,152 @@ const OPME = (() => {
                 : 'Nenhum registro';
         }
     }
+
+    function updateClearFiltersButton() {
+        const btn = document.getElementById('btnClearAllFilters');
+        if (!btn) return;
+        let hasAnyFilter = false;
+        for (let key in state.filters) {
+            if (state.filters[key] && state.filters[key].size > 0) {
+                hasAnyFilter = true; break;
+            }
+        }
+        if (hasAnyFilter) {
+            btn.classList.remove('hidden');
+            btn.classList.add('flex');
+        } else {
+            btn.classList.add('hidden');
+            btn.classList.remove('flex');
+        }
+    }
+
+    function clearAllFilters() {
+        state.filters = {};
+        state.pagination.current = 1;
+        processData();
+    }
+
+    // ==========================================
+    // 8.0 Seleção de Células (Estilo Excel - Soma)
+    // ==========================================
+    const selectedCells = new Set();
+
+    function initCellSelection() {
+        const tbody = document.getElementById('opmeTableBody');
+        if (!tbody) return;
+
+        tbody.addEventListener('mousedown', (e) => {
+            const td = e.target.closest('td');
+            if (!td) return;
+
+            // Ignora cliques em botões, links e ações
+            if (e.target.closest('button') || e.target.closest('a')) return;
+
+            // Detecta Ctrl/Cmd click para seleção múltipla
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const cellText = td.textContent.trim();
+                const cellId = `${td.closest('tr').rowIndex}-${td.cellIndex}`;
+
+                if (selectedCells.has(cellId)) {
+                    selectedCells.delete(cellId);
+                    td.classList.remove('ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20');
+                } else {
+                    selectedCells.add(cellId);
+                    td.dataset.rawText = cellText;
+                    td.classList.add('ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20');
+                }
+
+                updateSelectionSumBar();
+                return false;
+            }
+        });
+
+        // Limpar seleção ao clicar fora (sem Ctrl) ou ao apertar Escape
+        document.addEventListener('click', (e) => {
+            if (!e.ctrlKey && !e.metaKey && !e.target.closest('#selectionSumBar')) {
+                if (selectedCells.size > 0) {
+                    clearCellSelection();
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && selectedCells.size > 0) {
+                clearCellSelection();
+            }
+        });
+    }
+
+    function clearCellSelection() {
+        const tbody = document.getElementById('opmeTableBody');
+        if (tbody) {
+            tbody.querySelectorAll('td.ring-2').forEach(td => {
+                td.classList.remove('ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20');
+            });
+        }
+        selectedCells.clear();
+        updateSelectionSumBar();
+    }
+
+    function updateSelectionSumBar() {
+        const bar = document.getElementById('selectionSumBar');
+        if (!bar) return;
+
+        if (selectedCells.size === 0) {
+            bar.classList.add('hidden');
+            bar.classList.remove('flex');
+            return;
+        }
+
+        const tbody = document.getElementById('opmeTableBody');
+        if (!tbody) return;
+
+        const numericValues = [];
+        let totalCount = selectedCells.size;
+
+        selectedCells.forEach(cellId => {
+            const [rowIdx, colIdx] = cellId.split('-').map(Number);
+            const row = tbody.querySelector(`tr:nth-child(${rowIdx})`);
+            if (!row) return;
+            const td = row.children[colIdx];
+            if (!td) return;
+
+            const rawText = td.textContent.trim();
+            // Parse: try currency first (R$ 1.234,56), then plain number
+            let numVal = null;
+            if (rawText.includes('R$')) {
+                const cleaned = rawText.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+                numVal = parseFloat(cleaned);
+            } else {
+                // Try plain number (1.234 or 1,234 or 1234)
+                const cleaned = rawText.replace(/\./g, '').replace(',', '.');
+                numVal = parseFloat(cleaned);
+            }
+            if (!isNaN(numVal)) numericValues.push(numVal);
+        });
+
+        const sum = numericValues.reduce((a, b) => a + b, 0);
+        const avg = numericValues.length > 0 ? sum / numericValues.length : 0;
+
+        document.getElementById('selCount').textContent = totalCount;
+        document.getElementById('selSum').textContent = numericValues.length > 0
+            ? sum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : '-';
+        document.getElementById('selAvg').textContent = numericValues.length > 0
+            ? avg.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : '-';
+
+        bar.classList.remove('hidden');
+        bar.classList.add('flex');
+    }
+
+    // Inicializar seleção de células após DOM carregar
+    document.addEventListener('DOMContentLoaded', () => {
+        initCellSelection();
+    });
 
     // ==========================================
     // 8. Filtros (Dropdown com Checkboxes)
@@ -860,12 +1007,14 @@ const OPME = (() => {
                     div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
 
                     let displayVal = val;
-                    if (col.type === 'currency') displayVal = formatCurrency(val);
-                    if (col.type === 'date') displayVal = formatDate(val);
+                    if (val === '-') displayVal = '(Vazio)';
+                    else if (col.type === 'currency') displayVal = formatCurrency(val);
+                    else if (col.type === 'date') displayVal = formatDate(val);
 
+                    const isVazio = val === '-';
                     div.innerHTML = `
                         <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                        <span class="truncate text-steel-600 dark:text-gray-400 text-xs" title="${displayVal}">${displayVal}</span>
+                        <span class="truncate text-xs ${isVazio ? 'italic text-steel-400 dark:text-steel-500' : 'text-steel-600 dark:text-gray-400'}" title="${displayVal}">${displayVal}</span>
                     `;
 
                     const checkbox = div.querySelector('input');
@@ -1148,7 +1297,9 @@ const OPME = (() => {
     // ==========================================
     // 11. Clique na Linha
     // ==========================================
-    function handleRowClick(idx, tab) {
+    function handleRowClick(e, idx, tab) {
+        // Ctrl+Click reservado para seleção de células (Soma Excel)
+        if (e && (e.ctrlKey || e.metaKey)) return;
         const row = state.viewData[idx];
         if (!row) return;
 
@@ -2691,6 +2842,7 @@ const OPME = (() => {
     // ==========================================
     // API pública
     return {
+        clearAllFilters,
         openContratoModal,
         closeContratoModal,
         saveContrato,
