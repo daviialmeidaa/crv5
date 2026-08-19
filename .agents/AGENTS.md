@@ -249,3 +249,23 @@ A rota `/cirurgias` (arquivo `public/cirurgias.html`, controller `public/js/ciru
 6. **Grid e Filtros:** Cada aba possui seu próprio array de colunas (`tabColumns`). O grid herda a mesma mecânica consolidada do projeto: filtros por checkbox com dropdown posicionado abaixo do cabeçalho, ordenação por clique, paginação minimalista e ícone de funil flutuante (`absolute right-1 top-1/2 -translate-y-1/2`).
 7. **Modal de Detalhes:** O clique em qualquer linha (exceto na aba Contratos, onde o clique seleciona o contrato) abre um modal genérico (`#detailModal`) com todos os campos da linha renderizados em layout chave-valor (2 colunas, `dl/dt/dd`). O modal usa `backdrop-blur-sm` e animação `scale-95 → scale-100`.
 8. **Controller JS (IIFE `OPME`):** O arquivo `public/js/cirurgias.js` encapsula toda a lógica no namespace `OPME` (padrão IIFE idêntico ao `IA` de itens arrematados). Estado global: `rawData`, `filteredData`, `viewData`, `filters`, `sort`, `pagination`, `currentTab`, `selectedContract`.
+
+## Integração OPME → Faturamento (Supra ERP)
+A geração de pedidos no banco de dados do Supra (`SGC` ou `SGC2`, resolvido dinamicamente pela API com base na empresa do contrato) para faturamento (Nota Fiscal) é o processo mais crítico do módulo OPME. Qualquer violação dessas regras fará com que o sistema de Expedição do Supra ignore o pedido, impossibilitando a emissão da NFe.
+
+1. **Geração do Cabeçalho (`dbo.pedido`):**
+   - É **OBRIGATÓRIO** o uso de bloqueio pessimista na leitura do próximo ID: `SELECT ISNULL(MAX(codigo), 0) + 1 FROM dbo.pedido WITH (UPDLOCK, SERIALIZABLE)`.
+   - Flags estritas obrigatórias: `id_situacao = 3` (Confirmado), `listapr_codigo = 1`, `condpg_codigo = 2` (30 dias).
+   - A data do pedido deve ser `GETDATE()`.
+
+2. **Geração dos Itens (`dbo.pedido_item`):**
+   - **Proibido inserir dados cegos:** Não se deve jamais inserir um item apenas com o `cod_bio` e strings vazias. Antes do `INSERT` na `pedido_item`, é obrigatório realizar um `SELECT` na tabela `dbo.produto` buscando pela coluna `codigo = cod_bio`.
+   - **Tributação e Metadados Padrão:** O `INSERT` deve obrigatoriamente preencher: `id_desconto_acrescimo = 1`, `id_base_calculo_st = 1`, `id_calculo_preco = 4`, `id_metodo_calculo_preco_venda = 1`.
+   - **Dados extraídos do Produto:** Deve-se puxar e injetar na `pedido_item` a exata `descricao`, `codigo_cst`, `preco_custo` e `unid_unidade` que retornaram da `dbo.produto`.
+
+3. **Matemática de Valores (A Regra do Zero):**
+   - Os valores unitários dos itens (`valor_unitario`) DEVEM ser estritamente os mesmos que vieram da tabela do Hub local (PostgreSQL).
+   - É **EXTREMAMENTE COMUM** em licitações (biddings) a existência de parafusos e componentes "bonificados" (inclusos no kit/placa) com valor `0` (Zero).
+   - Se o Hub mandar o valor como `0`, o código **DEVE inserir `0`** no Supra. 
+   - **NUNCA faça fallback** automático para o `preco_venda` da tabela `produto` do Supra caso o valor do Hub seja `0`, ou o total do pedido no ERP inflacionará e não baterá com o total do Hub.
+   - O ERP permite normalmente itens com valor `0` na expedição, desde que a `descricao` seja válida e os CSTs (`codigo_cst`, etc.) não sejam nulos.
