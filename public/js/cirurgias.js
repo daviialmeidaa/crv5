@@ -19,22 +19,21 @@ const OPME = (() => {
 
     function showToast(message, type = 'success') {
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-[200] transform transition-all duration-300 translate-y-10 opacity-0 flex items-center gap-2 ${
-            type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
-        }`;
-        
-        const icon = type === 'success' 
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-sm font-medium z-[200] transform transition-all duration-300 translate-y-10 opacity-0 flex items-center gap-2 ${type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+            }`;
+
+        const icon = type === 'success'
             ? '<svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>'
             : '<svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-            
+
         toast.innerHTML = `${icon} <span>${message}</span>`;
         document.body.appendChild(toast);
-        
+
         // Animate in
         requestAnimationFrame(() => {
             toast.classList.remove('translate-y-10', 'opacity-0');
         });
-        
+
         // Remove after 4 seconds
         setTimeout(() => {
             toast.classList.add('translate-y-10', 'opacity-0');
@@ -177,7 +176,7 @@ const OPME = (() => {
     try {
         const u = JSON.parse(localStorage.getItem('user'));
         if (u && u.role) userRole = u.role;
-    } catch(e) {}
+    } catch (e) { }
     const canEditCirurgia = ['ADMIN', 'OPME3', 'OPME4'].includes(userRole);
     const canDeleteCirurgia = ['ADMIN', 'OPME4'].includes(userRole);
     let activeFilterModal = null;
@@ -214,7 +213,7 @@ const OPME = (() => {
         if (typeof val === 'string' && val.includes('-') && val.length >= 10) {
             try {
                 return new Date(val).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-            } catch(e) { return val; }
+            } catch (e) { return val; }
         }
         return val;
     }
@@ -272,7 +271,7 @@ const OPME = (() => {
             });
             if (!response.ok) throw new Error('Erro ao buscar KPIs');
             const data = await response.json();
-            
+
             document.getElementById('kpiCirurgiasRealizadas').textContent = Number(data.cirurgias_realizadas || 0).toLocaleString('pt-BR');
             document.getElementById('kpiCirurgiasEmAberto').textContent = Number(data.cirurgias_em_aberto || 0).toLocaleString('pt-BR');
             document.getElementById('kpiTotalRealizado').textContent = formatCurrency(data.total_cirurgias_realizadas);
@@ -309,7 +308,7 @@ const OPME = (() => {
                 headers: { 'Authorization': `Bearer ${getToken()}` }
             });
             if (!response.ok) throw new Error('Erro ao buscar dados');
-            
+
             state.rawData = await response.json();
             state.filters = {};
             state.pagination.current = 1;
@@ -454,13 +453,13 @@ const OPME = (() => {
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
                          ${clickHandler}>`;
-            
+
             cols.forEach(col => {
                 if (col.type === 'actions') {
                     const isInactive = row.inativo;
                     const toggleColor = isInactive ? 'text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30' : 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30';
-                    const toggleIcon = isInactive ? 
-                        `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>` : 
+                    const toggleIcon = isInactive ?
+                        `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>` :
                         `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>`;
                     const toggleTitle = isInactive ? 'Ativar Contrato' : 'Desativar Contrato';
 
@@ -498,10 +497,10 @@ const OPME = (() => {
 
                     // Aplicar line-clamp nas colunas com max-w
                     const needsClamp = wrapClass.includes('max-w');
-                    const cellContent = needsClamp 
-                        ? `<span class="line-clamp-3">${val}</span>` 
+                    const cellContent = needsClamp
+                        ? `<span class="line-clamp-3">${val}</span>`
                         : val;
-                    
+
                     html += `<td class="px-2 py-2 text-[12px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${cellContent}</td>`;
                 }
             });
@@ -595,65 +594,133 @@ const OPME = (() => {
     }
 
     // ==========================================
-    // 8.0 Seleção de Células (Estilo Excel - Soma)
+    // 8.0 Seleção de Células (Estilo Excel - Soma + Arrasto)
     // ==========================================
     const selectedCells = new Set();
+    let isDragging = false;
+    let dragStartCell = null;
+
+    const SEL_CLASSES = ['ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20'];
+
+    function getCellId(td) {
+        return `${td.closest('tr').rowIndex}-${td.cellIndex}`;
+    }
+
+    function selectCell(td) {
+        const cellId = getCellId(td);
+        if (!selectedCells.has(cellId)) {
+            selectedCells.add(cellId);
+            td.classList.add(...SEL_CLASSES);
+        }
+    }
+
+    function deselectCell(td) {
+        const cellId = getCellId(td);
+        selectedCells.delete(cellId);
+        td.classList.remove(...SEL_CLASSES);
+    }
+
+    function getCellsInRect(startTd, endTd, tbody) {
+        const r1 = startTd.closest('tr').rowIndex, c1 = startTd.cellIndex;
+        const r2 = endTd.closest('tr').rowIndex, c2 = endTd.cellIndex;
+        const rMin = Math.min(r1, r2), rMax = Math.max(r1, r2);
+        const cMin = Math.min(c1, c2), cMax = Math.max(c1, c2);
+        const cells = [];
+        tbody.querySelectorAll('tr').forEach(tr => {
+            if (tr.rowIndex >= rMin && tr.rowIndex <= rMax) {
+                Array.from(tr.children).forEach(td => {
+                    if (td.cellIndex >= cMin && td.cellIndex <= cMax) cells.push(td);
+                });
+            }
+        });
+        return cells;
+    }
 
     function initCellSelection() {
         const tbody = document.getElementById('opmeTableBody');
         if (!tbody) return;
 
+        // Ctrl+Click individual OU início de arrasto
         tbody.addEventListener('mousedown', (e) => {
             const td = e.target.closest('td');
             if (!td) return;
-
-            // Ignora cliques em botões, links e ações
             if (e.target.closest('button') || e.target.closest('a')) return;
+            if (!(e.ctrlKey || e.metaKey)) return;
 
-            // Detecta Ctrl/Cmd click para seleção múltipla
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                e.stopPropagation();
+            e.preventDefault();
+            e.stopPropagation();
 
-                const cellText = td.textContent.trim();
-                const cellId = `${td.closest('tr').rowIndex}-${td.cellIndex}`;
+            isDragging = true;
+            dragStartCell = td;
 
-                if (selectedCells.has(cellId)) {
-                    selectedCells.delete(cellId);
-                    td.classList.remove('ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20');
-                } else {
-                    selectedCells.add(cellId);
-                    td.dataset.rawText = cellText;
-                    td.classList.add('ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20');
+            // Toggle individual (será recalculado se virar arrasto)
+            if (selectedCells.has(getCellId(td))) {
+                deselectCell(td);
+            } else {
+                selectCell(td);
+            }
+            updateSelectionSumBar();
+        });
+
+        // Arrasto com Ctrl
+        tbody.addEventListener('mouseover', (e) => {
+            if (!isDragging || !dragStartCell) return;
+            if (!(e.ctrlKey || e.metaKey)) { isDragging = false; return; }
+
+            const td = e.target.closest('td');
+            if (!td) return;
+
+            // Limpar seleção do arrasto anterior (manter seleções pré-existentes)
+            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
+                cell.removeAttribute('data-drag-sel');
+                if (!cell.hasAttribute('data-pre-sel')) {
+                    deselectCell(cell);
                 }
+            });
 
-                updateSelectionSumBar();
-                return false;
+            // Selecionar retângulo
+            const cells = getCellsInRect(dragStartCell, td, tbody);
+            cells.forEach(cell => {
+                cell.setAttribute('data-drag-sel', '1');
+                selectCell(cell);
+            });
+            updateSelectionSumBar();
+        });
+
+        // Fim do arrasto
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                // Limpar atributos de marcação de arrasto
+                const tbody = document.getElementById('opmeTableBody');
+                if (tbody) {
+                    tbody.querySelectorAll('td[data-drag-sel]').forEach(td => td.removeAttribute('data-drag-sel'));
+                    tbody.querySelectorAll('td[data-pre-sel]').forEach(td => td.removeAttribute('data-pre-sel'));
+                }
             }
         });
 
-        // Limpar seleção ao clicar fora (sem Ctrl) ou ao apertar Escape
+        // Marcar cells pré-selecionadas ao iniciar arrasto
+        tbody.addEventListener('mousedown', () => {
+            tbody.querySelectorAll('td.ring-2').forEach(td => td.setAttribute('data-pre-sel', '1'));
+        });
+
+        // Limpar seleção ao clicar fora (sem Ctrl)
         document.addEventListener('click', (e) => {
             if (!e.ctrlKey && !e.metaKey && !e.target.closest('#selectionSumBar')) {
-                if (selectedCells.size > 0) {
-                    clearCellSelection();
-                }
+                if (selectedCells.size > 0) clearCellSelection();
             }
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && selectedCells.size > 0) {
-                clearCellSelection();
-            }
+            if (e.key === 'Escape' && selectedCells.size > 0) clearCellSelection();
         });
     }
 
     function clearCellSelection() {
         const tbody = document.getElementById('opmeTableBody');
         if (tbody) {
-            tbody.querySelectorAll('td.ring-2').forEach(td => {
-                td.classList.remove('ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20');
-            });
+            tbody.querySelectorAll('td.ring-2').forEach(td => td.classList.remove(...SEL_CLASSES));
         }
         selectedCells.clear();
         updateSelectionSumBar();
@@ -683,13 +750,11 @@ const OPME = (() => {
             if (!td) return;
 
             const rawText = td.textContent.trim();
-            // Parse: try currency first (R$ 1.234,56), then plain number
             let numVal = null;
             if (rawText.includes('R$')) {
                 const cleaned = rawText.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
                 numVal = parseFloat(cleaned);
             } else {
-                // Try plain number (1.234 or 1,234 or 1234)
                 const cleaned = rawText.replace(/\./g, '').replace(',', '.');
                 numVal = parseFloat(cleaned);
             }
@@ -711,10 +776,227 @@ const OPME = (() => {
         bar.classList.add('flex');
     }
 
-    // Inicializar seleção de células após DOM carregar
     document.addEventListener('DOMContentLoaded', () => {
         initCellSelection();
     });
+
+    // ==========================================
+    // 8.1 Exportar Excel
+    // ==========================================
+    function exportExcel() {
+        if (typeof XLSX === 'undefined') {
+            showToast('Biblioteca de exportação não carregada.', 'error');
+            return;
+        }
+
+        const cols = tabColumns[state.currentTab];
+        const headers = cols.filter(c => c.type !== 'actions').map(c => c.label);
+        const keys = cols.filter(c => c.type !== 'actions').map(c => c);
+
+        const rows = state.filteredData.map(row => {
+            return keys.map(col => {
+                let val = col.key === '_deadline' ? null : row[col.key];
+                if (col.type === 'deadline') {
+                    const dl = calcDeadline(row.termino_ata);
+                    return dl.days !== null ? dl.days : '';
+                }
+                if (col.type === 'date') {
+                    if (!val || val === '-') return '';
+                    try {
+                        return new Date(val).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    } catch (e) { return val; }
+                }
+                if (col.type === 'currency') {
+                    const num = parseFloat(val);
+                    return isNaN(num) ? '' : num;
+                }
+                if (col.type === 'boolean') return val ? 'Sim' : 'Não';
+                if (val === null || val === undefined) return '';
+                return String(val).trim();
+            });
+        });
+
+        const wsData = [headers, ...rows];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
+
+        const bannerText = document.getElementById('contractBannerText');
+        const contractLabel = bannerText ? bannerText.textContent.trim() : state.currentTab;
+        const safeName = contractLabel.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_').substring(0, 80);
+        const fileName = `Cirurgias_${safeName}.xlsx`;
+
+        XLSX.writeFile(wb, fileName);
+        showToast('Excel exportado com sucesso!', 'success');
+    }
+
+    // ==========================================
+    // 8.2 Banco de Códigos Lookup
+    // ==========================================
+    let bancoCodigosCache = [];
+    let bancoCodigosTargetInput = null;
+
+    async function openBancoCodigosLookup(labelEl) {
+        const block = labelEl.closest('.produto-box') || labelEl.closest('.product-block');
+        const codBioInput = block ? block.querySelector('.prod-cod-bio') : null;
+        bancoCodigosTargetInput = codBioInput;
+
+        const contrato = document.getElementById('fcContrato').value;
+        if (!contrato) {
+            showToast('Nenhum contrato selecionado.', 'error');
+            return;
+        }
+
+        // Remover modal existente se houver
+        const existing = document.getElementById('bancoCodigosLookupModal');
+        if (existing) existing.remove();
+
+        // Criar modal overlay
+        const modal = document.createElement('div');
+        modal.id = 'bancoCodigosLookupModal';
+        modal.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-steel-700 w-[900px] max-w-[95vw] max-h-[80vh] flex flex-col transform transition-all duration-200 scale-95 opacity-0">
+                <!-- Header -->
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-nexo-50 dark:bg-nexo-900/30 rounded-lg">
+                            <svg class="w-5 h-5 text-nexo-600 dark:text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-steel-800 dark:text-white">Banco de Códigos</h3>
+                            <p class="text-[11px] text-steel-400">Contrato: <span class="text-nexo-600 dark:text-nexo-400 font-medium">${contrato}</span></p>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('bancoCodigosLookupModal').remove()" class="p-1.5 rounded-lg text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="px-6 py-3 border-b border-gray-100 dark:border-steel-700 flex items-center gap-3 shrink-0">
+                    <select id="bcLookupColumn" class="px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-700 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all w-44 shrink-0">
+                        <option value="all">Todas as Colunas</option>
+                        <option value="cod_bio">Cód. Bio</option>
+                        <option value="cod_fab">Cód. Fab.</option>
+                        <option value="produto">Produto</option>
+                        <option value="descricao_personalizada">Descrição</option>
+                        <option value="classificacao">Classificação</option>
+                        <option value="item_ata">Item Ata</option>
+                    </select>
+                    <div class="relative flex-1">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                        <input id="bcLookupSearch" type="text" placeholder="Digite para filtrar..." class="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all" autofocus>
+                    </div>
+                    <span id="bcLookupCount" class="text-xs text-steel-400 whitespace-nowrap">0 itens</span>
+                </div>
+
+                <!-- Table -->
+                <div class="flex-1 overflow-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-steel-900">
+                            <tr class="text-steel-600 dark:text-gray-300 text-[11px] font-medium">
+                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Cód. Bio</th>
+                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Cód. Fab.</th>
+                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Produto</th>
+                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Descrição</th>
+                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Classificação</th>
+                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Item Ata</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bcLookupBody" class="text-sm text-steel-700 dark:text-gray-300"></tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // Animar entrada
+        requestAnimationFrame(() => {
+            modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.modal-content').classList.add('scale-100', 'opacity-100');
+        });
+
+        // Fechar ao clicar no backdrop
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) modal.remove();
+        });
+
+        // Carregar dados
+        try {
+            const res = await fetch(`/api/opme/banco-codigos?contrato=${encodeURIComponent(contrato)}`, {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (!res.ok) throw new Error('Erro ao buscar banco de códigos');
+            bancoCodigosCache = await res.json();
+        } catch (err) {
+            console.error(err);
+            showToast('Erro ao carregar banco de códigos.', 'error');
+            modal.remove();
+            return;
+        }
+
+        const searchInput = document.getElementById('bcLookupSearch');
+        const columnSelect = document.getElementById('bcLookupColumn');
+
+        function renderLookupRows() {
+            const tbody = document.getElementById('bcLookupBody');
+            if (!tbody) return;
+            const searchVal = searchInput.value.trim().toLowerCase();
+            const colFilter = columnSelect.value;
+
+            const filtered = bancoCodigosCache.filter(item => {
+                if (!searchVal) return true;
+                if (colFilter === 'all') {
+                    return ['cod_bio', 'cod_fab', 'produto', 'descricao_personalizada', 'classificacao', 'item_ata']
+                        .some(k => String(item[k] || '').toLowerCase().includes(searchVal));
+                }
+                return String(item[colFilter] || '').toLowerCase().includes(searchVal);
+            });
+
+            document.getElementById('bcLookupCount').textContent = `${filtered.length} ite${filtered.length === 1 ? 'm' : 'ns'}`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-steel-400 dark:text-steel-500 text-sm">Nenhum item encontrado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="cursor-pointer hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 border-b border-gray-100 dark:border-steel-700/50 transition-colors"
+                    data-cod-bio="${item.cod_bio || ''}">
+                    <td class="px-4 py-2.5 font-medium text-nexo-600 dark:text-nexo-400">${item.cod_bio || '-'}</td>
+                    <td class="px-4 py-2.5">${item.cod_fab || '-'}</td>
+                    <td class="px-4 py-2.5 max-w-[200px]"><span class="line-clamp-2">${item.produto || '-'}</span></td>
+                    <td class="px-4 py-2.5 max-w-[200px]"><span class="line-clamp-2">${item.descricao_personalizada || '-'}</span></td>
+                    <td class="px-4 py-2.5">${item.classificacao || '-'}</td>
+                    <td class="px-4 py-2.5">${item.item_ata || '-'}</td>
+                </tr>
+            `).join('');
+
+            // Click handler para selecionar
+            tbody.querySelectorAll('tr[data-cod-bio]').forEach(tr => {
+                tr.addEventListener('click', () => {
+                    const codBio = tr.getAttribute('data-cod-bio');
+                    if (bancoCodigosTargetInput && codBio) {
+                        bancoCodigosTargetInput.value = codBio;
+                        fetchProdutoInfo(bancoCodigosTargetInput);
+                    }
+                    modal.remove();
+                });
+            });
+        }
+
+        renderLookupRows();
+        searchInput.addEventListener('input', renderLookupRows);
+        columnSelect.addEventListener('change', () => {
+            searchInput.focus();
+            renderLookupRows();
+        });
+        searchInput.focus();
+    }
 
     // ==========================================
     // 8. Filtros (Dropdown com Checkboxes)
@@ -735,7 +1017,7 @@ const OPME = (() => {
                 if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
                     const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '-';
                     if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
-                        return false; 
+                        return false;
                     }
                 }
             }
@@ -801,7 +1083,7 @@ const OPME = (() => {
 
         function renderCheckboxes(searchTerm = '') {
             listContainer.innerHTML = '';
-            
+
             const filteredVals = uniqueValues.filter(v => {
                 if (!searchTerm) return true;
                 let displayVal = v;
@@ -835,7 +1117,7 @@ const OPME = (() => {
             if (col.type === 'date' && !searchTerm) {
                 const tree = {};
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
+
                 filteredVals.forEach(val => {
                     let y, m, d;
                     if (val && String(val).includes('T')) {
@@ -854,7 +1136,7 @@ const OPME = (() => {
                         }
                     }
 
-                    if (y && m && d) {       
+                    if (y && m && d) {
                         if (!tree[y]) tree[y] = {};
                         if (!tree[y][m]) tree[y][m] = [];
                         tree[y][m].push(val);
@@ -865,10 +1147,10 @@ const OPME = (() => {
                     }
                 });
 
-                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
+                Object.keys(tree).sort((a, b) => b.localeCompare(a)).forEach(year => {
                     const yearDiv = document.createElement('div');
                     yearDiv.className = 'pl-1';
-                    
+
                     let yearAllChecked = true;
                     let yearAnyChecked = false;
                     const yearVals = [];
@@ -885,13 +1167,13 @@ const OPME = (() => {
                         <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
                         <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
                     `;
-                    
+
                     const yCb = yHeader.querySelector('input');
                     yCb.indeterminate = yearAnyChecked && !yearAllChecked;
-                    
+
                     const mContainer = document.createElement('div');
                     mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                    
+
                     yHeader.onclick = (e) => {
                         if (e.target === yCb) return;
                         const isHidden = mContainer.classList.contains('hidden');
@@ -899,7 +1181,7 @@ const OPME = (() => {
                         mContainer.classList.toggle('hidden');
                         yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
                     };
-                    
+
                     if (expandedState[year]) {
                         mContainer.classList.remove('hidden');
                         yHeader.querySelector('span').textContent = '-';
@@ -912,10 +1194,10 @@ const OPME = (() => {
                         renderCheckboxes(searchTerm);
                     };
 
-                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
+                    Object.keys(tree[year]).sort((a, b) => a.localeCompare(b)).forEach(month => {
                         const monthVals = tree[year][month];
-                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
-                        
+                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month) - 1] : month;
+
                         let monthAllChecked = true;
                         let monthAnyChecked = false;
                         monthVals.forEach(v => {
@@ -936,7 +1218,7 @@ const OPME = (() => {
 
                         const dContainer = document.createElement('div');
                         dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                        
+
                         const monthKey = `${year}-${month}`;
                         mHeader.onclick = (e) => {
                             if (e.target === mCb) return;
@@ -945,7 +1227,7 @@ const OPME = (() => {
                             dContainer.classList.toggle('hidden');
                             mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
                         };
-                        
+
                         if (expandedState[monthKey]) {
                             dContainer.classList.remove('hidden');
                             mHeader.querySelector('span').textContent = '-';
@@ -963,7 +1245,7 @@ const OPME = (() => {
                             const dHeader = document.createElement('div');
                             dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
                             let displayVal = formatDate(val);
-                            
+
                             const valStr = String(val);
                             if (valStr.includes('-') && valStr.split('-').length >= 3) {
                                 const datePart = valStr.split('T')[0];
@@ -1126,7 +1408,7 @@ const OPME = (() => {
                 btn.classList.toggle('hover:text-steel-700', !isActive);
                 btn.classList.toggle('dark:hover:text-steel-300', !isActive);
             });
-            
+
             const kpisContainer = document.getElementById('kpisContainer');
             if (kpisContainer) {
                 if (tabId === 'contratos_inativos') {
@@ -1177,12 +1459,19 @@ const OPME = (() => {
             }
         }
 
+        // Controle do botão Exportar Excel (visível em qualquer aba com dados)
+        const btnExport = document.getElementById('btnExportExcel');
+        if (btnExport) {
+            btnExport.classList.remove('hidden');
+            btnExport.classList.add('flex');
+        }
+
         fetchData();
     }
 
     function selectContract(row) {
         state.selectedContract = row;
-        
+
         // Habilitar abas
         document.querySelectorAll('.opme-tab[data-tab]:not([data-tab="contratos"])').forEach(btn => {
             btn.classList.remove('opacity-40', 'cursor-not-allowed');
@@ -1202,7 +1491,7 @@ const OPME = (() => {
         if (banner) {
             const label = `${row.id_contrato} — ${(row.material || '').trim()} — ${(row.cliente || '').trim().substring(0, 60)}`;
             document.getElementById('contractBannerText').textContent = label;
-            
+
             const badgeId = 'contractInactiveBadge';
             let badge = document.getElementById(badgeId);
             if (row.inativo) {
@@ -1234,7 +1523,7 @@ const OPME = (() => {
     async function confirmToggleContract() {
         if (!contractToToggle) return;
         const { id, currentStatus } = contractToToggle;
-        
+
         try {
             const btn = document.getElementById('btnConfirmToggle');
             const originalText = btn.textContent;
@@ -1249,13 +1538,13 @@ const OPME = (() => {
                 },
                 body: JSON.stringify({ inativo: !currentStatus })
             });
-            
+
             if (!response.ok) throw new Error('Erro ao alterar status');
-            
+
             // Recarregar dados
             fetchData();
             fetchKpis();
-            
+
             document.getElementById('toggleContractModal').classList.add('hidden');
             contractToToggle = null;
             btn.textContent = originalText;
@@ -1332,7 +1621,7 @@ const OPME = (() => {
             const col = cols.find(c => c.key === key);
             const label = col ? col.label : key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             let val = row[key];
-            
+
             if (col && col.type === 'currency') val = formatCurrency(val);
             else if (col && col.type === 'date') val = formatDate(val);
             else if (val === null || val === undefined || val === '') val = '-';
@@ -1406,7 +1695,7 @@ const OPME = (() => {
         editingCirurgiaItems = []; // Flag de que é inserção
 
         const modal = document.getElementById('cirurgiaModal');
-        
+
         switchCirurgiaModalTab('dados');
         document.getElementById('fcCirurgiaObservacoes').value = '';
         const titleSpan = document.getElementById('cirurgiaModalSubtitle');
@@ -1421,7 +1710,7 @@ const OPME = (() => {
 
         // Preencher Campos Iniciais
         document.getElementById('fcContrato').value = state.selectedContract.id_contrato || '';
-        
+
         // Buscar e preencher Unidades (Local da Cirurgia)
         try {
             const resUnidades = await fetch(`/api/opme/unidades?contrato=${state.selectedContract.id_contrato}`, {
@@ -1434,8 +1723,8 @@ const OPME = (() => {
                 unidadesCache.forEach(u => {
                     localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
                 });
-                
-                localSelect.onchange = function() {
+
+                localSelect.onchange = function () {
                     const selectedOption = localSelect.options[localSelect.selectedIndex];
                     const codCliente = selectedOption.getAttribute('data-cod');
                     if (codCliente) {
@@ -1464,7 +1753,7 @@ const OPME = (() => {
             btnSave.textContent = 'Criar Cirurgia';
             document.querySelectorAll('#cirurgiaForm input:not([readonly]):not([disabled]), #cirurgiaForm select:not([readonly]):not([disabled])').forEach(el => el.disabled = false);
         }
-        
+
         if (btnDelete) btnDelete.classList.add('hidden');
         if (btnGerarPedidoSupra) btnGerarPedidoSupra.classList.add('hidden');
 
@@ -1473,7 +1762,7 @@ const OPME = (() => {
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         const content = modal.querySelector('.modal-content');
         setTimeout(() => {
             content.classList.remove('scale-95', 'opacity-0');
@@ -1490,9 +1779,9 @@ const OPME = (() => {
         const modal = document.getElementById('contratoModal');
         const titleSpan = document.getElementById('contratoModalTitle').querySelector('span');
         const form = document.getElementById('contratoForm');
-        
+
         form.reset();
-        
+
         const inputId = document.getElementById('fcContratoId');
         const inputEmpresa = document.getElementById('fcContratoEmpresa');
 
@@ -1501,7 +1790,7 @@ const OPME = (() => {
             const row = state.viewData[idx];
             editingContratoId = row.id;
             titleSpan.textContent = 'Editar Contrato: ' + (row.id_contrato || '');
-            
+
             inputId.value = row.id_contrato || '';
             inputId.readOnly = true;
             inputId.classList.add('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
@@ -1509,13 +1798,13 @@ const OPME = (() => {
             inputEmpresa.value = row.empresa || '';
             inputEmpresa.disabled = true;
             inputEmpresa.classList.add('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
-            
+
             document.getElementById('fcContratoMaterial').value = row.material || '';
             document.getElementById('fcContratoCodCliente').value = row.cod_cliente || '';
             document.getElementById('fcContratoCliente').value = row.cliente || '';
             document.getElementById('fcContratoUf').value = row.uf || '';
             document.getElementById('fcContratoPregao').value = row.pregao || '';
-            
+
             if (row.total_ata) {
                 document.getElementById('fcContratoTotalAta').value = formatCurrency(row.total_ata).replace('R$ ', '');
             } else {
@@ -1528,7 +1817,7 @@ const OPME = (() => {
             // New mode
             editingContratoId = null;
             titleSpan.textContent = 'Novo Contrato';
-            
+
             inputId.value = '';
             inputId.readOnly = false;
             inputId.classList.remove('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
@@ -1536,7 +1825,7 @@ const OPME = (() => {
             inputEmpresa.value = '';
             inputEmpresa.disabled = false;
             inputEmpresa.classList.remove('bg-gray-100', 'dark:bg-steel-800', 'cursor-not-allowed', 'text-gray-500');
-            
+
             document.getElementById('fcContratoMaterial').value = '';
             document.getElementById('fcContratoCodCliente').value = '';
             document.getElementById('fcContratoCliente').value = '';
@@ -1549,7 +1838,7 @@ const OPME = (() => {
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         const content = modal.querySelector('.modal-content');
         setTimeout(() => {
             content.classList.remove('scale-95', 'opacity-0');
@@ -1560,10 +1849,10 @@ const OPME = (() => {
     function closeContratoModal() {
         const modal = document.getElementById('contratoModal');
         const content = modal.querySelector('.modal-content');
-        
+
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
-        
+
         setTimeout(() => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
@@ -1633,22 +1922,22 @@ const OPME = (() => {
         const modal = document.getElementById('modalUnidade');
         const titleSpan = document.getElementById('unidadeModalTitle').querySelector('span');
         const form = document.getElementById('unidadeForm');
-        
+
         form.reset();
-        
+
         const inputContrato = document.getElementById('fcUnidadeContrato');
-        
+
         if (idx !== null) {
             // Edit mode
             const row = state.viewData[idx];
             editingUnidadeId = row.id;
             titleSpan.textContent = 'Editar Unidade: ' + (row.sigla || row.hospital || row.id);
-            
+
             inputContrato.value = row.contrato || '';
             document.getElementById('fcUnidadeCodCliente').value = row.cod_cliente || '';
             document.getElementById('fcUnidadeHospital').value = row.hospital || '';
             document.getElementById('fcUnidadeSigla').value = row.sigla || '';
-            
+
             document.getElementById('fcUnidadeIR').checked = !!row.ir;
             document.getElementById('fcUnidadeAliquota').value = row.aliquota || '';
             document.getElementById('fcUnidadeObservacoes').value = row.observacoes || '';
@@ -1658,16 +1947,16 @@ const OPME = (() => {
             editingUnidadeId = null;
             titleSpan.textContent = 'Nova Unidade';
             inputContrato.value = state.selectedContract ? state.selectedContract.id_contrato : '';
-            
+
             document.getElementById('fcUnidadeIR').checked = false;
             document.getElementById('fcUnidadeAliquota').value = '';
             document.getElementById('fcUnidadeObservacoes').value = '';
             toggleIRObservacoes();
         }
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         setTimeout(() => {
             const content = modal.querySelector('.modal-content');
             content.classList.remove('scale-95', 'opacity-0');
@@ -1678,10 +1967,10 @@ const OPME = (() => {
     function closeUnidadeModal() {
         const modal = document.getElementById('modalUnidade');
         const content = modal.querySelector('.modal-content');
-        
+
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
-        
+
         setTimeout(() => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
@@ -1775,12 +2064,12 @@ const OPME = (() => {
 
     async function openCirurgiaModal(row) {
         // Agrupar itens da mesma cirurgia
-        const items = state.rawData.filter(r => 
-            r.contrato === row.contrato && 
-            r.paciente === row.paciente && 
+        const items = state.rawData.filter(r =>
+            r.contrato === row.contrato &&
+            r.paciente === row.paciente &&
             r.data_cirurgia === row.data_cirurgia
         );
-        
+
         if (items.length === 0) return;
         editingCirurgiaItems = items;
 
@@ -1799,7 +2088,7 @@ const OPME = (() => {
         switchCirurgiaModalTab('dados');
         document.getElementById('fcCirurgiaObservacoes').value = '';
         document.getElementById('fcCirurgiaObservacoes').style.height = 'auto';
-        document.getElementById('fcCirurgiaObservacoes').oninput = function() {
+        document.getElementById('fcCirurgiaObservacoes').oninput = function () {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
         };
@@ -1810,11 +2099,11 @@ const OPME = (() => {
             const obsRes = await fetch(`/api/opme/observacoes/generate?contrato=${encodeURIComponent(ref.contrato)}&paciente=${encodeURIComponent(ref.paciente)}&data_cirurgia=${encodeURIComponent(dateStr)}`, {
                 headers: { 'Authorization': `Bearer ${getToken()}` }
             });
-            if(obsRes.ok) {
+            if (obsRes.ok) {
                 const obsData = await obsRes.json();
                 document.getElementById('fcCirurgiaObservacoes').value = obsData.observacao || '';
             }
-        } catch(e) {
+        } catch (e) {
             console.error('Erro ao gerar observação', e);
         }
 
@@ -1841,9 +2130,9 @@ const OPME = (() => {
                         localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
                     });
                     localSelect.value = ref.local_cirurgia || '';
-                    
+
                     // Event listener para auto-preencher Cod. Cliente ao alterar o Local
-                    localSelect.onchange = function() {
+                    localSelect.onchange = function () {
                         const selectedOption = localSelect.options[localSelect.selectedIndex];
                         const codCliente = selectedOption.getAttribute('data-cod');
                         if (codCliente) {
@@ -1913,10 +2202,10 @@ const OPME = (() => {
         const itemPregaoHtml = `<input type="hidden" class="prod-item-pregao" value="${item.item_pregao || ''}">`;
         const itemText = item.item_pregao ? ` - Item ${item.item_pregao}` : '';
         const titleText = (item.produto || 'NOVO PRODUTO') + itemText;
-        
+
         const block = document.createElement('div');
         block.className = 'produto-box product-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
-        
+
         block.innerHTML = `
             ${idHtml}
             ${itemPregaoHtml}
@@ -1943,7 +2232,10 @@ const OPME = (() => {
                         <!-- Coluna Esquerda (50%) — Grid 2x3 -->
                         <div class="w-1/2 grid grid-cols-2 gap-3">
                             <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Bio</label>
+                                <label class="block text-xs font-medium text-nexo-600 dark:text-nexo-400 mb-1 cursor-pointer hover:underline inline-flex items-center gap-1" onclick="event.stopPropagation(); OPME.openBancoCodigosLookup(this)">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                                    Cód. Bio
+                                </label>
                                 <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.cod_bio || ''}">
                             </div>
                             <div>
@@ -2017,13 +2309,13 @@ const OPME = (() => {
             const qtdeInput = block.querySelector('.prod-qtde');
             const vlrUnInput = block.querySelector('.prod-vlr-un');
             const vlrTotInput = block.querySelector('.prod-vlr-tot');
-            
+
             const qtde = parseFloat(qtdeInput.value) || 0;
             const vlrUn = parseCurrency(vlrUnInput.value) || 0;
-            
+
             const total = qtde * vlrUn;
             vlrTotInput.value = formatCurrencyInput(total);
-            
+
             globalTotal += total;
         });
         document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal);
@@ -2053,7 +2345,7 @@ const OPME = (() => {
                 block.querySelector('.prod-desc').value = '';
                 block.querySelector('.prod-vlr-un').value = '';
                 block.querySelector('.prod-item-pregao').value = '';
-                
+
                 block.querySelector('.prod-title-text').textContent = 'NOVO PRODUTO';
                 calculateTotalCirurgia();
                 return;
@@ -2062,7 +2354,7 @@ const OPME = (() => {
             if (!res.ok) throw new Error('Erro ao buscar produto');
 
             const data = await res.json();
-            
+
             block.querySelector('.prod-tipo').value = data.classificacao || '';
             block.querySelector('.prod-nome').value = data.produto || '';
             block.querySelector('.prod-desc').value = data.descricao_personalizada || '';
@@ -2125,7 +2417,7 @@ const OPME = (() => {
                 valor_total: parseCurrency(block.querySelector('.prod-vlr-tot').value),
                 item_pregao: block.querySelector('.prod-item-pregao') ? block.querySelector('.prod-item-pregao').value || null : null
             };
-            
+
             if (idInput && idInput.value) {
                 itemData.id = idInput.value;
             }
@@ -2150,7 +2442,7 @@ const OPME = (() => {
             });
 
             if (!res.ok) throw new Error('Erro ao salvar cirurgia');
-            
+
             // Salvar Observação (somente na EDIÇÃO — na criação o backend gera automaticamente)
             if (!isCreating) {
                 const dateStr = commonData.data_cirurgia;
@@ -2171,7 +2463,7 @@ const OPME = (() => {
             showToast(isCreating ? 'Cirurgia criada com sucesso' : 'Cirurgia atualizada com sucesso', 'success');
             closeCirurgiaModal();
             fetchData(); // Recarrega os dados para atualizar a grid
-            
+
             btnSave.innerHTML = originalText;
             btnSave.disabled = false;
         } catch (err) {
@@ -2192,7 +2484,7 @@ const OPME = (() => {
     async function gerarPedidoSupra() {
         if (!editingCirurgiaItems || editingCirurgiaItems.length === 0) return;
         const ref = editingCirurgiaItems[0];
-        
+
         if (ref.pedido) {
             showToast('Esta cirurgia já possui pedido gerado.', 'warning');
             return;
@@ -2200,7 +2492,7 @@ const OPME = (() => {
 
         const btnGerar = document.getElementById('btnGerarPedidoSupra');
         const originalText = btnGerar.innerHTML;
-        
+
         try {
             btnGerar.disabled = true;
             btnGerar.innerHTML = `
@@ -2261,11 +2553,11 @@ const OPME = (() => {
             const parts = rawDate.split('-');
             formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
         }
-        
+
         const paciente = ref.paciente || '';
         const contrato = ref.contrato || '';
         const text = `Tem certeza que deseja excluir a cirurgia ${paciente} ${formattedDate} ${contrato}? Esta ação não pode ser desfeita.`;
-        
+
         document.getElementById('deleteModalText').textContent = text;
         document.getElementById('deleteModal').classList.remove('hidden');
     }
@@ -2293,7 +2585,7 @@ const OPME = (() => {
             });
 
             if (!res.ok) throw new Error('Erro ao excluir cirurgia');
-            
+
             showToast('Cirurgia excluída com sucesso', 'success');
             closeDeleteModal();
             closeCirurgiaModal();
@@ -2383,7 +2675,7 @@ const OPME = (() => {
         const container = document.getElementById('saldoAtaProductsContainer');
         const block = document.createElement('div');
         block.className = 'saldoata-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
-        
+
         let removeBtnHtml = '';
         if (canRemove) {
             removeBtnHtml = `
@@ -2440,7 +2732,7 @@ const OPME = (() => {
             </div>
         `;
         container.appendChild(block);
-        
+
         if (!item.id) {
             // Expandir automaticamente o último se for novo e fechar os outros
             const allBodies = container.querySelectorAll('.accordion-body');
@@ -2466,10 +2758,10 @@ const OPME = (() => {
         const block = input.closest('.saldoata-block');
         const qtdeStr = block.querySelector('.sa-qtde').value;
         const qtde = parseFloat(qtdeStr) || 0;
-        
+
         const vlrUnStr = block.querySelector('.sa-vlrunit').value;
         const vlrUn = parseCurrency(vlrUnStr) || 0;
-        
+
         const total = qtde * vlrUn;
         block.querySelector('.sa-vlrtot').value = formatCurrencyInput(total);
     }
@@ -2603,7 +2895,7 @@ const OPME = (() => {
                 Editar Item Ata Hospital
             `;
             btnAdd.classList.add('hidden');
-            renderSaldoAtaHospitalBlock(item, 0, false); 
+            renderSaldoAtaHospitalBlock(item, 0, false);
         } else {
             // Modo Criação
             currentSaldoAtaHospitalEditId = null;
@@ -2614,7 +2906,7 @@ const OPME = (() => {
                 Novo Item Ata Hospital
             `;
             btnAdd.classList.remove('hidden');
-            renderSaldoAtaHospitalBlock({}, 0, true); 
+            renderSaldoAtaHospitalBlock({}, 0, true);
         }
 
         modal.classList.remove('hidden');
@@ -2651,7 +2943,7 @@ const OPME = (() => {
         const container = document.getElementById('saldoAtaHospitalProductsContainer');
         const block = document.createElement('div');
         block.className = 'sah-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
-        
+
         let removeBtnHtml = '';
         if (canRemove) {
             removeBtnHtml = `
@@ -2720,7 +3012,7 @@ const OPME = (() => {
             </div>
         `;
         container.appendChild(block);
-        
+
         if (!item.id) {
             const allBodies = container.querySelectorAll('.accordion-body');
             allBodies.forEach(b => {
@@ -2745,10 +3037,10 @@ const OPME = (() => {
         const block = input.closest('.sah-block');
         const qtdeStr = block.querySelector('.sah-qtde').value;
         const qtde = parseFloat(qtdeStr) || 0;
-        
+
         const vlrUnStr = block.querySelector('.sah-vlrunit').value;
         const vlrUn = parseCurrency(vlrUnStr) || 0;
-        
+
         const total = qtde * vlrUn;
         block.querySelector('.sah-vlrtot').value = formatCurrencyInput(total);
     }
@@ -2802,7 +3094,7 @@ const OPME = (() => {
             if (currentSaldoAtaHospitalEditId) {
                 url = `/api/opme/saldo-ata-hospital/${currentSaldoAtaHospitalEditId}`;
                 method = 'PUT';
-                bodyData = items[0]; 
+                bodyData = items[0];
             }
 
             const res = await fetch(url, {
@@ -2843,6 +3135,8 @@ const OPME = (() => {
     // API pública
     return {
         clearAllFilters,
+        exportExcel,
+        openBancoCodigosLookup,
         openContratoModal,
         closeContratoModal,
         saveContrato,
