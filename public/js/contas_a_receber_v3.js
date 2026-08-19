@@ -268,7 +268,7 @@ const ContasGrid = (function () {
         let html = '';
         state.viewData.forEach(row => {
             const safeCliente = row.cliente ? row.cliente.replace(/'/g, "\\'") : '';
-            html += `<tr onclick="ContasGrid.openNotaModal('${row.empresa}', '${row.nota}', '${row.documento || ''}', '${safeCliente}', '${row.esfera || ''}', '${row.uf || ''}', '${row.valor || '0'}')" class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 transition-all duration-200 group cursor-pointer">`;
+            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; ContasGrid.openNotaModal('${row.empresa}', '${row.nota}', '${row.documento || ''}', '${safeCliente}', '${row.esfera || ''}', '${row.uf || ''}', '${row.valor || '0'}')" class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 transition-all duration-200 group cursor-pointer">`;
             columns.forEach(col => {
                 let val = row[col.key];
 
@@ -736,6 +736,9 @@ const ContasGrid = (function () {
                     processData();
                 });
             }
+
+            // Seleção de células (Ctrl+Click+Arrasto)
+            if (typeof CellSelector !== 'undefined') CellSelector.init('contasTableBody');
 
             // Botão de Sincronização com Modal
             const btnSync = document.getElementById('btnSyncSupra');

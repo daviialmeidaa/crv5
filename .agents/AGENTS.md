@@ -47,6 +47,65 @@ Quando o projeto exigir tabelas complexas (com paginação, ordenação multifac
 - **Estágio Atual (Mock/Protótipo):** A arquitetura é implementada em **Client-Side**. Isso significa que todo o gerenciamento de estado (Array de dados brutos, filtragem, interseção, ordenação e corte de paginação) ocorre inteiramente no JavaScript do navegador em memória, utilizando Vanilla JS puro.
 - **Transição Futura (Produção em Larga Escala):** Quando a base de dados crescer consideravelmente, os agentes de IA devem auxiliar a migrar essa lógica para **Server-Side**. Ou seja, as interações de filtro, ordenação e paginação no frontend passarão a enviar parâmetros (query strings) nas requisições para a API Node.js. O backend será o responsável por executar a lógica usando SQL dinâmico (`LIMIT`/`OFFSET` e condições de `WHERE`).
 
+### Funcionalidades Obrigatórias de Todo Novo Grid
+Todo novo grid criado no hub **DEVE** implementar as seguintes funcionalidades de fábrica:
+
+1. **Filtros por Coluna (Checkboxes):**
+   - Cada cabeçalho de coluna deve possuir um ícone de funil (posição absoluta, `absolute right-2 top-1/2 -translate-y-1/2`) que abre um dropdown com checkboxes para filtrar valores.
+   - O dropdown deve possuir "(Selecionar Tudo)" ancorado no topo.
+   - Filtros devem suportar **valores vazios** (`(Vazio)`) — equivalente ao Excel. Itens com valor `null`, `undefined` ou string vazia devem ser agrupados sob esta opção.
+   - Filtros de colunas do tipo `date` devem usar o formato hierárquico: Ano > Mês > Dia.
+
+2. **Botão "Remover Filtros":**
+   - Quando qualquer filtro estiver ativo, um botão vermelho "Remover Filtros" deve aparecer na barra de abas (ou na barra de ações do grid).
+   - Estética: `bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 rounded-lg text-xs font-medium`.
+   - Ao clicar, limpa `state.filters` completamente e reprocessa os dados.
+
+3. **Botão "Exportar Excel":**
+   - Botão de exportação deve estar presente na barra de abas, ao lado do "Remover Filtros" (ambos agrupados em um container `ml-auto flex items-center gap-2`).
+   - Utiliza a biblioteca **SheetJS** (`xlsx@0.18.5`) via CDN: `<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>`.
+   - A exportação deve gerar um arquivo `.xlsx` contendo **exatamente** os dados filtrados que o usuário está visualizando (`state.filteredData`), nunca os dados brutos.
+   - Colunas do tipo `actions` devem ser omitidas da exportação.
+
+4. **Seleção de Células com Soma (Ctrl+Click e Ctrl+Arrasto):**
+   - O hub possui um **módulo global reutilizável**: `public/js/cell_selector.js` (`CellSelector`).
+   - Este módulo é a implementação canônica da seleção de células estilo Excel.
+
+### Como Integrar o `CellSelector` em um Novo Grid
+Siga estes passos exatos para integrar a seleção de células em qualquer novo grid:
+
+#### Passo 1: Incluir o Script no HTML
+Adicionar a tag `<script>` **ANTES** do script principal do grid:
+```html
+<script src="/js/cell_selector.js"></script>
+<script src="/js/meu_novo_grid.js"></script>
+```
+
+#### Passo 2: Inicializar no JavaScript
+Na função `init()` do grid, após `fetchData()`, chamar:
+```javascript
+if (typeof CellSelector !== 'undefined') CellSelector.init('meuTableBodyId');
+```
+O parâmetro é o `id` do elemento `<tbody>` da tabela HTML. O módulo automaticamente:
+- Injeta a **barra flutuante** de soma/contagem/média (`#selectionSumBar`) no DOM, caso não exista.
+- Registra os event listeners de `mousedown`, `mouseover`, `mouseup`, `click` e `keydown`.
+
+#### Passo 3: Proteger o Row Click (Guard)
+Se o `<tr>` do grid possuir `onclick` para abrir modais ou navegações, o evento **DEVE** ser protegido para não disparar durante a seleção de células. Adicionar o guard `if(event.ctrlKey||event.metaKey)return;` no **início** do atributo `onclick`:
+```javascript
+// ❌ ERRADO — Modal abre junto com a seleção de célula
+html += `<tr onclick="Grid.openModal(${row.id})">`;
+
+// ✅ CORRETO — Ctrl+Click não dispara o modal
+html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; Grid.openModal(${row.id})">`;
+```
+
+#### Comportamento do CellSelector
+- **Ctrl+Click**: Seleciona/deseleciona uma célula individual. O anel visual `ring-2 ring-nexo-500/50 bg-nexo-50/50 dark:bg-nexo-900/20` é aplicado.
+- **Ctrl+Click+Arrasto**: Seleciona um retângulo de células (como Excel). Arrastar com Ctrl seguro seleciona todas as células no retângulo formado entre a célula de início e a célula atual do mouse.
+- **Escape** ou **Clique fora** (sem Ctrl): Limpa toda a seleção.
+- **Barra Flutuante**: Fixa no canto inferior direito (`fixed bottom-12 right-6 z-50`), exibe: **Contagem**, **Soma** (R$) e **Média** (R$) das células numéricas selecionadas. Parseia automaticamente formatos `R$ 1.234,56` e `1.234,56`.
+
 ## Segurança de Dados (Integração com Supra ERP)
 > [!CAUTION]
 > **REGRA DE SEGURANÇA MÁXIMA (READ-ONLY NO SUPRA)**
