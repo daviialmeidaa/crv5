@@ -857,12 +857,13 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                         codigo, numero_pedido, clifor_codigo, data, tipoped_codigo, 
                         vend_codigo, condpg_codigo, cob_codigo, id_situacao, numero_empenho_compra_publica,
                         listapr_codigo, empr_codigo, observacao_nota_fiscal, nome_contato,
-                        valor_total, quantidade_total_produtos
+                        valor_total, quantidade_total_produtos, id_estoque, id_frete, 
+                        id_faturamento, id_nota_fiscal, id_emissao_nota_fiscal, vend_codigo_2
                     ) VALUES (
                         ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), 57,
                         ${vendCodigo}, 2, 1, 3, @empenho,
                         1, 0, @obs, @contato,
-                        ${valorTotal}, ${quantidadeTotal}
+                        ${valorTotal}, ${quantidadeTotal}, 1, 1, 1, 1, 1, ${vendCodigo}
                     )
                 `);
 
