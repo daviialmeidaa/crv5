@@ -142,6 +142,9 @@ const ClienteDetalhe = (() => {
                 activeFilterModal = null;
             }
         });
+
+        // Seleção de células (Ctrl+Click+Arrasto)
+        if (typeof CellSelector !== 'undefined') CellSelector.init('notasTableBody');
     };
 
     const fetchClienteData = async () => {
@@ -381,7 +384,7 @@ const ClienteDetalhe = (() => {
         state.viewData.forEach(row => {
             const clientName = document.getElementById('clienteNome') ? document.getElementById('clienteNome').textContent.replace(/'/g, "\\'") : '';
             const args = `'${row.empresa}', '${row.nota}', '${row.documento || ''}', '${clientName}', '', '', '${row.valor || '0'}'`;
-            html += `<tr onclick="ClienteDetalhe.openNotaModal(${args})" class="h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
+            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; ClienteDetalhe.openNotaModal(${args})" class="h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
 
             columns.forEach(col => {
                 let val = row[col.key];

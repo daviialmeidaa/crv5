@@ -497,6 +497,20 @@
                     data-tab="bancocodigos" onclick="OPME.switchTab('bancocodigos')">
                     Banco de Códigos
                 </button>
+                <div class="ml-auto flex items-center gap-2">
+                    <button id="btnClearAllFilters" onclick="OPME.clearAllFilters()" class="hidden px-3 py-1.5 items-center gap-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 rounded-lg text-xs font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Remover Filtros
+                    </button>
+                    <button id="btnExportExcel" onclick="OPME.exportExcel()" class="hidden px-3 py-1.5 items-center gap-1.5 bg-white dark:bg-steel-700 text-steel-600 dark:text-gray-300 border border-gray-200 dark:border-steel-600 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-steel-600 transition-colors shadow-sm" title="Exportar Excel">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Exportar
+                    </button>
+                </div>
             </div>
 
             <!-- Banner de Contrato Selecionado -->
@@ -550,6 +564,7 @@
                     </button>
                 </div>
             </div>
+
 
             <!-- Tabela -->
             <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up"
@@ -606,6 +621,27 @@
                     <div class="flex items-center gap-1" id="paginationContainer">
                         <!-- Botões de paginação injetados pelo JS -->
                     </div>
+                </div>
+            </div>
+
+            <!-- Barra de Soma (estilo Excel) - aparece ao selecionar células numéricas -->
+            <div id="selectionSumBar" class="hidden fixed bottom-12 right-6 z-50 bg-steel-800 dark:bg-steel-900 text-white rounded-xl shadow-2xl border border-steel-700 px-5 py-3 flex items-center gap-5 text-sm font-medium animate-fade-in-up" style="backdrop-filter: blur(12px);">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h8m-8 5h16" />
+                    </svg>
+                    <span class="text-steel-400">Contagem:</span>
+                    <span id="selCount" class="text-white font-semibold">0</span>
+                </div>
+                <div class="w-px h-5 bg-steel-600"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-steel-400">Soma:</span>
+                    <span id="selSum" class="text-nexo-400 font-semibold">R$ 0,00</span>
+                </div>
+                <div class="w-px h-5 bg-steel-600"></div>
+                <div class="flex items-center gap-2">
+                    <span class="text-steel-400">Média:</span>
+                    <span id="selAvg" class="text-emerald-400 font-semibold">R$ 0,00</span>
                 </div>
             </div>
 
@@ -1486,6 +1522,7 @@
     <script src="/js/theme.js"></script>
     <script src="/js/components/datepicker.js"></script>
     <script src="/js/layout.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/js/cirurgias.js"></script>
     <div id="toast" class="toast"></div>
 </body>

@@ -215,7 +215,7 @@ const AL = (() => {
 
         let html = '';
         state.viewData.forEach(row => {
-            html += `<tr onclick="AL.openModal(${row.CHAVE})" class="h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
+            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; AL.openModal(${row.CHAVE})" class="h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
             columns.forEach(col => {
                 let val = row[col.key];
                 let displayVal;
@@ -987,6 +987,9 @@ const AL = (() => {
         setupCustomDropdown('formCategoria', 'categoriaDropdown', 'categoriaList').setOptions(categoriaOps);
 
         fetchData();
+
+        // Seleção de células (Ctrl+Click+Arrasto)
+        if (typeof CellSelector !== 'undefined') CellSelector.init('alTableBody');
     }
 
     document.addEventListener('DOMContentLoaded', init);
