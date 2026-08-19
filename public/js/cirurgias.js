@@ -847,66 +847,65 @@ const OPME = (() => {
             return;
         }
 
-        // Remover modal existente se houver
         const existing = document.getElementById('bancoCodigosLookupModal');
         if (existing) existing.remove();
 
-        // Criar modal overlay
+        const BC_COLS = [
+            { key: 'cod_bio', label: 'Cód. Bio' },
+            { key: 'cod_fab', label: 'Cód. Fab.' },
+            { key: 'produto', label: 'Produto' },
+            { key: 'descricao_personalizada', label: 'Descrição' },
+            { key: 'classificacao', label: 'Classificação' },
+            { key: 'item_ata', label: 'Item Ata' },
+        ];
+
+        let activeCol = 'all';
+
         const modal = document.createElement('div');
         modal.id = 'bancoCodigosLookupModal';
         modal.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm';
         modal.innerHTML = `
-            <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-steel-700 w-[900px] max-w-[95vw] max-h-[80vh] flex flex-col transform transition-all duration-200 scale-95 opacity-0">
+            <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-steel-700 w-[1100px] max-w-[95vw] max-h-[50vh] flex flex-col transform transition-all duration-200 scale-95 opacity-0">
                 <!-- Header -->
-                <div class="px-6 py-4 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2 bg-nexo-50 dark:bg-nexo-900/30 rounded-lg">
-                            <svg class="w-5 h-5 text-nexo-600 dark:text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <div class="px-5 py-3 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2.5">
+                        <div class="p-1.5 bg-nexo-50 dark:bg-nexo-900/30 rounded-lg">
+                            <svg class="w-4 h-4 text-nexo-600 dark:text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                             </svg>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-steel-800 dark:text-white">Banco de Códigos</h3>
-                            <p class="text-[11px] text-steel-400">Contrato: <span class="text-nexo-600 dark:text-nexo-400 font-medium">${contrato}</span></p>
+                            <h3 class="text-xs font-semibold text-steel-800 dark:text-white">Banco de Códigos</h3>
+                            <p class="text-[10px] text-steel-400 leading-tight">Contrato: <span class="text-nexo-600 dark:text-nexo-400 font-medium">${contrato}</span></p>
                         </div>
                     </div>
-                    <button onclick="document.getElementById('bancoCodigosLookupModal').remove()" class="p-1.5 rounded-lg text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <button onclick="document.getElementById('bancoCodigosLookupModal').remove()" class="p-1 rounded-lg text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
 
                 <!-- Search Bar -->
-                <div class="px-6 py-3 border-b border-gray-100 dark:border-steel-700 flex items-center gap-3 shrink-0">
-                    <select id="bcLookupColumn" class="px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-700 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all w-44 shrink-0">
-                        <option value="all">Todas as Colunas</option>
-                        <option value="cod_bio">Cód. Bio</option>
-                        <option value="cod_fab">Cód. Fab.</option>
-                        <option value="produto">Produto</option>
-                        <option value="descricao_personalizada">Descrição</option>
-                        <option value="classificacao">Classificação</option>
-                        <option value="item_ata">Item Ata</option>
-                    </select>
+                <div class="px-5 py-2.5 border-b border-gray-100 dark:border-steel-700 flex items-center gap-3 shrink-0">
                     <div class="relative flex-1">
-                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                        <input id="bcLookupSearch" type="text" placeholder="Digite para filtrar..." class="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all" autofocus>
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                        <input id="bcLookupSearch" type="text" placeholder="Pesquisar em todas as colunas..." class="w-full pl-9 pr-4 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all" autofocus>
                     </div>
-                    <span id="bcLookupCount" class="text-xs text-steel-400 whitespace-nowrap">0 itens</span>
+                    <span id="bcLookupCount" class="text-[10px] text-steel-400 whitespace-nowrap tabular-nums">0 itens</span>
                 </div>
 
                 <!-- Table -->
                 <div class="flex-1 overflow-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
                         <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-steel-900">
-                            <tr class="text-steel-600 dark:text-gray-300 text-[11px] font-medium">
-                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Cód. Bio</th>
-                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Cód. Fab.</th>
-                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Produto</th>
-                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Descrição</th>
-                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Classificação</th>
-                                <th class="px-4 py-2.5 border-b border-gray-200 dark:border-steel-700">Item Ata</th>
+                            <tr id="bcLookupHeaders">
+                                ${BC_COLS.map(c => `
+                                    <th data-col="${c.key}" class="bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-gray-200 dark:border-steel-700 cursor-pointer select-none transition-all text-steel-500 dark:text-steel-400 hover:text-nexo-600 dark:hover:text-nexo-400">
+                                        <span class="inline-flex items-center gap-1">${c.label}</span>
+                                    </th>
+                                `).join('')}
                             </tr>
                         </thead>
-                        <tbody id="bcLookupBody" class="text-sm text-steel-700 dark:text-gray-300"></tbody>
+                        <tbody id="bcLookupBody" class="text-[11px] text-steel-700 dark:text-gray-300"></tbody>
                     </table>
                 </div>
             </div>
@@ -914,13 +913,11 @@ const OPME = (() => {
 
         document.body.appendChild(modal);
 
-        // Animar entrada
         requestAnimationFrame(() => {
             modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
             modal.querySelector('.modal-content').classList.add('scale-100', 'opacity-100');
         });
 
-        // Fechar ao clicar no backdrop
         modal.addEventListener('click', (e) => {
             if (e.target === modal) modal.remove();
         });
@@ -940,43 +937,59 @@ const OPME = (() => {
         }
 
         const searchInput = document.getElementById('bcLookupSearch');
-        const columnSelect = document.getElementById('bcLookupColumn');
+
+        function updateHeaderHighlight() {
+            document.querySelectorAll('#bcLookupHeaders .bc-th').forEach(th => {
+                const col = th.dataset.col;
+                if (col === activeCol) {
+                    th.classList.add('text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500');
+                    th.classList.remove('text-steel-500', 'dark:text-steel-400', 'border-b-gray-200', 'dark:border-b-steel-700');
+                } else {
+                    th.classList.remove('text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500');
+                    th.classList.add('text-steel-500', 'dark:text-steel-400', 'border-b-gray-200', 'dark:border-b-steel-700');
+                }
+            });
+            // Update placeholder
+            if (activeCol === 'all') {
+                searchInput.placeholder = 'Pesquisar em todas as colunas...';
+            } else {
+                const col = BC_COLS.find(c => c.key === activeCol);
+                searchInput.placeholder = `Pesquisar por ${col ? col.label : ''}...`;
+            }
+        }
 
         function renderLookupRows() {
             const tbody = document.getElementById('bcLookupBody');
             if (!tbody) return;
             const searchVal = searchInput.value.trim().toLowerCase();
-            const colFilter = columnSelect.value;
 
             const filtered = bancoCodigosCache.filter(item => {
                 if (!searchVal) return true;
-                if (colFilter === 'all') {
-                    return ['cod_bio', 'cod_fab', 'produto', 'descricao_personalizada', 'classificacao', 'item_ata']
-                        .some(k => String(item[k] || '').toLowerCase().includes(searchVal));
+                if (activeCol === 'all') {
+                    return BC_COLS.some(c => String(item[c.key] || '').toLowerCase().includes(searchVal));
                 }
-                return String(item[colFilter] || '').toLowerCase().includes(searchVal);
+                return String(item[activeCol] || '').toLowerCase().includes(searchVal);
             });
 
             document.getElementById('bcLookupCount').textContent = `${filtered.length} ite${filtered.length === 1 ? 'm' : 'ns'}`;
 
             if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-10 text-center text-steel-400 dark:text-steel-500 text-sm">Nenhum item encontrado.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-steel-400 dark:text-steel-500 text-xs">Nenhum item encontrado.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = filtered.map(item => `
                 <tr class="cursor-pointer hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 border-b border-gray-100 dark:border-steel-700/50 transition-colors"
                     data-cod-bio="${item.cod_bio || ''}">
-                    <td class="px-4 py-2.5 font-medium text-nexo-600 dark:text-nexo-400">${item.cod_bio || '-'}</td>
-                    <td class="px-4 py-2.5">${item.cod_fab || '-'}</td>
-                    <td class="px-4 py-2.5 max-w-[200px]"><span class="line-clamp-2">${item.produto || '-'}</span></td>
-                    <td class="px-4 py-2.5 max-w-[200px]"><span class="line-clamp-2">${item.descricao_personalizada || '-'}</span></td>
-                    <td class="px-4 py-2.5">${item.classificacao || '-'}</td>
-                    <td class="px-4 py-2.5">${item.item_ata || '-'}</td>
+                    <td class="px-5 py-1.5 font-medium text-nexo-600 dark:text-nexo-400 whitespace-nowrap">${item.cod_bio || '-'}</td>
+                    <td class="px-5 py-1.5 whitespace-nowrap">${item.cod_fab || '-'}</td>
+                    <td class="px-5 py-1.5 max-w-[200px]"><span class="line-clamp-1">${item.produto || '-'}</span></td>
+                    <td class="px-5 py-1.5 max-w-[200px]"><span class="line-clamp-1">${item.descricao_personalizada || '-'}</span></td>
+                    <td class="px-5 py-1.5 whitespace-nowrap">${item.classificacao || '-'}</td>
+                    <td class="px-5 py-1.5 whitespace-nowrap">${item.item_ata || '-'}</td>
                 </tr>
             `).join('');
 
-            // Click handler para selecionar
             tbody.querySelectorAll('tr[data-cod-bio]').forEach(tr => {
                 tr.addEventListener('click', () => {
                     const codBio = tr.getAttribute('data-cod-bio');
@@ -989,12 +1002,20 @@ const OPME = (() => {
             });
         }
 
+        // Clickable column headers
+        document.querySelectorAll('#bcLookupHeaders .bc-th').forEach(th => {
+            th.addEventListener('click', () => {
+                const col = th.dataset.col;
+                activeCol = (activeCol === col) ? 'all' : col;
+                updateHeaderHighlight();
+                searchInput.focus();
+                renderLookupRows();
+            });
+        });
+
+        updateHeaderHighlight();
         renderLookupRows();
         searchInput.addEventListener('input', renderLookupRows);
-        columnSelect.addEventListener('change', () => {
-            searchInput.focus();
-            renderLookupRows();
-        });
         searchInput.focus();
     }
 
