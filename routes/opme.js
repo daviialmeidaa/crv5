@@ -604,6 +604,118 @@ async function generateObservacaoText(pgPool, ref, items) {
 }
 
 // ==========================================
+// POST /api/opme/cirurgias/sync-notas
+// ==========================================
+router.post('/cirurgias/sync-notas', async (req, res) => {
+    try {
+        const { contrato } = req.body;
+        if (!contrato) return res.status(400).json({ error: 'Contrato não informado' });
+
+        let cirurgiasResult = await pgPool.query(`
+            SELECT id, cod_bio, pedido 
+            FROM opme.cirurgias 
+            WHERE contrato = $1 
+              AND pedido IS NOT NULL 
+              AND (nota_fiscal IS NULL OR nota_fiscal = '' OR nota_fiscal = '0')
+        `, [contrato]);
+
+        if (cirurgiasResult.rows.length === 0) {
+            return res.json({ message: 'Nenhuma cirurgia pendente de nota com pedido gerado.', updated: 0 });
+        }
+
+        let pedidos = [...new Set(cirurgiasResult.rows.map(r => r.pedido))];
+        if (pedidos.length === 0) {
+            return res.json({ message: 'Nenhuma cirurgia pendente de nota com pedido gerado.', updated: 0 });
+        }
+
+        const contratoRes = await pgPool.query('SELECT empresa FROM opme.contratos WHERE id_contrato = $1', [contrato]);
+        if (contratoRes.rows.length === 0) {
+            return res.status(404).json({ error: 'Contrato não encontrado' });
+        }
+        
+        const empresa = contratoRes.rows[0].empresa;
+        if (!empresa) return res.status(400).json({ error: 'Contrato não tem empresa definida (SGC/BML)' });
+
+        const viewDbName = empresa.toLowerCase() === 'bml' ? 'SGC2' : 'SGC';
+        const viewName = empresa.toLowerCase() === 'bml' ? 'bml_pedidos_x_nf' : 'bio_pedidos_x_nf';
+        const sgcDbName = empresa.toLowerCase() === 'bml' ? 'SGC2' : 'SGC';
+
+        const mssqlPool = await getPool();
+        
+        const pedidosStr = pedidos.join(',');
+        const nfRes = await mssqlPool.request().query(`
+            SELECT Numero_Pedido, Numero_Nota 
+            FROM ${viewDbName}.dbo.${viewName} 
+            WHERE Numero_Pedido IN (${pedidosStr})
+        `);
+
+        if (nfRes.recordset.length === 0) {
+            return res.json({ message: 'Nenhuma nota fiscal encontrada no Supra para os pedidos pendentes.', updated: 0 });
+        }
+
+        const nfMap = {};
+        const nfs = [];
+        for (const row of nfRes.recordset) {
+            nfMap[row.Numero_Nota] = row.Numero_Pedido;
+            nfs.push(row.Numero_Nota);
+        }
+        
+        const nfsStr = nfs.join(',');
+        const cabRes = await mssqlPool.request().query(`
+            SELECT codigo, numero_nota 
+            FROM ${sgcDbName}.dbo.nota_fiscal_venda 
+            WHERE numero_nota IN (${nfsStr})
+        `);
+
+        const codigoToNf = {};
+        const codigos = [];
+        for (const row of cabRes.recordset) {
+            codigoToNf[row.codigo] = row.numero_nota;
+            codigos.push(row.codigo);
+        }
+
+        if (codigos.length === 0) {
+            return res.json({ message: 'Notas Fiscais encontradas na view, mas não na tabela principal do Supra.', updated: 0 });
+        }
+
+        const codigosStr = codigos.join(',');
+        const itemRes = await mssqlPool.request().query(`
+            SELECT nf_numero, prod_codigo 
+            FROM ${sgcDbName}.dbo.nota_fiscal_venda_item 
+            WHERE nf_numero IN (${codigosStr})
+        `);
+
+        let updatedCount = 0;
+        for (const item of itemRes.recordset) {
+            const numeroNota = codigoToNf[item.nf_numero];
+            const numeroPedido = nfMap[numeroNota];
+            const prodCodigoStr = item.prod_codigo;
+            
+            const matches = cirurgiasResult.rows.filter(r => 
+                r.pedido == numeroPedido && 
+                r.cod_bio && 
+                r.cod_bio.toString() === prodCodigoStr
+            );
+            
+            for (const match of matches) {
+                await pgPool.query(`
+                    UPDATE opme.cirurgias 
+                    SET nota_fiscal = $1, status_expedicao = 'Ok' 
+                    WHERE id = $2
+                `, [numeroNota.toString(), match.id]);
+                updatedCount++;
+            }
+        }
+        
+        res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount });
+
+    } catch (err) {
+        console.error('[OPME] Erro ao sincronizar notas fiscais:', err.message);
+        res.status(500).json({ error: 'Erro ao sincronizar notas fiscais' });
+    }
+});
+
+// ==========================================
 // POST /api/opme/cirurgias
 // ==========================================
 router.post('/cirurgias', async (req, res) => {
