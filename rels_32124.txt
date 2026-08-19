@@ -1,6 +1,0 @@
-[+] pedido_item_fator_preco: 2
-[+] comissao_venda: 1
-[+] entrada_saida_mercadoria: 2
-[+] pedido_item: 2
-[+] pedido_item_lote: 2
-[+] pedido_follow_up: 4
