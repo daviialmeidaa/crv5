@@ -101,6 +101,13 @@ async function runSync(onProgress = () => {}) {
             const supraDocsSet = new Set();
             const upsertValues = [];
 
+            const safeDate = (d) => {
+                if (!d) return null;
+                const dObj = new Date(d);
+                if (isNaN(dObj)) return null;
+                return dObj.toISOString().split('T')[0];
+            };
+
             for (const row of supraRecords.recordset) {
                 const numDoc = row.Documento ? row.Documento.toString() : (row.Parcela ? `${row.Núm_documento}-${row.Parcela}` : row.Núm_documento.toString());
                 supraDocsSet.add(numDoc);
@@ -169,13 +176,6 @@ async function runSync(onProgress = () => {}) {
                         empResult.updated++;
                     }
                 }
-                    const safeDate = (d) => {
-                        if (!d) return null;
-                        const dObj = new Date(d);
-                        if (isNaN(dObj)) return null;
-                        return dObj.toISOString().split('T')[0];
-                    };
-
                     const values = [
                         emp.id, row.Núm_NF, numDoc, row.Cód_Fornecedor,
                         row.Nome_Fornecedor, normEsfera, row.UF, normContrato,
