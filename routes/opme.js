@@ -840,15 +840,16 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                 novoCodigo = codeRes.recordset[0].newCode;
 
                 const reqInsert = new sql.Request(transaction);
+                reqInsert.input('obs', sql.NVarChar(sql.MAX), observacao || '');
                 await reqInsert.query(`
                     INSERT INTO ${dbName}.dbo.pedido (
                         codigo, numero_pedido, clifor_codigo, data, tipoped_codigo, 
                         vend_codigo, condpg_codigo, cob_codigo, id_situacao, numero_empenho_compra_publica,
-                        listapr_codigo, empr_codigo
+                        listapr_codigo, empr_codigo, observacao_nota_fiscal
                     ) VALUES (
                         ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), 57,
                         ${vendCodigo}, 2, 1, 3, '${empenho}',
-                        1, 0
+                        1, 0, @obs
                     )
                 `);
 
@@ -881,10 +882,10 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                 const reqFollow = new sql.Request(transaction);
                 await reqFollow.query(`
                     INSERT INTO ${dbName}.dbo.pedido_follow_up (
-                        ped_codigo, data, usu_codigo, id_movimentacao, historico
+                        ped_codigo, data, usu_codigo, id_movimentacao, id_historico_follow_up, historico
                     ) VALUES (
                         ${novoCodigo}, GETDATE(), 
-                        ${usuIdHub}, 1, 'Gerado automaticamente via Hub'
+                        ${usuIdHub}, 1, 1, 'Gerado automaticamente via Hub'
                     )
                 `);
 
