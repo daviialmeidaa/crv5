@@ -839,17 +839,30 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                 const codeRes = await reqCode.query(`SELECT ISNULL(MAX(codigo), 0) + 1 AS newCode FROM ${dbName}.dbo.pedido WITH (UPDLOCK, SERIALIZABLE)`);
                 novoCodigo = codeRes.recordset[0].newCode;
 
+                let valorTotal = 0;
+                let quantidadeTotal = 0;
+                for (const item of items) {
+                    const qtd = item.quantidade_utilizada || 0;
+                    const vlr = item.valor_unitario || 0;
+                    valorTotal += (qtd * vlr);
+                    quantidadeTotal += qtd;
+                }
+
                 const reqInsert = new sql.Request(transaction);
                 reqInsert.input('obs', sql.NVarChar(sql.MAX), observacao || '');
+                reqInsert.input('contato', sql.NVarChar(40), contrato || '');
+                reqInsert.input('empenho', sql.NVarChar(40), empenho || '');
                 await reqInsert.query(`
                     INSERT INTO ${dbName}.dbo.pedido (
                         codigo, numero_pedido, clifor_codigo, data, tipoped_codigo, 
                         vend_codigo, condpg_codigo, cob_codigo, id_situacao, numero_empenho_compra_publica,
-                        listapr_codigo, empr_codigo, observacao_nota_fiscal
+                        listapr_codigo, empr_codigo, observacao_nota_fiscal, nome_contato,
+                        valor_total, quantidade_total_produtos
                     ) VALUES (
                         ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), 57,
-                        ${vendCodigo}, 2, 1, 3, '${empenho}',
-                        1, 0, @obs
+                        ${vendCodigo}, 2, 1, 3, @empenho,
+                        1, 0, @obs, @contato,
+                        ${valorTotal}, ${quantidadeTotal}
                     )
                 `);
 
