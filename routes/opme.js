@@ -897,8 +897,8 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                         pUnid = p.unid_unidade || 'UN';
                     }
                     
-                    // Use item's price if > 0, else product's price
-                    let vlr = item.valor_unitario && parseFloat(item.valor_unitario) > 0 ? parseFloat(item.valor_unitario) : pPrecoVenda;
+                    // Use item's price as-is (it may be 0 for bundled/bonus items)
+                    let vlr = item.valor_unitario !== undefined && item.valor_unitario !== null ? parseFloat(item.valor_unitario) : 0;
                     
                     // Clean description from quotes
                     pDescricao = pDescricao.replace(/'/g, "''").trim();
