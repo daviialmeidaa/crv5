@@ -16,7 +16,8 @@ O sistema é projetado para operar com extrema eficiência e baixíssimo consumo
    - A conexão primária é feita através do módulo `db/redis.js` conectando-se a `process.env.REDISCLOUD_URL` (Redis Cloud 30MB Free Tier).
    - **MANDATÓRIO:** Toda rota HTTP do tipo `GET` que busque arrays pesados (como `/api/titulos`, `/api/opme/cirurgias`, `/api/opme/banco-codigos`) **DEVE** tentar buscar os dados no cache usando `getCache(chave)` antes de disparar o comando no PostgreSQL. Se o cache não existir, busca no banco, salva com `setCache()` (tempo de vida padrão: 3600s) e retorna ao usuário.
 3. **Invalidation (Limpeza de Cache):** Sempre que um Agente de IA criar ou alterar rotas do tipo `POST`, `PUT` ou `DELETE` nestas tabelas mastigadas, é **obrigatório** chamar a função utilitária `clearCache('nome_da_chave')` após o comando SQL bem-sucedido. Nunca deixe dados estáticos mortos rodando no Redis.
-4. **Indexação (Banco de Dados):** Ao criar novas tabelas, os agentes devem sugerir ativamente e executar a criação de `INDEX` em colunas que frequentemente aparecerão em claúsulas `WHERE`, para evitar Full Table Scans lentos na infraestrutura do Heroku.
+4. **Indexação Manual (Banco de Dados):** Índices no PostgreSQL **não** são automáticos nem globais. Eles são atrelados a colunas específicas de tabelas específicas. Os índices criados até o momento (ex: `opme.cirurgias(contrato)`) só aceleram buscas daquelas tabelas. 
+   - **Regra para o Futuro:** Ao criar *novas* tabelas ou *novas* queries de filtro pesadas, os agentes de IA devem sugerir ativamente e executar a criação de novos `INDEX` nas colunas que aparecerão na cláusula `WHERE`. Sem isso, o banco fará *Full Table Scans* e destruirá a performance do Heroku.
 
 
 ## Regras de Estrutura de Frontend (Obrigatórias)
