@@ -1044,7 +1044,10 @@ const OPME = (() => {
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => `
+            const LIMIT = 100;
+            const toRender = filtered.slice(0, LIMIT);
+
+            let html = toRender.map(item => `
                 <tr class="cursor-pointer hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 border-b border-gray-100 dark:border-steel-700/50 transition-colors"
                     data-cod-bio="${item.cod_bio || ''}">
                     <td class="px-5 py-1.5 font-medium text-nexo-600 dark:text-nexo-400 whitespace-nowrap">${item.cod_bio || '-'}</td>
@@ -1055,6 +1058,12 @@ const OPME = (() => {
                     <td class="px-5 py-1.5 whitespace-nowrap">${item.item_ata || '-'}</td>
                 </tr>
             `).join('');
+
+            if (filtered.length > LIMIT) {
+                html += `<tr><td colspan="6" class="px-6 py-4 text-center text-steel-400 dark:text-steel-500 text-[10px] bg-gray-50/50 dark:bg-steel-800/50">Mostrando os primeiros ${LIMIT} resultados de ${filtered.length}. Use a pesquisa para refinar.</td></tr>`;
+            }
+
+            tbody.innerHTML = html;
 
             tbody.querySelectorAll('tr[data-cod-bio]').forEach(tr => {
                 tr.addEventListener('click', () => {
@@ -2322,7 +2331,7 @@ const OPME = (() => {
     function renderProductRow(item, idx) {
         const tbody = document.getElementById('cirurgiaProductsTbody');
         const tr = document.createElement('tr');
-        tr.className = 'product-row border-b border-gray-100 dark:border-steel-700 hover:bg-gray-50/50 dark:hover:bg-steel-700/20 transition-colors align-middle';
+        tr.className = 'product-row border-b border-gray-100 dark:border-steel-700 hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors align-middle';
         tr.dataset.idx = idx;
 
         const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
@@ -2459,12 +2468,12 @@ const OPME = (() => {
 
         const dropdown = document.createElement('div');
         dropdown.id = 'headerSelectDropdown';
-        dropdown.className = 'absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50';
+        dropdown.className = 'fixed mt-2 z-[200]';
         dropdown.style.cssText = 'min-width: 170px;';
         dropdown.innerHTML = `
-            <div class="bg-steel-800 border border-steel-600/50 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm" style="animation: fadeIn 0.15s ease-out">
-                <div class="px-3 py-2 border-b border-steel-700/50">
-                    <span class="text-[10px] font-semibold text-nexo-400 uppercase tracking-wider">Aplicar a todos</span>
+            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm" style="animation: fadeIn 0.15s ease-out">
+                <div class="px-3 py-2 border-b border-gray-100 dark:border-steel-700/50">
+                    <span class="text-[10px] font-semibold text-nexo-600 dark:text-nexo-400 uppercase tracking-wider">Aplicar a todos</span>
                 </div>
                 <div class="py-1" id="headerSelectOptions"></div>
             </div>
@@ -2474,9 +2483,9 @@ const OPME = (() => {
         options.forEach(opt => {
             const btn = document.createElement('button');
             btn.type = 'button';
-            btn.className = 'w-full px-3 py-2 flex items-center gap-2 text-xs text-gray-200 hover:bg-nexo-500/15 hover:text-nexo-300 transition-all duration-150 cursor-pointer';
+            btn.className = 'w-full px-3 py-2 flex items-center gap-2 text-xs text-steel-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-nexo-500/15 hover:text-nexo-600 dark:hover:text-nexo-300 transition-all duration-150 cursor-pointer';
             btn.innerHTML = `
-                <span class="w-1.5 h-1.5 rounded-full ${opt.value ? 'bg-nexo-500' : 'bg-steel-500'} flex-shrink-0"></span>
+                <span class="w-1.5 h-1.5 rounded-full ${opt.value ? 'bg-nexo-500' : 'bg-gray-300 dark:bg-steel-500'} flex-shrink-0"></span>
                 <span>${opt.label}</span>
             `;
             btn.onclick = (e) => {
@@ -2489,17 +2498,23 @@ const OPME = (() => {
             optionsContainer.appendChild(btn);
         });
 
-        thEl.style.position = 'relative';
-        thEl.appendChild(dropdown);
+        document.body.appendChild(dropdown);
+        const rect = thEl.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom}px`;
+        dropdown.style.left = `${rect.left + (rect.width / 2) - 85}px`; // 85 is half of 170px (min-width)
 
-        // Fechar ao clicar fora
-        const closeHandler = (e) => {
-            if (!dropdown.contains(e.target) && e.target !== thEl) {
-                dropdown.remove();
-                document.removeEventListener('click', closeHandler);
-            }
-        };
-        setTimeout(() => document.addEventListener('click', closeHandler), 10);
+        // Remover dropdown ao clicar fora ou dar scroll
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (!dropdown.contains(e.target) && e.target !== thEl) {
+                    dropdown.remove();
+                    document.removeEventListener('click', closeHandler);
+                    window.removeEventListener('scroll', closeHandler, { capture: true });
+                }
+            };
+            document.addEventListener('click', closeHandler);
+            window.addEventListener('scroll', closeHandler, { capture: true });
+        }, 10);
     }
 
     // Menu de visibilidade de colunas

@@ -70,12 +70,16 @@ function initCustomDatepickers() {
         
         // Popup do Calendário
         const popup = document.createElement('div');
-        popup.className = 'absolute z-50 mt-1 hidden bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg shadow-xl p-4 w-72 transform transition-all duration-200 opacity-0 scale-95 origin-top-left';
+        popup.className = 'absolute z-[200] mt-1 hidden bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg shadow-xl p-4 w-72 transform transition-all duration-200 opacity-0 scale-95 origin-top-left';
         
-        // Prevenir fechamento se estourar a tela (ajuste simples de bottom se necessário, por padrão desce)
-        popup.style.top = '100%';
-        popup.style.left = '0';
-        wrapper.appendChild(popup);
+        // Cleanup previous popup if re-initialized
+        if (originalInput._datepickerPopup) {
+            originalInput._datepickerPopup.remove();
+        }
+        originalInput._datepickerPopup = popup;
+        
+        // Append popup to body to avoid overflow issues
+        document.body.appendChild(popup);
         
         // Estado local do calendário
         let currentDate = originalInput.value ? new Date(originalInput.value + 'T12:00:00') : new Date();
@@ -275,46 +279,38 @@ function initCustomDatepickers() {
                 selectedDate = null;
             }
             
+            // Se o wrapper sumiu do DOM, não abre
+            if (!document.body.contains(wrapper)) return;
+            
             renderCalendar();
             
             popup.classList.add('custom-datepicker-popup');
             popup.classList.remove('hidden');
             
-            // Fix para posições na tela (se passar das bordas inferior ou lateral)
             const rect = wrapper.getBoundingClientRect();
-            const scrollContainer = wrapper.closest('.custom-scrollbar') || wrapper.closest('.overflow-y-auto') || wrapper.closest('.overflow-auto') || document.body;
-            const containerRect = scrollContainer.getBoundingClientRect();
+            popup.style.position = 'fixed';
             
             // Altura aproximada do popup do calendário
             const popupHeight = 320;
+            const popupWidth = 288;
             
-            // Limite inferior é o menor valor entre a janela inteira e o container de scroll
-            const bottomLimit = scrollContainer === document.body ? window.innerHeight : Math.min(window.innerHeight, containerRect.bottom);
+            // Define a posição top/left
+            let topPos = rect.bottom + 4;
+            let leftPos = rect.left;
             
-            let originY = 'top';
-            popup.style.top = '100%';
-            popup.style.bottom = 'auto';
-            popup.style.marginTop = '4px';
-            popup.style.marginBottom = '';
-            originY = 'top';
-            
-            let originX = 'left';
-            // Se o limite direito do input + a largura do calendário (288px) passar da borda do modal (containerRect.right)
-            if (rect.left + 288 > containerRect.right - 20) {
-                popup.style.left = 'auto';
-                popup.style.right = '0';
-                originX = 'right';
-            } else {
-                popup.style.left = '0';
-                popup.style.right = 'auto';
-                originX = 'left';
+            // Se passar da tela pra baixo, joga pra cima
+            if (topPos + popupHeight > window.innerHeight && rect.top - popupHeight - 4 > 0) {
+                topPos = rect.top - popupHeight - 4;
             }
             
-            // Atualiza classe de origem para animação correta
-            popup.classList.remove('origin-top-left', 'origin-top-right', 'origin-bottom-left', 'origin-bottom-right');
-            popup.classList.add(`origin-${originY}-${originX}`);
+            // Se passar da tela pra direita
+            if (leftPos + popupWidth > window.innerWidth) {
+                leftPos = window.innerWidth - popupWidth - 8;
+            }
             
-            // Animar entrada
+            popup.style.top = `${topPos}px`;
+            popup.style.left = `${leftPos}px`;
+            popup.style.bottom = 'auto';
             setTimeout(() => {
                 popup.classList.remove('opacity-0', 'scale-95');
                 popup.classList.add('opacity-100', 'scale-100');
@@ -348,6 +344,13 @@ function initCustomDatepickers() {
                 }
             }
         });
+        
+        // Fechar ao rolar a página
+        window.addEventListener('scroll', () => {
+            if (!popup.classList.contains('hidden')) {
+                closePopup();
+            }
+        }, { passive: true, capture: true });
         
         displayInput.addEventListener('click', (e) => {
             e.stopPropagation();

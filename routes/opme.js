@@ -191,7 +191,7 @@ router.get('/cirurgias', async (req, res) => {
             query += ' WHERE contrato = $1';
             params.push(contrato);
         }
-        query += ' ORDER BY id DESC';
+        query += ' ORDER BY data_cirurgia DESC NULLS LAST, paciente ASC, id DESC';
         
         const cacheKey = `opme:cirurgias:${contrato || 'all'}`;
         const cached = await getCache(cacheKey);
@@ -812,11 +812,13 @@ router.post('/cirurgias', async (req, res) => {
             console.error('[OPME] Erro ao gerar observação automática (não-fatal):', obsErr.message);
         }
 
-        res.json({ success: true, message: 'Nova cirurgia criada com sucesso.', id: newId });
-        
-        // Invalida o cache
+        // Invalida o cache ANTES de enviar a resposta
         await clearCache(`opme:cirurgias:all`);
-        await clearCache(`opme:cirurgias:${items[0].contrato}`);
+        if (items.length > 0 && items[0].contrato) {
+            await clearCache(`opme:cirurgias:${items[0].contrato}`);
+        }
+
+        res.json({ success: true, message: 'Nova cirurgia criada com sucesso.', id: newId });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao criar cirurgias (POST):', err.message);
@@ -914,12 +916,13 @@ router.put('/cirurgias', async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ success: true, message: 'Cirurgia(s) atualizada(s) com sucesso' });
-        
-        // Invalida o cache
+
+        // Invalida o cache ANTES de enviar a resposta para evitar race conditions no frontend
         await clearCache(`opme:cirurgias:all`);
         const targetContrato = contrato || (items.length > 0 ? items[0].contrato : null);
         if (targetContrato) await clearCache(`opme:cirurgias:${targetContrato}`);
+
+        res.json({ success: true, message: 'Cirurgia(s) atualizada(s) com sucesso' });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao atualizar cirurgias (PUT):', err.message);
