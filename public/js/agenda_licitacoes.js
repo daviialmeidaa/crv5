@@ -113,10 +113,11 @@ const AL = (() => {
         state.filteredData = state.rawData.filter(row => {
             for (let key in state.filters) {
                 const selected = state.filters[key];
-                if (selected && selected.size > 0) {
-                    if (selected.has('__NONE__')) { return false; }
-                    const val = row[key] !== null && row[key] !== undefined ? String(row[key]) : '-';
+                if (selected && selected.size > 0 && !selected.has('__NONE__')) {
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? String(row[key]) : '(Vazio)';
                     if (!selected.has(val)) return false;
+                } else if (selected && selected.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
@@ -332,16 +333,26 @@ const AL = (() => {
                 if (key === colKey) continue;
                 const selected = state.filters[key];
                 if (selected && selected.size > 0 && !selected.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined ? String(row[key]) : '-';
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? String(row[key]) : '(Vazio)';
                     if (!selected.has(val)) return false;
+                } else if (selected && selected.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
         });
-        const uniqueValues = [...new Set(preFilteredData.map(row => {
+        
+        const rawValuesMapped = preFilteredData.map(row => {
             const v = row[colKey];
-            return (v !== null && v !== undefined && v !== '') ? String(v) : '-';
-        }))].sort();
+            return (v !== null && v !== undefined && v !== '') ? String(v) : '(Vazio)';
+        });
+
+        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
+            if (a === '(Vazio)') return 1;
+            if (b === '(Vazio)') return -1;
+            if (typeof a === 'number' && typeof b === 'number') return a - b;
+            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
+        });
 
         if (!state.filters[colKey]) state.filters[colKey] = new Set();
 

@@ -83,10 +83,11 @@ const ClientesGrid = (() => {
         state.filteredData = baseData.filter(row => {
             for (let key in state.filters) {
                 const selected = state.filters[key];
-                if (selected && selected.size > 0) {
-                    if (selected.has('__NONE__')) { return false; }
-                    const val = row[key] !== null && row[key] !== undefined ? String(row[key]) : '-';
+                if (selected && selected.size > 0 && !selected.has('__NONE__')) {
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? String(row[key]) : '(Vazio)';
                     if (!selected.has(val)) return false;
+                } else if (selected && selected.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
@@ -270,19 +271,27 @@ const ClientesGrid = (() => {
             for (let k in state.filters) {
                 if (k === columnKey) continue;
                 const sel = state.filters[k];
-                if (sel && sel.size > 0) {
-                    if (sel.has('__NONE__')) return false;
-                    const v = row[k] !== null && row[k] !== undefined ? String(row[k]) : '-';
+                if (sel && sel.size > 0 && !sel.has('__NONE__')) {
+                    const v = row[k] !== null && row[k] !== undefined && row[k] !== '' ? String(row[k]) : '(Vazio)';
                     if (!sel.has(v)) return false;
+                } else if (sel && sel.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
         });
 
-        const uniqueValues = [...new Set(baseForFilter.map(row => {
+        const rawValuesMapped = baseForFilter.map(row => {
             const v = row[columnKey];
-            return (v !== null && v !== undefined && v !== '') ? String(v) : '-';
-        }))].sort();
+            return (v !== null && v !== undefined && v !== '') ? String(v) : '(Vazio)';
+        });
+
+        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
+            if (a === '(Vazio)') return 1;
+            if (b === '(Vazio)') return -1;
+            if (typeof a === 'number' && typeof b === 'number') return a - b;
+            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
+        });
         
         if (!state.filters[columnKey]) state.filters[columnKey] = new Set();
         

@@ -248,13 +248,14 @@ const ClienteDetalhe = (() => {
         // 1. Filtragem
         let data = [...state.rawData];
         for (const [colKey, allowedSet] of Object.entries(state.filters)) {
-            if (allowedSet && allowedSet.size > 0) {
+            if (allowedSet && allowedSet.size > 0 && !allowedSet.has('__NONE__')) {
                 data = data.filter(row => {
-                    let val = row[colKey];
-                    if (val === null || val === undefined || val === '') val = '__EMPTY__';
-                    else val = String(val);
+                    const val = row[colKey] !== null && row[colKey] !== undefined && row[colKey] !== '' ? String(row[colKey]) : '(Vazio)';
                     return allowedSet.has(val);
                 });
+            } else if (allowedSet && allowedSet.has('__NONE__')) {
+                data = [];
+                break;
             }
         }
         state.filteredData = data;
@@ -504,23 +505,16 @@ const ClienteDetalhe = (() => {
             }
             return true;
         });
-        const uniqueValues = [...new Set(preFilteredData.map(row => {
-            let val = row[colKey];
-            if (val === null || val === undefined || val === '') return '__EMPTY__';
-            return String(val);
-        }))].sort((a, b) => {
-            const aEmpty = a === '__EMPTY__' || a === '-';
-            const bEmpty = b === '__EMPTY__' || b === '-';
-            
-            if (aEmpty && bEmpty) return 0;
-            if (aEmpty) return -1;
-            if (bEmpty) return 1;
+        const rawValuesMapped = preFilteredData.map(row => {
+            const val = row[colKey];
+            return val !== null && val !== undefined && val !== '' ? String(val) : '(Vazio)';
+        });
 
-            if (col && (col.type === 'number' || col.type === 'currency')) {
-                return (parseFloat(a) || 0) - (parseFloat(b) || 0);
-            }
-            
-            return a.localeCompare(b);
+        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
+            if (a === '(Vazio)') return 1;
+            if (b === '(Vazio)') return -1;
+            if (typeof a === 'number' && typeof b === 'number') return a - b;
+            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
         });
 
         // Inicializa o state do filtro se não existir

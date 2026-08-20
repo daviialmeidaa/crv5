@@ -322,12 +322,13 @@ const OPME = (() => {
         state.filteredData = state.rawData.filter(row => {
             for (let key in state.filters) {
                 const selectedValues = state.filters[key];
-                if (selectedValues && selectedValues.size > 0) {
-                    if (selectedValues.has('__NONE__')) return false;
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '-';
+                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
                     if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
                         return false;
                     }
+                } else if (selectedValues && selectedValues.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
@@ -559,24 +560,27 @@ const OPME = (() => {
                 if (key === colKey) continue;
                 const selectedValues = state.filters[key];
                 if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '-';
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
                     if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
                         return false; 
                     }
+                } else if (selectedValues && selectedValues.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
         });
 
-        // Valores brutos, mapeados para '-' se vazios
+        // Valores brutos, mapeados para '(Vazio)' se vazios
         const rawValuesMapped = preFilteredData.map(row => {
-            return row[colKey] !== null && row[colKey] !== undefined && row[colKey] !== '' ? row[colKey] : '-';
+            return row[colKey] !== null && row[colKey] !== undefined && row[colKey] !== '' ? row[colKey] : '(Vazio)';
         });
 
         const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
-            if (a === '-') return 1;
-            if (b === '-') return -1;
-            return String(a).localeCompare(String(b), 'pt-BR');
+            if (a === '(Vazio)') return 1;
+            if (b === '(Vazio)') return -1;
+            if (typeof a === 'number' && typeof b === 'number') return a - b;
+            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
         });
 
         if (!state.filters[colKey]) {

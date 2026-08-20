@@ -119,10 +119,13 @@ const ContasGrid = (function () {
         state.filteredData = state.rawData.filter(row => {
             for (let key in state.filters) {
                 const selectedValues = state.filters[key];
-                if (selectedValues.size > 0) {
-                    if (!selectedValues.has(row[key])) {
+                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
+                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
                         return false; // Falhou em um dos filtros
                     }
+                } else if (selectedValues && selectedValues.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
@@ -353,14 +356,28 @@ const ContasGrid = (function () {
                 if (key === colKey) continue; // Ignora o filtro da própria coluna que estamos abrindo
                 const selectedValues = state.filters[key];
                 if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
-                    if (!selectedValues.has(row[key])) {
+                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
+                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
                         return false; 
                     }
+                } else if (selectedValues && selectedValues.has('__NONE__')) {
+                    return false;
                 }
             }
             return true;
         });
-        const uniqueValues = [...new Set(preFilteredData.map(row => row[colKey]))].sort();
+        
+        const rawValuesMapped = preFilteredData.map(row => {
+            const val = row[colKey];
+            return val !== null && val !== undefined && val !== '' ? val : '(Vazio)';
+        });
+
+        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
+            if (a === '(Vazio)') return 1;
+            if (b === '(Vazio)') return -1;
+            if (typeof a === 'number' && typeof b === 'number') return a - b;
+            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
+        });
 
         // Inicializa o state do filtro se não existir
         if (!state.filters[colKey]) {
