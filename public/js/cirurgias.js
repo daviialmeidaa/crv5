@@ -1671,6 +1671,11 @@ const OPME = (() => {
         const banner = document.getElementById('contractBanner');
         if (banner) banner.classList.add('hidden');
 
+        // Sair do modo tela cheia se estiver ativo
+        if (document.body.classList.contains('fullscreen-grid')) {
+            toggleFullscreenGrid();
+        }
+
         // Volta para a aba que estávamos antes de entrar no detalhe (ativos ou inativos)
         // Por padrão vamos forçar voltar pra aba de contratos ativos se a atual não for inativos
         const targetTab = document.querySelector('.main-tab[data-main-tab="contratos_inativos"]').classList.contains('text-nexo-600') ? 'contratos_inativos' : 'contratos';
@@ -3229,9 +3234,26 @@ const OPME = (() => {
         }
     }
 
+    function toggleFullscreenGrid() {
+        const body = document.body;
+        body.classList.toggle('fullscreen-grid');
+        const isFullscreen = body.classList.contains('fullscreen-grid');
+        const btn = document.getElementById('btnFullscreenGrid');
+        if (!btn) return;
+        const icon = btn.querySelector('svg');
+        if (isFullscreen) {
+            btn.title = "Sair da Tela Cheia";
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />';
+        } else {
+            btn.title = "Modo Tela Cheia";
+            icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />';
+        }
+    }
+
     // ==========================================
     // API pública
     return {
+        toggleFullscreenGrid,
         clearAllFilters,
         exportExcel,
         syncNotasFiscais,
