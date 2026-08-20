@@ -1118,13 +1118,13 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                 reqInsert.input('empenho', sql.NVarChar(40), empenho || '');
                 await reqInsert.query(`
                     INSERT INTO ${dbName}.dbo.pedido (
-                        codigo, numero_pedido, clifor_codigo, data, tipoped_codigo, 
+                        codigo, numero_pedido, clifor_codigo, data, data_entrega, tipoped_codigo, 
                         vend_codigo, condpg_codigo, cob_codigo, id_situacao, numero_empenho_compra_publica,
                         listapr_codigo, empr_codigo, observacao, observacao_nota_fiscal, nome_contato,
                         valor_total, quantidade_total_produtos, id_estoque, id_frete, 
                         id_faturamento, id_nota_fiscal, id_emissao_nota_fiscal, vend_codigo_2
                     ) VALUES (
-                        ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), 57,
+                        ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), GETDATE(), 57,
                         ${vendCodigo}, 2, 1, 3, @empenho,
                         1, 0, @obs_pedido, @obs_nota_fiscal, @contato,
                         ${valorTotal}, ${quantidadeTotal}, 1, 1, 1, 1, 1, ${vendCodigo}
