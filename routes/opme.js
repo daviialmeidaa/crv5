@@ -39,7 +39,7 @@ router.get('/contratos', async (req, res) => {
 // ==========================================
 router.post('/contratos', async (req, res) => {
     try {
-        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
+        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, descricao_detalhada } = req.body;
         
         if (!id_contrato || !cliente) {
             return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
@@ -49,13 +49,13 @@ router.post('/contratos', async (req, res) => {
 
         const result = await pgPool.query(`
             INSERT INTO opme.contratos 
-            (id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false)
+            (id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo, descricao_detalhada)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11)
             RETURNING id
         `, [
             id_contrato, empresa || null, material || null, cod_cliente || null, cliente, uf || null, 
             pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
-            inicio_ata || null, termino_ata || null
+            inicio_ata || null, termino_ata || null, descricao_detalhada ? true : false
         ]);
 
         res.json({ success: true, id: result.rows[0].id, message: 'Contrato criado com sucesso' });
@@ -71,7 +71,7 @@ router.post('/contratos', async (req, res) => {
 router.put('/contratos/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata } = req.body;
+        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, descricao_detalhada } = req.body;
         
         if (!id_contrato || !cliente) {
             return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
@@ -82,12 +82,13 @@ router.put('/contratos/:id', async (req, res) => {
         await pgPool.query(`
             UPDATE opme.contratos SET 
                 id_contrato = $1, empresa = $2, material = $3, cod_cliente = $4, cliente = $5, 
-                uf = $6, pregao = $7, total_ata = $8, inicio_ata = $9, termino_ata = $10
-            WHERE id = $11
+                uf = $6, pregao = $7, total_ata = $8, inicio_ata = $9, termino_ata = $10,
+                descricao_detalhada = $11
+            WHERE id = $12
         `, [
             id_contrato, empresa || null, material || null, cod_cliente || null, cliente, uf || null, 
             pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
-            inicio_ata || null, termino_ata || null, id
+            inicio_ata || null, termino_ata || null, descricao_detalhada ? true : false, id
         ]);
 
         res.json({ success: true, message: 'Contrato atualizado com sucesso' });
@@ -931,7 +932,7 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
 
         // 2. Buscar itens da cirurgia e info do contrato
         const cirurgiaRes = await pgPool.query(`
-            SELECT c.*, ct.empresa 
+            SELECT c.*, ct.empresa, ct.descricao_detalhada 
             FROM opme.cirurgias c
             LEFT JOIN opme.contratos ct ON c.contrato = ct.id_contrato
             WHERE c.contrato = $1 AND c.paciente = $2 AND c.data_cirurgia = $3
@@ -960,6 +961,17 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
             vendCodigo = 22;
         } else {
             return res.status(400).json({ error: 'Empresa inválida no contrato (deve ser Nexomed ou Bml).' });
+        }
+
+        let bancoCodigosMap = {};
+        if (ref.descricao_detalhada) {
+            const bcRes = await pgPool.query(`SELECT cod_bio, descricao_personalizada, produto FROM opme.bancocodigos WHERE contrato = $1`, [contrato]);
+            for (const row of bcRes.rows) {
+                bancoCodigosMap[row.cod_bio] = {
+                    descricao_personalizada: row.descricao_personalizada,
+                    produto: row.produto
+                };
+            }
         }
 
         const empenho = ref.autorizacao || ref.empenho || '';
@@ -1042,8 +1054,26 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                     // Use item's price as-is (it may be 0 for bundled/bonus items)
                     let vlr = item.valor_unitario !== undefined && item.valor_unitario !== null ? parseFloat(item.valor_unitario) : 0;
                     
+                    // Use custom description if provided, otherwise fallback to product description
+                    let finalDescricao = '';
+
+                    if (ref.descricao_detalhada && bancoCodigosMap[prodCod]) {
+                        const bcItem = bancoCodigosMap[prodCod];
+                        if (bcItem.descricao_personalizada && bcItem.descricao_personalizada.trim() !== '') {
+                            finalDescricao = bcItem.descricao_personalizada;
+                        } else if (bcItem.produto && bcItem.produto.trim() !== '') {
+                            finalDescricao = bcItem.produto;
+                        } else {
+                            finalDescricao = pDescricao;
+                        }
+                    } else {
+                        finalDescricao = item.descricao_personalizada && item.descricao_personalizada.trim() !== '' 
+                            ? item.descricao_personalizada 
+                            : pDescricao;
+                    }
+                    
                     // Clean description from quotes
-                    pDescricao = pDescricao.replace(/'/g, "''").trim();
+                    finalDescricao = finalDescricao.replace(/'/g, "''").trim();
                     
                     const reqItem = new sql.Request(transaction);
                     await reqItem.query(`
@@ -1061,7 +1091,7 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                             valor_unitario_sugerido
                         ) VALUES (
                             ${novoItemCodigo}, ${novoCodigo}, '${prodCod}', ${qtd}, ${vlr},
-                            ${qtd}, ${vlr}, '${pDescricao}',
+                            ${qtd}, ${vlr}, '${finalDescricao}',
                             '${pUnid}', '${pUnid}',
                             1, 1, 4,
                             1, '${pCst}', ${pPrecoCusto},

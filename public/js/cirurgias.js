@@ -1907,6 +1907,8 @@ const OPME = (() => {
 
             document.getElementById('fcContratoInicio').value = row.inicio_ata ? row.inicio_ata.split('T')[0] : '';
             document.getElementById('fcContratoTermino').value = row.termino_ata ? row.termino_ata.split('T')[0] : '';
+            
+            document.getElementById('fcDescricaoDetalhada').checked = row.descricao_detalhada === true;
         } else {
             // New mode
             editingContratoId = null;
@@ -1928,6 +1930,7 @@ const OPME = (() => {
             document.getElementById('fcContratoTotalAta').value = '';
             document.getElementById('fcContratoInicio').value = '';
             document.getElementById('fcContratoTermino').value = '';
+            document.getElementById('fcDescricaoDetalhada').checked = false;
         }
 
         modal.classList.remove('hidden');
@@ -1966,7 +1969,8 @@ const OPME = (() => {
             pregao: document.getElementById('fcContratoPregao').value.toUpperCase(),
             total_ata: document.getElementById('fcContratoTotalAta').value,
             inicio_ata: document.getElementById('fcContratoInicio').value,
-            termino_ata: document.getElementById('fcContratoTermino').value
+            termino_ata: document.getElementById('fcContratoTermino').value,
+            descricao_detalhada: document.getElementById('fcDescricaoDetalhada').checked
         };
 
         if (!payload.id_contrato || !payload.cliente) {
