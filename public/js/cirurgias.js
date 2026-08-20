@@ -1070,8 +1070,8 @@ const OPME = (() => {
                     data-cod-bio="${item.cod_bio || ''}">
                     <td class="px-5 py-1.5 font-medium text-nexo-600 dark:text-nexo-400 whitespace-nowrap">${item.cod_bio || '-'}</td>
                     <td class="px-5 py-1.5 whitespace-nowrap">${item.cod_fab || '-'}</td>
-                    <td class="px-5 py-1.5 max-w-[200px]"><span class="line-clamp-1">${item.produto || '-'}</span></td>
-                    <td class="px-5 py-1.5 max-w-[200px]"><span class="line-clamp-1">${item.descricao_personalizada || '-'}</span></td>
+                    <td class="px-5 py-1.5 max-w-[200px]" title="${(item.produto || '').replace(/"/g, '&quot;')}"><span class="line-clamp-1">${item.produto || '-'}</span></td>
+                    <td class="px-5 py-1.5 max-w-[200px]" title="${(item.descricao_personalizada || '').replace(/"/g, '&quot;')}"><span class="line-clamp-1">${item.descricao_personalizada || '-'}</span></td>
                     <td class="px-5 py-1.5 whitespace-nowrap">${item.classificacao || '-'}</td>
                     <td class="px-5 py-1.5 whitespace-nowrap">${item.item_ata || '-'}</td>
                 </tr>
@@ -2548,9 +2548,10 @@ const OPME = (() => {
         ];
 
         const wrapper = document.getElementById('colToggleWrapper');
+        const button = wrapper.querySelector('button');
         const dropdown = document.createElement('div');
         dropdown.id = 'colVisibilityMenu';
-        dropdown.className = 'absolute right-0 top-full mt-1 z-50';
+        dropdown.className = 'fixed z-[200]';
         dropdown.style.cssText = 'min-width: 190px;';
         dropdown.innerHTML = `
             <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden" style="animation: fadeIn 0.15s ease-out">
@@ -2581,13 +2582,28 @@ const OPME = (() => {
             optionsContainer.appendChild(item);
         });
 
-        wrapper.appendChild(dropdown);
+        document.body.appendChild(dropdown);
+        
+        // Position it exactly below the button and aligned to the right edge
+        const rect = button.getBoundingClientRect();
+        const dropRect = dropdown.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom + 4}px`;
+        dropdown.style.left = `${rect.right - dropRect.width}px`;
+
+        // Update position on scroll
+        const scrollHandler = () => {
+            const newRect = button.getBoundingClientRect();
+            dropdown.style.top = `${newRect.bottom + 4}px`;
+            dropdown.style.left = `${newRect.right - dropRect.width}px`;
+        };
+        window.addEventListener('scroll', scrollHandler, { capture: true });
 
         // Fechar ao clicar fora
         const closeHandler = (e) => {
             if (!dropdown.contains(e.target) && !e.target.closest('#colToggleWrapper button')) {
                 dropdown.remove();
                 document.removeEventListener('click', closeHandler);
+                window.removeEventListener('scroll', scrollHandler, { capture: true });
             }
         };
         setTimeout(() => document.addEventListener('click', closeHandler), 10);
