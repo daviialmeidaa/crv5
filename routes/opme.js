@@ -750,6 +750,10 @@ router.post('/cirurgias', async (req, res) => {
         }
 
         await client.query('BEGIN');
+        
+        // PREVENÇÃO DE DESINCRONISMO (VBA): Sincroniza a sequence com o MAIOR ID real antes de inserir
+        await client.query(`SELECT setval('opme.cirurgias_id_seq', COALESCE((SELECT MAX(id) FROM opme.cirurgias), 1))`);
+        
         let newId = null;
 
         for (const item of items) {
@@ -833,6 +837,9 @@ router.put('/cirurgias', async (req, res) => {
         }
 
         await client.query('BEGIN');
+
+        // PREVENÇÃO DE DESINCRONISMO (VBA): Sincroniza a sequence com o MAIOR ID real antes de inserir novos itens na edição
+        await client.query(`SELECT setval('opme.cirurgias_id_seq', COALESCE((SELECT MAX(id) FROM opme.cirurgias), 1))`);
 
         for (const item of items) {
             if (!item.id) {
