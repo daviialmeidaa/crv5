@@ -2382,7 +2382,7 @@ const OPME = (() => {
                 <input type="text" class="prod-lote ${cellInput} uppercase" value="${item.lote || ''}" style="min-width:50px">
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada || 0}" style="width:40px">
+                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}" style="width:40px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
                 <span class="prod-vlr-un ${cellReadonly}">${formatCurrencyInput(item.valor_unitario)}</span>
@@ -2432,8 +2432,8 @@ const OPME = (() => {
         const currentCount = document.querySelectorAll('.product-row').length;
         renderProductRow({
             quantidade_utilizada: 1,
-            valor_unitario: 0,
-            valor_total: 0
+            valor_unitario: null,
+            valor_total: null
         }, currentCount);
     }
 
@@ -2454,13 +2454,18 @@ const OPME = (() => {
             const vlrUnEl = tr.querySelector('.prod-vlr-un');
             const vlrTotEl = tr.querySelector('.prod-vlr-tot');
 
-            const qtde = parseFloat(qtdeInput.value) || 0;
-            const vlrUn = parseCurrency(vlrUnEl.textContent || vlrUnEl.value) || 0;
+            const qtdeVal = qtdeInput.value;
+            const vlrUnVal = vlrUnEl.textContent || vlrUnEl.value;
+            const qtde = parseFloat(qtdeVal);
+            const vlrUn = parseCurrency(vlrUnVal);
 
-            const total = qtde * vlrUn;
-            vlrTotEl.textContent = formatCurrencyInput(total);
-
-            globalTotal += total;
+            if (isNaN(qtde) || vlrUn === null) {
+                vlrTotEl.textContent = '';
+            } else {
+                const total = qtde * vlrUn;
+                vlrTotEl.textContent = formatCurrencyInput(total);
+                globalTotal += total;
+            }
         });
         document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal);
     }
@@ -2699,7 +2704,7 @@ const OPME = (() => {
                 autorizacao: (tr.querySelector('.prod-autorizacao').value || '').toUpperCase(),
                 pedido: tr.querySelector('.prod-pedido').value || '',
                 retorno_consignacao: (tr.querySelector('.prod-retorno-consignacao').value || '').toUpperCase(),
-                status_expedicao: (tr.querySelector('.prod-status-expedicao').textContent || '').toUpperCase(),
+                status_expedicao: (tr.querySelector('.prod-status-expedicao').textContent || '').toUpperCase().replace('-', ''),
                 autorizacao_opme: (tr.querySelector('.prod-autorizacao-opme').value || '').toUpperCase(),
                 nota_fiscal: (tr.querySelector('.prod-nota-fiscal').value || '').toUpperCase(),
             };

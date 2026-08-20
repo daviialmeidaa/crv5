@@ -1204,6 +1204,10 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
             WHERE contrato = $2 AND paciente = $3 AND data_cirurgia = $4
         `, [novoCodigo.toString(), contrato, paciente, data_cirurgia]);
 
+        // Limpar cache para que a grid principal reflita a mudança imediatamente
+        await clearCache(`opme:cirurgias:all`);
+        if (contrato) await clearCache(`opme:cirurgias:${contrato}`);
+
         res.json({ success: true, pedido: novoCodigo });
     } catch (err) {
         console.error('[OPME] Erro geral ao criar pedido supra:', err);
