@@ -806,7 +806,37 @@ router.put('/cirurgias', async (req, res) => {
         await client.query('BEGIN');
 
         for (const item of items) {
-            if (!item.id) continue; // Por ora, não inserimos novos, apenas damos update
+            if (!item.id) {
+                // Inserir novo item adicionado na edição da cirurgia
+                const fields = [];
+                const values = [];
+                const placeholders = [];
+                let i = 1;
+
+                const insertColumns = [
+                    'contrato', 'acao', 'local_cirurgia', 'paciente', 'data_cirurgia', 
+                    'prontuario', 'medico', 'crm', 'cod_cliente', 'empenho', 'autorizacao', 
+                    'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
+                    'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
+                    'descricao_personalizada', 'quantidade_utilizada', 'lote', 
+                    'valor_unitario', 'valor_total', 'item_pregao'
+                ];
+
+                for (const key of insertColumns) {
+                    if (item[key] !== undefined) {
+                        fields.push(key);
+                        placeholders.push(`$${i}`);
+                        values.push(item[key] === '' ? null : item[key]);
+                        i++;
+                    }
+                }
+
+                if (fields.length > 0) {
+                    const query = `INSERT INTO opme.cirurgias (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
+                    await client.query(query, values);
+                }
+                continue;
+            }
 
             // Mapeando chaves do objeto para update
             const fields = [];
