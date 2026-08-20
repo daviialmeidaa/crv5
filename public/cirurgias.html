@@ -206,6 +206,12 @@
         #cirurgiaProductsTable.show-expedicao .col-expedicao {
             display: table-cell;
         }
+
+        /* Contraste dos selects em dark mode (option elements são nativos do browser) */
+        .dark #cirurgiaProductsTable select option {
+            background-color: #1f2937;
+            color: #e5e7eb;
+        }
     </style>
     <!-- Aplicar tema antes de renderizar -->
     <script>
@@ -813,14 +819,8 @@
                                 </div>
                                 <div>
                                     <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Data da Cirurgia</label>
-                                    <div class="relative">
-                                        <input type="text" id="fcData" placeholder="DD/MM/AAAA" maxlength="10"
-                                            oninput="this.value=this.value.replace(/[^0-9/]/g,'');if(this.value.length===2&&!this.value.includes('/'))this.value+='/';if(this.value.length===5&&this.value.split('/').length===2)this.value+='/';"
-                                            class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all">
-                                        <input type="date" id="fcDataPicker" tabindex="-1"
-                                            class="absolute inset-0 opacity-0 cursor-pointer"
-                                            onchange="if(this.value){const p=this.value.split('-');document.getElementById('fcData').value=p[2]+'/'+p[1]+'/'+p[0];}">
-                                    </div>
+                                    <input type="date" id="fcData"
+                                        class="custom-datepicker w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all">
                                 </div>
                             </div>
                             <!-- Coluna Direita -->

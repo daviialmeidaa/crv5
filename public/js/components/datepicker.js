@@ -27,10 +27,17 @@ function initCustomDatepickers() {
         // Criar o input visual (proxy)
         const displayInput = document.createElement('input');
         displayInput.type = 'text';
-        displayInput.readOnly = true; // Para forçar o clique
+        displayInput.readOnly = false; // Permite digitação manual
         displayInput.placeholder = 'DD/MM/AAAA';
-        // Copia a estética do input original
-        displayInput.className = 'w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 hover:border-nexo-500 input-glow transition-all cursor-pointer';
+        displayInput.maxLength = 10;
+        
+        // Extrai a estética do input original e substitui as classes não desejadas
+        let baseClass = originalInput.className.replace('custom-datepicker', '').replace('initialized', '').trim();
+        if (!baseClass.includes('pr-8')) baseClass += ' pr-8'; // Espaço para o ícone
+        displayInput.className = baseClass + ' cursor-text relative z-10 bg-transparent';
+        
+        // Remove bordas e fundos do wrapper, deixa apenas no displayInput
+        originalInput.style.display = 'none';
         
         // Sincronizar valor inicial (suportando se o BD mandou atributo em formato brasileiro ou ISO)
         let rawVal = originalInput.getAttribute('value') || originalInput.value;
@@ -46,10 +53,20 @@ function initCustomDatepickers() {
         wrapper.appendChild(displayInput);
         
         // Ícone de Calendário
+        // Ícone de Calendário (agora clicável para abrir o popup, pois o input é text)
         const icon = document.createElement('div');
-        icon.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-steel-400 pointer-events-none';
+        icon.className = 'absolute right-2 top-1/2 -translate-y-1/2 text-steel-400 cursor-pointer z-20 hover:text-nexo-500 transition-colors p-1';
         icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>`;
         wrapper.appendChild(icon);
+        
+        icon.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (popup.classList.contains('hidden')) {
+                openPopup();
+            } else {
+                closePopup();
+            }
+        });
         
         // Popup do Calendário
         const popup = document.createElement('div');
@@ -275,19 +292,11 @@ function initCustomDatepickers() {
             const bottomLimit = scrollContainer === document.body ? window.innerHeight : Math.min(window.innerHeight, containerRect.bottom);
             
             let originY = 'top';
-            if (rect.bottom + popupHeight > bottomLimit) {
-                popup.style.top = 'auto';
-                popup.style.bottom = '100%';
-                popup.style.marginBottom = '4px';
-                popup.style.marginTop = '';
-                originY = 'bottom';
-            } else {
-                popup.style.top = '100%';
-                popup.style.bottom = 'auto';
-                popup.style.marginTop = '4px';
-                popup.style.marginBottom = '';
-                originY = 'top';
-            }
+            popup.style.top = '100%';
+            popup.style.bottom = 'auto';
+            popup.style.marginTop = '4px';
+            popup.style.marginBottom = '';
+            originY = 'top';
             
             let originX = 'left';
             // Se o limite direito do input + a largura do calendário (288px) passar da borda do modal (containerRect.right)
@@ -321,12 +330,29 @@ function initCustomDatepickers() {
             }, 200); // tempo da transição tailwind
         };
         
+        // Formatação manual ao digitar
+        displayInput.addEventListener('input', (e) => {
+            let v = e.target.value.replace(/\D/g, '');
+            if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2);
+            if (v.length > 5) v = v.substring(0, 5) + '/' + v.substring(5, 9);
+            e.target.value = v;
+            
+            if (v.length === 10) {
+                const parts = v.split('/');
+                const yyyy = parts[2], mm = parts[1], dd = parts[0];
+                if (parseInt(mm) >= 1 && parseInt(mm) <= 12 && parseInt(dd) >= 1 && parseInt(dd) <= 31) {
+                    originalInput.value = `${yyyy}-${mm}-${dd}`;
+                    selectedDate = new Date(yyyy, parseInt(mm)-1, parseInt(dd));
+                    currentDate = new Date(yyyy, parseInt(mm)-1, parseInt(dd));
+                    originalInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        });
+        
         displayInput.addEventListener('click', (e) => {
             e.stopPropagation();
             if (popup.classList.contains('hidden')) {
                 openPopup();
-            } else {
-                closePopup();
             }
         });
         

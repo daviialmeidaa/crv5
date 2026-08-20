@@ -193,6 +193,8 @@ const OPME = (() => {
         return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     }
 
+
+
     function formatCurrencyInput(val) {
         if (val === null || val === undefined || val === '') return '';
         const num = parseFloat(val);
@@ -203,7 +205,7 @@ const OPME = (() => {
     function parseCurrency(val) {
         if (!val) return null;
         if (typeof val === 'number') return val;
-        const cleaned = String(val).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+        const cleaned = String(val).replace(/[R$\s\xA0]/g, '').replace(/\./g, '').replace(',', '.');
         const num = parseFloat(cleaned);
         return isNaN(num) ? null : num;
     }
@@ -960,10 +962,10 @@ const OPME = (() => {
                 <!-- Table -->
                 <div class="flex-1 overflow-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-steel-900">
+                        <thead class="sticky top-0 z-10 bg-nexo-600 dark:bg-steel-900">
                             <tr id="bcLookupHeaders">
                                 ${BC_COLS.map(c => `
-                                    <th data-col="${c.key}" class="bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-gray-200 dark:border-steel-700 cursor-pointer select-none transition-all text-steel-500 dark:text-steel-400 hover:text-nexo-600 dark:hover:text-nexo-400">
+                                    <th data-col="${c.key}" class="bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-nexo-700 dark:border-steel-700 cursor-pointer select-none transition-all text-white dark:text-steel-400 hover:text-nexo-100 dark:hover:text-nexo-400">
                                         <span class="inline-flex items-center gap-1">${c.label}</span>
                                     </th>
                                 `).join('')}
@@ -1853,12 +1855,10 @@ const OPME = (() => {
             console.error('Erro ao carregar unidades:', err);
         }
 
-        // Pré-preencher data com hoje em formato DD/MM/AAAA
+        // Pré-preencher com hoje em ISO
+        const dataInput = document.getElementById('fcData');
         const today = new Date();
-        const dd = String(today.getDate()).padStart(2, '0');
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const yyyy = today.getFullYear();
-        document.getElementById('fcData').value = `${dd}/${mm}/${yyyy}`;
+        dataInput.value = today.toISOString().split('T')[0];
 
         // Adiciona uma linha vazia na tabela
         addCirurgiaProduct();
@@ -2277,15 +2277,9 @@ const OPME = (() => {
             console.error('Erro ao carregar unidades:', err);
         }
 
-        // Preencher data no formato DD/MM/AAAA
+        // Preencher data em ISO
         const dataInput = document.getElementById('fcData');
-        if (ref.data_cirurgia) {
-            const d = ref.data_cirurgia.split('T')[0]; // YYYY-MM-DD
-            const parts = d.split('-');
-            dataInput.value = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : '';
-        } else {
-            dataInput.value = '';
-        }
+        dataInput.value = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
 
         // Preencher Produtos na tabela (cada item com seus próprios dados de faturamento)
         items.forEach((item, index) => {
@@ -2630,7 +2624,7 @@ const OPME = (() => {
             acao: document.getElementById('fcAcao').value,
             local_cirurgia: document.getElementById('fcLocal').value.toUpperCase(),
             paciente: document.getElementById('fcPaciente').value.toUpperCase(),
-            data_cirurgia: (() => { const v = document.getElementById('fcData').value; if (!v) return ''; const p = v.split('/'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : v; })(),
+            data_cirurgia: document.getElementById('fcData').value,
             prontuario: document.getElementById('fcProntuario').value,
             medico: document.getElementById('fcMedico').value.toUpperCase(),
             crm: document.getElementById('fcCRM').value.toUpperCase(),
@@ -2673,9 +2667,10 @@ const OPME = (() => {
             const btnSave = document.getElementById('btnSaveCirurgia');
             const originalText = btnSave.innerHTML;
             btnSave.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
-            btnSave.disabled = true;
-
-            const payload = { items: itemsPayload };
+            const payload = { 
+                items: itemsPayload,
+                contrato: commonData.contrato
+            };
             // Na edição, enviar IDs dos itens deletados para o backend remover
             if (!isCreating && deletedItemIds.length > 0) {
                 payload.deletedIds = [...deletedItemIds];

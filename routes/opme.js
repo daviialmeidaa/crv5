@@ -831,7 +831,7 @@ router.post('/cirurgias', async (req, res) => {
 router.put('/cirurgias', async (req, res) => {
     const client = await pgPool.connect();
     try {
-        const { items, deletedIds } = req.body;
+        const { items, deletedIds, contrato } = req.body;
         if (!Array.isArray(items)) {
             return res.status(400).json({ error: 'Payload inválido. Esperado array "items".' });
         }
@@ -918,7 +918,8 @@ router.put('/cirurgias', async (req, res) => {
         
         // Invalida o cache
         await clearCache(`opme:cirurgias:all`);
-        await clearCache(`opme:cirurgias:${items[0].contrato}`);
+        const targetContrato = contrato || (items.length > 0 ? items[0].contrato : null);
+        if (targetContrato) await clearCache(`opme:cirurgias:${targetContrato}`);
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao atualizar cirurgias (PUT):', err.message);
