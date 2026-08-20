@@ -918,10 +918,12 @@ const OPME = (() => {
     // ==========================================
     let bancoCodigosCache = [];
     let bancoCodigosTargetInput = null;
+    let bancoCodigosAutoAddRow = false;
 
-    async function openBancoCodigosLookup(labelEl) {
+    async function openBancoCodigosLookup(labelEl, autoAddRow = false) {
+        bancoCodigosAutoAddRow = autoAddRow;
         // Try to find the target input from the closest table row, or fallback to null (header click)
-        const row = labelEl.closest('tr');
+        const row = labelEl ? labelEl.closest('tr') : null;
         const codBioInput = row ? row.querySelector('.prod-cod-bio') : null;
         bancoCodigosTargetInput = codBioInput;
 
@@ -1086,9 +1088,18 @@ const OPME = (() => {
             tbody.querySelectorAll('tr[data-cod-bio]').forEach(tr => {
                 tr.addEventListener('click', () => {
                     const codBio = tr.getAttribute('data-cod-bio');
-                    // Se não veio de uma linha específica, encontrar a primeira linha vazia
                     let targetInput = bancoCodigosTargetInput;
-                    if (!targetInput) {
+                    
+                    if (bancoCodigosAutoAddRow) {
+                        // Create a new empty row
+                        addCirurgiaProduct();
+                        // Find the newly added row's input (the last one)
+                        const rows = document.querySelectorAll('.product-row .prod-cod-bio');
+                        if (rows.length > 0) {
+                            targetInput = rows[rows.length - 1];
+                        }
+                    } else if (!targetInput) {
+                        // Se não veio de uma linha específica e não deve auto-adicionar, encontrar a primeira linha vazia
                         const emptyRows = document.querySelectorAll('.product-row .prod-cod-bio');
                         for (const inp of emptyRows) {
                             if (!inp.value || inp.value.trim() === '') {
@@ -1097,6 +1108,7 @@ const OPME = (() => {
                             }
                         }
                     }
+                    
                     if (targetInput && codBio) {
                         targetInput.value = codBio;
                         fetchProdutoInfo(targetInput);
