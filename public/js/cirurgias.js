@@ -378,6 +378,24 @@ const OPME = (() => {
                 if (va > vb) return state.sort.dir === 'asc' ? 1 : -1;
                 return 0;
             });
+        } else if (state.currentTab === 'cirurgias') {
+            // Default grouping and sorting for cirurgias
+            state.filteredData.sort((a, b) => {
+                // 1. Data Cirurgia DESC
+                const dateA = a.data_cirurgia ? new Date(a.data_cirurgia).getTime() : 0;
+                const dateB = b.data_cirurgia ? new Date(b.data_cirurgia).getTime() : 0;
+                if (dateA !== dateB) return dateB - dateA;
+
+                // 2. Paciente ASC
+                const pacA = (a.paciente || '').toLowerCase();
+                const pacB = (b.paciente || '').toLowerCase();
+                if (pacA !== pacB) return pacA.localeCompare(pacB);
+
+                // 3. ID DESC
+                const idA = a.id || 0;
+                const idB = b.id || 0;
+                return idB - idA;
+            });
         }
 
         // 5.3 Paginação
