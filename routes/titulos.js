@@ -3,10 +3,15 @@ const router = express.Router();
 const pgPool = require('../db/pgConnection');
 const { runSync } = require('../services/syncService');
 const { authMiddleware } = require('../middleware/authMiddleware');
+const { getCache, setCache, clearCache } = require('../db/redis');
 
 // Rota para buscar os títulos salvos localmente
 router.get('/', authMiddleware, async (req, res) => {
     try {
+        const cacheKey = 'cr:titulos';
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const result = await pgPool.query(`
             SELECT 
                 t.*, 
@@ -17,6 +22,8 @@ router.get('/', authMiddleware, async (req, res) => {
             LEFT JOIN contratos c ON t.contrato = c.codigo_contrato
             ORDER BY t.data_vencimento ASC
         `);
+        
+        await setCache(cacheKey, result.rows, 3600); // 1 hora de cache
         res.json(result.rows);
     } catch (err) {
         console.error('Erro ao buscar títulos:', err);
@@ -39,6 +46,9 @@ router.post('/sync', authMiddleware, async (req, res) => {
         // Envia o resultado final
         res.write(JSON.stringify({ type: 'complete', data: syncResult }) + '\n');
         res.end();
+        
+        // Invalida o cache após sincronização
+        await clearCache('cr:titulos');
     } catch (err) {
         console.error('Erro na rota de sync:', err);
         res.write(JSON.stringify({ 

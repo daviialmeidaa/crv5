@@ -9,6 +9,16 @@ Este arquivo define as regras e o contexto arquitetural do projeto. **Todos os a
 - **Frontend:** Vanilla HTML, CSS, JavaScript (sem frameworks como React, Vue ou Angular).
 - **Estilização:** Tailwind CSS (carregado via CDN) com configurações customizadas injetadas no próprio HTML.
 
+## Arquitetura de Performance e Cache (Heroku/Redis)
+O sistema é projetado para operar com extrema eficiência e baixíssimo consumo de rede e banco de dados, utilizando as seguintes premissas obrigatórias:
+1. **Compressão de Rede (Gzip):** O `server.js` obrigatoriamente roda o middleware `compression()`. Nenhuma resposta de API REST deve trafegar arrays JSON brutos na rede sem essa camada de compressão. Isso reduz payloads gigantes em até 80%, sendo crucial para o nosso modelo de UI (grids que carregam tudo no client-side).
+2. **Camada de Cache na Memória (Redis Cloud):** 
+   - A conexão primária é feita através do módulo `db/redis.js` conectando-se a `process.env.REDISCLOUD_URL` (Redis Cloud 30MB Free Tier).
+   - **MANDATÓRIO:** Toda rota HTTP do tipo `GET` que busque arrays pesados (como `/api/titulos`, `/api/opme/cirurgias`, `/api/opme/banco-codigos`) **DEVE** tentar buscar os dados no cache usando `getCache(chave)` antes de disparar o comando no PostgreSQL. Se o cache não existir, busca no banco, salva com `setCache()` (tempo de vida padrão: 3600s) e retorna ao usuário.
+3. **Invalidation (Limpeza de Cache):** Sempre que um Agente de IA criar ou alterar rotas do tipo `POST`, `PUT` ou `DELETE` nestas tabelas mastigadas, é **obrigatório** chamar a função utilitária `clearCache('nome_da_chave')` após o comando SQL bem-sucedido. Nunca deixe dados estáticos mortos rodando no Redis.
+4. **Indexação (Banco de Dados):** Ao criar novas tabelas, os agentes devem sugerir ativamente e executar a criação de `INDEX` em colunas que frequentemente aparecerão em claúsulas `WHERE`, para evitar Full Table Scans lentos na infraestrutura do Heroku.
+
+
 ## Regras de Estrutura de Frontend (Obrigatórias)
 Todo código de interface deve seguir estritamente o padrão estabelecido na pasta `public/`:
 
