@@ -19,6 +19,7 @@
   "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
@@ -30,6 +31,7 @@
     "nodemailer": "^9.0.3",
     "pdf-lib": "^1.17.1",
     "pg": "^8.22.0",
+    "redis": "^6.2.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

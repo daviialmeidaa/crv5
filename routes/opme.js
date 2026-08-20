@@ -4,6 +4,7 @@ const pgPool = require('../db/pgConnection');
 const { sql, getPool } = require("../db/connection");
 const { authMiddleware } = require('../middleware/authMiddleware');
 const { requirePermission } = require('../middleware/rbac');
+const { getCache, setCache, clearCache } = require('../db/redis');
 
 // Middleware global: autenticação + permissão OPME
 router.use(authMiddleware);
@@ -91,7 +92,11 @@ router.put('/contratos/:id', async (req, res) => {
             inicio_ata || null, termino_ata || null, descricao_detalhada ? true : false, id
         ]);
 
-        res.json({ success: true, message: 'Contrato atualizado com sucesso' });
+        res.json({ success: true, message: 'Item atualizado com sucesso' });
+        
+        // Invalida o cache
+        await clearCache(`opme:cirurgias:all`);
+        await clearCache(`opme:cirurgias:${id_contrato}`);
     } catch (err) {
         console.error('[OPME] Erro ao atualizar contrato:', err.message);
         res.status(500).json({ error: 'Erro ao atualizar contrato' });
@@ -112,7 +117,14 @@ router.put('/contratos/:id/status', async (req, res) => {
             [inativo, id]
         );
         
-        res.json({ success: true, message: 'Status do contrato atualizado com sucesso' });
+        res.json({
+            success: true,
+            message: 'Sincronização concluída.',
+            details: 'Status do contrato atualizado com sucesso'
+        });
+        
+        // Invalida o cache
+        await clearCache(`opme:cirurgias:all`);
     } catch (err) {
         console.error('[OPME] Erro ao atualizar status do contrato:', err.message);
         res.status(500).json({ error: 'Erro ao atualizar status do contrato' });
@@ -181,7 +193,12 @@ router.get('/cirurgias', async (req, res) => {
         }
         query += ' ORDER BY id DESC';
         
+        const cacheKey = `opme:cirurgias:${contrato || 'all'}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const result = await pgPool.query(query, params);
+        await setCache(cacheKey, result.rows, 3600); // 1 hora
         res.json(result.rows);
     } catch (err) {
         console.error('[OPME] Erro ao buscar cirurgias:', err.message);
@@ -466,7 +483,12 @@ router.get('/banco-codigos', async (req, res) => {
         }
         query += ' ORDER BY id';
         
+        const cacheKey = `opme:bancocodigos:${contrato || 'all'}`;
+        const cached = await getCache(cacheKey);
+        if (cached) return res.json(cached);
+
         const result = await pgPool.query(query, params);
+        await setCache(cacheKey, result.rows, 3600);
         res.json(result.rows);
     } catch (err) {
         console.error('[OPME] Erro ao buscar banco de códigos:', err.message);
@@ -728,6 +750,7 @@ router.post('/cirurgias', async (req, res) => {
         }
 
         await client.query('BEGIN');
+        let newId = null;
 
         for (const item of items) {
             const fields = [];
@@ -755,8 +778,9 @@ router.post('/cirurgias', async (req, res) => {
 
             if (fields.length === 0) continue;
 
-            const query = `INSERT INTO opme.cirurgias (${fields.join(', ')}) VALUES (${placeholders.join(', ')})`;
-            await client.query(query, values);
+            const query = `INSERT INTO opme.cirurgias (${fields.join(', ')}) VALUES (${placeholders.join(', ')}) RETURNING id`;
+            const result = await client.query(query, values);
+            if (!newId) newId = result.rows[0].id;
         }
 
         await client.query('COMMIT');
@@ -784,7 +808,11 @@ router.post('/cirurgias', async (req, res) => {
             console.error('[OPME] Erro ao gerar observação automática (não-fatal):', obsErr.message);
         }
 
-        res.json({ success: true, message: 'Cirurgia(s) criada(s) com sucesso' });
+        res.json({ success: true, message: 'Nova cirurgia criada com sucesso.', id: newId });
+        
+        // Invalida o cache
+        await clearCache(`opme:cirurgias:all`);
+        await clearCache(`opme:cirurgias:${items[0].contrato}`);
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao criar cirurgias (POST):', err.message);
@@ -871,6 +899,10 @@ router.put('/cirurgias', async (req, res) => {
 
         await client.query('COMMIT');
         res.json({ success: true, message: 'Cirurgia(s) atualizada(s) com sucesso' });
+        
+        // Invalida o cache
+        await clearCache(`opme:cirurgias:all`);
+        await clearCache(`opme:cirurgias:${items[0].contrato}`);
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao atualizar cirurgias (PUT):', err.message);
@@ -886,7 +918,7 @@ router.put('/cirurgias', async (req, res) => {
 router.post('/cirurgias/batch-delete', async (req, res) => {
     const client = await pgPool.connect();
     try {
-        const { ids } = req.body;
+        const { ids, contrato } = req.body;
         if (!Array.isArray(ids) || ids.length === 0) {
             return res.status(400).json({ error: 'Array de IDs inválido ou vazio.' });
         }
@@ -900,6 +932,10 @@ router.post('/cirurgias/batch-delete', async (req, res) => {
 
         await client.query('COMMIT');
         res.json({ success: true, message: 'Itens da cirurgia excluídos com sucesso' });
+        
+        // Invalida o cache
+        await clearCache(`opme:cirurgias:all`);
+        if (contrato) await clearCache(`opme:cirurgias:${contrato}`);
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao excluir cirurgias (DELETE):', err.message);
