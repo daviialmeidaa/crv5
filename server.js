@@ -9,7 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(compression());
+app.use(compression({
+    filter: (req, res) => {
+        if (req.headers['accept'] === 'text/event-stream') {
+            return false; // Não comprime SSE (impede o buffering das notificações)
+        }
+        return compression.filter(req, res);
+    }
+}));
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));

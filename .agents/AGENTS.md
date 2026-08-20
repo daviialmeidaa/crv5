@@ -11,7 +11,7 @@ Este arquivo define as regras e o contexto arquitetural do projeto. **Todos os a
 
 ## Arquitetura de Performance e Cache (Heroku/Redis)
 O sistema é projetado para operar com extrema eficiência e baixíssimo consumo de rede e banco de dados, utilizando as seguintes premissas obrigatórias:
-1. **Compressão de Rede (Gzip):** O `server.js` obrigatoriamente roda o middleware `compression()`. Nenhuma resposta de API REST deve trafegar arrays JSON brutos na rede sem essa camada de compressão. Isso reduz payloads gigantes em até 80%, sendo crucial para o nosso modelo de UI (grids que carregam tudo no client-side).
+1. **Compressão de Rede (Gzip):** O `server.js` obrigatoriamente roda o middleware `compression()`. Nenhuma resposta de API REST deve trafegar arrays JSON brutos na rede sem essa camada de compressão. Isso reduz payloads gigantes em até 80%, sendo crucial para o nosso modelo de UI (grids que carregam tudo no client-side). **Exceção de Notificações (SSE):** A compressão NÃO deve ser aplicada a rotas de Server-Sent Events (como o streaming de notificações), pois o buffering do Gzip retém os "chunks" do event-stream e bloqueia a entrega em tempo real para o frontend, causando travamentos.
 2. **Camada de Cache na Memória (Redis Cloud):** 
    - A conexão primária é feita através do módulo `db/redis.js` conectando-se a `process.env.REDISCLOUD_URL` (Redis Cloud 30MB Free Tier).
    - **MANDATÓRIO:** Toda rota HTTP do tipo `GET` que busque arrays pesados (como `/api/titulos`, `/api/opme/cirurgias`, `/api/opme/banco-codigos`) **DEVE** tentar buscar os dados no cache usando `getCache(chave)` antes de disparar o comando no PostgreSQL. Se o cache não existir, busca no banco, salva com `setCache()` (tempo de vida padrão: 3600s) e retorna ao usuário.
