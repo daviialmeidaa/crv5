@@ -730,6 +730,10 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             }
         }
         
+        // Limpa o cache para garantir que a grid carregue as NFs atualizadas
+        await clearCache(`opme:cirurgias:all`);
+        await clearCache(`opme:cirurgias:${contrato}`);
+        
         res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount });
 
     } catch (err) {
