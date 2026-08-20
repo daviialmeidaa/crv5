@@ -2397,7 +2397,7 @@ const OPME = (() => {
                 <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}" style="width:40px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
-                <span class="prod-vlr-un ${cellReadonly}">${formatCurrencyInput(item.valor_unitario)}</span>
+                <input type="text" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value)); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
                 <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total)}</span>
@@ -2648,7 +2648,15 @@ const OPME = (() => {
                 row.querySelector('.prod-tipo').textContent = '-';
                 row.querySelector('.prod-nome').textContent = '';
                 row.querySelector('.prod-desc').textContent = '';
-                row.querySelector('.prod-vlr-un').textContent = '';
+                
+                const vlrUnEl = row.querySelector('.prod-vlr-un');
+                if (vlrUnEl) {
+                    vlrUnEl.value = '';
+                    vlrUnEl.setAttribute('readonly', 'true');
+                    vlrUnEl.classList.add('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                    vlrUnEl.classList.remove('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                }
+                
                 row.querySelector('.prod-item-pregao').value = '';
                 calculateTotalCirurgia();
                 return;
@@ -2664,7 +2672,20 @@ const OPME = (() => {
             row.querySelector('.prod-desc').textContent = data.descricao_personalizada || '';
             row.querySelector('.prod-desc').title = data.descricao_personalizada || '';
             row.querySelector('.prod-item-pregao').value = data.item_ata || '';
-            row.querySelector('.prod-vlr-un').textContent = formatCurrencyInput(data.valor_unitario);
+            
+            const vlrUnEl = row.querySelector('.prod-vlr-un');
+            if (vlrUnEl) {
+                vlrUnEl.value = formatCurrencyInput(data.valor_unitario);
+                if (parseFloat(data.valor_unitario || 0) === 0) {
+                    vlrUnEl.removeAttribute('readonly');
+                    vlrUnEl.classList.remove('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                    vlrUnEl.classList.add('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                } else {
+                    vlrUnEl.setAttribute('readonly', 'true');
+                    vlrUnEl.classList.add('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                    vlrUnEl.classList.remove('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                }
+            }
 
             calculateTotalCirurgia();
         } catch (err) {
@@ -2708,7 +2729,7 @@ const OPME = (() => {
                 descricao_personalizada: tr.querySelector('.prod-desc').textContent || '',
                 quantidade_utilizada: tr.querySelector('.prod-qtde').value,
                 lote: (tr.querySelector('.prod-lote').value || '').toUpperCase(),
-                valor_unitario: parseCurrency(tr.querySelector('.prod-vlr-un').textContent),
+                valor_unitario: parseCurrency(tr.querySelector('.prod-vlr-un').value || tr.querySelector('.prod-vlr-un').textContent),
                 valor_total: parseCurrency(tr.querySelector('.prod-vlr-tot').textContent),
                 item_pregao: tr.querySelector('.prod-item-pregao') ? tr.querySelector('.prod-item-pregao').value || null : null,
                 // Faturamento por produto (lidos da linha)
