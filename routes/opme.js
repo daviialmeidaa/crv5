@@ -1065,6 +1065,27 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
         const empenho = ref.autorizacao || ref.empenho || '';
         const cliforCodigo = ref.cod_cliente || 0;
         
+        // Determinar observações (padrão vs nota fiscal)
+        let obsPedido = observacao || '';
+        let obsNotaFiscal = observacao || '';
+
+        const unidadeRes = await pgPool.query(`SELECT ir, observacoes FROM opme.unidades WHERE contrato = $1 AND cod_cliente = $2`, [contrato, cliforCodigo]);
+        if (unidadeRes.rows.length > 0) {
+            const unid = unidadeRes.rows[0];
+            if (unid.ir && unid.observacoes && unid.observacoes.trim() !== '') {
+                // O texto que vem do front já traz a observação de IR calculada.
+                // Na nota fiscal fica o texto completo.
+                obsNotaFiscal = observacao || '';
+                
+                // No pedido, removemos o bloco de IR (localizamos o início da string de observação da unidade e cortamos)
+                const obsBase = unid.observacoes.trim();
+                const idx = obsPedido.indexOf(obsBase);
+                if (idx !== -1) {
+                    obsPedido = obsPedido.substring(0, idx).trim();
+                }
+            }
+        }
+        
         const pool = await getPool();
         let success = false;
         let novoCodigo = 0;
@@ -1091,20 +1112,21 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                 }
 
                 const reqInsert = new sql.Request(transaction);
-                reqInsert.input('obs', sql.NVarChar(sql.MAX), observacao || '');
+                reqInsert.input('obs_pedido', sql.NVarChar(sql.MAX), obsPedido);
+                reqInsert.input('obs_nota_fiscal', sql.NVarChar(sql.MAX), obsNotaFiscal);
                 reqInsert.input('contato', sql.NVarChar(40), contrato || '');
                 reqInsert.input('empenho', sql.NVarChar(40), empenho || '');
                 await reqInsert.query(`
                     INSERT INTO ${dbName}.dbo.pedido (
                         codigo, numero_pedido, clifor_codigo, data, tipoped_codigo, 
                         vend_codigo, condpg_codigo, cob_codigo, id_situacao, numero_empenho_compra_publica,
-                        listapr_codigo, empr_codigo, observacao_nota_fiscal, nome_contato,
+                        listapr_codigo, empr_codigo, observacao, observacao_nota_fiscal, nome_contato,
                         valor_total, quantidade_total_produtos, id_estoque, id_frete, 
                         id_faturamento, id_nota_fiscal, id_emissao_nota_fiscal, vend_codigo_2
                     ) VALUES (
                         ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), 57,
                         ${vendCodigo}, 2, 1, 3, @empenho,
-                        1, 0, @obs, @contato,
+                        1, 0, @obs_pedido, @obs_nota_fiscal, @contato,
                         ${valorTotal}, ${quantidadeTotal}, 1, 1, 1, 1, 1, ${vendCodigo}
                     )
                 `);
