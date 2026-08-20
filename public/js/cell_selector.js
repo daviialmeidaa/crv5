@@ -39,13 +39,16 @@ const CellSelector = (function () {
         const rMin = Math.min(r1, r2), rMax = Math.max(r1, r2);
         const cMin = Math.min(c1, c2), cMax = Math.max(c1, c2);
         const cells = [];
-        tbody.querySelectorAll('tr').forEach(tr => {
+        const rows = tbody.rows;
+        for (let i = 0; i < rows.length; i++) {
+            const tr = rows[i];
             if (tr.rowIndex >= rMin && tr.rowIndex <= rMax) {
-                Array.from(tr.children).forEach(td => {
-                    if (td.cellIndex >= cMin && td.cellIndex <= cMax) cells.push(td);
-                });
+                for (let j = cMin; j <= cMax; j++) {
+                    const cell = tr.cells[j];
+                    if (cell) cells.push(cell);
+                }
             }
-        });
+        }
         return cells;
     }
 
@@ -138,6 +141,38 @@ const CellSelector = (function () {
         const tbody = document.getElementById(tableBodyId);
         if (!tbody) return;
 
+        // Interceptar wheel para evitar zoom do navegador com Ctrl e forçar scroll
+        tbody.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const scrollContainer = tbody.closest('.custom-scrollbar') || tbody.closest('.overflow-auto') || window;
+                if (scrollContainer === window) {
+                    window.scrollBy({ top: e.deltaY, left: e.deltaX });
+                } else {
+                    scrollContainer.scrollTop += e.deltaY;
+                    scrollContainer.scrollLeft += e.deltaX;
+                }
+            }
+        }, { passive: false });
+
+        // Função de atualização de seleção refatorada
+        function updateDragSelection(td) {
+            if (!isDragging || !dragStartCell) return;
+            
+            // Limpar seleção de arrasto anterior
+            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
+                cell.removeAttribute('data-drag-sel');
+                if (!cell.hasAttribute('data-pre-sel')) deselectCell(cell);
+            });
+
+            // Selecionar retângulo
+            getCellsInRect(dragStartCell, td, tbody).forEach(cell => {
+                cell.setAttribute('data-drag-sel', '1');
+                selectCell(cell);
+            });
+            updateBar();
+        }
+
         // Mousedown: iniciar seleção ou toggle individual
         tbody.addEventListener('mousedown', (e) => {
             const td = e.target.closest('td');
@@ -170,18 +205,7 @@ const CellSelector = (function () {
             const td = e.target.closest('td');
             if (!td) return;
 
-            // Limpar seleção de arrasto anterior
-            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
-                cell.removeAttribute('data-drag-sel');
-                if (!cell.hasAttribute('data-pre-sel')) deselectCell(cell);
-            });
-
-            // Selecionar retângulo
-            getCellsInRect(dragStartCell, td, tbody).forEach(cell => {
-                cell.setAttribute('data-drag-sel', '1');
-                selectCell(cell);
-            });
-            updateBar();
+            updateDragSelection(td);
         });
 
         // Mouseup: finalizar arrasto
@@ -203,7 +227,8 @@ const CellSelector = (function () {
             }
         });
 
-        // Escape: limpar
+        // Escape ou soltar Ctrl com seleção ativa não deve limpar imediatamente,
+        // mas deve parar o drag. O drag já é parado no mouseup ou mouseover sem ctrl.
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && selectedCells.size > 0) clear();
         });

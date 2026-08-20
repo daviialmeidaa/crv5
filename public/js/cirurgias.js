@@ -597,10 +597,9 @@ const OPME = (() => {
     // 8.0 Seleção de Células (Estilo Excel - Soma + Arrasto)
     // ==========================================
     const selectedCells = new Set();
+    const SEL_CLASSES = ['ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20'];
     let isDragging = false;
     let dragStartCell = null;
-
-    const SEL_CLASSES = ['ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20'];
 
     function getCellId(td) {
         return `${td.closest('tr').rowIndex}-${td.cellIndex}`;
@@ -626,19 +625,57 @@ const OPME = (() => {
         const rMin = Math.min(r1, r2), rMax = Math.max(r1, r2);
         const cMin = Math.min(c1, c2), cMax = Math.max(c1, c2);
         const cells = [];
-        tbody.querySelectorAll('tr').forEach(tr => {
+        const rows = tbody.rows;
+        for (let i = 0; i < rows.length; i++) {
+            const tr = rows[i];
             if (tr.rowIndex >= rMin && tr.rowIndex <= rMax) {
-                Array.from(tr.children).forEach(td => {
-                    if (td.cellIndex >= cMin && td.cellIndex <= cMax) cells.push(td);
-                });
+                for (let j = cMin; j <= cMax; j++) {
+                    const cell = tr.cells[j];
+                    if (cell) cells.push(cell);
+                }
             }
-        });
+        }
         return cells;
     }
 
     function initCellSelection() {
         const tbody = document.getElementById('opmeTableBody');
         if (!tbody) return;
+
+        // Interceptar wheel para evitar zoom do navegador com Ctrl e forçar scroll
+        tbody.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                const scrollContainer = tbody.closest('.custom-scrollbar') || tbody.closest('.overflow-auto') || window;
+                if (scrollContainer === window) {
+                    window.scrollBy({ top: e.deltaY, left: e.deltaX });
+                } else {
+                    scrollContainer.scrollTop += e.deltaY;
+                    scrollContainer.scrollLeft += e.deltaX;
+                }
+            }
+        }, { passive: false });
+
+        // Função de atualização de seleção refatorada
+        function updateDragSelection(td) {
+            if (!isDragging || !dragStartCell) return;
+            
+            // Limpar seleção do arrasto anterior (manter seleções pré-existentes)
+            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
+                cell.removeAttribute('data-drag-sel');
+                if (!cell.hasAttribute('data-pre-sel')) {
+                    deselectCell(cell);
+                }
+            });
+
+            // Selecionar retângulo
+            const cells = getCellsInRect(dragStartCell, td, tbody);
+            cells.forEach(cell => {
+                cell.setAttribute('data-drag-sel', '1');
+                selectCell(cell);
+            });
+            updateSelectionSumBar();
+        }
 
         // Ctrl+Click individual OU início de arrasto
         tbody.addEventListener('mousedown', (e) => {
@@ -652,6 +689,9 @@ const OPME = (() => {
 
             isDragging = true;
             dragStartCell = td;
+
+            // Marcar cells pré-selecionadas ao iniciar arrasto
+            tbody.querySelectorAll('td.ring-2').forEach(c => c.setAttribute('data-pre-sel', '1'));
 
             // Toggle individual (será recalculado se virar arrasto)
             if (selectedCells.has(getCellId(td))) {
@@ -670,21 +710,7 @@ const OPME = (() => {
             const td = e.target.closest('td');
             if (!td) return;
 
-            // Limpar seleção do arrasto anterior (manter seleções pré-existentes)
-            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
-                cell.removeAttribute('data-drag-sel');
-                if (!cell.hasAttribute('data-pre-sel')) {
-                    deselectCell(cell);
-                }
-            });
-
-            // Selecionar retângulo
-            const cells = getCellsInRect(dragStartCell, td, tbody);
-            cells.forEach(cell => {
-                cell.setAttribute('data-drag-sel', '1');
-                selectCell(cell);
-            });
-            updateSelectionSumBar();
+            updateDragSelection(td);
         });
 
         // Fim do arrasto
@@ -698,11 +724,6 @@ const OPME = (() => {
                     tbody.querySelectorAll('td[data-pre-sel]').forEach(td => td.removeAttribute('data-pre-sel'));
                 }
             }
-        });
-
-        // Marcar cells pré-selecionadas ao iniciar arrasto
-        tbody.addEventListener('mousedown', () => {
-            tbody.querySelectorAll('td.ring-2').forEach(td => td.setAttribute('data-pre-sel', '1'));
         });
 
         // Limpar seleção ao clicar fora (sem Ctrl)
@@ -828,6 +849,47 @@ const OPME = (() => {
 
         XLSX.writeFile(wb, fileName);
         showToast('Excel exportado com sucesso!', 'success');
+    }
+
+    async function syncNotasFiscais() {
+        if (!state.selectedContract) return;
+
+        const btn = document.getElementById('btnSyncNotas');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Sincronizando...
+        `;
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/opme/cirurgias/sync-notas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getToken()}`
+                },
+                body: JSON.stringify({ contrato: state.selectedContract.id_contrato })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar');
+
+            if (data.updated > 0) {
+                showToast(`Sincronização concluída: ${data.updated} itens atualizados com NFs.`, 'success');
+                fetchData(); // Recarrega o grid
+            } else {
+                showToast(data.message || 'Nenhuma atualização encontrada.', 'info');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast(err.message, 'error');
+        } finally {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
     }
 
     // ==========================================
@@ -1487,6 +1549,17 @@ const OPME = (() => {
             btnExport.classList.add('flex');
         }
 
+        const btnSync = document.getElementById('btnSyncNotas');
+        if (btnSync) {
+            if (tabId === 'cirurgias') {
+                btnSync.classList.remove('hidden');
+                btnSync.classList.add('flex');
+            } else {
+                btnSync.classList.remove('flex');
+                btnSync.classList.add('hidden');
+            }
+        }
+
         fetchData();
     }
 
@@ -1834,6 +1907,8 @@ const OPME = (() => {
 
             document.getElementById('fcContratoInicio').value = row.inicio_ata ? row.inicio_ata.split('T')[0] : '';
             document.getElementById('fcContratoTermino').value = row.termino_ata ? row.termino_ata.split('T')[0] : '';
+            
+            document.getElementById('fcDescricaoDetalhada').checked = row.descricao_detalhada === true;
         } else {
             // New mode
             editingContratoId = null;
@@ -1855,6 +1930,7 @@ const OPME = (() => {
             document.getElementById('fcContratoTotalAta').value = '';
             document.getElementById('fcContratoInicio').value = '';
             document.getElementById('fcContratoTermino').value = '';
+            document.getElementById('fcDescricaoDetalhada').checked = false;
         }
 
         modal.classList.remove('hidden');
@@ -1893,7 +1969,8 @@ const OPME = (() => {
             pregao: document.getElementById('fcContratoPregao').value.toUpperCase(),
             total_ata: document.getElementById('fcContratoTotalAta').value,
             inicio_ata: document.getElementById('fcContratoInicio').value,
-            termino_ata: document.getElementById('fcContratoTermino').value
+            termino_ata: document.getElementById('fcContratoTermino').value,
+            descricao_detalhada: document.getElementById('fcDescricaoDetalhada').checked
         };
 
         if (!payload.id_contrato || !payload.cliente) {
@@ -3157,6 +3234,7 @@ const OPME = (() => {
     return {
         clearAllFilters,
         exportExcel,
+        syncNotasFiscais,
         openBancoCodigosLookup,
         openContratoModal,
         closeContratoModal,
