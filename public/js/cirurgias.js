@@ -422,19 +422,19 @@ const OPME = (() => {
         const thead = document.getElementById('opmeTableHead');
         if (!thead) return;
 
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[11px] font-medium">';
+        let html = '<tr class="text-white dark:text-gray-300 text-[11px] font-medium">';
         cols.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
             const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
             const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
+            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
 
             html += `
-                <th class="px-2 py-1.5 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[46px] select-none relative align-middle"
+                <th class="px-2 py-1.5 border-b border-nexo-700/50 dark:border-steel-700 whitespace-normal break-words h-[46px] select-none relative align-middle"
                      data-col="${col.key}">
                     <div class="flex items-center justify-center gap-1 w-full h-full px-3">
-                        <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
+                        <div class="cursor-pointer hover:text-nexo-100 dark:hover:text-white transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
                         ${(col.key !== '_deadline' && col.type !== 'actions') ? `
