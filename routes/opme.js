@@ -1168,7 +1168,7 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                         INSERT INTO ${dbName}.dbo.pedido_item (
                             codigo, ped_codigo, prod_codigo, quantidade, valor_unitario, 
                             quantidade_comercializacao, valor_unitario_comercializacao, descricao,
-                            unidade, unid_unidade_comercializacao,
+                            unidade, unid_unidade_comercializacao, unidade_tributacao, quantidade_tributacao,
                             id_desconto_acrescimo, id_base_calculo_st, id_calculo_preco,
                             id_metodo_calculo_preco_venda, codigo_cst, valor_custo, 
                             valor_unitario_cadastro, preco_custo_produto,
@@ -1180,7 +1180,7 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                         ) VALUES (
                             ${novoItemCodigo}, ${novoCodigo}, '${prodCod}', ${qtd}, ${vlr},
                             ${qtd}, ${vlr}, '${finalDescricao}',
-                            '${pUnid}', '${pUnid}',
+                            '${pUnid}', '${pUnid}', '${pUnid}', ${qtd},
                             1, 1, 4,
                             1, '${pCst}', ${pPrecoCusto},
                             ${pPrecoCusto}, ${pPrecoCusto},
