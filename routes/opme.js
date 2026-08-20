@@ -635,15 +635,14 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         if (!contrato) return res.status(400).json({ error: 'Contrato não informado' });
 
         let cirurgiasResult = await pgPool.query(`
-            SELECT id, cod_bio, pedido 
+            SELECT id, cod_bio, pedido, nota_fiscal 
             FROM opme.cirurgias 
             WHERE contrato = $1 
               AND pedido IS NOT NULL 
-              AND (nota_fiscal IS NULL OR nota_fiscal = '' OR nota_fiscal = '0')
         `, [contrato]);
 
         if (cirurgiasResult.rows.length === 0) {
-            return res.json({ message: 'Nenhuma cirurgia pendente de nota com pedido gerado.', updated: 0 });
+            return res.json({ message: 'Nenhuma cirurgia com pedido gerado para sincronizar.', updated: 0, removed: 0 });
         }
 
         let pedidos = [...new Set(cirurgiasResult.rows.map(r => r.pedido))];
@@ -685,20 +684,26 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         
         const nfsStr = nfs.join(',');
         const cabRes = await mssqlPool.request().query(`
-            SELECT codigo, numero_nota 
+            SELECT codigo, numero_nota, id_situacao_nfe 
             FROM ${sgcDbName}.dbo.nota_fiscal_venda 
             WHERE numero_nota IN (${nfsStr})
         `);
 
         const codigoToNf = {};
         const codigos = [];
+        const notasTransmitidas = new Set();
+        
         for (const row of cabRes.recordset) {
             codigoToNf[row.codigo] = row.numero_nota;
             codigos.push(row.codigo);
+            // Considera apenas notas "Transmitida" (id_situacao_nfe = 2)
+            if (row.id_situacao_nfe === 2) {
+                notasTransmitidas.add(row.numero_nota.toString());
+            }
         }
 
         if (codigos.length === 0) {
-            return res.json({ message: 'Notas Fiscais encontradas na view, mas não na tabela principal do Supra.', updated: 0 });
+            return res.json({ message: 'Notas Fiscais encontradas na view, mas não na tabela principal do Supra.', updated: 0, removed: 0 });
         }
 
         const codigosStr = codigos.join(',');
@@ -708,25 +713,48 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             WHERE nf_numero IN (${codigosStr})
         `);
 
-        let updatedCount = 0;
+        // Mapeia (pedido_codBio) -> numeroNota (apenas notas transmitidas)
+        const supraNotesMap = {};
         for (const item of itemRes.recordset) {
             const numeroNota = codigoToNf[item.nf_numero];
             const numeroPedido = nfMap[numeroNota];
             const prodCodigoStr = item.prod_codigo;
             
-            const matches = cirurgiasResult.rows.filter(r => 
-                r.pedido == numeroPedido && 
-                r.cod_bio && 
-                r.cod_bio.toString() === prodCodigoStr
-            );
+            if (notasTransmitidas.has(numeroNota.toString())) {
+                const key = `${numeroPedido}_${prodCodigoStr}`;
+                supraNotesMap[key] = numeroNota.toString();
+            }
+        }
+
+        let updatedCount = 0;
+        let removedCount = 0;
+        
+        for (const row of cirurgiasResult.rows) {
+            if (!row.cod_bio) continue;
             
-            for (const match of matches) {
-                await pgPool.query(`
-                    UPDATE opme.cirurgias 
-                    SET nota_fiscal = $1, status_expedicao = 'Ok' 
-                    WHERE id = $2
-                `, [numeroNota.toString(), match.id]);
-                updatedCount++;
+            const key = `${row.pedido}_${row.cod_bio.toString()}`;
+            const supraNota = supraNotesMap[key];
+            
+            if (supraNota) {
+                // Existe nota transmitida no Supra para este produto
+                if (row.nota_fiscal !== supraNota) {
+                    await pgPool.query(`
+                        UPDATE opme.cirurgias 
+                        SET nota_fiscal = $1, status_expedicao = 'Ok' 
+                        WHERE id = $2
+                    `, [supraNota, row.id]);
+                    updatedCount++;
+                }
+            } else {
+                // NÃO existe nota transmitida no Supra para este produto
+                if (row.nota_fiscal && row.nota_fiscal !== '' && row.nota_fiscal !== '0') {
+                    await pgPool.query(`
+                        UPDATE opme.cirurgias 
+                        SET nota_fiscal = NULL, status_expedicao = '' 
+                        WHERE id = $1
+                    `, [row.id]);
+                    removedCount++;
+                }
             }
         }
         
@@ -734,7 +762,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         await clearCache(`opme:cirurgias:all`);
         await clearCache(`opme:cirurgias:${contrato}`);
         
-        res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount });
+        res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount, removed: removedCount });
 
     } catch (err) {
         console.error('[OPME] Erro ao sincronizar notas fiscais:', err.message);
