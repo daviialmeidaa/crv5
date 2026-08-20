@@ -900,8 +900,9 @@ const OPME = (() => {
     let bancoCodigosTargetInput = null;
 
     async function openBancoCodigosLookup(labelEl) {
-        const block = labelEl.closest('.produto-box') || labelEl.closest('.product-block');
-        const codBioInput = block ? block.querySelector('.prod-cod-bio') : null;
+        // Try to find the target input from the closest table row, or fallback to null (header click)
+        const row = labelEl.closest('tr');
+        const codBioInput = row ? row.querySelector('.prod-cod-bio') : null;
         bancoCodigosTargetInput = codBioInput;
 
         const contrato = document.getElementById('fcContrato').value;
@@ -1056,9 +1057,20 @@ const OPME = (() => {
             tbody.querySelectorAll('tr[data-cod-bio]').forEach(tr => {
                 tr.addEventListener('click', () => {
                     const codBio = tr.getAttribute('data-cod-bio');
-                    if (bancoCodigosTargetInput && codBio) {
-                        bancoCodigosTargetInput.value = codBio;
-                        fetchProdutoInfo(bancoCodigosTargetInput);
+                    // Se não veio de uma linha específica, encontrar a primeira linha vazia
+                    let targetInput = bancoCodigosTargetInput;
+                    if (!targetInput) {
+                        const emptyRows = document.querySelectorAll('.product-row .prod-cod-bio');
+                        for (const inp of emptyRows) {
+                            if (!inp.value || inp.value.trim() === '') {
+                                targetInput = inp;
+                                break;
+                            }
+                        }
+                    }
+                    if (targetInput && codBio) {
+                        targetInput.value = codBio;
+                        fetchProdutoInfo(targetInput);
                     }
                     modal.remove();
                 });
@@ -1795,6 +1807,7 @@ const OPME = (() => {
         if (!state.selectedContract) return;
 
         editingCirurgiaItems = []; // Flag de que é inserção
+        deletedItemIds = []; // Reset deleted items tracking
 
         const modal = document.getElementById('cirurgiaModal');
 
@@ -1806,7 +1819,7 @@ const OPME = (() => {
         const btnGerarPedidoSupra = document.getElementById('btnGerarPedidoSupra');
 
         document.getElementById('cirurgiaForm').reset();
-        document.getElementById('cirurgiaProductsContainer').innerHTML = '';
+        document.getElementById('cirurgiaProductsTbody').innerHTML = '';
 
         titleSpan.textContent = `Nova Cirurgia - ${state.selectedContract.id_contrato}`;
 
@@ -1840,14 +1853,14 @@ const OPME = (() => {
             console.error('Erro ao carregar unidades:', err);
         }
 
-        const dataInput = document.getElementById('fcData');
-        if (typeof window.CustomDatepicker !== 'undefined') {
-            window.CustomDatepicker.init(dataInput);
-        } else if (typeof window.initCustomDatepickers === 'function') {
-            window.initCustomDatepickers();
-        }
+        // Pré-preencher data com hoje em formato DD/MM/AAAA
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+        document.getElementById('fcData').value = `${dd}/${mm}/${yyyy}`;
 
-        // Adiciona um bloco vazio e limpa IDs
+        // Adiciona uma linha vazia na tabela
         addCirurgiaProduct();
 
         if (canEditCirurgia) {
@@ -2137,10 +2150,22 @@ const OPME = (() => {
     }
 
     function switchCirurgiaModalTab(tabId) {
-        document.getElementById('cirurgiaTabDados').classList.add('hidden');
-        document.getElementById('cirurgiaTabDados').classList.remove('block');
-        document.getElementById('cirurgiaTabObs').classList.add('hidden');
-        document.getElementById('cirurgiaTabObs').classList.remove('block');
+        const tabDados = document.getElementById('cirurgiaTabDados');
+        const tabObs = document.getElementById('cirurgiaTabObs');
+
+        // Antes de esconder a aba Dados, capturar sua altura para preservar no Observações
+        if (tabId === 'obs' && tabDados && !tabDados.classList.contains('hidden')) {
+            const h = tabDados.offsetHeight;
+            tabObs.style.setProperty('--cirurgia-tab-height', h + 'px');
+            // Também aplicar min-height diretamente no wrapper da aba obs
+            const obsWrapper = tabObs.querySelector('div');
+            if (obsWrapper) obsWrapper.style.minHeight = h + 'px';
+        }
+
+        tabDados.classList.add('hidden');
+        tabDados.classList.remove('block');
+        tabObs.classList.add('hidden');
+        tabObs.classList.remove('block');
 
         document.getElementById('tabBtnCirurgiaDados').classList.remove('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
         document.getElementById('tabBtnCirurgiaDados').classList.add('border-transparent', 'text-steel-500');
@@ -2148,13 +2173,13 @@ const OPME = (() => {
         document.getElementById('tabBtnCirurgiaObs').classList.add('border-transparent', 'text-steel-500');
 
         if (tabId === 'dados') {
-            document.getElementById('cirurgiaTabDados').classList.remove('hidden');
-            document.getElementById('cirurgiaTabDados').classList.add('block');
+            tabDados.classList.remove('hidden');
+            tabDados.classList.add('block');
             document.getElementById('tabBtnCirurgiaDados').classList.remove('border-transparent', 'text-steel-500');
             document.getElementById('tabBtnCirurgiaDados').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
         } else if (tabId === 'obs') {
-            document.getElementById('cirurgiaTabObs').classList.remove('hidden');
-            document.getElementById('cirurgiaTabObs').classList.add('block');
+            tabObs.classList.remove('hidden');
+            tabObs.classList.add('block');
             document.getElementById('tabBtnCirurgiaObs').classList.remove('border-transparent', 'text-steel-500');
             document.getElementById('tabBtnCirurgiaObs').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
             // Auto-resize quando a aba se torna visível
@@ -2178,6 +2203,7 @@ const OPME = (() => {
 
         if (items.length === 0) return;
         editingCirurgiaItems = items;
+        deletedItemIds = []; // Reset deleted items tracking
 
         const ref = items[0]; // Referência para campos globais
         const modal = document.getElementById('cirurgiaModal');
@@ -2187,7 +2213,7 @@ const OPME = (() => {
         const btnGerarPedidoSupra = document.getElementById('btnGerarPedidoSupra');
 
         document.getElementById('cirurgiaForm').reset();
-        document.getElementById('cirurgiaProductsContainer').innerHTML = '';
+        document.getElementById('cirurgiaProductsTbody').innerHTML = '';
 
         titleSpan.textContent = `${ref.paciente} (${formatDate(ref.data_cirurgia)})`;
 
@@ -2213,7 +2239,7 @@ const OPME = (() => {
             console.error('Erro ao gerar observação', e);
         }
 
-        // Preencher Campos Globais
+        // Preencher Campos de Identificação
         document.getElementById('fcContrato').value = ref.contrato || '';
         document.getElementById('fcAcao').value = ref.acao || '';
         document.getElementById('fcPaciente').value = ref.paciente || '';
@@ -2251,27 +2277,19 @@ const OPME = (() => {
             console.error('Erro ao carregar unidades:', err);
         }
 
-        // Configurar o datepicker customizado e inicializá-content
+        // Preencher data no formato DD/MM/AAAA
         const dataInput = document.getElementById('fcData');
-        dataInput.value = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
-        if (typeof window.CustomDatepicker !== 'undefined') {
-            window.CustomDatepicker.init(dataInput);
-        } else if (typeof window.initCustomDatepickers === 'function') {
-            window.initCustomDatepickers();
+        if (ref.data_cirurgia) {
+            const d = ref.data_cirurgia.split('T')[0]; // YYYY-MM-DD
+            const parts = d.split('-');
+            dataInput.value = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : '';
+        } else {
+            dataInput.value = '';
         }
 
-        // Preencher Faturamento e Status
-        document.getElementById('fcEmpenho').value = ref.empenho || '';
-        document.getElementById('fcAutorizacao').value = ref.autorizacao || '';
-        document.getElementById('fcPedido').value = ref.pedido || '';
-        document.getElementById('fcNotaFiscal').value = ref.nota_fiscal || '';
-        document.getElementById('fcRetornoConsignacao').value = ref.retorno_consignacao || '';
-        document.getElementById('fcStatusExpedicao').value = ref.status_expedicao || '';
-        document.getElementById('fcAutorizacaoOpme').value = ref.autorizacao_opme || '';
-
-        // Preencher Produtos
+        // Preencher Produtos na tabela (cada item com seus próprios dados de faturamento)
         items.forEach((item, index) => {
-            renderProductBlock(item, index);
+            renderProductRow(item, index);
         });
 
         calculateTotalCirurgia();
@@ -2289,7 +2307,9 @@ const OPME = (() => {
             btnDelete.classList.add('hidden');
         }
 
-        if (canEditCirurgia && !ref.pedido) {
+        // Mostrar botão "Gerar Pedido" se ALGUM item ainda não tiver pedido
+        const anyWithoutPedido = items.some(i => !i.pedido);
+        if (canEditCirurgia && anyWithoutPedido) {
             btnGerarPedidoSupra.classList.remove('hidden');
         } else {
             btnGerarPedidoSupra.classList.add('hidden');
@@ -2302,102 +2322,94 @@ const OPME = (() => {
         });
     }
 
-    function renderProductBlock(item, idx) {
-        const container = document.getElementById('cirurgiaProductsContainer');
+    // Array para rastrear IDs de itens removidos (para exclusão no PUT)
+    let deletedItemIds = [];
+
+    function renderProductRow(item, idx) {
+        const tbody = document.getElementById('cirurgiaProductsTbody');
+        const tr = document.createElement('tr');
+        tr.className = 'product-row border-b border-gray-100 dark:border-steel-700 hover:bg-gray-50/50 dark:hover:bg-steel-700/20 transition-colors align-middle';
+        tr.dataset.idx = idx;
+
         const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
         const itemPregaoHtml = `<input type="hidden" class="prod-item-pregao" value="${item.item_pregao || ''}">`;
-        const itemText = item.item_pregao ? ` - Item ${item.item_pregao}` : '';
-        const titleText = (item.produto || 'NOVO PRODUTO') + itemText;
 
-        const block = document.createElement('div');
-        block.className = 'produto-box product-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
+        // Estilo flat: inputs transparentes sem borda, focáveis ao clicar
+        const cellInput = 'w-full bg-transparent text-[11px] text-steel-800 dark:text-gray-200 outline-none text-center py-1 border-0 focus:ring-1 focus:ring-nexo-500/40 rounded transition-all';
+        const cellReadonly = 'text-[11px] text-steel-600 dark:text-steel-400';
+        const cellSelect = 'w-full bg-transparent text-[11px] text-steel-800 dark:text-gray-200 outline-none text-center py-1 border-0 focus:ring-1 focus:ring-nexo-500/40 rounded cursor-pointer appearance-none';
 
-        block.innerHTML = `
+        const retConsigVal = (item.retorno_consignacao || '').toUpperCase();
+        const autOpmeVal = (item.autorizacao_opme || '').toUpperCase();
+
+        tr.innerHTML = `
             ${idHtml}
             ${itemPregaoHtml}
-            <!-- Header (Collapsible) -->
-            <div class="accordion-header flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-steel-700/60 select-none" onclick="OPME.toggleCirurgiaProduct(this)">
-                <div class="flex items-center gap-2">
-                    <svg class="accordion-icon w-4 h-4 text-steel-400 transition-transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    <span class="prod-title-text text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">${titleText}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="event.stopPropagation(); OPME.removeCirurgiaProduct(this)" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                        Remover
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Body -->
-            <div class="accordion-body hidden">
-                <div class="p-4 space-y-4">
-                    <div class="flex gap-4">
-                        <!-- Coluna Esquerda (50%) — Grid 2x3 -->
-                        <div class="w-1/2 grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-medium text-nexo-600 dark:text-nexo-400 mb-1 cursor-pointer hover:underline inline-flex items-center gap-1" onclick="event.stopPropagation(); OPME.openBancoCodigosLookup(this)">
-                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                                    Cód. Bio
-                                </label>
-                                <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.cod_bio || ''}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Tipo de Cirurgia</label>
-                                <input type="text" readonly tabindex="-1" class="prod-tipo w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all pointer-events-none" value="${item.classificacao || ''}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote</label>
-                                <input type="text" class="prod-lote w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase" value="${item.lote || ''}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Quantidade</label>
-                                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all text-right" value="${item.quantidade_utilizada || 0}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
-                                <input type="text" readonly tabindex="-1" class="prod-vlr-un w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all text-right pointer-events-none" value="${formatCurrencyInput(item.valor_unitario)}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
-                                <input type="text" readonly tabindex="-1" class="prod-vlr-tot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all text-right font-semibold pointer-events-none" value="${formatCurrencyInput(item.valor_total)}">
-                            </div>
-                        </div>
-
-                        <!-- Coluna Direita (50%) — Produto + Descrição -->
-                        <div class="w-1/2 flex flex-col gap-3">
-                            <div class="flex-1 flex flex-col">
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Produto</label>
-                                <textarea readonly tabindex="-1" class="prod-nome w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all resize-none flex-1 pointer-events-none" style="min-height: 48px;">${item.produto || ''}</textarea>
-                            </div>
-                            <div class="flex-1 flex flex-col">
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Descrição Personalizada</label>
-                                <textarea readonly tabindex="-1" class="prod-desc w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all resize-none flex-1 pointer-events-none" style="min-height: 48px;">${item.descricao_personalizada || ''}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap sticky left-0 bg-white dark:bg-steel-800 z-[5]">
+                <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio ${cellInput}" value="${item.cod_bio || ''}" style="min-width:60px">
+            </td>
+            <td class="col-tipoCirurgia px-2 py-1.5 text-center min-w-[80px]">
+                <span class="prod-tipo ${cellReadonly}">${item.classificacao || '-'}</span>
+            </td>
+            <td class="px-2 py-1.5 min-w-[140px] max-w-[180px]">
+                <div class="prod-nome text-[11px] text-steel-700 dark:text-gray-300 line-clamp-3 leading-tight" title="${(item.produto || '').replace(/"/g, '&quot;')}">${item.produto || ''}</div>
+            </td>
+            <td class="col-descPersonalizada px-2 py-1.5 min-w-[160px] max-w-[200px]">
+                <div class="prod-desc text-[11px] text-steel-700 dark:text-gray-300 line-clamp-3 leading-tight" title="${(item.descricao_personalizada || '').replace(/"/g, '&quot;')}">${item.descricao_personalizada || ''}</div>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-lote ${cellInput} uppercase" value="${item.lote || ''}" style="min-width:50px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada || 0}" style="width:40px">
+            </td>
+            <td class="px-2 py-1.5 text-right whitespace-nowrap">
+                <span class="prod-vlr-un ${cellReadonly}">${formatCurrencyInput(item.valor_unitario)}</span>
+            </td>
+            <td class="px-2 py-1.5 text-right whitespace-nowrap">
+                <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total)}</span>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-empenho ${cellInput} uppercase" value="${item.empenho || ''}" style="min-width:55px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-autorizacao ${cellInput} uppercase" value="${item.autorizacao || ''}" style="min-width:55px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-pedido ${cellInput}" value="${item.pedido || ''}" style="min-width:50px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <select class="prod-retorno-consignacao ${cellSelect}" style="min-width:85px">
+                    <option value="">-</option>
+                    <option value="AGUARDANDO" ${retConsigVal === 'AGUARDANDO' ? 'selected' : ''}>AGUARDANDO</option>
+                    <option value="FEITO" ${retConsigVal === 'FEITO' ? 'selected' : ''}>FEITO</option>
+                </select>
+            </td>
+            <td class="col-expedicao px-2 py-1.5 text-center whitespace-nowrap">
+                <span class="prod-status-expedicao ${cellReadonly}">${item.status_expedicao || '-'}</span>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <select class="prod-autorizacao-opme ${cellSelect}" style="min-width:90px">
+                    <option value="">-</option>
+                    <option value="NÃO FATURAR" ${autOpmeVal === 'NÃO FATURAR' ? 'selected' : ''}>NÃO FATURAR</option>
+                    <option value="FATURAR" ${autOpmeVal === 'FATURAR' ? 'selected' : ''}>FATURAR</option>
+                </select>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-nota-fiscal ${cellInput} uppercase" value="${item.nota_fiscal || ''}" style="min-width:50px">
+            </td>
+            <td class="px-1 py-1.5 text-center whitespace-nowrap">
+                <button type="button" onclick="OPME.removeCirurgiaProduct(this)" class="p-1 rounded text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Remover Produto">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+            </td>
         `;
-        container.appendChild(block);
-    }
-
-    function toggleCirurgiaProduct(headerEl) {
-        const body = headerEl.nextElementSibling;
-        const icon = headerEl.querySelector('svg');
-        body.classList.toggle('hidden');
-        if (body.classList.contains('hidden')) {
-            icon.classList.remove('rotate-180');
-        } else {
-            icon.classList.add('rotate-180');
-        }
+        tbody.appendChild(tr);
     }
 
     function addCirurgiaProduct() {
-        const currentCount = document.querySelectorAll('.product-block').length;
-        renderProductBlock({
+        const currentCount = document.querySelectorAll('.product-row').length;
+        renderProductRow({
             quantidade_utilizada: 1,
             valor_unitario: 0,
             valor_total: 0
@@ -2405,30 +2417,157 @@ const OPME = (() => {
     }
 
     function removeCirurgiaProduct(btn) {
-        btn.closest('.product-block').remove();
+        const tr = btn.closest('tr');
+        const idInput = tr.querySelector('.prod-id');
+        if (idInput && idInput.value) {
+            deletedItemIds.push(parseInt(idInput.value));
+        }
+        tr.remove();
         calculateTotalCirurgia();
     }
 
     function calculateTotalCirurgia() {
         let globalTotal = 0;
-        document.querySelectorAll('.product-block').forEach(block => {
-            const qtdeInput = block.querySelector('.prod-qtde');
-            const vlrUnInput = block.querySelector('.prod-vlr-un');
-            const vlrTotInput = block.querySelector('.prod-vlr-tot');
+        document.querySelectorAll('.product-row').forEach(tr => {
+            const qtdeInput = tr.querySelector('.prod-qtde');
+            const vlrUnEl = tr.querySelector('.prod-vlr-un');
+            const vlrTotEl = tr.querySelector('.prod-vlr-tot');
 
             const qtde = parseFloat(qtdeInput.value) || 0;
-            const vlrUn = parseCurrency(vlrUnInput.value) || 0;
+            const vlrUn = parseCurrency(vlrUnEl.textContent || vlrUnEl.value) || 0;
 
             const total = qtde * vlrUn;
-            vlrTotInput.value = formatCurrencyInput(total);
+            vlrTotEl.textContent = formatCurrencyInput(total);
 
             globalTotal += total;
         });
         document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal);
     }
 
+    // Header select bulk-fill: ao clicar no cabeçalho de Ret. Consig. ou Aut. OPME, mostra dropdown e preenche todas as linhas
+    function toggleHeaderSelect(type, thEl) {
+        // Remove qualquer dropdown anterior
+        const existing = document.getElementById('headerSelectDropdown');
+        if (existing) { existing.remove(); return; }
+
+        let options = [];
+        let selector = '';
+        let title = '';
+        if (type === 'retConsig') {
+            options = [{ value: '', label: 'Nenhum' }, { value: 'AGUARDANDO', label: 'Aguardando' }, { value: 'FEITO', label: 'Feito' }];
+            selector = '.prod-retorno-consignacao';
+            title = 'Ret. Consignação';
+        } else if (type === 'autOpme') {
+            options = [{ value: '', label: 'Nenhum' }, { value: 'NÃO FATURAR', label: 'Não Faturar' }, { value: 'FATURAR', label: 'Faturar' }];
+            selector = '.prod-autorizacao-opme';
+            title = 'Aut. OPME';
+        }
+
+        const dropdown = document.createElement('div');
+        dropdown.id = 'headerSelectDropdown';
+        dropdown.className = 'absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50';
+        dropdown.style.cssText = 'min-width: 170px;';
+        dropdown.innerHTML = `
+            <div class="bg-steel-800 border border-steel-600/50 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm" style="animation: fadeIn 0.15s ease-out">
+                <div class="px-3 py-2 border-b border-steel-700/50">
+                    <span class="text-[10px] font-semibold text-nexo-400 uppercase tracking-wider">Aplicar a todos</span>
+                </div>
+                <div class="py-1" id="headerSelectOptions"></div>
+            </div>
+        `;
+
+        const optionsContainer = dropdown.querySelector('#headerSelectOptions');
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-full px-3 py-2 flex items-center gap-2 text-xs text-gray-200 hover:bg-nexo-500/15 hover:text-nexo-300 transition-all duration-150 cursor-pointer';
+            btn.innerHTML = `
+                <span class="w-1.5 h-1.5 rounded-full ${opt.value ? 'bg-nexo-500' : 'bg-steel-500'} flex-shrink-0"></span>
+                <span>${opt.label}</span>
+            `;
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll(`.product-row ${selector}`).forEach(sel => {
+                    sel.value = opt.value;
+                });
+                dropdown.remove();
+            };
+            optionsContainer.appendChild(btn);
+        });
+
+        thEl.style.position = 'relative';
+        thEl.appendChild(dropdown);
+
+        // Fechar ao clicar fora
+        const closeHandler = (e) => {
+            if (!dropdown.contains(e.target) && e.target !== thEl) {
+                dropdown.remove();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 10);
+    }
+
+    // Menu de visibilidade de colunas
+    function toggleColumnMenu() {
+        const existing = document.getElementById('colVisibilityMenu');
+        if (existing) { existing.remove(); return; }
+
+        const table = document.getElementById('cirurgiaProductsTable');
+        const columns = [
+            { key: 'tipoCirurgia', label: 'Tipo Cirurgia', cls: 'show-tipoCirurgia' },
+            { key: 'descPersonalizada', label: 'Desc. Personalizada', cls: 'show-descPersonalizada' },
+            { key: 'expedicao', label: 'Expedição', cls: 'show-expedicao' }
+        ];
+
+        const wrapper = document.getElementById('colToggleWrapper');
+        const dropdown = document.createElement('div');
+        dropdown.id = 'colVisibilityMenu';
+        dropdown.className = 'absolute right-0 top-full mt-1 z-50';
+        dropdown.style.cssText = 'min-width: 190px;';
+        dropdown.innerHTML = `
+            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden" style="animation: fadeIn 0.15s ease-out">
+                <div class="px-3 py-2 border-b border-gray-100 dark:border-steel-700/50">
+                    <span class="text-[10px] font-semibold text-nexo-600 dark:text-nexo-400 uppercase tracking-wider">Colunas visíveis</span>
+                </div>
+                <div class="py-1" id="colVisibilityOptions"></div>
+            </div>
+        `;
+
+        const optionsContainer = dropdown.querySelector('#colVisibilityOptions');
+        columns.forEach(col => {
+            const isVisible = table.classList.contains(col.cls);
+            const item = document.createElement('label');
+            item.className = 'w-full px-3 py-2 flex items-center gap-2.5 text-xs text-steel-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-steel-700/50 transition-all cursor-pointer select-none';
+            item.innerHTML = `
+                <input type="checkbox" ${isVisible ? 'checked' : ''} class="w-3.5 h-3.5 rounded border-gray-300 dark:border-steel-500 text-nexo-500 focus:ring-nexo-500/30 cursor-pointer accent-nexo-500">
+                <span>${col.label}</span>
+            `;
+            const checkbox = item.querySelector('input');
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    table.classList.add(col.cls);
+                } else {
+                    table.classList.remove(col.cls);
+                }
+            });
+            optionsContainer.appendChild(item);
+        });
+
+        wrapper.appendChild(dropdown);
+
+        // Fechar ao clicar fora
+        const closeHandler = (e) => {
+            if (!dropdown.contains(e.target) && !e.target.closest('#colToggleWrapper button')) {
+                dropdown.remove();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 10);
+    }
+
     async function fetchProdutoInfo(input) {
-        const block = input.closest('.produto-box');
+        const row = input.closest('tr');
         const codBio = input.value.trim();
         const contrato = document.getElementById('fcContrato').value;
 
@@ -2446,13 +2585,11 @@ const OPME = (() => {
             if (res.status === 404) {
                 document.getElementById('errorModal').classList.remove('hidden');
                 // Limpa os campos
-                block.querySelector('.prod-tipo').value = '';
-                block.querySelector('.prod-nome').value = '';
-                block.querySelector('.prod-desc').value = '';
-                block.querySelector('.prod-vlr-un').value = '';
-                block.querySelector('.prod-item-pregao').value = '';
-
-                block.querySelector('.prod-title-text').textContent = 'NOVO PRODUTO';
+                row.querySelector('.prod-tipo').textContent = '-';
+                row.querySelector('.prod-nome').textContent = '';
+                row.querySelector('.prod-desc').textContent = '';
+                row.querySelector('.prod-vlr-un').textContent = '';
+                row.querySelector('.prod-item-pregao').value = '';
                 calculateTotalCirurgia();
                 return;
             }
@@ -2461,14 +2598,13 @@ const OPME = (() => {
 
             const data = await res.json();
 
-            block.querySelector('.prod-tipo').value = data.classificacao || '';
-            block.querySelector('.prod-nome').value = data.produto || '';
-            block.querySelector('.prod-desc').value = data.descricao_personalizada || '';
-            block.querySelector('.prod-item-pregao').value = data.item_ata || '';
-            block.querySelector('.prod-vlr-un').value = formatCurrencyInput(data.valor_unitario);
-
-            const itemText = data.item_ata ? ` - Item ${data.item_ata}` : '';
-            block.querySelector('.prod-title-text').textContent = (data.produto || 'NOVO PRODUTO') + itemText;
+            row.querySelector('.prod-tipo').textContent = data.classificacao || '-';
+            row.querySelector('.prod-nome').textContent = data.produto || '';
+            row.querySelector('.prod-nome').title = data.produto || '';
+            row.querySelector('.prod-desc').textContent = data.descricao_personalizada || '';
+            row.querySelector('.prod-desc').title = data.descricao_personalizada || '';
+            row.querySelector('.prod-item-pregao').value = data.item_ata || '';
+            row.querySelector('.prod-vlr-un').textContent = formatCurrencyInput(data.valor_unitario);
 
             calculateTotalCirurgia();
         } catch (err) {
@@ -2488,40 +2624,41 @@ const OPME = (() => {
     async function saveCirurgia() {
         if (!canEditCirurgia) return;
 
-        // Capturar globais
+        // Capturar globais (apenas identificação da cirurgia)
         const commonData = {
             contrato: document.getElementById('fcContrato').value,
             acao: document.getElementById('fcAcao').value,
             local_cirurgia: document.getElementById('fcLocal').value.toUpperCase(),
             paciente: document.getElementById('fcPaciente').value.toUpperCase(),
-            data_cirurgia: document.getElementById('fcData').value,
+            data_cirurgia: (() => { const v = document.getElementById('fcData').value; if (!v) return ''; const p = v.split('/'); return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : v; })(),
             prontuario: document.getElementById('fcProntuario').value,
             medico: document.getElementById('fcMedico').value.toUpperCase(),
             crm: document.getElementById('fcCRM').value.toUpperCase(),
             cod_cliente: document.getElementById('fcCodCliente').value,
-            empenho: document.getElementById('fcEmpenho').value.toUpperCase(),
-            autorizacao: document.getElementById('fcAutorizacao').value.toUpperCase(),
-            pedido: document.getElementById('fcPedido').value,
-            nota_fiscal: document.getElementById('fcNotaFiscal').value.toUpperCase(),
-            retorno_consignacao: document.getElementById('fcRetornoConsignacao').value.toUpperCase(),
-            status_expedicao: document.getElementById('fcStatusExpedicao').value.toUpperCase(),
-            autorizacao_opme: document.getElementById('fcAutorizacaoOpme').value.toUpperCase(),
         };
 
         const itemsPayload = [];
-        document.querySelectorAll('.product-block').forEach(block => {
-            const idInput = block.querySelector('.prod-id');
+        document.querySelectorAll('.product-row').forEach(tr => {
+            const idInput = tr.querySelector('.prod-id');
             const itemData = {
-                ...commonData, // Mesclar os dados comuns no item
-                cod_bio: block.querySelector('.prod-cod-bio').value,
-                classificacao: block.querySelector('.prod-tipo').value.toUpperCase(),
-                produto: block.querySelector('.prod-nome').value,
-                descricao_personalizada: block.querySelector('.prod-desc').value,
-                quantidade_utilizada: block.querySelector('.prod-qtde').value,
-                lote: block.querySelector('.prod-lote').value.toUpperCase(),
-                valor_unitario: parseCurrency(block.querySelector('.prod-vlr-un').value),
-                valor_total: parseCurrency(block.querySelector('.prod-vlr-tot').value),
-                item_pregao: block.querySelector('.prod-item-pregao') ? block.querySelector('.prod-item-pregao').value || null : null
+                ...commonData,
+                cod_bio: tr.querySelector('.prod-cod-bio').value,
+                classificacao: (tr.querySelector('.prod-tipo').textContent || '').toUpperCase().replace('-', ''),
+                produto: tr.querySelector('.prod-nome').textContent || '',
+                descricao_personalizada: tr.querySelector('.prod-desc').textContent || '',
+                quantidade_utilizada: tr.querySelector('.prod-qtde').value,
+                lote: (tr.querySelector('.prod-lote').value || '').toUpperCase(),
+                valor_unitario: parseCurrency(tr.querySelector('.prod-vlr-un').textContent),
+                valor_total: parseCurrency(tr.querySelector('.prod-vlr-tot').textContent),
+                item_pregao: tr.querySelector('.prod-item-pregao') ? tr.querySelector('.prod-item-pregao').value || null : null,
+                // Faturamento por produto (lidos da linha)
+                empenho: (tr.querySelector('.prod-empenho').value || '').toUpperCase(),
+                autorizacao: (tr.querySelector('.prod-autorizacao').value || '').toUpperCase(),
+                pedido: tr.querySelector('.prod-pedido').value || '',
+                retorno_consignacao: (tr.querySelector('.prod-retorno-consignacao').value || '').toUpperCase(),
+                status_expedicao: (tr.querySelector('.prod-status-expedicao').textContent || '').toUpperCase(),
+                autorizacao_opme: (tr.querySelector('.prod-autorizacao-opme').value || '').toUpperCase(),
+                nota_fiscal: (tr.querySelector('.prod-nota-fiscal').value || '').toUpperCase(),
             };
 
             if (idInput && idInput.value) {
@@ -2538,13 +2675,19 @@ const OPME = (() => {
             btnSave.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
             btnSave.disabled = true;
 
+            const payload = { items: itemsPayload };
+            // Na edição, enviar IDs dos itens deletados para o backend remover
+            if (!isCreating && deletedItemIds.length > 0) {
+                payload.deletedIds = [...deletedItemIds];
+            }
+
             const res = await fetch('/api/opme/cirurgias', {
                 method: isCreating ? 'POST' : 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${getToken()}`
                 },
-                body: JSON.stringify({ items: itemsPayload })
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) throw new Error('Erro ao salvar cirurgia');
@@ -2630,7 +2773,10 @@ const OPME = (() => {
 
             if (response.ok) {
                 showToast(`Pedido Nº ${data.pedido} gerado com sucesso no Supra!`, 'success');
-                document.getElementById('fcPedido').value = data.pedido;
+                // Preencher a coluna Pedido em TODAS as linhas da tabela
+                document.querySelectorAll('.product-row .prod-pedido').forEach(input => {
+                    input.value = data.pedido;
+                });
                 ref.pedido = data.pedido;
                 btnGerar.classList.add('hidden'); // Oculta o botão pois já tem pedido
                 fetchData(); // Atualiza a grid por trás
@@ -3279,10 +3425,11 @@ const OPME = (() => {
         openCirurgiaModal,
         openNewCirurgiaModal,
         closeCirurgiaModal,
-        toggleCirurgiaProduct,
         addCirurgiaProduct,
         removeCirurgiaProduct,
         calculateTotalCirurgia,
+        toggleHeaderSelect,
+        toggleColumnMenu,
         saveCirurgia,
         gerarPedidoSupra,
         deleteCirurgia,

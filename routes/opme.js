@@ -831,7 +831,7 @@ router.post('/cirurgias', async (req, res) => {
 router.put('/cirurgias', async (req, res) => {
     const client = await pgPool.connect();
     try {
-        const { items } = req.body;
+        const { items, deletedIds } = req.body;
         if (!Array.isArray(items)) {
             return res.status(400).json({ error: 'Payload inválido. Esperado array "items".' });
         }
@@ -840,6 +840,15 @@ router.put('/cirurgias', async (req, res) => {
 
         // PREVENÇÃO DE DESINCRONISMO (VBA): Sincroniza a sequence com o MAIOR ID real antes de inserir novos itens na edição
         await client.query(`SELECT setval('opme.cirurgias_id_seq', COALESCE((SELECT MAX(id) FROM opme.cirurgias), 1))`);
+
+        // Deletar itens removidos pelo usuário na edição
+        if (Array.isArray(deletedIds) && deletedIds.length > 0) {
+            const safeIds = deletedIds.filter(id => Number.isInteger(Number(id)));
+            if (safeIds.length > 0) {
+                const params = safeIds.map((_, idx) => `$${idx + 1}`).join(',');
+                await client.query(`DELETE FROM opme.cirurgias WHERE id IN (${params})`, safeIds.map(Number));
+            }
+        }
 
         for (const item of items) {
             if (!item.id) {
