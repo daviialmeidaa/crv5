@@ -3611,7 +3611,7 @@ const OPME = (() => {
         modal.innerHTML = `
             <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-steel-700 w-[600px] max-w-[95vw] max-h-[80vh] flex flex-col transform transition-all duration-200 scale-95 opacity-0">
                 <!-- Header -->
-                <div class="px-5 py-4 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0 bg-gradient-to-r from-amber-50 to-white dark:from-steel-800 dark:to-steel-800 rounded-t-2xl">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0">
                     <div class="flex items-center gap-3">
                         <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -3641,10 +3641,10 @@ const OPME = (() => {
                     <div id="kpiModalContent" class="hidden">
                         <table class="w-full text-left border-collapse">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-steel-700/50">
-                                    <th class="px-3 py-2 text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider rounded-l-lg border-b border-gray-200 dark:border-steel-700">Contrato</th>
-                                    <th class="px-3 py-2 text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-center border-b border-gray-200 dark:border-steel-700">Qtd. Cirurgias</th>
-                                    <th class="px-3 py-2 text-[11px] font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-right rounded-r-lg border-b border-gray-200 dark:border-steel-700">Total a Faturar</th>
+                                <tr class="bg-nexo-600 dark:bg-steel-900 text-white">
+                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-tl-lg border-b border-nexo-700/50 dark:border-steel-700">Contrato</th>
+                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-center border-b border-nexo-700/50 dark:border-steel-700">Qtd. Cirurgias</th>
+                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-right rounded-tr-lg border-b border-nexo-700/50 dark:border-steel-700">Total a Faturar</th>
                                 </tr>
                             </thead>
                             <tbody id="kpiModalTableBody" class="divide-y divide-gray-100 dark:divide-steel-700/50">
@@ -3654,6 +3654,25 @@ const OPME = (() => {
                 </div>
             </div>
         `;
+        
+        function closeModal() {
+            if (modal.parentNode) modal.remove();
+            document.removeEventListener('keydown', handleEsc);
+        }
+        
+        function handleEsc(e) {
+            if (e.key === 'Escape') closeModal();
+        }
+        
+        document.addEventListener('keydown', handleEsc);
+        
+        modal.addEventListener('mousedown', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        const closeBtn = modal.querySelector('button');
+        closeBtn.onclick = closeModal;
+
         document.body.appendChild(modal);
         
         requestAnimationFrame(() => {
@@ -3676,15 +3695,16 @@ const OPME = (() => {
             } else {
                 data.forEach(item => {
                     const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-amber-50 dark:hover:bg-amber-900/10 cursor-pointer transition-colors group';
+                    tr.className = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 cursor-pointer transition-colors group';
                     tr.innerHTML = `
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-medium text-steel-800 dark:text-gray-200 group-hover:text-amber-700 dark:group-hover:text-amber-400 transition-colors">${item.contrato}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-medium text-steel-800 dark:text-gray-200 group-hover:text-nexo-700 dark:group-hover:text-nexo-400 transition-colors">${item.contrato}</td>
                         <td class="px-3 py-2.5 whitespace-nowrap text-sm text-steel-600 dark:text-steel-400 text-center">${item.qtd_cirurgias}</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-semibold text-amber-600 dark:text-amber-400 text-right">${formatCurrency(item.total_faturar)}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-semibold text-nexo-600 dark:text-nexo-400 text-right">${formatCurrency(item.total_faturar)}</td>
                     `;
                     tr.onclick = () => {
                         // Fecha este modal
-                        document.getElementById('cirurgiasEmAbertoModal').remove();
+                        if (typeof closeModal === 'function') closeModal();
+                        else document.getElementById('cirurgiasEmAbertoModal').remove();
                         // Abre o modal de acesso ao contrato
                         contractToAccess = { 
                             id_contrato: item.contrato,
