@@ -926,8 +926,12 @@ const OPME = (() => {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar');
 
-            if (data.updated > 0) {
-                showToast(`Sincronização concluída: ${data.updated} itens atualizados com NFs.`, 'success');
+            if (data.updated > 0 || data.removed > 0) {
+                const msg = [];
+                if (data.updated > 0) msg.push(`${data.updated} itens atualizados`);
+                if (data.removed > 0) msg.push(`${data.removed} notas canceladas removidas`);
+                
+                showToast(`Sincronização concluída: ${msg.join(' e ')}.`, 'success');
                 fetchData(); // Recarrega o grid
             } else {
                 showToast(data.message || 'Nenhuma atualização encontrada.', 'info');

@@ -683,58 +683,58 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             WHERE Numero_Pedido IN (${pedidosStr})
         `);
 
-        if (nfRes.recordset.length === 0) {
-            return res.json({ message: 'Nenhuma nota fiscal encontrada no Supra para os pedidos pendentes.', updated: 0 });
-        }
-
         const nfMap = {};
         const nfs = [];
-        for (const row of nfRes.recordset) {
-            nfMap[row.Numero_Nota] = row.Numero_Pedido;
-            nfs.push(row.Numero_Nota);
-        }
-        
-        const nfsStr = nfs.join(',');
-        const cabRes = await mssqlPool.request().query(`
-            SELECT codigo, numero_nota, id_situacao_nfe 
-            FROM ${sgcDbName}.dbo.nota_fiscal_venda 
-            WHERE numero_nota IN (${nfsStr})
-        `);
+        let codigosStr = '';
 
-        const codigoToNf = {};
-        const codigos = [];
-        const notasTransmitidas = new Set();
-        
-        for (const row of cabRes.recordset) {
-            codigoToNf[row.codigo] = row.numero_nota;
-            codigos.push(row.codigo);
-            // Considera notas "Transmitida" / "Emitida" (id_situacao_nfe = 2 ou 4)
-            if (row.id_situacao_nfe === 2 || row.id_situacao_nfe === 4) {
-                notasTransmitidas.add(row.numero_nota.toString());
+        if (nfRes.recordset.length > 0) {
+            for (const row of nfRes.recordset) {
+                nfMap[row.Numero_Nota] = row.Numero_Pedido;
+                nfs.push(row.Numero_Nota);
             }
         }
 
-        if (codigos.length === 0) {
-            return res.json({ message: 'Notas Fiscais encontradas na view, mas não na tabela principal do Supra.', updated: 0, removed: 0 });
+        const notasTransmitidas = new Set();
+        const codigoToNf = {};
+        const codigos = [];
+
+        if (nfs.length > 0) {
+            const nfsStr = nfs.join(',');
+            const cabRes = await mssqlPool.request().query(`
+                SELECT codigo, numero_nota, id_situacao_nfe 
+                FROM ${sgcDbName}.dbo.nota_fiscal_venda 
+                WHERE numero_nota IN (${nfsStr})
+            `);
+
+            for (const row of cabRes.recordset) {
+                codigoToNf[row.codigo] = row.numero_nota;
+                codigos.push(row.codigo);
+                // Considera apenas notas "Transmitida" (id_situacao_nfe = 2)
+                if (row.id_situacao_nfe === 2) {
+                    notasTransmitidas.add(row.numero_nota.toString());
+                }
+            }
         }
 
-        const codigosStr = codigos.join(',');
-        const itemRes = await mssqlPool.request().query(`
-            SELECT nf_numero, prod_codigo 
-            FROM ${sgcDbName}.dbo.nota_fiscal_venda_item 
-            WHERE nf_numero IN (${codigosStr})
-        `);
-
-        // Mapeia (pedido_codBio) -> numeroNota (apenas notas transmitidas)
         const supraNotesMap = {};
-        for (const item of itemRes.recordset) {
-            const numeroNota = codigoToNf[item.nf_numero];
-            const numeroPedido = nfMap[numeroNota];
-            const prodCodigoStr = item.prod_codigo ? item.prod_codigo.toString().trim() : '';
-            
-            if (notasTransmitidas.has(numeroNota.toString()) && numeroNota.toString() !== '0') {
-                const key = `${numeroPedido}_${prodCodigoStr}`;
-                supraNotesMap[key] = numeroNota.toString();
+
+        if (codigos.length > 0) {
+            codigosStr = codigos.join(',');
+            const itemRes = await mssqlPool.request().query(`
+                SELECT nf_numero, prod_codigo 
+                FROM ${sgcDbName}.dbo.nota_fiscal_venda_item 
+                WHERE nf_numero IN (${codigosStr})
+            `);
+
+            for (const item of itemRes.recordset) {
+                const numeroNota = codigoToNf[item.nf_numero];
+                const numeroPedido = nfMap[numeroNota];
+                const prodCodigoStr = item.prod_codigo ? item.prod_codigo.toString().trim() : '';
+                
+                if (notasTransmitidas.has(numeroNota.toString()) && numeroNota.toString() !== '0') {
+                    const key = `${numeroPedido}_${prodCodigoStr}`;
+                    supraNotesMap[key] = numeroNota.toString();
+                }
             }
         }
 
