@@ -777,6 +777,44 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
 
         let updatedCount = 0;
         let removedCount = 0;
+
+        // Verificação de segurança: Não excluir notas que já estejam PAGAS na tabela titulos
+        const notasParaVerificar = [...new Set(cirurgiasResult.rows.map(r => r.nota_fiscal).filter(n => n && n.trim() !== ''))];
+        const notasPagas = new Set();
+        
+        if (notasParaVerificar.length > 0) {
+            let empresasParaBuscar = [];
+            if (empresa.toLowerCase() === 'bml') {
+                empresasParaBuscar = ['BML'];
+            } else {
+                empresasParaBuscar = ['Nexomed', 'MEDICAL LIFE'];
+            }
+            
+            const params = [];
+            let inClauseNotas = [];
+            let inClauseEmpresas = [];
+            
+            let paramIndex = 1;
+            for (const n of notasParaVerificar) {
+                inClauseNotas.push(`$${paramIndex++}`);
+                params.push(n);
+            }
+            for (const e of empresasParaBuscar) {
+                inClauseEmpresas.push(`$${paramIndex++}`);
+                params.push(e);
+            }
+            
+            const titulosRes = await pgPool.query(`
+                SELECT nota FROM public.titulos 
+                WHERE nota IN (${inClauseNotas.join(',')}) 
+                  AND empresa IN (${inClauseEmpresas.join(',')}) 
+                  AND status = 'PAGO'
+            `, params);
+            
+            for (const r of titulosRes.rows) {
+                notasPagas.add(r.nota);
+            }
+        }
         
         for (const row of cirurgiasResult.rows) {
             if (!row.cod_bio) continue;
@@ -786,8 +824,12 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             // Se o ERP não tem NENHUMA nota válida para este pedido (ex: todas canceladas)
             if (!nfsForPedidoSet || nfsForPedidoSet.size === 0) {
                 if (row.nota_fiscal) {
-                    await pgPool.query('UPDATE opme.cirurgias SET nota_fiscal = NULL, status_expedicao = \'\' WHERE id = $1', [row.id]);
-                    removedCount++;
+                    if (notasPagas.has(row.nota_fiscal)) {
+                        // Trava de segurança: A nota está cancelada no ERP, mas já foi PAGA no nosso sistema. NÃO EXCLUIR.
+                    } else {
+                        await pgPool.query('UPDATE opme.cirurgias SET nota_fiscal = NULL, status_expedicao = \'\' WHERE id = $1', [row.id]);
+                        removedCount++;
+                    }
                 }
                 continue;
             }
