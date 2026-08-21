@@ -709,8 +709,8 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             for (const row of cabRes.recordset) {
                 codigoToNf[row.codigo] = row.numero_nota;
                 codigos.push(row.codigo);
-                // Considera apenas notas "Transmitida" (id_situacao_nfe = 2)
-                if (row.id_situacao_nfe === 2 && row.numero_nota) {
+                // Considera notas "Transmitida" (id_situacao_nfe = 4 ou 2)
+                if ((row.id_situacao_nfe === 4 || row.id_situacao_nfe === 2) && row.numero_nota) {
                     notasTransmitidas.add(row.numero_nota.toString());
                 }
             }
