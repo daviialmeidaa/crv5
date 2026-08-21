@@ -710,7 +710,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
                 codigoToNf[row.codigo] = row.numero_nota;
                 codigos.push(row.codigo);
                 // Considera apenas notas "Transmitida" (id_situacao_nfe = 2)
-                if (row.id_situacao_nfe === 2) {
+                if (row.id_situacao_nfe === 2 && row.numero_nota) {
                     notasTransmitidas.add(row.numero_nota.toString());
                 }
             }
@@ -731,7 +731,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
                 const numeroPedido = nfMap[numeroNota];
                 const prodCodigoStr = item.prod_codigo ? item.prod_codigo.toString().trim() : '';
                 
-                if (notasTransmitidas.has(numeroNota.toString()) && numeroNota.toString() !== '0') {
+                if (numeroNota && notasTransmitidas.has(numeroNota.toString()) && numeroNota.toString() !== '0') {
                     const key = `${numeroPedido}_${prodCodigoStr}`;
                     supraNotesMap[key] = numeroNota.toString();
                 }
@@ -777,8 +777,8 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount, removed: removedCount });
 
     } catch (err) {
-        console.error('[OPME] Erro ao sincronizar notas fiscais:', err.message);
-        res.status(500).json({ error: 'Erro ao sincronizar notas fiscais' });
+        console.error('Erro na sincronização de notas fiscais:', err);
+        return res.status(500).json({ error: 'Erro ao sincronizar notas fiscais: ' + err.message, stack: err.stack });
     }
 });
 
