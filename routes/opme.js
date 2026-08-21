@@ -732,7 +732,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             const numeroPedido = nfMap[numeroNota];
             const prodCodigoStr = item.prod_codigo;
             
-            if (notasTransmitidas.has(numeroNota.toString())) {
+            if (notasTransmitidas.has(numeroNota.toString()) && numeroNota.toString() !== '0') {
                 const key = `${numeroPedido}_${prodCodigoStr}`;
                 supraNotesMap[key] = numeroNota.toString();
             }
@@ -759,7 +759,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
                 }
             } else {
                 // NÃO existe nota transmitida no Supra para este produto
-                if (row.nota_fiscal && row.nota_fiscal !== '' && row.nota_fiscal !== '0') {
+                if (row.nota_fiscal && row.nota_fiscal !== '') {
                     await pgPool.query(`
                         UPDATE opme.cirurgias 
                         SET nota_fiscal = NULL, status_expedicao = '' 
@@ -819,7 +819,12 @@ router.post('/cirurgias', async (req, res) => {
                 if (item[key] !== undefined) {
                     fields.push(key);
                     placeholders.push(`$${i}`);
-                    values.push(item[key] === '' ? null : item[key]);
+                    let val = item[key] === '' ? null : item[key];
+                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao'].includes(key)) {
+                        const s = String(val).trim();
+                        if (s === '-' || s === "'" || s === '0') val = null;
+                    }
+                    values.push(val);
                     i++;
                 }
             }
@@ -917,7 +922,12 @@ router.put('/cirurgias', async (req, res) => {
                     if (item[key] !== undefined) {
                         fields.push(key);
                         placeholders.push(`$${i}`);
-                        values.push(item[key] === '' ? null : item[key]);
+                        let val = item[key] === '' ? null : item[key];
+                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao'].includes(key)) {
+                        const s = String(val).trim();
+                        if (s === '-' || s === "'" || s === '0') val = null;
+                    }
+                    values.push(val);
                         i++;
                     }
                 }
@@ -946,7 +956,12 @@ router.put('/cirurgias', async (req, res) => {
             for (const key of updateableColumns) {
                 if (item[key] !== undefined) {
                     fields.push(`${key} = $${i}`);
-                    values.push(item[key] === '' ? null : item[key]);
+                    let val = item[key] === '' ? null : item[key];
+                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao'].includes(key)) {
+                        const s = String(val).trim();
+                        if (s === '-' || s === "'" || s === '0') val = null;
+                    }
+                    values.push(val);
                     i++;
                 }
             }
@@ -1267,7 +1282,7 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
         await pgPool.query(`
             UPDATE opme.cirurgias 
             SET pedido = $1
-            WHERE contrato = $2 AND paciente = $3 AND data_cirurgia = $4
+            WHERE contrato = $2 AND paciente = $3 AND data_cirurgia::date = $4::date
         `, [novoCodigo.toString(), contrato, paciente, data_cirurgia]);
 
         // Limpar cache para que a grid principal reflita a mudança imediatamente
