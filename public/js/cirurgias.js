@@ -3697,9 +3697,9 @@ const OPME = (() => {
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 cursor-pointer transition-colors group';
                     tr.innerHTML = `
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-medium text-steel-800 dark:text-gray-200 group-hover:text-nexo-700 dark:group-hover:text-nexo-400 transition-colors">${item.contrato}</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm text-steel-600 dark:text-steel-400 text-center">${item.qtd_cirurgias}</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-semibold text-nexo-600 dark:text-nexo-400 text-right">${formatCurrency(item.total_faturar)}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-bold text-steel-800 dark:text-gray-200 group-hover:text-nexo-700 dark:group-hover:text-nexo-400 transition-colors">${item.contrato}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-bold text-steel-600 dark:text-steel-400 text-center">${item.qtd_cirurgias}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-bold text-nexo-600 dark:text-nexo-400 text-right">${formatCurrency(item.total_faturar)}</td>
                     `;
                     tr.onclick = () => {
                         // Fecha este modal
