@@ -202,19 +202,19 @@ const IA = (() => {
     // ==========================================
     function renderHeaders() {
         const thead = document.getElementById('iaTableHeader');
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
+        let html = '<tr class="text-white text-[12px] font-medium">';
 
         columns.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
             const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
             const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
+            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
 
             html += `
-                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle">
-                    <div class="flex items-center justify-center gap-3 w-full h-full">
-                        <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="IA.toggleSort('${col.key}')">
+                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle text-center">
+                    <div class="flex items-center justify-center w-full px-4">
+                        <div class="cursor-pointer hover:text-white/80 transition-colors text-center" onclick="IA.toggleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
                         <button onclick="IA.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none flex-shrink-0 ${filterColor} absolute right-2 top-1/2 -translate-y-1/2">
@@ -229,7 +229,7 @@ const IA = (() => {
 
         // Coluna de ações (apenas excluir)
         html += `<th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none text-center align-middle w-[50px]">
-            <svg class="w-3.5 h-3.5 mx-auto text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            <svg class="w-3.5 h-3.5 mx-auto opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
         </th>`;
         html += '</tr>';
         thead.innerHTML = html;

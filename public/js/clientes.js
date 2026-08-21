@@ -155,20 +155,20 @@ const ClientesGrid = (() => {
     // ==========================================
     const renderHeaders = () => {
         if (!elements.tableHeader) return;
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
+        let html = '<tr class="text-white text-[12px] font-medium">';
         
         columns.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
             const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
             const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
-            const isSticky = col.sticky ? 'sticky-col bg-gray-50 dark:bg-steel-900 border-r border-gray-200 dark:border-steel-700 shadow-[1px_0_0_rgba(229,231,235,1)] dark:shadow-[1px_0_0_rgba(55,65,81,1)]' : '';
+            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
+            const isSticky = col.sticky ? 'sticky-col bg-nexo-600 dark:bg-steel-900 border-r border-gray-200 dark:border-steel-700 shadow-[1px_0_0_rgba(229,231,235,1)] dark:shadow-[1px_0_0_rgba(55,65,81,1)]' : '';
 
             html += `
-                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle ${isSticky}">
-                    <div class="flex items-center justify-center w-full h-full">
-                        <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="ClientesGrid.toggleSort('${col.key}')">
+                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle text-center ${isSticky}">
+                    <div class="flex items-center justify-center w-full px-4">
+                        <div class="cursor-pointer hover:text-white/80 transition-colors text-center" onclick="ClientesGrid.toggleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
                     </div>
