@@ -569,8 +569,14 @@ async function generateObservacaoText(pgPool, ref, items) {
         const partes = [contratoCod];
         if (pregao) partes.push(`PE ${pregao}`);
         
-        const empenhos = [...new Set(items.map(i => i.empenho).filter(e => e && String(e).trim() !== ''))];
-        const autorizacoes = [...new Set(items.map(i => i.autorizacao).filter(a => a && String(a).trim() !== ''))];
+        const isValidValue = (val) => {
+            if (!val) return false;
+            const str = String(val).trim();
+            return str !== '' && str !== '-' && str !== "'";
+        };
+
+        const empenhos = [...new Set(items.map(i => i.empenho).filter(isValidValue))];
+        const autorizacoes = [...new Set(items.map(i => i.autorizacao).filter(isValidValue))];
 
         if (empenhos.length > 0) partes.push(`EMPENHO: ${empenhos.join(' / ')}`);
         if (autorizacoes.length > 0) partes.push(`AF: ${autorizacoes.join(' / ')}`);
