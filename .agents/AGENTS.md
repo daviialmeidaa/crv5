@@ -339,3 +339,21 @@ A geração de pedidos no banco de dados do Supra (`SGC` ou `SGC2`, resolvido di
    - Se o Hub mandar o valor como `0`, o código **DEVE inserir `0`** no Supra. 
    - **NUNCA faça fallback** automático para o `preco_venda` da tabela `produto` do Supra caso o valor do Hub seja `0`, ou o total do pedido no ERP inflacionará e não baterá com o total do Hub.
    - O ERP permite normalmente itens com valor `0` na expedição, desde que a `descricao` seja válida e os CSTs (`codigo_cst`, etc.) não sejam nulos.
+
+## Sincronização de Notas Fiscais (OPME -> Supra ERP)
+A rotina de sincronização de Notas Fiscais do OPME (`/api/opme/cirurgias/sync-notas`) possui regras cruciais de segurança e validação de status que não podem ser violadas, sob pena de exclusão indevida de dados ou falhas fatais no servidor (HTTP 500):
+
+1. **Dicionário de Status NFe do Supra (SGC / SGC2):**
+   - **Status Válido (Transmitida):** O código definitivo no banco de dados para notas fiscais válidas e emitidas é `id_situacao_nfe = 4`.
+   - **Status Inválido (Cancelada):** Notas fiscais canceladas ou inutilizadas assumem o status `id_situacao_nfe = 6`.
+   - **Legado:** Historicamente acreditava-se que o status correto era `2`. Por precaução de retrocompatibilidade, a validação backend DEVE aceitar tanto o status `4` quanto o `2` (`id_situacao_nfe === 4 || id_situacao_nfe === 2`).
+   - Se o script de sincronização buscar apenas o status `2`, ele tratará todas as notas válidas atuais (que são status `4`) como inválidas, causando a **exclusão em massa** dos números de notas do banco de dados local.
+
+2. **Prevenção de Crash Fatal (Anti-Null):**
+   - É comum que notas recém-geradas no ERP, rascunhos, ou notas corrompidas por cancelamento retornem a coluna `numero_nota` como nula (`NULL`) no SQL Server.
+   - Qualquer loop que processe o resultado das queries do Supra DEVE realizar checagens de falsy (`if (numeroNota)`) antes de tentar executar métodos como `.toString()`. 
+   - A falta dessa verificação causa uma exceção `TypeError: Cannot read properties of null/undefined (reading 'toString')` em tempo de execução, derrubando a API e retornando um Erro 500 para o usuário sem completar a sincronização.
+
+3. **Ciclo de Limpeza (Obrigatório):**
+   - A lógica da rota de sincronização foi projetada não apenas para puxar notas novas, mas para limpar notas que foram canceladas no ERP.
+   - O código **NÃO DEVE** usar `early returns` (`return res.json(...)`) caso não encontre nenhuma nota válida no Supra. O fluxo de execução deve obrigatoriamente descer até a rotina que itera sobre os registros locais, para que possa aplicar comandos `UPDATE opme.cirurgias SET nota_fiscal = NULL` nas linhas locais que possuíam notas que sumiram ou foram canceladas no ERP.
