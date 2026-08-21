@@ -94,7 +94,7 @@ def main():
             for row in rows_acc:
                 row_list = list(row)
                 if table_name == "Cirurgias":
-                    clean_cols = {"empenho", "autorizacao", "prontuario", "medico", "crm", "pedido", "nota_fiscal"}
+                    clean_cols = {"empenho", "autorizacao", "prontuario", "medico", "crm", "pedido", "nota_fiscal", "lote"}
                     for idx, col_name in enumerate(columns):
                         if col_name in clean_cols:
                             val = row_list[idx]

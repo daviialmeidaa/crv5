@@ -2009,7 +2009,7 @@ const OPME = (() => {
             document.getElementById('fcContratoInicio').value = row.inicio_ata ? row.inicio_ata.split('T')[0] : '';
             document.getElementById('fcContratoTermino').value = row.termino_ata ? row.termino_ata.split('T')[0] : '';
             
-            document.getElementById('fcDescricaoDetalhada').checked = row.descricao_detalhada === true;
+            document.getElementById('fcDescricaoDetalhada').checked = row.descricao_detalhada === true || row.descricao_detalhada === 'true' || row.descricao_detalhada === 1 || row.descricao_detalhada === '1' || row.descricao_detalhada === 't';
             
             // Decimals (visible but disabled in edit mode)
             document.getElementById('fcCasasDecimaisBlock').classList.remove('hidden');
