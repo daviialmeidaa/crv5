@@ -750,6 +750,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         }
 
         const supraNotesMap = {};
+        const pedidoToNfs = {};
 
         if (codigos.length > 0) {
             codigosStr = codigos.join(',');
@@ -767,6 +768,9 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
                 if (numeroNota && notasTransmitidas.has(numeroNota.toString()) && numeroNota.toString() !== '0') {
                     const key = `${numeroPedido}_${prodCodigoStr}`;
                     supraNotesMap[key] = numeroNota.toString();
+                    
+                    if (!pedidoToNfs[numeroPedido]) pedidoToNfs[numeroPedido] = new Set();
+                    pedidoToNfs[numeroPedido].add(numeroNota.toString());
                 }
             }
         }
@@ -777,28 +781,34 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         for (const row of cirurgiasResult.rows) {
             if (!row.cod_bio) continue;
             
-            const key = `${row.pedido}_${row.cod_bio.toString()}`;
-            const supraNota = supraNotesMap[key];
+            const nfsForPedidoSet = pedidoToNfs[row.pedido];
             
-            if (supraNota) {
-                // Existe nota transmitida no Supra para este produto
-                if (row.nota_fiscal !== supraNota) {
-                    await pgPool.query(`
-                        UPDATE opme.cirurgias 
-                        SET nota_fiscal = $1, status_expedicao = 'Ok' 
-                        WHERE id = $2
-                    `, [supraNota, row.id]);
-                    updatedCount++;
-                }
-            } else {
-                // NÃO existe nota transmitida no Supra para este produto
-                if (row.nota_fiscal && row.nota_fiscal !== '') {
-                    await pgPool.query(`
-                        UPDATE opme.cirurgias 
-                        SET nota_fiscal = NULL, status_expedicao = '' 
-                        WHERE id = $1
-                    `, [row.id]);
+            // Se o ERP não tem NENHUMA nota válida para este pedido (ex: todas canceladas)
+            if (!nfsForPedidoSet || nfsForPedidoSet.size === 0) {
+                if (row.nota_fiscal) {
+                    await pgPool.query('UPDATE opme.cirurgias SET nota_fiscal = NULL, status_expedicao = \'\' WHERE id = $1', [row.id]);
                     removedCount++;
+                }
+                continue;
+            }
+            
+            // Se o ERP tem notas válidas para este pedido
+            const nfsForPedido = Array.from(nfsForPedidoSet);
+            let novaNota = null;
+            
+            if (nfsForPedido.length === 1) {
+                // Se existe apenas UMA nota para o pedido todo, aplicamos a todos os itens (ignora se o cod_bio bate)
+                novaNota = nfsForPedido[0];
+            } else {
+                // Faturamento parcial (múltiplas notas para o mesmo pedido). Tentamos achar o produto exato.
+                const key = `${row.pedido}_${row.cod_bio.toString()}`;
+                novaNota = supraNotesMap[key] || null;
+            }
+
+            if (novaNota) {
+                if (row.nota_fiscal !== novaNota) {
+                    await pgPool.query('UPDATE opme.cirurgias SET nota_fiscal = $1, status_expedicao = \'Ok\' WHERE id = $2', [novaNota, row.id]);
+                    updatedCount++;
                 }
             }
         }
