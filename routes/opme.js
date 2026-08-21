@@ -568,8 +568,13 @@ async function generateObservacaoText(pgPool, ref, items) {
         // 4) Montar a primeira linha: CONTRATO | PE PREGAO | EMPENHO: xxx | AF: xxx
         const partes = [contratoCod];
         if (pregao) partes.push(`PE ${pregao}`);
-        if (ref.empenho) partes.push(`EMPENHO: ${ref.empenho}`);
-        if (ref.autorizacao) partes.push(`AF: ${ref.autorizacao}`);
+        
+        const empenhos = [...new Set(items.map(i => i.empenho).filter(e => e && String(e).trim() !== ''))];
+        const autorizacoes = [...new Set(items.map(i => i.autorizacao).filter(a => a && String(a).trim() !== ''))];
+
+        if (empenhos.length > 0) partes.push(`EMPENHO: ${empenhos.join(' / ')}`);
+        if (autorizacoes.length > 0) partes.push(`AF: ${autorizacoes.join(' / ')}`);
+
         let texto = partes.join(' | ');
 
         // 5) Bloco de dados do paciente
