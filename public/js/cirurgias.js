@@ -1906,7 +1906,8 @@ const OPME = (() => {
                 const localSelect = document.getElementById('fcLocal');
                 localSelect.innerHTML = '<option value="">Selecione...</option>';
                 unidadesCache.forEach(u => {
-                    localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
+                    const siglaUpper = (u.sigla || '').toUpperCase();
+                    localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${siglaUpper}</option>`;
                 });
 
                 localSelect.onchange = function () {
@@ -1923,13 +1924,16 @@ const OPME = (() => {
             console.error('Erro ao carregar unidades:', err);
         }
 
-        // Pré-preencher com hoje em ISO
+        // Pré-preencher com hoje no fuso local
         const dataInput = document.getElementById('fcData');
         const today = new Date();
-        dataInput.value = today.toISOString().split('T')[0];
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        dataInput.value = `${year}-${month}-${day}`;
 
-        // Adiciona uma linha vazia na tabela
-        addCirurgiaProduct();
+        // Adiciona uma linha vazia na tabela (REMOVIDO: usuário clica em adicionar)
+        // addCirurgiaProduct();
 
         if (canEditCirurgia) {
             btnSave.classList.remove('hidden');
@@ -2359,7 +2363,8 @@ const OPME = (() => {
                     const localSelect = document.getElementById('fcLocal');
                     localSelect.innerHTML = '<option value="">Selecione...</option>';
                     unidadesCache.forEach(u => {
-                        localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
+                        const siglaUpper = (u.sigla || '').toUpperCase();
+                        localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${siglaUpper}</option>`;
                     });
                     localSelect.value = ref.local_cirurgia || '';
 
