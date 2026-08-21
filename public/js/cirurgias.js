@@ -186,24 +186,24 @@ const OPME = (() => {
     // ==========================================
     function getToken() { return localStorage.getItem('token'); }
 
-    function formatCurrency(val) {
-        if (val === null || val === undefined || val === '' || val === '-') return '-';
+    function formatCurrency(val, casas = 2) {
+        if (val === null || val === undefined) return '-';
         const num = parseFloat(val);
-        if (isNaN(num)) return String(val);
-        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        if (isNaN(num)) return '-';
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: casas, maximumFractionDigits: casas });
     }
 
-    function formatCurrencyInput(val) {
+    function formatCurrencyInput(val, casas = 2) {
         if (val === null || val === undefined || val === '') return '';
         const num = parseFloat(val);
         if (isNaN(num)) return '';
-        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: casas, maximumFractionDigits: casas });
     }
 
     function parseCurrency(val) {
         if (!val) return null;
         if (typeof val === 'number') return val;
-        const cleaned = String(val).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+        const cleaned = String(val).replace(/[R$\s\xA0]/g, '').replace(/\./g, '').replace(',', '.');
         const num = parseFloat(cleaned);
         return isNaN(num) ? null : num;
     }
@@ -228,7 +228,15 @@ const OPME = (() => {
     }
 
     function formatCell(val, col, row) {
-        if (col.type === 'currency') return formatCurrency(val);
+        if (col.type === 'currency') {
+            let casas = 2;
+            if (row.contrato && window.contratosCasasMap && window.contratosCasasMap[row.contrato]) {
+                casas = window.contratosCasasMap[row.contrato];
+            } else if (row.id_contrato && window.contratosCasasMap && window.contratosCasasMap[row.id_contrato]) {
+                casas = window.contratosCasasMap[row.id_contrato];
+            }
+            return formatCurrency(val, casas);
+        }
         if (col.type === 'date') return formatDate(val);
         if (col.type === 'boolean') {
             return val ? `<span class="inline-block w-3 h-3 rounded-full bg-nexo-500 shadow-sm" title="Sim"></span>` : `<span class="inline-block w-3 h-3 rounded-full bg-steel-300 dark:bg-steel-600 shadow-sm" title="Não"></span>`;
@@ -323,6 +331,28 @@ const OPME = (() => {
         }
     }
 
+    async function loadContratos() {
+        try {
+            const res = await fetch('/api/opme/contratos', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (res.ok) {
+                state.contratos = await res.json();
+                
+                window.contratosCasasMap = {};
+                state.contratos.forEach(c => {
+                    window.contratosCasasMap[c.id_contrato] = c.decimais ? (c.casas || 2) : 2;
+                });
+                
+                populateSelect('fcContrato', state.contratos, 'id_contrato', 'id_contrato');
+                populateSelect('fcUnidadeContrato', state.contratos, 'id_contrato', 'id_contrato');
+                populateFilterSelect('filter-contrato', state.contratos, 'id_contrato', 'id_contrato');
+            }
+        } catch (e) {
+            console.error('Erro ao carregar contratos:', e);
+        }
+    }
+
     // ==========================================
     // 5. Pipeline: Filtro -> Ordenação -> Paginação
     // ==========================================
@@ -376,6 +406,24 @@ const OPME = (() => {
                 if (va > vb) return state.sort.dir === 'asc' ? 1 : -1;
                 return 0;
             });
+        } else if (state.currentTab === 'cirurgias') {
+            // Default grouping and sorting for cirurgias
+            state.filteredData.sort((a, b) => {
+                // 1. Data Cirurgia DESC
+                const dateA = a.data_cirurgia ? new Date(a.data_cirurgia).getTime() : 0;
+                const dateB = b.data_cirurgia ? new Date(b.data_cirurgia).getTime() : 0;
+                if (dateA !== dateB) return dateB - dateA;
+
+                // 2. Paciente ASC
+                const pacA = (a.paciente || '').toLowerCase();
+                const pacB = (b.paciente || '').toLowerCase();
+                if (pacA !== pacB) return pacA.localeCompare(pacB);
+
+                // 3. ID DESC
+                const idA = a.id || 0;
+                const idB = b.id || 0;
+                return idB - idA;
+            });
         }
 
         // 5.3 Paginação
@@ -402,19 +450,19 @@ const OPME = (() => {
         const thead = document.getElementById('opmeTableHead');
         if (!thead) return;
 
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[11px] font-medium">';
+        let html = '<tr class="text-white dark:text-gray-300 text-[11px] font-medium">';
         cols.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
             const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
             const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
+            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
 
             html += `
-                <th class="px-2 py-1.5 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[46px] select-none relative align-middle"
+                <th class="px-2 py-1.5 border-b border-nexo-700/50 dark:border-steel-700 whitespace-normal break-words h-[46px] select-none relative align-middle"
                      data-col="${col.key}">
                     <div class="flex items-center justify-center gap-1 w-full h-full px-3">
-                        <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
+                        <div class="cursor-pointer hover:text-nexo-100 dark:hover:text-white transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                         </div>
                         ${(col.key !== '_deadline' && col.type !== 'actions') ? `
@@ -898,10 +946,13 @@ const OPME = (() => {
     // ==========================================
     let bancoCodigosCache = [];
     let bancoCodigosTargetInput = null;
+    let bancoCodigosAutoAddRow = false;
 
-    async function openBancoCodigosLookup(labelEl) {
-        const block = labelEl.closest('.produto-box') || labelEl.closest('.product-block');
-        const codBioInput = block ? block.querySelector('.prod-cod-bio') : null;
+    async function openBancoCodigosLookup(labelEl, autoAddRow = false) {
+        bancoCodigosAutoAddRow = autoAddRow;
+        // Try to find the target input from the closest table row, or fallback to null (header click)
+        const row = labelEl ? labelEl.closest('tr') : null;
+        const codBioInput = row ? row.querySelector('.prod-cod-bio') : null;
         bancoCodigosTargetInput = codBioInput;
 
         const contrato = document.getElementById('fcContrato').value;
@@ -959,10 +1010,10 @@ const OPME = (() => {
                 <!-- Table -->
                 <div class="flex-1 overflow-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
-                        <thead class="sticky top-0 z-10 bg-gray-50 dark:bg-steel-900">
+                        <thead class="sticky top-0 z-10 bg-nexo-600 dark:bg-steel-900">
                             <tr id="bcLookupHeaders">
                                 ${BC_COLS.map(c => `
-                                    <th data-col="${c.key}" class="bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-gray-200 dark:border-steel-700 cursor-pointer select-none transition-all text-steel-500 dark:text-steel-400 hover:text-nexo-600 dark:hover:text-nexo-400">
+                                    <th data-col="${c.key}" class="bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-nexo-700 dark:border-steel-700 cursor-pointer select-none transition-all text-white dark:text-steel-400 hover:text-nexo-100 dark:hover:text-nexo-400">
                                         <span class="inline-flex items-center gap-1">${c.label}</span>
                                     </th>
                                 `).join('')}
@@ -1041,24 +1092,54 @@ const OPME = (() => {
                 return;
             }
 
-            tbody.innerHTML = filtered.map(item => `
+            const LIMIT = 100;
+            const toRender = filtered.slice(0, LIMIT);
+
+            let html = toRender.map(item => `
                 <tr class="cursor-pointer hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 border-b border-gray-100 dark:border-steel-700/50 transition-colors"
                     data-cod-bio="${item.cod_bio || ''}">
                     <td class="px-5 py-1.5 font-medium text-nexo-600 dark:text-nexo-400 whitespace-nowrap">${item.cod_bio || '-'}</td>
                     <td class="px-5 py-1.5 whitespace-nowrap">${item.cod_fab || '-'}</td>
-                    <td class="px-5 py-1.5 max-w-[200px]"><span class="line-clamp-1">${item.produto || '-'}</span></td>
-                    <td class="px-5 py-1.5 max-w-[200px]"><span class="line-clamp-1">${item.descricao_personalizada || '-'}</span></td>
+                    <td class="px-5 py-1.5 max-w-[200px]" title="${(item.produto || '').replace(/"/g, '&quot;')}"><span class="line-clamp-1">${item.produto || '-'}</span></td>
+                    <td class="px-5 py-1.5 max-w-[200px]" title="${(item.descricao_personalizada || '').replace(/"/g, '&quot;')}"><span class="line-clamp-1">${item.descricao_personalizada || '-'}</span></td>
                     <td class="px-5 py-1.5 whitespace-nowrap">${item.classificacao || '-'}</td>
                     <td class="px-5 py-1.5 whitespace-nowrap">${item.item_ata || '-'}</td>
                 </tr>
             `).join('');
 
+            if (filtered.length > LIMIT) {
+                html += `<tr><td colspan="6" class="px-6 py-4 text-center text-steel-400 dark:text-steel-500 text-[10px] bg-gray-50/50 dark:bg-steel-800/50">Mostrando os primeiros ${LIMIT} resultados de ${filtered.length}. Use a pesquisa para refinar.</td></tr>`;
+            }
+
+            tbody.innerHTML = html;
+
             tbody.querySelectorAll('tr[data-cod-bio]').forEach(tr => {
                 tr.addEventListener('click', () => {
                     const codBio = tr.getAttribute('data-cod-bio');
-                    if (bancoCodigosTargetInput && codBio) {
-                        bancoCodigosTargetInput.value = codBio;
-                        fetchProdutoInfo(bancoCodigosTargetInput);
+                    let targetInput = bancoCodigosTargetInput;
+                    
+                    if (bancoCodigosAutoAddRow) {
+                        // Create a new empty row
+                        addCirurgiaProduct();
+                        // Find the newly added row's input (the last one)
+                        const rows = document.querySelectorAll('.product-row .prod-cod-bio');
+                        if (rows.length > 0) {
+                            targetInput = rows[rows.length - 1];
+                        }
+                    } else if (!targetInput) {
+                        // Se não veio de uma linha específica e não deve auto-adicionar, encontrar a primeira linha vazia
+                        const emptyRows = document.querySelectorAll('.product-row .prod-cod-bio');
+                        for (const inp of emptyRows) {
+                            if (!inp.value || inp.value.trim() === '') {
+                                targetInput = inp;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (targetInput && codBio) {
+                        targetInput.value = codBio;
+                        fetchProdutoInfo(targetInput);
                     }
                     modal.remove();
                 });
@@ -1773,6 +1854,7 @@ const OPME = (() => {
     function init() {
         fetchKpis();
         fetchData();
+        loadContratos();
 
         const selectLimit = document.getElementById('itemsPerPage');
         if (selectLimit) {
@@ -1795,6 +1877,7 @@ const OPME = (() => {
         if (!state.selectedContract) return;
 
         editingCirurgiaItems = []; // Flag de que é inserção
+        deletedItemIds = []; // Reset deleted items tracking
 
         const modal = document.getElementById('cirurgiaModal');
 
@@ -1806,7 +1889,7 @@ const OPME = (() => {
         const btnGerarPedidoSupra = document.getElementById('btnGerarPedidoSupra');
 
         document.getElementById('cirurgiaForm').reset();
-        document.getElementById('cirurgiaProductsContainer').innerHTML = '';
+        document.getElementById('cirurgiaProductsTbody').innerHTML = '';
 
         titleSpan.textContent = `Nova Cirurgia - ${state.selectedContract.id_contrato}`;
 
@@ -1823,7 +1906,8 @@ const OPME = (() => {
                 const localSelect = document.getElementById('fcLocal');
                 localSelect.innerHTML = '<option value="">Selecione...</option>';
                 unidadesCache.forEach(u => {
-                    localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
+                    const siglaUpper = (u.sigla || '').toUpperCase();
+                    localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${siglaUpper}</option>`;
                 });
 
                 localSelect.onchange = function () {
@@ -1840,15 +1924,16 @@ const OPME = (() => {
             console.error('Erro ao carregar unidades:', err);
         }
 
+        // Pré-preencher com hoje no fuso local
         const dataInput = document.getElementById('fcData');
-        if (typeof window.CustomDatepicker !== 'undefined') {
-            window.CustomDatepicker.init(dataInput);
-        } else if (typeof window.initCustomDatepickers === 'function') {
-            window.initCustomDatepickers();
-        }
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        dataInput.value = `${year}-${month}-${day}`;
 
-        // Adiciona um bloco vazio e limpa IDs
-        addCirurgiaProduct();
+        // Adiciona uma linha vazia na tabela (REMOVIDO: usuário clica em adicionar)
+        // addCirurgiaProduct();
 
         if (canEditCirurgia) {
             btnSave.classList.remove('hidden');
@@ -1917,6 +2002,25 @@ const OPME = (() => {
             document.getElementById('fcContratoTermino').value = row.termino_ata ? row.termino_ata.split('T')[0] : '';
             
             document.getElementById('fcDescricaoDetalhada').checked = row.descricao_detalhada === true;
+            
+            // Decimals (visible but disabled in edit mode)
+            document.getElementById('fcCasasDecimaisBlock').classList.remove('hidden');
+            const checkbox = document.getElementById('fcAplicarDecimais');
+            const casasInput = document.getElementById('fcCasas');
+            const container = document.getElementById('fcCasasDecimaisContainer');
+            
+            checkbox.checked = row.decimais === true;
+            checkbox.disabled = true;
+            
+            if (row.decimais) {
+                container.classList.remove('hidden');
+                casasInput.value = row.casas || 2;
+            } else {
+                container.classList.add('hidden');
+                casasInput.value = 2;
+            }
+            casasInput.disabled = true;
+
         } else {
             // New mode
             editingContratoId = null;
@@ -1939,6 +2043,17 @@ const OPME = (() => {
             document.getElementById('fcContratoInicio').value = '';
             document.getElementById('fcContratoTermino').value = '';
             document.getElementById('fcDescricaoDetalhada').checked = false;
+            
+            document.getElementById('fcCasasDecimaisBlock').classList.remove('hidden');
+            const checkbox = document.getElementById('fcAplicarDecimais');
+            const casasInput = document.getElementById('fcCasas');
+            const container = document.getElementById('fcCasasDecimaisContainer');
+            
+            checkbox.checked = false;
+            checkbox.disabled = false;
+            casasInput.value = '2';
+            casasInput.disabled = false;
+            container.classList.add('hidden');
         }
 
         modal.classList.remove('hidden');
@@ -1978,7 +2093,9 @@ const OPME = (() => {
             total_ata: document.getElementById('fcContratoTotalAta').value,
             inicio_ata: document.getElementById('fcContratoInicio').value,
             termino_ata: document.getElementById('fcContratoTermino').value,
-            descricao_detalhada: document.getElementById('fcDescricaoDetalhada').checked
+            descricao_detalhada: document.getElementById('fcDescricaoDetalhada').checked,
+            decimais: document.getElementById('fcAplicarDecimais').checked,
+            casas: parseInt(document.getElementById('fcCasas').value) || 2
         };
 
         if (!payload.id_contrato || !payload.cliente) {
@@ -2137,10 +2254,22 @@ const OPME = (() => {
     }
 
     function switchCirurgiaModalTab(tabId) {
-        document.getElementById('cirurgiaTabDados').classList.add('hidden');
-        document.getElementById('cirurgiaTabDados').classList.remove('block');
-        document.getElementById('cirurgiaTabObs').classList.add('hidden');
-        document.getElementById('cirurgiaTabObs').classList.remove('block');
+        const tabDados = document.getElementById('cirurgiaTabDados');
+        const tabObs = document.getElementById('cirurgiaTabObs');
+
+        // Antes de esconder a aba Dados, capturar sua altura para preservar no Observações
+        if (tabId === 'obs' && tabDados && !tabDados.classList.contains('hidden')) {
+            const h = tabDados.offsetHeight;
+            tabObs.style.setProperty('--cirurgia-tab-height', h + 'px');
+            // Também aplicar min-height diretamente no wrapper da aba obs
+            const obsWrapper = tabObs.querySelector('div');
+            if (obsWrapper) obsWrapper.style.minHeight = h + 'px';
+        }
+
+        tabDados.classList.add('hidden');
+        tabDados.classList.remove('block');
+        tabObs.classList.add('hidden');
+        tabObs.classList.remove('block');
 
         document.getElementById('tabBtnCirurgiaDados').classList.remove('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
         document.getElementById('tabBtnCirurgiaDados').classList.add('border-transparent', 'text-steel-500');
@@ -2148,13 +2277,13 @@ const OPME = (() => {
         document.getElementById('tabBtnCirurgiaObs').classList.add('border-transparent', 'text-steel-500');
 
         if (tabId === 'dados') {
-            document.getElementById('cirurgiaTabDados').classList.remove('hidden');
-            document.getElementById('cirurgiaTabDados').classList.add('block');
+            tabDados.classList.remove('hidden');
+            tabDados.classList.add('block');
             document.getElementById('tabBtnCirurgiaDados').classList.remove('border-transparent', 'text-steel-500');
             document.getElementById('tabBtnCirurgiaDados').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
         } else if (tabId === 'obs') {
-            document.getElementById('cirurgiaTabObs').classList.remove('hidden');
-            document.getElementById('cirurgiaTabObs').classList.add('block');
+            tabObs.classList.remove('hidden');
+            tabObs.classList.add('block');
             document.getElementById('tabBtnCirurgiaObs').classList.remove('border-transparent', 'text-steel-500');
             document.getElementById('tabBtnCirurgiaObs').classList.add('border-nexo-500', 'text-nexo-600', 'dark:text-nexo-400');
             // Auto-resize quando a aba se torna visível
@@ -2178,6 +2307,7 @@ const OPME = (() => {
 
         if (items.length === 0) return;
         editingCirurgiaItems = items;
+        deletedItemIds = []; // Reset deleted items tracking
 
         const ref = items[0]; // Referência para campos globais
         const modal = document.getElementById('cirurgiaModal');
@@ -2187,7 +2317,7 @@ const OPME = (() => {
         const btnGerarPedidoSupra = document.getElementById('btnGerarPedidoSupra');
 
         document.getElementById('cirurgiaForm').reset();
-        document.getElementById('cirurgiaProductsContainer').innerHTML = '';
+        document.getElementById('cirurgiaProductsTbody').innerHTML = '';
 
         titleSpan.textContent = `${ref.paciente} (${formatDate(ref.data_cirurgia)})`;
 
@@ -2213,7 +2343,7 @@ const OPME = (() => {
             console.error('Erro ao gerar observação', e);
         }
 
-        // Preencher Campos Globais
+        // Preencher Campos de Identificação
         document.getElementById('fcContrato').value = ref.contrato || '';
         document.getElementById('fcAcao').value = ref.acao || '';
         document.getElementById('fcPaciente').value = ref.paciente || '';
@@ -2233,7 +2363,8 @@ const OPME = (() => {
                     const localSelect = document.getElementById('fcLocal');
                     localSelect.innerHTML = '<option value="">Selecione...</option>';
                     unidadesCache.forEach(u => {
-                        localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${u.sigla}</option>`;
+                        const siglaUpper = (u.sigla || '').toUpperCase();
+                        localSelect.innerHTML += `<option value="${u.sigla}" data-cod="${u.cod_cliente}">${siglaUpper}</option>`;
                     });
                     localSelect.value = ref.local_cirurgia || '';
 
@@ -2251,27 +2382,13 @@ const OPME = (() => {
             console.error('Erro ao carregar unidades:', err);
         }
 
-        // Configurar o datepicker customizado e inicializá-content
+        // Preencher data em ISO
         const dataInput = document.getElementById('fcData');
         dataInput.value = ref.data_cirurgia ? ref.data_cirurgia.split('T')[0] : '';
-        if (typeof window.CustomDatepicker !== 'undefined') {
-            window.CustomDatepicker.init(dataInput);
-        } else if (typeof window.initCustomDatepickers === 'function') {
-            window.initCustomDatepickers();
-        }
 
-        // Preencher Faturamento e Status
-        document.getElementById('fcEmpenho').value = ref.empenho || '';
-        document.getElementById('fcAutorizacao').value = ref.autorizacao || '';
-        document.getElementById('fcPedido').value = ref.pedido || '';
-        document.getElementById('fcNotaFiscal').value = ref.nota_fiscal || '';
-        document.getElementById('fcRetornoConsignacao').value = ref.retorno_consignacao || '';
-        document.getElementById('fcStatusExpedicao').value = ref.status_expedicao || '';
-        document.getElementById('fcAutorizacaoOpme').value = ref.autorizacao_opme || '';
-
-        // Preencher Produtos
+        // Preencher Produtos na tabela (cada item com seus próprios dados de faturamento)
         items.forEach((item, index) => {
-            renderProductBlock(item, index);
+            renderProductRow(item, index);
         });
 
         calculateTotalCirurgia();
@@ -2289,7 +2406,9 @@ const OPME = (() => {
             btnDelete.classList.add('hidden');
         }
 
-        if (canEditCirurgia && !ref.pedido) {
+        // Mostrar botão "Gerar Pedido" se ALGUM item ainda não tiver pedido
+        const anyWithoutPedido = items.some(i => !i.pedido);
+        if (canEditCirurgia && anyWithoutPedido) {
             btnGerarPedidoSupra.classList.remove('hidden');
         } else {
             btnGerarPedidoSupra.classList.add('hidden');
@@ -2302,133 +2421,290 @@ const OPME = (() => {
         });
     }
 
-    function renderProductBlock(item, idx) {
-        const container = document.getElementById('cirurgiaProductsContainer');
-        const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
-        const itemPregaoHtml = `<input type="hidden" class="prod-item-pregao" value="${item.item_pregao || ''}">`;
-        const itemText = item.item_pregao ? ` - Item ${item.item_pregao}` : '';
-        const titleText = (item.produto || 'NOVO PRODUTO') + itemText;
+    // Array para rastrear IDs de itens removidos (para exclusão no PUT)
+    let deletedItemIds = [];
 
-        const block = document.createElement('div');
-        block.className = 'produto-box product-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
-
-        block.innerHTML = `
-            ${idHtml}
-            ${itemPregaoHtml}
-            <!-- Header (Collapsible) -->
-            <div class="accordion-header flex items-center justify-between px-4 py-2.5 bg-white/60 dark:bg-steel-700/40 border-b border-gray-100 dark:border-steel-600 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-steel-700/60 select-none" onclick="OPME.toggleCirurgiaProduct(this)">
-                <div class="flex items-center gap-2">
-                    <svg class="accordion-icon w-4 h-4 text-steel-400 transition-transform -rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    <span class="prod-title-text text-xs font-bold text-nexo-600 dark:text-nexo-400 tracking-wide uppercase">${titleText}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="event.stopPropagation(); OPME.removeCirurgiaProduct(this)" class="btn-remove-produto flex items-center gap-1 text-[11px] text-steel-400 hover:text-red-500 transition-colors" title="Remover Produto">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
-                        </svg>
-                        Remover
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Body -->
-            <div class="accordion-body hidden">
-                <div class="p-4 space-y-4">
-                    <div class="flex gap-4">
-                        <!-- Coluna Esquerda (50%) — Grid 2x3 -->
-                        <div class="w-1/2 grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-medium text-nexo-600 dark:text-nexo-400 mb-1 cursor-pointer hover:underline inline-flex items-center gap-1" onclick="event.stopPropagation(); OPME.openBancoCodigosLookup(this)">
-                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                                    Cód. Bio
-                                </label>
-                                <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.cod_bio || ''}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Tipo de Cirurgia</label>
-                                <input type="text" readonly tabindex="-1" class="prod-tipo w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all pointer-events-none" value="${item.classificacao || ''}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Lote</label>
-                                <input type="text" class="prod-lote w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase" value="${item.lote || ''}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Quantidade</label>
-                                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all text-right" value="${item.quantidade_utilizada || 0}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Unitário</label>
-                                <input type="text" readonly tabindex="-1" class="prod-vlr-un w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all text-right pointer-events-none" value="${formatCurrencyInput(item.valor_unitario)}">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Valor Total</label>
-                                <input type="text" readonly tabindex="-1" class="prod-vlr-tot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all text-right font-semibold pointer-events-none" value="${formatCurrencyInput(item.valor_total)}">
-                            </div>
-                        </div>
-
-                        <!-- Coluna Direita (50%) — Produto + Descrição -->
-                        <div class="w-1/2 flex flex-col gap-3">
-                            <div class="flex-1 flex flex-col">
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Produto</label>
-                                <textarea readonly tabindex="-1" class="prod-nome w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all resize-none flex-1 pointer-events-none" style="min-height: 48px;">${item.produto || ''}</textarea>
-                            </div>
-                            <div class="flex-1 flex flex-col">
-                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Descrição Personalizada</label>
-                                <textarea readonly tabindex="-1" class="prod-desc w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all resize-none flex-1 pointer-events-none" style="min-height: 48px;">${item.descricao_personalizada || ''}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        container.appendChild(block);
+    function getCirurgiaModalCasas() {
+        const fcContrato = document.getElementById('fcContrato');
+        const selectedContrato = fcContrato ? fcContrato.value : null;
+        if (selectedContrato && window.contratosCasasMap && window.contratosCasasMap[selectedContrato]) {
+            return window.contratosCasasMap[selectedContrato];
+        }
+        return 2;
     }
 
-    function toggleCirurgiaProduct(headerEl) {
-        const body = headerEl.nextElementSibling;
-        const icon = headerEl.querySelector('svg');
-        body.classList.toggle('hidden');
-        if (body.classList.contains('hidden')) {
-            icon.classList.remove('rotate-180');
-        } else {
-            icon.classList.add('rotate-180');
-        }
+    function renderProductRow(item, idx) {
+        const tbody = document.getElementById('cirurgiaProductsTbody');
+        const tr = document.createElement('tr');
+        tr.className = 'product-row group border-b border-gray-100 dark:border-steel-700 hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors align-middle';
+        tr.dataset.idx = idx;
+        const casas = getCirurgiaModalCasas();
+
+        const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
+        const itemPregaoHtml = `<input type="hidden" class="prod-item-pregao" value="${item.item_pregao || ''}">`;
+
+        // Estilo flat: inputs transparentes sem borda, focáveis ao clicar
+        const cellInput = 'w-full bg-transparent text-[11px] text-steel-800 dark:text-gray-200 outline-none text-center py-1 border-0 focus:ring-1 focus:ring-nexo-500/40 rounded transition-all';
+        const cellReadonly = 'text-[11px] text-steel-600 dark:text-steel-400';
+        const cellSelect = 'w-full bg-transparent text-[11px] text-steel-800 dark:text-gray-200 outline-none text-center py-1 border-0 focus:ring-1 focus:ring-nexo-500/40 rounded cursor-pointer appearance-none';
+
+        const retConsigVal = (item.retorno_consignacao || '').toUpperCase();
+        const autOpmeVal = (item.autorizacao_opme || '').toUpperCase();
+
+        tr.innerHTML = `
+            ${idHtml}
+            ${itemPregaoHtml}
+            <td class="px-2 py-1.5 text-center whitespace-nowrap sticky left-0 bg-white dark:bg-steel-800 group-hover:bg-[#e8f9fa] dark:group-hover:bg-[#1c3442] transition-colors z-[5]">
+                <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio ${cellInput}" value="${item.cod_bio || ''}" style="min-width:60px">
+            </td>
+            <td class="col-tipoCirurgia px-2 py-1.5 text-center min-w-[80px]">
+                <span class="prod-tipo ${cellReadonly}">${item.classificacao || '-'}</span>
+            </td>
+            <td class="px-2 py-1.5 min-w-[140px] max-w-[180px]">
+                <div class="prod-nome text-[11px] text-steel-700 dark:text-gray-300 line-clamp-3 leading-tight" title="${(item.produto || '').replace(/"/g, '&quot;')}">${item.produto || ''}</div>
+            </td>
+            <td class="col-descPersonalizada px-2 py-1.5 min-w-[160px] max-w-[200px]">
+                <div class="prod-desc text-[11px] text-steel-700 dark:text-gray-300 line-clamp-3 leading-tight" title="${(item.descricao_personalizada || '').replace(/"/g, '&quot;')}">${item.descricao_personalizada || ''}</div>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-lote ${cellInput} uppercase" value="${item.lote || ''}" style="min-width:50px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}" style="width:40px">
+            </td>
+            <td class="px-2 py-1.5 text-right whitespace-nowrap">
+                <input type="text" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
+            </td>
+            <td class="px-2 py-1.5 text-right whitespace-nowrap">
+                <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total, casas)}</span>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-empenho ${cellInput} uppercase" value="${item.empenho || ''}" style="min-width:55px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-autorizacao ${cellInput} uppercase" value="${item.autorizacao || ''}" style="min-width:55px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-pedido ${cellInput}" value="${item.pedido || ''}" style="min-width:50px">
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <select class="prod-retorno-consignacao ${cellSelect}" style="min-width:85px">
+                    <option value="">-</option>
+                    <option value="AGUARDANDO" ${retConsigVal === 'AGUARDANDO' ? 'selected' : ''}>AGUARDANDO</option>
+                    <option value="FEITO" ${retConsigVal === 'FEITO' ? 'selected' : ''}>FEITO</option>
+                </select>
+            </td>
+            <td class="col-expedicao px-2 py-1.5 text-center whitespace-nowrap">
+                <span class="prod-status-expedicao ${cellReadonly}">${item.status_expedicao || '-'}</span>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <select class="prod-autorizacao-opme ${cellSelect}" style="min-width:90px">
+                    <option value="">-</option>
+                    <option value="NÃO FATURAR" ${autOpmeVal === 'NÃO FATURAR' ? 'selected' : ''}>NÃO FATURAR</option>
+                    <option value="FATURAR" ${autOpmeVal === 'FATURAR' ? 'selected' : ''}>FATURAR</option>
+                </select>
+            </td>
+            <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <input type="text" class="prod-nota-fiscal ${cellInput} uppercase" value="${item.nota_fiscal || ''}" style="min-width:50px">
+            </td>
+            <td class="px-1 py-1.5 text-center whitespace-nowrap">
+                <button type="button" onclick="OPME.removeCirurgiaProduct(this)" class="p-1 rounded text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Remover Produto">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
     }
 
     function addCirurgiaProduct() {
-        const currentCount = document.querySelectorAll('.product-block').length;
-        renderProductBlock({
+        const currentCount = document.querySelectorAll('.product-row').length;
+        renderProductRow({
             quantidade_utilizada: 1,
-            valor_unitario: 0,
-            valor_total: 0
+            valor_unitario: null,
+            valor_total: null
         }, currentCount);
     }
 
     function removeCirurgiaProduct(btn) {
-        btn.closest('.product-block').remove();
+        const tr = btn.closest('tr');
+        const idInput = tr.querySelector('.prod-id');
+        if (idInput && idInput.value) {
+            deletedItemIds.push(parseInt(idInput.value));
+        }
+        tr.remove();
         calculateTotalCirurgia();
     }
 
     function calculateTotalCirurgia() {
         let globalTotal = 0;
-        document.querySelectorAll('.product-block').forEach(block => {
-            const qtdeInput = block.querySelector('.prod-qtde');
-            const vlrUnInput = block.querySelector('.prod-vlr-un');
-            const vlrTotInput = block.querySelector('.prod-vlr-tot');
+        const casas = getCirurgiaModalCasas();
+        document.querySelectorAll('.product-row').forEach(tr => {
+            const qtdeInput = tr.querySelector('.prod-qtde');
+            const vlrUnEl = tr.querySelector('.prod-vlr-un');
+            const vlrTotEl = tr.querySelector('.prod-vlr-tot');
 
-            const qtde = parseFloat(qtdeInput.value) || 0;
-            const vlrUn = parseCurrency(vlrUnInput.value) || 0;
+            const qtdeVal = qtdeInput.value;
+            const vlrUnVal = vlrUnEl.textContent || vlrUnEl.value;
+            const qtde = parseFloat(qtdeVal);
+            const vlrUn = parseCurrency(vlrUnVal);
 
-            const total = qtde * vlrUn;
-            vlrTotInput.value = formatCurrencyInput(total);
-
-            globalTotal += total;
+            if (isNaN(qtde) || vlrUn === null) {
+                vlrTotEl.textContent = '';
+            } else {
+                const total = qtde * vlrUn;
+                vlrTotEl.textContent = formatCurrencyInput(total, casas);
+                globalTotal += total;
+            }
         });
-        document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal);
+        document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal, casas);
+    }
+
+    // Header select bulk-fill: ao clicar no cabeçalho de Ret. Consig. ou Aut. OPME, mostra dropdown e preenche todas as linhas
+    function toggleHeaderSelect(type, thEl) {
+        // Remove qualquer dropdown anterior
+        const existing = document.getElementById('headerSelectDropdown');
+        if (existing) { existing.remove(); return; }
+
+        let options = [];
+        let selector = '';
+        let title = '';
+        if (type === 'retConsig') {
+            options = [{ value: '', label: 'Nenhum' }, { value: 'AGUARDANDO', label: 'Aguardando' }, { value: 'FEITO', label: 'Feito' }];
+            selector = '.prod-retorno-consignacao';
+            title = 'Ret. Consignação';
+        } else if (type === 'autOpme') {
+            options = [{ value: '', label: 'Nenhum' }, { value: 'NÃO FATURAR', label: 'Não Faturar' }, { value: 'FATURAR', label: 'Faturar' }];
+            selector = '.prod-autorizacao-opme';
+            title = 'Aut. OPME';
+        }
+
+        const dropdown = document.createElement('div');
+        dropdown.id = 'headerSelectDropdown';
+        dropdown.className = 'fixed mt-2 z-[200]';
+        dropdown.style.cssText = 'min-width: 170px;';
+        dropdown.innerHTML = `
+            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm" style="animation: fadeIn 0.15s ease-out">
+                <div class="px-3 py-2 border-b border-gray-100 dark:border-steel-700/50">
+                    <span class="text-[10px] font-semibold text-nexo-600 dark:text-nexo-400 uppercase tracking-wider">Aplicar a todos</span>
+                </div>
+                <div class="py-1" id="headerSelectOptions"></div>
+            </div>
+        `;
+
+        const optionsContainer = dropdown.querySelector('#headerSelectOptions');
+        options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'w-full px-3 py-2 flex items-center gap-2 text-xs text-steel-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-nexo-500/15 hover:text-nexo-600 dark:hover:text-nexo-300 transition-all duration-150 cursor-pointer';
+            btn.innerHTML = `
+                <span class="w-1.5 h-1.5 rounded-full ${opt.value ? 'bg-nexo-500' : 'bg-gray-300 dark:bg-steel-500'} flex-shrink-0"></span>
+                <span>${opt.label}</span>
+            `;
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll(`.product-row ${selector}`).forEach(sel => {
+                    sel.value = opt.value;
+                });
+                dropdown.remove();
+            };
+            optionsContainer.appendChild(btn);
+        });
+
+        document.body.appendChild(dropdown);
+        const rect = thEl.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom}px`;
+        dropdown.style.left = `${rect.left + (rect.width / 2) - 85}px`; // 85 is half of 170px (min-width)
+
+        // Remover dropdown ao clicar fora ou dar scroll
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (!dropdown.contains(e.target) && e.target !== thEl) {
+                    dropdown.remove();
+                    document.removeEventListener('click', closeHandler);
+                    window.removeEventListener('scroll', closeHandler, { capture: true });
+                }
+            };
+            document.addEventListener('click', closeHandler);
+            window.addEventListener('scroll', closeHandler, { capture: true });
+        }, 10);
+    }
+
+    // Menu de visibilidade de colunas
+    function toggleColumnMenu() {
+        const existing = document.getElementById('colVisibilityMenu');
+        if (existing) { existing.remove(); return; }
+
+        const table = document.getElementById('cirurgiaProductsTable');
+        const columns = [
+            { key: 'tipoCirurgia', label: 'Tipo Cirurgia', cls: 'show-tipoCirurgia' },
+            { key: 'descPersonalizada', label: 'Desc. Personalizada', cls: 'show-descPersonalizada' },
+            { key: 'expedicao', label: 'Expedição', cls: 'show-expedicao' }
+        ];
+
+        const wrapper = document.getElementById('colToggleWrapper');
+        const button = wrapper.querySelector('button');
+        const dropdown = document.createElement('div');
+        dropdown.id = 'colVisibilityMenu';
+        dropdown.className = 'fixed z-[200]';
+        dropdown.style.cssText = 'min-width: 190px;';
+        dropdown.innerHTML = `
+            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden" style="animation: fadeIn 0.15s ease-out">
+                <div class="px-3 py-2 border-b border-gray-100 dark:border-steel-700/50">
+                    <span class="text-[10px] font-semibold text-nexo-600 dark:text-nexo-400 uppercase tracking-wider">Colunas visíveis</span>
+                </div>
+                <div class="py-1" id="colVisibilityOptions"></div>
+            </div>
+        `;
+
+        const optionsContainer = dropdown.querySelector('#colVisibilityOptions');
+        columns.forEach(col => {
+            const isVisible = table.classList.contains(col.cls);
+            const item = document.createElement('label');
+            item.className = 'w-full px-3 py-2 flex items-center gap-2.5 text-xs text-steel-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-steel-700/50 transition-all cursor-pointer select-none';
+            item.innerHTML = `
+                <input type="checkbox" ${isVisible ? 'checked' : ''} class="w-3.5 h-3.5 rounded border-gray-300 dark:border-steel-500 text-nexo-500 focus:ring-nexo-500/30 cursor-pointer accent-nexo-500">
+                <span>${col.label}</span>
+            `;
+            const checkbox = item.querySelector('input');
+            checkbox.addEventListener('change', () => {
+                if (checkbox.checked) {
+                    table.classList.add(col.cls);
+                } else {
+                    table.classList.remove(col.cls);
+                }
+            });
+            optionsContainer.appendChild(item);
+        });
+
+        document.body.appendChild(dropdown);
+        
+        // Position it exactly below the button and aligned to the right edge
+        const rect = button.getBoundingClientRect();
+        const dropRect = dropdown.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom + 4}px`;
+        dropdown.style.left = `${rect.right - dropRect.width}px`;
+
+        // Update position on scroll
+        const scrollHandler = () => {
+            const newRect = button.getBoundingClientRect();
+            dropdown.style.top = `${newRect.bottom + 4}px`;
+            dropdown.style.left = `${newRect.right - dropRect.width}px`;
+        };
+        window.addEventListener('scroll', scrollHandler, { capture: true });
+
+        // Fechar ao clicar fora
+        const closeHandler = (e) => {
+            if (!dropdown.contains(e.target) && !e.target.closest('#colToggleWrapper button')) {
+                dropdown.remove();
+                document.removeEventListener('click', closeHandler);
+                window.removeEventListener('scroll', scrollHandler, { capture: true });
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 10);
     }
 
     async function fetchProdutoInfo(input) {
-        const block = input.closest('.produto-box');
+        const row = input.closest('tr');
         const codBio = input.value.trim();
         const contrato = document.getElementById('fcContrato').value;
 
@@ -2446,13 +2722,19 @@ const OPME = (() => {
             if (res.status === 404) {
                 document.getElementById('errorModal').classList.remove('hidden');
                 // Limpa os campos
-                block.querySelector('.prod-tipo').value = '';
-                block.querySelector('.prod-nome').value = '';
-                block.querySelector('.prod-desc').value = '';
-                block.querySelector('.prod-vlr-un').value = '';
-                block.querySelector('.prod-item-pregao').value = '';
-
-                block.querySelector('.prod-title-text').textContent = 'NOVO PRODUTO';
+                row.querySelector('.prod-tipo').textContent = '-';
+                row.querySelector('.prod-nome').textContent = '';
+                row.querySelector('.prod-desc').textContent = '';
+                
+                const vlrUnEl = row.querySelector('.prod-vlr-un');
+                if (vlrUnEl) {
+                    vlrUnEl.value = '';
+                    vlrUnEl.setAttribute('readonly', 'true');
+                    vlrUnEl.classList.add('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                    vlrUnEl.classList.remove('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                }
+                
+                row.querySelector('.prod-item-pregao').value = '';
                 calculateTotalCirurgia();
                 return;
             }
@@ -2461,14 +2743,27 @@ const OPME = (() => {
 
             const data = await res.json();
 
-            block.querySelector('.prod-tipo').value = data.classificacao || '';
-            block.querySelector('.prod-nome').value = data.produto || '';
-            block.querySelector('.prod-desc').value = data.descricao_personalizada || '';
-            block.querySelector('.prod-item-pregao').value = data.item_ata || '';
-            block.querySelector('.prod-vlr-un').value = formatCurrencyInput(data.valor_unitario);
-
-            const itemText = data.item_ata ? ` - Item ${data.item_ata}` : '';
-            block.querySelector('.prod-title-text').textContent = (data.produto || 'NOVO PRODUTO') + itemText;
+            row.querySelector('.prod-tipo').textContent = data.classificacao || '-';
+            row.querySelector('.prod-nome').textContent = data.produto || '';
+            row.querySelector('.prod-nome').title = data.produto || '';
+            row.querySelector('.prod-desc').textContent = data.descricao_personalizada || '';
+            row.querySelector('.prod-desc').title = data.descricao_personalizada || '';
+            row.querySelector('.prod-item-pregao').value = data.item_ata || '';
+            
+            const vlrUnEl = row.querySelector('.prod-vlr-un');
+            if (vlrUnEl) {
+                const casas = getCirurgiaModalCasas();
+                vlrUnEl.value = formatCurrencyInput(data.valor_unitario, casas);
+                if (parseFloat(data.valor_unitario || 0) === 0) {
+                    vlrUnEl.removeAttribute('readonly');
+                    vlrUnEl.classList.remove('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                    vlrUnEl.classList.add('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                } else {
+                    vlrUnEl.setAttribute('readonly', 'true');
+                    vlrUnEl.classList.add('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                    vlrUnEl.classList.remove('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                }
+            }
 
             calculateTotalCirurgia();
         } catch (err) {
@@ -2488,7 +2783,7 @@ const OPME = (() => {
     async function saveCirurgia() {
         if (!canEditCirurgia) return;
 
-        // Capturar globais
+        // Capturar globais (apenas identificação da cirurgia)
         const commonData = {
             contrato: document.getElementById('fcContrato').value,
             acao: document.getElementById('fcAcao').value,
@@ -2499,29 +2794,30 @@ const OPME = (() => {
             medico: document.getElementById('fcMedico').value.toUpperCase(),
             crm: document.getElementById('fcCRM').value.toUpperCase(),
             cod_cliente: document.getElementById('fcCodCliente').value,
-            empenho: document.getElementById('fcEmpenho').value.toUpperCase(),
-            autorizacao: document.getElementById('fcAutorizacao').value.toUpperCase(),
-            pedido: document.getElementById('fcPedido').value,
-            nota_fiscal: document.getElementById('fcNotaFiscal').value.toUpperCase(),
-            retorno_consignacao: document.getElementById('fcRetornoConsignacao').value.toUpperCase(),
-            status_expedicao: document.getElementById('fcStatusExpedicao').value.toUpperCase(),
-            autorizacao_opme: document.getElementById('fcAutorizacaoOpme').value.toUpperCase(),
         };
 
         const itemsPayload = [];
-        document.querySelectorAll('.product-block').forEach(block => {
-            const idInput = block.querySelector('.prod-id');
+        document.querySelectorAll('.product-row').forEach(tr => {
+            const idInput = tr.querySelector('.prod-id');
             const itemData = {
-                ...commonData, // Mesclar os dados comuns no item
-                cod_bio: block.querySelector('.prod-cod-bio').value,
-                classificacao: block.querySelector('.prod-tipo').value.toUpperCase(),
-                produto: block.querySelector('.prod-nome').value,
-                descricao_personalizada: block.querySelector('.prod-desc').value,
-                quantidade_utilizada: block.querySelector('.prod-qtde').value,
-                lote: block.querySelector('.prod-lote').value.toUpperCase(),
-                valor_unitario: parseCurrency(block.querySelector('.prod-vlr-un').value),
-                valor_total: parseCurrency(block.querySelector('.prod-vlr-tot').value),
-                item_pregao: block.querySelector('.prod-item-pregao') ? block.querySelector('.prod-item-pregao').value || null : null
+                ...commonData,
+                cod_bio: tr.querySelector('.prod-cod-bio').value,
+                classificacao: (tr.querySelector('.prod-tipo').textContent || '').toUpperCase().replace('-', ''),
+                produto: tr.querySelector('.prod-nome').textContent || '',
+                descricao_personalizada: tr.querySelector('.prod-desc').textContent || '',
+                quantidade_utilizada: tr.querySelector('.prod-qtde').value,
+                lote: (tr.querySelector('.prod-lote').value || '').toUpperCase(),
+                valor_unitario: parseCurrency(tr.querySelector('.prod-vlr-un').value || tr.querySelector('.prod-vlr-un').textContent),
+                valor_total: parseCurrency(tr.querySelector('.prod-vlr-tot').textContent),
+                item_pregao: tr.querySelector('.prod-item-pregao') ? tr.querySelector('.prod-item-pregao').value || null : null,
+                // Faturamento por produto (lidos da linha)
+                empenho: (tr.querySelector('.prod-empenho').value || '').toUpperCase(),
+                autorizacao: (tr.querySelector('.prod-autorizacao').value || '').toUpperCase(),
+                pedido: tr.querySelector('.prod-pedido').value || '',
+                retorno_consignacao: (tr.querySelector('.prod-retorno-consignacao').value || '').toUpperCase(),
+                status_expedicao: (tr.querySelector('.prod-status-expedicao').textContent || '').toUpperCase().replace('-', ''),
+                autorizacao_opme: (tr.querySelector('.prod-autorizacao-opme').value || '').toUpperCase(),
+                nota_fiscal: (tr.querySelector('.prod-nota-fiscal').value || '').toUpperCase(),
             };
 
             if (idInput && idInput.value) {
@@ -2536,7 +2832,14 @@ const OPME = (() => {
             const btnSave = document.getElementById('btnSaveCirurgia');
             const originalText = btnSave.innerHTML;
             btnSave.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
-            btnSave.disabled = true;
+            const payload = { 
+                items: itemsPayload,
+                contrato: commonData.contrato
+            };
+            // Na edição, enviar IDs dos itens deletados para o backend remover
+            if (!isCreating && deletedItemIds.length > 0) {
+                payload.deletedIds = [...deletedItemIds];
+            }
 
             const res = await fetch('/api/opme/cirurgias', {
                 method: isCreating ? 'POST' : 'PUT',
@@ -2544,7 +2847,7 @@ const OPME = (() => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${getToken()}`
                 },
-                body: JSON.stringify({ items: itemsPayload })
+                body: JSON.stringify(payload)
             });
 
             if (!res.ok) throw new Error('Erro ao salvar cirurgia');
@@ -2630,7 +2933,10 @@ const OPME = (() => {
 
             if (response.ok) {
                 showToast(`Pedido Nº ${data.pedido} gerado com sucesso no Supra!`, 'success');
-                document.getElementById('fcPedido').value = data.pedido;
+                // Preencher a coluna Pedido em TODAS as linhas da tabela
+                document.querySelectorAll('.product-row .prod-pedido').forEach(input => {
+                    input.value = data.pedido;
+                });
                 ref.pedido = data.pedido;
                 btnGerar.classList.add('hidden'); // Oculta o botão pois já tem pedido
                 fetchData(); // Atualiza a grid por trás
@@ -2821,11 +3127,11 @@ const OPME = (() => {
                         <!-- Linha 2 -->
                         <div>
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Unitário</label>
-                            <input type="text" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAta(this)" class="sa-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario) : ''}">
+                            <input type="text" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAta(this)" class="sa-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario, casas) : ''}">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Total</label>
-                            <input type="text" readonly class="sa-vlrtot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total) : ''}">
+                            <input type="text" readonly class="sa-vlrtot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total, casas) : ''}">
                         </div>
                     </div>
                     
@@ -2862,6 +3168,7 @@ const OPME = (() => {
 
     function calculateTotalSaldoAta(input) {
         const block = input.closest('.saldoata-block');
+        const casas = getSaldoAtaCasas(block);
         const qtdeStr = block.querySelector('.sa-qtde').value;
         const qtde = parseFloat(qtdeStr) || 0;
 
@@ -2869,7 +3176,7 @@ const OPME = (() => {
         const vlrUn = parseCurrency(vlrUnStr) || 0;
 
         const total = qtde * vlrUn;
-        block.querySelector('.sa-vlrtot').value = formatCurrencyInput(total);
+        block.querySelector('.sa-vlrtot').value = formatCurrencyInput(total, casas);
     }
 
     async function saveSaldoAta() {
@@ -2955,6 +3262,14 @@ const OPME = (() => {
     // ==========================================
     let currentSaldoAtaHospitalEditId = null;
     let availableUnidades = [];
+
+    function getSaldoAtaHospitalCasas(block) {
+        const contrato = document.getElementById('fcSaldoAtaHospitalContrato').value;
+        if (contrato && window.contratosCasasMap && window.contratosCasasMap[contrato]) {
+            return window.contratosCasasMap[contrato];
+        }
+        return 2;
+    }
 
     async function fetchUnidadesForContract(contrato) {
         try {
@@ -3049,6 +3364,7 @@ const OPME = (() => {
         const container = document.getElementById('saldoAtaHospitalProductsContainer');
         const block = document.createElement('div');
         block.className = 'sah-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
+        const casas = getSaldoAtaHospitalCasas(block);
 
         let removeBtnHtml = '';
         if (canRemove) {
@@ -3101,11 +3417,11 @@ const OPME = (() => {
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Unitário *</label>
-                            <input type="text" class="sah-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario) : ''}" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAtaHospital(this)">
+                            <input type="text" class="sah-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario, casas) : ''}" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAtaHospital(this)">
                         </div>
                         <div class="col-span-2">
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Total</label>
-                            <input type="text" readonly class="sah-vlrtot font-bold text-emerald-600 dark:text-emerald-400 w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg outline-none cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total) : ''}">
+                            <input type="text" readonly class="sah-vlrtot font-bold text-emerald-600 dark:text-emerald-400 w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg outline-none cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total, casas) : ''}">
                         </div>
                     </div>
                     
@@ -3141,6 +3457,7 @@ const OPME = (() => {
 
     function calculateTotalSaldoAtaHospital(input) {
         const block = input.closest('.sah-block');
+        const casas = getSaldoAtaHospitalCasas(block);
         const qtdeStr = block.querySelector('.sah-qtde').value;
         const qtde = parseFloat(qtdeStr) || 0;
 
@@ -3148,7 +3465,7 @@ const OPME = (() => {
         const vlrUn = parseCurrency(vlrUnStr) || 0;
 
         const total = qtde * vlrUn;
-        block.querySelector('.sah-vlrtot').value = formatCurrencyInput(total);
+        block.querySelector('.sah-vlrtot').value = formatCurrencyInput(total, casas);
     }
 
     async function saveSaldoAtaHospital() {
@@ -3279,10 +3596,11 @@ const OPME = (() => {
         openCirurgiaModal,
         openNewCirurgiaModal,
         closeCirurgiaModal,
-        toggleCirurgiaProduct,
         addCirurgiaProduct,
         removeCirurgiaProduct,
         calculateTotalCirurgia,
+        toggleHeaderSelect,
+        toggleColumnMenu,
         saveCirurgia,
         gerarPedidoSupra,
         deleteCirurgia,
@@ -3321,6 +3639,7 @@ const OPME = (() => {
             contractToToggle = null;
             document.getElementById('toggleContractModal').classList.add('hidden');
         },
-        confirmToggleContract
+        confirmToggleContract,
+        getCirurgiaModalCasas
     };
 })();

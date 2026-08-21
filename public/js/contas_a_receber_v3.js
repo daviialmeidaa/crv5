@@ -229,30 +229,28 @@ const ContasGrid = (function () {
 
     function renderHeaders() {
         const thead = document.getElementById('contasTableHeader');
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
+        let html = '<tr class="text-white text-[12px] font-medium">';
 
         columns.forEach(col => {
-            const isSticky = col.sticky ? 'sticky-col bg-gray-50 dark:bg-steel-900 border-r shadow-[1px_0_0_rgba(229,231,235,1)] dark:shadow-[1px_0_0_rgba(55,65,81,1)]' : '';
+            const isSticky = col.sticky ? 'sticky-col bg-nexo-600 dark:bg-steel-900 border-r shadow-[1px_0_0_rgba(229,231,235,1)] dark:shadow-[1px_0_0_rgba(55,65,81,1)]' : '';
             const sortIcon = state.sort.key === col.key
                 ? (state.sort.dir === 'asc' ? '↑' : '↓')
                 : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
             const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
             const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
+            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
 
             html += `
-                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none ${isSticky}">
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="cursor-pointer flex-1 hover:text-nexo-600 transition-colors" onclick="ContasGrid.toggleSort('${col.key}')">
-                            ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
-                        </div>
-                        <button onclick="ContasGrid.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none ${filterColor}">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
+                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative text-center align-middle ${isSticky}">
+                    <div class="flex items-center justify-center cursor-pointer hover:text-white/80 transition-colors w-full px-4" onclick="ContasGrid.toggleSort('${col.key}')">
+                        ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                     </div>
+                    <button onclick="ContasGrid.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none absolute right-2 top-1/2 -translate-y-1/2 ${filterColor}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
                 </th>
             `;
         });

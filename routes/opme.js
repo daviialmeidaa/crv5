@@ -24,7 +24,7 @@ router.get('/contratos', async (req, res) => {
         
         const result = await pgPool.query(`
             SELECT id, id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, 
-                   total_ata, inicio_ata, termino_ata, inativo
+                   total_ata, inicio_ata, termino_ata, inativo, decimais, casas
             FROM opme.contratos
             ${whereClause}
             ORDER BY id DESC
@@ -40,7 +40,7 @@ router.get('/contratos', async (req, res) => {
 // ==========================================
 router.post('/contratos', async (req, res) => {
     try {
-        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, descricao_detalhada } = req.body;
+        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, descricao_detalhada, decimais, casas } = req.body;
         
         if (!id_contrato || !cliente) {
             return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
@@ -50,13 +50,14 @@ router.post('/contratos', async (req, res) => {
 
         const result = await pgPool.query(`
             INSERT INTO opme.contratos 
-            (id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo, descricao_detalhada)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11)
+            (id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo, descricao_detalhada, decimais, casas)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11, $12, $13)
             RETURNING id
         `, [
             id_contrato, empresa || null, material || null, cod_cliente || null, cliente, uf || null, 
             pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
-            inicio_ata || null, termino_ata || null, descricao_detalhada ? true : false
+            inicio_ata || null, termino_ata || null, descricao_detalhada ? true : false,
+            decimais === true, casas || 2
         ]);
 
         res.json({ success: true, id: result.rows[0].id, message: 'Contrato criado com sucesso' });
@@ -191,7 +192,7 @@ router.get('/cirurgias', async (req, res) => {
             query += ' WHERE contrato = $1';
             params.push(contrato);
         }
-        query += ' ORDER BY id DESC';
+        query += ' ORDER BY data_cirurgia DESC NULLS LAST, paciente ASC, id DESC';
         
         const cacheKey = `opme:cirurgias:${contrato || 'all'}`;
         const cached = await getCache(cacheKey);
@@ -635,15 +636,14 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         if (!contrato) return res.status(400).json({ error: 'Contrato não informado' });
 
         let cirurgiasResult = await pgPool.query(`
-            SELECT id, cod_bio, pedido 
+            SELECT id, cod_bio, pedido, nota_fiscal 
             FROM opme.cirurgias 
             WHERE contrato = $1 
               AND pedido IS NOT NULL 
-              AND (nota_fiscal IS NULL OR nota_fiscal = '' OR nota_fiscal = '0')
         `, [contrato]);
 
         if (cirurgiasResult.rows.length === 0) {
-            return res.json({ message: 'Nenhuma cirurgia pendente de nota com pedido gerado.', updated: 0 });
+            return res.json({ message: 'Nenhuma cirurgia com pedido gerado para sincronizar.', updated: 0, removed: 0 });
         }
 
         let pedidos = [...new Set(cirurgiasResult.rows.map(r => r.pedido))];
@@ -685,20 +685,26 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         
         const nfsStr = nfs.join(',');
         const cabRes = await mssqlPool.request().query(`
-            SELECT codigo, numero_nota 
+            SELECT codigo, numero_nota, id_situacao_nfe 
             FROM ${sgcDbName}.dbo.nota_fiscal_venda 
             WHERE numero_nota IN (${nfsStr})
         `);
 
         const codigoToNf = {};
         const codigos = [];
+        const notasTransmitidas = new Set();
+        
         for (const row of cabRes.recordset) {
             codigoToNf[row.codigo] = row.numero_nota;
             codigos.push(row.codigo);
+            // Considera apenas notas "Transmitida" (id_situacao_nfe = 2)
+            if (row.id_situacao_nfe === 2) {
+                notasTransmitidas.add(row.numero_nota.toString());
+            }
         }
 
         if (codigos.length === 0) {
-            return res.json({ message: 'Notas Fiscais encontradas na view, mas não na tabela principal do Supra.', updated: 0 });
+            return res.json({ message: 'Notas Fiscais encontradas na view, mas não na tabela principal do Supra.', updated: 0, removed: 0 });
         }
 
         const codigosStr = codigos.join(',');
@@ -708,29 +714,56 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             WHERE nf_numero IN (${codigosStr})
         `);
 
-        let updatedCount = 0;
+        // Mapeia (pedido_codBio) -> numeroNota (apenas notas transmitidas)
+        const supraNotesMap = {};
         for (const item of itemRes.recordset) {
             const numeroNota = codigoToNf[item.nf_numero];
             const numeroPedido = nfMap[numeroNota];
             const prodCodigoStr = item.prod_codigo;
             
-            const matches = cirurgiasResult.rows.filter(r => 
-                r.pedido == numeroPedido && 
-                r.cod_bio && 
-                r.cod_bio.toString() === prodCodigoStr
-            );
+            if (notasTransmitidas.has(numeroNota.toString())) {
+                const key = `${numeroPedido}_${prodCodigoStr}`;
+                supraNotesMap[key] = numeroNota.toString();
+            }
+        }
+
+        let updatedCount = 0;
+        let removedCount = 0;
+        
+        for (const row of cirurgiasResult.rows) {
+            if (!row.cod_bio) continue;
             
-            for (const match of matches) {
-                await pgPool.query(`
-                    UPDATE opme.cirurgias 
-                    SET nota_fiscal = $1, status_expedicao = 'Ok' 
-                    WHERE id = $2
-                `, [numeroNota.toString(), match.id]);
-                updatedCount++;
+            const key = `${row.pedido}_${row.cod_bio.toString()}`;
+            const supraNota = supraNotesMap[key];
+            
+            if (supraNota) {
+                // Existe nota transmitida no Supra para este produto
+                if (row.nota_fiscal !== supraNota) {
+                    await pgPool.query(`
+                        UPDATE opme.cirurgias 
+                        SET nota_fiscal = $1, status_expedicao = 'Ok' 
+                        WHERE id = $2
+                    `, [supraNota, row.id]);
+                    updatedCount++;
+                }
+            } else {
+                // NÃO existe nota transmitida no Supra para este produto
+                if (row.nota_fiscal && row.nota_fiscal !== '' && row.nota_fiscal !== '0') {
+                    await pgPool.query(`
+                        UPDATE opme.cirurgias 
+                        SET nota_fiscal = NULL, status_expedicao = '' 
+                        WHERE id = $1
+                    `, [row.id]);
+                    removedCount++;
+                }
             }
         }
         
-        res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount });
+        // Limpa o cache para garantir que a grid carregue as NFs atualizadas
+        await clearCache(`opme:cirurgias:all`);
+        await clearCache(`opme:cirurgias:${contrato}`);
+        
+        res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount, removed: removedCount });
 
     } catch (err) {
         console.error('[OPME] Erro ao sincronizar notas fiscais:', err.message);
@@ -812,11 +845,13 @@ router.post('/cirurgias', async (req, res) => {
             console.error('[OPME] Erro ao gerar observação automática (não-fatal):', obsErr.message);
         }
 
-        res.json({ success: true, message: 'Nova cirurgia criada com sucesso.', id: newId });
-        
-        // Invalida o cache
+        // Invalida o cache ANTES de enviar a resposta
         await clearCache(`opme:cirurgias:all`);
-        await clearCache(`opme:cirurgias:${items[0].contrato}`);
+        if (items.length > 0 && items[0].contrato) {
+            await clearCache(`opme:cirurgias:${items[0].contrato}`);
+        }
+
+        res.json({ success: true, message: 'Nova cirurgia criada com sucesso.', id: newId });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao criar cirurgias (POST):', err.message);
@@ -831,7 +866,7 @@ router.post('/cirurgias', async (req, res) => {
 router.put('/cirurgias', async (req, res) => {
     const client = await pgPool.connect();
     try {
-        const { items } = req.body;
+        const { items, deletedIds, contrato } = req.body;
         if (!Array.isArray(items)) {
             return res.status(400).json({ error: 'Payload inválido. Esperado array "items".' });
         }
@@ -840,6 +875,15 @@ router.put('/cirurgias', async (req, res) => {
 
         // PREVENÇÃO DE DESINCRONISMO (VBA): Sincroniza a sequence com o MAIOR ID real antes de inserir novos itens na edição
         await client.query(`SELECT setval('opme.cirurgias_id_seq', COALESCE((SELECT MAX(id) FROM opme.cirurgias), 1))`);
+
+        // Deletar itens removidos pelo usuário na edição
+        if (Array.isArray(deletedIds) && deletedIds.length > 0) {
+            const safeIds = deletedIds.filter(id => Number.isInteger(Number(id)));
+            if (safeIds.length > 0) {
+                const params = safeIds.map((_, idx) => `$${idx + 1}`).join(',');
+                await client.query(`DELETE FROM opme.cirurgias WHERE id IN (${params})`, safeIds.map(Number));
+            }
+        }
 
         for (const item of items) {
             if (!item.id) {
@@ -905,11 +949,13 @@ router.put('/cirurgias', async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ success: true, message: 'Cirurgia(s) atualizada(s) com sucesso' });
-        
-        // Invalida o cache
+
+        // Invalida o cache ANTES de enviar a resposta para evitar race conditions no frontend
         await clearCache(`opme:cirurgias:all`);
-        await clearCache(`opme:cirurgias:${items[0].contrato}`);
+        const targetContrato = contrato || (items.length > 0 ? items[0].contrato : null);
+        if (targetContrato) await clearCache(`opme:cirurgias:${targetContrato}`);
+
+        res.json({ success: true, message: 'Cirurgia(s) atualizada(s) com sucesso' });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao atualizar cirurgias (PUT):', err.message);
@@ -1020,6 +1066,27 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
         const empenho = ref.autorizacao || ref.empenho || '';
         const cliforCodigo = ref.cod_cliente || 0;
         
+        // Determinar observações (padrão vs nota fiscal)
+        let obsPedido = observacao || '';
+        let obsNotaFiscal = observacao || '';
+
+        const unidadeRes = await pgPool.query(`SELECT ir, observacoes FROM opme.unidades WHERE contrato = $1 AND cod_cliente = $2`, [contrato, cliforCodigo]);
+        if (unidadeRes.rows.length > 0) {
+            const unid = unidadeRes.rows[0];
+            if (unid.ir && unid.observacoes && unid.observacoes.trim() !== '') {
+                // O texto que vem do front já traz a observação de IR calculada.
+                // Na nota fiscal fica o texto completo.
+                obsNotaFiscal = observacao || '';
+                
+                // No pedido, removemos o bloco de IR (localizamos o início da string de observação da unidade e cortamos)
+                const obsBase = unid.observacoes.trim();
+                const idx = obsPedido.indexOf(obsBase);
+                if (idx !== -1) {
+                    obsPedido = obsPedido.substring(0, idx).trim();
+                }
+            }
+        }
+        
         const pool = await getPool();
         let success = false;
         let novoCodigo = 0;
@@ -1046,20 +1113,21 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                 }
 
                 const reqInsert = new sql.Request(transaction);
-                reqInsert.input('obs', sql.NVarChar(sql.MAX), observacao || '');
+                reqInsert.input('obs_pedido', sql.NVarChar(sql.MAX), obsPedido);
+                reqInsert.input('obs_nota_fiscal', sql.NVarChar(sql.MAX), obsNotaFiscal);
                 reqInsert.input('contato', sql.NVarChar(40), contrato || '');
                 reqInsert.input('empenho', sql.NVarChar(40), empenho || '');
                 await reqInsert.query(`
                     INSERT INTO ${dbName}.dbo.pedido (
-                        codigo, numero_pedido, clifor_codigo, data, tipoped_codigo, 
+                        codigo, numero_pedido, clifor_codigo, data, data_entrega, tipoped_codigo, 
                         vend_codigo, condpg_codigo, cob_codigo, id_situacao, numero_empenho_compra_publica,
-                        listapr_codigo, empr_codigo, observacao_nota_fiscal, nome_contato,
+                        listapr_codigo, empr_codigo, observacao, observacao_nota_fiscal, nome_contato,
                         valor_total, quantidade_total_produtos, id_estoque, id_frete, 
                         id_faturamento, id_nota_fiscal, id_emissao_nota_fiscal, vend_codigo_2
                     ) VALUES (
-                        ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), 57,
+                        ${novoCodigo}, ${novoCodigo}, ${cliforCodigo}, GETDATE(), GETDATE(), 57,
                         ${vendCodigo}, 2, 1, 3, @empenho,
-                        1, 0, @obs, @contato,
+                        1, 0, @obs_pedido, @obs_nota_fiscal, @contato,
                         ${valorTotal}, ${quantidadeTotal}, 1, 1, 1, 1, 1, ${vendCodigo}
                     )
                 `);
@@ -1123,7 +1191,7 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                         INSERT INTO ${dbName}.dbo.pedido_item (
                             codigo, ped_codigo, prod_codigo, quantidade, valor_unitario, 
                             quantidade_comercializacao, valor_unitario_comercializacao, descricao,
-                            unidade, unid_unidade_comercializacao,
+                            unidade, unid_unidade_comercializacao, unidade_tributacao, quantidade_tributacao,
                             id_desconto_acrescimo, id_base_calculo_st, id_calculo_preco,
                             id_metodo_calculo_preco_venda, codigo_cst, valor_custo, 
                             valor_unitario_cadastro, preco_custo_produto,
@@ -1135,7 +1203,7 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
                         ) VALUES (
                             ${novoItemCodigo}, ${novoCodigo}, '${prodCod}', ${qtd}, ${vlr},
                             ${qtd}, ${vlr}, '${finalDescricao}',
-                            '${pUnid}', '${pUnid}',
+                            '${pUnid}', '${pUnid}', '${pUnid}', ${qtd},
                             1, 1, 4,
                             1, '${pCst}', ${pPrecoCusto},
                             ${pPrecoCusto}, ${pPrecoCusto},
@@ -1190,6 +1258,10 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
             SET pedido = $1
             WHERE contrato = $2 AND paciente = $3 AND data_cirurgia = $4
         `, [novoCodigo.toString(), contrato, paciente, data_cirurgia]);
+
+        // Limpar cache para que a grid principal reflita a mudança imediatamente
+        await clearCache(`opme:cirurgias:all`);
+        if (contrato) await clearCache(`opme:cirurgias:${contrato}`);
 
         res.json({ success: true, pedido: novoCodigo });
     } catch (err) {
