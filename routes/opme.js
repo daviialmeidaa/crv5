@@ -815,7 +815,7 @@ router.post('/cirurgias', async (req, res) => {
                 'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
                 'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
                 'descricao_personalizada', 'quantidade_utilizada', 'lote', 
-                'valor_unitario', 'valor_total', 'item_pregao'
+                'valor_unitario', 'valor_total', 'item_pregao', 'modalidade'
             ];
 
             for (const key of insertColumns) {
@@ -918,7 +918,7 @@ router.put('/cirurgias', async (req, res) => {
                     'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
                     'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
                     'descricao_personalizada', 'quantidade_utilizada', 'lote', 
-                    'valor_unitario', 'valor_total', 'item_pregao'
+                    'valor_unitario', 'valor_total', 'item_pregao', 'modalidade'
                 ];
 
                 for (const key of insertColumns) {
@@ -953,7 +953,7 @@ router.put('/cirurgias', async (req, res) => {
                 'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
                 'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
                 'descricao_personalizada', 'quantidade_utilizada', 'lote', 
-                'valor_unitario', 'valor_total'
+                'valor_unitario', 'valor_total', 'item_pregao', 'modalidade'
             ];
 
             for (const key of updateableColumns) {
