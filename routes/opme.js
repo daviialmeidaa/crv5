@@ -1057,6 +1057,8 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
         if (items.length === 0) {
             return res.status(404).json({ error: 'Nenhum item encontrado para esta cirurgia.' });
         }
+        
+        const itemIds = items.map(i => i.id);
 
         const ref = items[0];
         if (ref.pedido) {
@@ -1278,12 +1280,12 @@ router.post('/cirurgias/gerar-pedido', async (req, res) => {
             return res.status(500).json({ error: 'Falha ao gerar pedido no ERP Supra.', details: lastError?.message });
         }
 
-        // 3. Atualizar registros no PostgreSQL
+        // 3. Atualizar registros no PostgreSQL usando os IDs exatos encontrados no início
         await pgPool.query(`
             UPDATE opme.cirurgias 
             SET pedido = $1
-            WHERE contrato = $2 AND paciente = $3 AND data_cirurgia::date = $4::date
-        `, [novoCodigo.toString(), contrato, paciente, data_cirurgia]);
+            WHERE id = ANY($2)
+        `, [novoCodigo.toString(), itemIds]);
 
         // Limpar cache para que a grid principal reflita a mudança imediatamente
         await clearCache(`opme:cirurgias:all`);
