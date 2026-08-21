@@ -732,7 +732,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         if (nfs.length > 0) {
             const nfsStr = nfs.join(',');
             const cabRes = await mssqlPool.request().query(`
-                SELECT codigo, numero_nota, id_situacao_nfe 
+                SELECT codigo, numero_nota, id_situacao_nfe, situacao 
                 FROM ${sgcDbName}.dbo.nota_fiscal_venda 
                 WHERE numero_nota IN (${nfsStr})
             `);
@@ -740,8 +740,10 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
             for (const row of cabRes.recordset) {
                 codigoToNf[row.codigo] = row.numero_nota;
                 codigos.push(row.codigo);
-                // Considera notas "Transmitida" (id_situacao_nfe = 4 ou 2)
-                if ((row.id_situacao_nfe === 4 || row.id_situacao_nfe === 2) && row.numero_nota) {
+                // Status Eletrônico (SEFAZ): 4 = Autorizada, 6 = Cancelada
+                // Status Interno (ERP): 2 = Faturada, 3 = Cancelada
+                // Considera válida se for Faturada (2) e não estiver cancelada (6 ou 3)
+                if (row.situacao === 2 && row.id_situacao_nfe !== 6 && row.numero_nota) {
                     notasTransmitidas.add(row.numero_nota.toString());
                 }
             }
