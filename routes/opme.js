@@ -853,9 +853,9 @@ router.post('/cirurgias', async (req, res) => {
                     fields.push(key);
                     placeholders.push(`$${i}`);
                     let val = item[key] === '' ? null : item[key];
-                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao'].includes(key)) {
+                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao', 'prontuario', 'medico', 'crm'].includes(key)) {
                         const s = String(val).trim();
-                        if (s === '-' || s === "'" || s === '0') val = null;
+                        if (s === '-' || s === "'" || s === '0' || s === '/' || s === '') val = null;
                     }
                     values.push(val);
                     i++;
@@ -956,9 +956,9 @@ router.put('/cirurgias', async (req, res) => {
                         fields.push(key);
                         placeholders.push(`$${i}`);
                         let val = item[key] === '' ? null : item[key];
-                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao'].includes(key)) {
+                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao', 'prontuario', 'medico', 'crm'].includes(key)) {
                         const s = String(val).trim();
-                        if (s === '-' || s === "'" || s === '0') val = null;
+                        if (s === '-' || s === "'" || s === '0' || s === '/' || s === '') val = null;
                     }
                     values.push(val);
                         i++;
@@ -990,9 +990,9 @@ router.put('/cirurgias', async (req, res) => {
                 if (item[key] !== undefined) {
                     fields.push(`${key} = $${i}`);
                     let val = item[key] === '' ? null : item[key];
-                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao'].includes(key)) {
+                    if (val !== null && ['nota_fiscal', 'pedido', 'empenho', 'autorizacao', 'prontuario', 'medico', 'crm'].includes(key)) {
                         const s = String(val).trim();
-                        if (s === '-' || s === "'" || s === '0') val = null;
+                        if (s === '-' || s === "'" || s === '0' || s === '/' || s === '') val = null;
                     }
                     values.push(val);
                     i++;
