@@ -605,6 +605,9 @@ async function generateObservacaoText(pgPool, ref, items) {
         if (ref.crm) {
             texto += `\nCRM: ${ref.crm}`;
         }
+        if (ref.prontuario) {
+            texto += `\nPRONTUÁRIO: ${ref.prontuario}`;
+        }
 
         // 6) Local da cirurgia
         const nomeHospital = unidade.hospital || localSigla || '';
