@@ -938,7 +938,7 @@ const OPME = (() => {
                 showToast(`Sincronização concluída: ${msg.join(' e ')}.`, 'success');
                 fetchData(); // Recarrega o grid
             } else {
-                showToast(data.message || 'Nenhuma atualização encontrada.', 'info');
+                showToast(data.message || 'Sincronização finalizada. Nada de novo por aqui.', 'success');
             }
         } catch (err) {
             console.error(err);

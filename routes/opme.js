@@ -807,7 +807,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         await clearCache(`opme:cirurgias:all`);
         await clearCache(`opme:cirurgias:${contrato}`);
         
-        res.json({ message: 'Sincronização finalizada com sucesso.', updated: updatedCount, removed: removedCount });
+        res.json({ message: 'Sincronização finalizada. Nada de novo por aqui.', updated: updatedCount, removed: removedCount });
 
     } catch (err) {
         console.error('Erro na sincronização de notas fiscais:', err);
