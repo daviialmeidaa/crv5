@@ -89,6 +89,7 @@ const OPME = (() => {
             { key: 'valor_unitario', label: 'Valor Unitário', type: 'currency' },
             { key: 'valor_total', label: 'Valor Total', type: 'currency' },
             { key: 'item_pregao', label: 'Item do Pregão' },
+            { key: 'modalidade', label: 'Modalidade' },
             { key: 'empenho', label: 'Empenho' },
             { key: 'autorizacao', label: 'Autorização' },
             { key: 'pedido', label: 'Pedido' },
@@ -501,8 +502,9 @@ const OPME = (() => {
             const cursorClass = 'cursor-pointer';
             const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 relative z-0 hover:z-10 group';
             const clickHandler = `onclick="OPME.handleRowClick(event, ${idx}, '${state.currentTab}')"`;
+            const modalidadeAttr = (row.modalidade === 'Doação' || row.modalidade === 'DOAÇÃO') ? 'data-modalidade="DOAÇÃO"' : '';
 
-            html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
+            html += `<tr ${modalidadeAttr} class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
                          ${clickHandler}>`;
 
             cols.forEach(col => {
@@ -2481,10 +2483,16 @@ const OPME = (() => {
                 <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}" style="width:40px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
-                <input type="text" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
+                <input type="text" data-original-vlr="${item.valor_unitario !== null && item.valor_unitario !== undefined ? item.valor_unitario : ''}" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
                 <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total, casas)}</span>
+            </td>
+            <td class="col-modalidade hidden px-2 py-1.5 text-center whitespace-nowrap">
+                <select class="prod-modalidade ${cellSelect}" onchange="OPME.handleModalidadeChange(this)" style="min-width:70px">
+                    <option value="Venda" ${(item.modalidade || 'Venda') === 'Venda' ? 'selected' : ''}>Venda</option>
+                    <option value="Doação" ${(item.modalidade || 'Venda') === 'Doação' ? 'selected' : ''}>Doação</option>
+                </select>
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
                 <input type="text" class="prod-empenho ${cellInput} uppercase" value="${item.empenho || ''}" style="min-width:55px">
@@ -2646,6 +2654,7 @@ const OPME = (() => {
         const columns = [
             { key: 'tipoCirurgia', label: 'Tipo Cirurgia', cls: 'show-tipoCirurgia' },
             { key: 'descPersonalizada', label: 'Desc. Personalizada', cls: 'show-descPersonalizada' },
+            { key: 'modalidade', label: 'Modalidade', cls: 'show-modalidade' },
             { key: 'expedicao', label: 'Expedição', cls: 'show-expedicao' }
         ];
 
@@ -2761,6 +2770,7 @@ const OPME = (() => {
             const vlrUnEl = row.querySelector('.prod-vlr-un');
             if (vlrUnEl) {
                 const casas = getCirurgiaModalCasas();
+                vlrUnEl.setAttribute('data-original-vlr', data.valor_unitario !== null && data.valor_unitario !== undefined ? data.valor_unitario : '');
                 vlrUnEl.value = formatCurrencyInput(data.valor_unitario, casas);
                 if (parseFloat(data.valor_unitario || 0) === 0) {
                     vlrUnEl.removeAttribute('readonly');
@@ -2785,6 +2795,12 @@ const OPME = (() => {
         const content = modal.querySelector('.modal-content');
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
+
+        const table = document.getElementById('cirurgiaProductsTable');
+        if (table) {
+            table.classList.remove('show-tipoCirurgia', 'show-descPersonalizada', 'show-modalidade', 'show-expedicao');
+        }
+
         setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
@@ -2818,6 +2834,7 @@ const OPME = (() => {
                 valor_unitario: parseCurrency(tr.querySelector('.prod-vlr-un').value || tr.querySelector('.prod-vlr-un').textContent),
                 valor_total: parseCurrency(tr.querySelector('.prod-vlr-tot').textContent),
                 item_pregao: tr.querySelector('.prod-item-pregao') ? tr.querySelector('.prod-item-pregao').value || null : null,
+                modalidade: (tr.querySelector('.prod-modalidade').value || 'Venda'),
                 // Faturamento por produto (lidos da linha)
                 empenho: (tr.querySelector('.prod-empenho').value || '').toUpperCase(),
                 autorizacao: (tr.querySelector('.prod-autorizacao').value || '').toUpperCase(),
@@ -3584,6 +3601,132 @@ const OPME = (() => {
 
     // ==========================================
     // API pública
+    async function openCirurgiasEmAbertoModal() {
+        const existing = document.getElementById('cirurgiasEmAbertoModal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'cirurgiasEmAbertoModal';
+        modal.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-steel-700 w-[600px] max-w-[95vw] max-h-[80vh] flex flex-col transform transition-all duration-200 scale-95 opacity-0">
+                <!-- Header -->
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-steel-800 dark:text-white">Cirurgias em Aberto</h3>
+                            <p class="text-xs text-steel-500 dark:text-steel-400">Total a faturar por contrato</p>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('cirurgiasEmAbertoModal').remove()" class="p-1.5 rounded-lg text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Body (Table) -->
+                <div class="flex-1 overflow-auto p-4">
+                    <div id="kpiModalLoading" class="flex flex-col items-center justify-center py-10">
+                        <svg class="animate-spin h-8 w-8 text-amber-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span class="text-xs text-steel-500">Carregando dados...</span>
+                    </div>
+                    
+                    <div id="kpiModalContent" class="hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-nexo-600 dark:bg-steel-900 text-white">
+                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-tl-lg border-b border-nexo-700/50 dark:border-steel-700">Contrato</th>
+                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-center border-b border-nexo-700/50 dark:border-steel-700">Qtd. Cirurgias</th>
+                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-right rounded-tr-lg border-b border-nexo-700/50 dark:border-steel-700">Total a Faturar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="kpiModalTableBody" class="divide-y divide-gray-100 dark:divide-steel-700/50">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        function closeModal() {
+            if (modal.parentNode) modal.remove();
+            document.removeEventListener('keydown', handleEsc);
+        }
+        
+        function handleEsc(e) {
+            if (e.key === 'Escape') closeModal();
+        }
+        
+        document.addEventListener('keydown', handleEsc);
+        
+        modal.addEventListener('mousedown', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        const closeBtn = modal.querySelector('button');
+        closeBtn.onclick = closeModal;
+
+        document.body.appendChild(modal);
+        
+        requestAnimationFrame(() => {
+            modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
+            modal.querySelector('.modal-content').classList.add('scale-100', 'opacity-100');
+        });
+
+        try {
+            const res = await fetch('/api/opme/cirurgias/em-aberto-por-contrato', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (!res.ok) throw new Error('Erro ao buscar dados');
+            
+            const data = await res.json();
+            const tbody = document.getElementById('kpiModalTableBody');
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-4 text-center text-sm text-steel-500">Nenhuma cirurgia em aberto.</td></tr>`;
+            } else {
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 cursor-pointer transition-colors group';
+                    tr.innerHTML = `
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-medium text-steel-800 dark:text-gray-200 group-hover:text-nexo-700 dark:group-hover:text-nexo-400 transition-colors">${item.contrato}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm text-steel-600 dark:text-steel-400 text-center">${item.qtd_cirurgias}</td>
+                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-semibold text-nexo-600 dark:text-nexo-400 text-right">${formatCurrency(item.total_faturar)}</td>
+                    `;
+                    tr.onclick = () => {
+                        // Fecha este modal
+                        if (typeof closeModal === 'function') closeModal();
+                        else document.getElementById('cirurgiasEmAbertoModal').remove();
+                        // Abre o modal de acesso ao contrato
+                        contractToAccess = { 
+                            id_contrato: item.contrato,
+                            material: item.material,
+                            cliente: item.cliente
+                        };
+                        document.getElementById('accessContractModalText').textContent = `Tem certeza que deseja acessar o contrato ${item.contrato}?`;
+                        document.getElementById('accessContractModal').classList.remove('hidden');
+                    };
+                    tbody.appendChild(tr);
+                });
+            }
+            
+            document.getElementById('kpiModalLoading').classList.add('hidden');
+            document.getElementById('kpiModalContent').classList.remove('hidden');
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            document.getElementById('kpiModalLoading').innerHTML = '<span class="text-sm text-red-500">Erro ao carregar os dados.</span>';
+        }
+    }
+
     return {
         toggleFullscreenGrid,
         clearAllFilters,
@@ -3611,6 +3754,30 @@ const OPME = (() => {
         addCirurgiaProduct,
         removeCirurgiaProduct,
         calculateTotalCirurgia,
+        handleModalidadeChange: function(selectEl) {
+            const tr = selectEl.closest('tr');
+            if (!tr) return;
+            const inputUn = tr.querySelector('.prod-vlr-un');
+            if (!inputUn) return;
+
+            if (selectEl.value === 'Doação') {
+                inputUn.value = formatCurrencyInput(0, getCirurgiaModalCasas());
+                inputUn.removeAttribute('readonly');
+                inputUn.classList.remove('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                inputUn.classList.add('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+            } else if (selectEl.value === 'Venda') {
+                const origVal = parseFloat(inputUn.getAttribute('data-original-vlr'));
+                const valToSet = isNaN(origVal) ? 0 : origVal;
+                inputUn.value = formatCurrencyInput(valToSet, getCirurgiaModalCasas());
+                
+                if (valToSet !== 0) {
+                    inputUn.setAttribute('readonly', 'true');
+                    inputUn.classList.remove('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                    inputUn.classList.add('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                }
+            }
+            calculateTotalCirurgia();
+        },
         toggleHeaderSelect,
         toggleColumnMenu,
         saveCirurgia,
@@ -3636,6 +3803,7 @@ const OPME = (() => {
         removeSaldoAtaHospitalProduct,
         calculateTotalSaldoAtaHospital,
         saveSaldoAtaHospital,
+        openCirurgiasEmAbertoModal,
         closeAccessContractModal: () => {
             contractToAccess = null;
             document.getElementById('accessContractModal').classList.add('hidden');

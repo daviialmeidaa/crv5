@@ -199,11 +199,13 @@
         /* Esconder colunas toggleáveis da tabela de produtos */
         #cirurgiaProductsTable .col-tipoCirurgia,
         #cirurgiaProductsTable .col-descPersonalizada,
+        #cirurgiaProductsTable .col-modalidade,
         #cirurgiaProductsTable .col-expedicao {
             display: none;
         }
         #cirurgiaProductsTable.show-tipoCirurgia .col-tipoCirurgia,
         #cirurgiaProductsTable.show-descPersonalizada .col-descPersonalizada,
+        #cirurgiaProductsTable.show-modalidade .col-modalidade,
         #cirurgiaProductsTable.show-expedicao .col-expedicao {
             display: table-cell;
         }
@@ -475,7 +477,7 @@
                 </div>
 
                 <!-- Cirurgias em Aberto -->
-                <div class="h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-amber-300 dark:hover:border-amber-700 transition-all duration-300">
+                <div onclick="if(typeof OPME !== 'undefined') OPME.openCirurgiasEmAbertoModal()" class="cursor-pointer h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-amber-300 dark:hover:border-amber-700 transition-all duration-300">
                     <div class="absolute top-3 right-3 opacity-10">
                         <svg class="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -898,6 +900,7 @@
                                             <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Qtde</th>
                                             <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Vlr. Unit.</th>
                                             <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Vlr. Total</th>
+                                            <th class="col-modalidade px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Modalidade</th>
                                             <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Empenho</th>
                                             <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Autorização</th>
                                             <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Pedido</th>

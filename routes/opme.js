@@ -180,6 +180,34 @@ router.get('/kpis', async (req, res) => {
 });
 
 // ==========================================
+// GET /api/opme/cirurgias/em-aberto-por-contrato
+// ==========================================
+router.get('/cirurgias/em-aberto-por-contrato', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                c.contrato,
+                ct.material,
+                ct.cliente,
+                COUNT(DISTINCT c.paciente || c.data_cirurgia) AS qtd_cirurgias,
+                SUM(c.valor_total) AS total_faturar
+            FROM opme.cirurgias c
+            JOIN opme.contratos ct ON c.contrato = ct.id_contrato
+            WHERE ct.inativo = false 
+              AND c.acao = 'CIRURGIA' 
+              AND (c.nota_fiscal IS NULL OR c.nota_fiscal = '' OR c.nota_fiscal = '0')
+            GROUP BY c.contrato, ct.material, ct.cliente
+            ORDER BY total_faturar DESC, qtd_cirurgias DESC;
+        `;
+        const result = await pgPool.query(query);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('[OPME] Erro ao buscar cirurgias em aberto por contrato:', err.message);
+        res.status(500).json({ error: 'Erro interno' });
+    }
+});
+
+// ==========================================
 // GET /api/opme/cirurgias?contrato=BIO687
 // ==========================================
 router.get('/cirurgias', async (req, res) => {
@@ -815,7 +843,7 @@ router.post('/cirurgias', async (req, res) => {
                 'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
                 'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
                 'descricao_personalizada', 'quantidade_utilizada', 'lote', 
-                'valor_unitario', 'valor_total', 'item_pregao'
+                'valor_unitario', 'valor_total', 'item_pregao', 'modalidade'
             ];
 
             for (const key of insertColumns) {
@@ -918,7 +946,7 @@ router.put('/cirurgias', async (req, res) => {
                     'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
                     'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
                     'descricao_personalizada', 'quantidade_utilizada', 'lote', 
-                    'valor_unitario', 'valor_total', 'item_pregao'
+                    'valor_unitario', 'valor_total', 'item_pregao', 'modalidade'
                 ];
 
                 for (const key of insertColumns) {
@@ -953,7 +981,7 @@ router.put('/cirurgias', async (req, res) => {
                 'pedido', 'nota_fiscal', 'retorno_consignacao', 'status_expedicao', 
                 'autorizacao_opme', 'cod_bio', 'classificacao', 'produto', 
                 'descricao_personalizada', 'quantidade_utilizada', 'lote', 
-                'valor_unitario', 'valor_total'
+                'valor_unitario', 'valor_total', 'item_pregao', 'modalidade'
             ];
 
             for (const key of updateableColumns) {
