@@ -730,7 +730,7 @@ router.post('/cirurgias/sync-notas', async (req, res) => {
         for (const item of itemRes.recordset) {
             const numeroNota = codigoToNf[item.nf_numero];
             const numeroPedido = nfMap[numeroNota];
-            const prodCodigoStr = item.prod_codigo;
+            const prodCodigoStr = item.prod_codigo ? item.prod_codigo.toString().trim() : '';
             
             if (notasTransmitidas.has(numeroNota.toString()) && numeroNota.toString() !== '0') {
                 const key = `${numeroPedido}_${prodCodigoStr}`;

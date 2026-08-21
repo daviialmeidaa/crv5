@@ -98,10 +98,14 @@ def main():
             # 3. DELEÇÃO DE ÓRFÃOS (Diferença de Conjuntos)
             ids_to_delete = pg_ids - access_ids
             if ids_to_delete:
-                print(f" > Encontrados {len(ids_to_delete)} registros excluídos no Access. Removendo do Postgres...")
-                format_strings = ','.join(['%s'] * len(ids_to_delete))
-                cursor_pg.execute(f"DELETE FROM {PG_SCHEMA}.{table_name} WHERE id IN ({format_strings})", tuple(ids_to_delete))
-                conn_pg.commit()
+                print(f" > Encontrados {len(ids_to_delete)} registros no Postgres que não estão no Access.")
+                if table_name.lower() == 'cirurgias':
+                    print(" > Ignorando deleção para a tabela Cirurgias para proteger dados criados exclusivamente no Hub.")
+                else:
+                    print(" > Removendo do Postgres...")
+                    format_strings = ','.join(['%s'] * len(ids_to_delete))
+                    cursor_pg.execute(f"DELETE FROM {PG_SCHEMA}.{table_name} WHERE id IN ({format_strings})", tuple(ids_to_delete))
+                    conn_pg.commit()
                 
             # 4. UPSERT (Update/Insert em massa)
             if access_data:
@@ -112,7 +116,16 @@ def main():
                 # Montar o trecho ON CONFLICT DO UPDATE (ignora a chave 'id')
                 update_cols = [c for c in columns if c != "id"]
                 if update_cols:
-                    update_str = ", ".join([f"{c} = EXCLUDED.{c}" for c in update_cols])
+                    update_str_parts = []
+                    for c in update_cols:
+                        if c in ['pedido', 'nota_fiscal', 'empenho', 'autorizacao', 'autorizacao_opme', 'status_expedicao', 'retorno_consignacao']:
+                            update_str_parts.append(
+                                f"{c} = CASE WHEN (EXCLUDED.{c} IS NULL OR CAST(EXCLUDED.{c} AS TEXT) = '' OR CAST(EXCLUDED.{c} AS TEXT) = '0' OR CAST(EXCLUDED.{c} AS TEXT) = '-') AND {table_name}.{c} IS NOT NULL THEN {table_name}.{c} ELSE EXCLUDED.{c} END"
+                            )
+                        else:
+                            update_str_parts.append(f"{c} = EXCLUDED.{c}")
+                    
+                    update_str = ", ".join(update_str_parts)
                     upsert_sql = f"""
                         INSERT INTO {PG_SCHEMA}.{table_name} ({cols_str_pg})
                         VALUES %s
