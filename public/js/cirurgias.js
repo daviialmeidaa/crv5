@@ -2431,7 +2431,7 @@ const OPME = (() => {
     function renderProductRow(item, idx) {
         const tbody = document.getElementById('cirurgiaProductsTbody');
         const tr = document.createElement('tr');
-        tr.className = 'product-row border-b border-gray-100 dark:border-steel-700 hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors align-middle';
+        tr.className = 'product-row group border-b border-gray-100 dark:border-steel-700 hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors align-middle';
         tr.dataset.idx = idx;
         const casas = getCirurgiaModalCasas();
 
@@ -2449,7 +2449,7 @@ const OPME = (() => {
         tr.innerHTML = `
             ${idHtml}
             ${itemPregaoHtml}
-            <td class="px-2 py-1.5 text-center whitespace-nowrap sticky left-0 bg-white dark:bg-steel-800 z-[5]">
+            <td class="px-2 py-1.5 text-center whitespace-nowrap sticky left-0 bg-white dark:bg-steel-800 group-hover:bg-[#e8f9fa] dark:group-hover:bg-[#1c3442] transition-colors z-[5]">
                 <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio ${cellInput}" value="${item.cod_bio || ''}" style="min-width:60px">
             </td>
             <td class="col-tipoCirurgia px-2 py-1.5 text-center min-w-[80px]">
