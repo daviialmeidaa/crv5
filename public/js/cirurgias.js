@@ -89,6 +89,7 @@ const OPME = (() => {
             { key: 'valor_unitario', label: 'Valor Unitário', type: 'currency' },
             { key: 'valor_total', label: 'Valor Total', type: 'currency' },
             { key: 'item_pregao', label: 'Item do Pregão' },
+            { key: 'modalidade', label: 'Modalidade' },
             { key: 'empenho', label: 'Empenho' },
             { key: 'autorizacao', label: 'Autorização' },
             { key: 'pedido', label: 'Pedido' },
@@ -501,8 +502,9 @@ const OPME = (() => {
             const cursorClass = 'cursor-pointer';
             const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 relative z-0 hover:z-10 group';
             const clickHandler = `onclick="OPME.handleRowClick(event, ${idx}, '${state.currentTab}')"`;
+            const modalidadeAttr = (row.modalidade === 'Doação' || row.modalidade === 'DOAÇÃO') ? 'data-modalidade="DOAÇÃO"' : '';
 
-            html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
+            html += `<tr ${modalidadeAttr} class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
                          ${clickHandler}>`;
 
             cols.forEach(col => {
@@ -2481,10 +2483,16 @@ const OPME = (() => {
                 <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}" style="width:40px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
-                <input type="text" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
+                <input type="text" data-original-vlr="${item.valor_unitario !== null && item.valor_unitario !== undefined ? item.valor_unitario : ''}" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
                 <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total, casas)}</span>
+            </td>
+            <td class="col-modalidade hidden px-2 py-1.5 text-center whitespace-nowrap">
+                <select class="prod-modalidade ${cellSelect}" onchange="OPME.handleModalidadeChange(this)" style="min-width:70px">
+                    <option value="Venda" ${(item.modalidade || 'Venda') === 'Venda' ? 'selected' : ''}>Venda</option>
+                    <option value="Doação" ${(item.modalidade || 'Venda') === 'Doação' ? 'selected' : ''}>Doação</option>
+                </select>
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
                 <input type="text" class="prod-empenho ${cellInput} uppercase" value="${item.empenho || ''}" style="min-width:55px">
@@ -2646,6 +2654,7 @@ const OPME = (() => {
         const columns = [
             { key: 'tipoCirurgia', label: 'Tipo Cirurgia', cls: 'show-tipoCirurgia' },
             { key: 'descPersonalizada', label: 'Desc. Personalizada', cls: 'show-descPersonalizada' },
+            { key: 'modalidade', label: 'Modalidade', cls: 'show-modalidade' },
             { key: 'expedicao', label: 'Expedição', cls: 'show-expedicao' }
         ];
 
@@ -2761,6 +2770,7 @@ const OPME = (() => {
             const vlrUnEl = row.querySelector('.prod-vlr-un');
             if (vlrUnEl) {
                 const casas = getCirurgiaModalCasas();
+                vlrUnEl.setAttribute('data-original-vlr', data.valor_unitario !== null && data.valor_unitario !== undefined ? data.valor_unitario : '');
                 vlrUnEl.value = formatCurrencyInput(data.valor_unitario, casas);
                 if (parseFloat(data.valor_unitario || 0) === 0) {
                     vlrUnEl.removeAttribute('readonly');
@@ -2785,6 +2795,12 @@ const OPME = (() => {
         const content = modal.querySelector('.modal-content');
         content.classList.remove('scale-100', 'opacity-100');
         content.classList.add('scale-95', 'opacity-0');
+
+        const table = document.getElementById('cirurgiaProductsTable');
+        if (table) {
+            table.classList.remove('show-tipoCirurgia', 'show-descPersonalizada', 'show-modalidade', 'show-expedicao');
+        }
+
         setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
@@ -2818,6 +2834,7 @@ const OPME = (() => {
                 valor_unitario: parseCurrency(tr.querySelector('.prod-vlr-un').value || tr.querySelector('.prod-vlr-un').textContent),
                 valor_total: parseCurrency(tr.querySelector('.prod-vlr-tot').textContent),
                 item_pregao: tr.querySelector('.prod-item-pregao') ? tr.querySelector('.prod-item-pregao').value || null : null,
+                modalidade: (tr.querySelector('.prod-modalidade').value || 'Venda'),
                 // Faturamento por produto (lidos da linha)
                 empenho: (tr.querySelector('.prod-empenho').value || '').toUpperCase(),
                 autorizacao: (tr.querySelector('.prod-autorizacao').value || '').toUpperCase(),
@@ -3611,6 +3628,30 @@ const OPME = (() => {
         addCirurgiaProduct,
         removeCirurgiaProduct,
         calculateTotalCirurgia,
+        handleModalidadeChange: function(selectEl) {
+            const tr = selectEl.closest('tr');
+            if (!tr) return;
+            const inputUn = tr.querySelector('.prod-vlr-un');
+            if (!inputUn) return;
+
+            if (selectEl.value === 'Doação') {
+                inputUn.value = formatCurrencyInput(0, getCirurgiaModalCasas());
+                inputUn.removeAttribute('readonly');
+                inputUn.classList.remove('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                inputUn.classList.add('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+            } else if (selectEl.value === 'Venda') {
+                const origVal = parseFloat(inputUn.getAttribute('data-original-vlr'));
+                const valToSet = isNaN(origVal) ? 0 : origVal;
+                inputUn.value = formatCurrencyInput(valToSet, getCirurgiaModalCasas());
+                
+                if (valToSet !== 0) {
+                    inputUn.setAttribute('readonly', 'true');
+                    inputUn.classList.remove('text-steel-800', 'dark:text-gray-200', 'focus:ring-1', 'focus:ring-nexo-500/40', 'cursor-text');
+                    inputUn.classList.add('text-steel-600', 'dark:text-steel-400', 'cursor-default');
+                }
+            }
+            calculateTotalCirurgia();
+        },
         toggleHeaderSelect,
         toggleColumnMenu,
         saveCirurgia,
