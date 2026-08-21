@@ -24,7 +24,7 @@ router.get('/contratos', async (req, res) => {
         
         const result = await pgPool.query(`
             SELECT id, id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, 
-                   total_ata, inicio_ata, termino_ata, inativo, decimais, casas
+                   total_ata, inicio_ata, termino_ata, inativo, decimais, casas, descricao_detalhada
             FROM opme.contratos
             ${whereClause}
             ORDER BY id DESC
