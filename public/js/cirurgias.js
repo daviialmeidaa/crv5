@@ -310,6 +310,7 @@ const OPME = (() => {
                 params.set('contrato', state.selectedContract.id_contrato);
             }
 
+            params.set('_t', Date.now()); // Cache-buster
             if (params.toString()) url += '?' + params.toString();
 
             const response = await fetch(url, {
@@ -333,7 +334,7 @@ const OPME = (() => {
 
     async function loadContratos() {
         try {
-            const res = await fetch('/api/opme/contratos', {
+            const res = await fetch(`/api/opme/contratos?_t=${Date.now()}`, {
                 headers: { 'Authorization': `Bearer ${getToken()}` }
             });
             if (res.ok) {
@@ -341,7 +342,8 @@ const OPME = (() => {
                 
                 window.contratosCasasMap = {};
                 state.contratos.forEach(c => {
-                    window.contratosCasasMap[c.id_contrato] = c.decimais ? (c.casas || 2) : 2;
+                    const isDecimaisAtivo = c.decimais === true || c.decimais === 'true' || c.decimais === 1 || c.decimais === '1';
+                    window.contratosCasasMap[c.id_contrato] = isDecimaisAtivo ? (c.casas || 2) : 2;
                 });
                 
                 populateSelect('fcContrato', state.contratos, 'id_contrato', 'id_contrato');
@@ -2013,10 +2015,12 @@ const OPME = (() => {
             const casasInput = document.getElementById('fcCasas');
             const container = document.getElementById('fcCasasDecimaisContainer');
             
-            checkbox.checked = row.decimais === true;
+            const isDecimaisAtivo = row.decimais === true || row.decimais === 'true' || row.decimais === 1 || row.decimais === '1';
+            
+            checkbox.checked = isDecimaisAtivo;
             checkbox.disabled = true;
             
-            if (row.decimais) {
+            if (isDecimaisAtivo) {
                 container.classList.remove('hidden');
                 casasInput.value = row.casas || 2;
             } else {
