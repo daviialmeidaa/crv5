@@ -24,7 +24,7 @@ router.get('/contratos', async (req, res) => {
         
         const result = await pgPool.query(`
             SELECT id, id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, 
-                   total_ata, inicio_ata, termino_ata, inativo
+                   total_ata, inicio_ata, termino_ata, inativo, decimais, casas
             FROM opme.contratos
             ${whereClause}
             ORDER BY id DESC
@@ -40,7 +40,7 @@ router.get('/contratos', async (req, res) => {
 // ==========================================
 router.post('/contratos', async (req, res) => {
     try {
-        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, descricao_detalhada } = req.body;
+        const { id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, descricao_detalhada, decimais, casas } = req.body;
         
         if (!id_contrato || !cliente) {
             return res.status(400).json({ error: 'Cód. Contrato e Cliente são obrigatórios' });
@@ -50,13 +50,14 @@ router.post('/contratos', async (req, res) => {
 
         const result = await pgPool.query(`
             INSERT INTO opme.contratos 
-            (id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo, descricao_detalhada)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11)
+            (id_contrato, empresa, material, cod_cliente, cliente, uf, pregao, total_ata, inicio_ata, termino_ata, inativo, descricao_detalhada, decimais, casas)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11, $12, $13)
             RETURNING id
         `, [
             id_contrato, empresa || null, material || null, cod_cliente || null, cliente, uf || null, 
             pregao || null, isNaN(totalNumeric) ? null : totalNumeric, 
-            inicio_ata || null, termino_ata || null, descricao_detalhada ? true : false
+            inicio_ata || null, termino_ata || null, descricao_detalhada ? true : false,
+            decimais === true, casas || 2
         ]);
 
         res.json({ success: true, id: result.rows[0].id, message: 'Contrato criado com sucesso' });

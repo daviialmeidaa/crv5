@@ -186,20 +186,18 @@ const OPME = (() => {
     // ==========================================
     function getToken() { return localStorage.getItem('token'); }
 
-    function formatCurrency(val) {
-        if (val === null || val === undefined || val === '' || val === '-') return '-';
+    function formatCurrency(val, casas = 2) {
+        if (val === null || val === undefined) return '-';
         const num = parseFloat(val);
-        if (isNaN(num)) return String(val);
-        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        if (isNaN(num)) return '-';
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: casas, maximumFractionDigits: casas });
     }
 
-
-
-    function formatCurrencyInput(val) {
+    function formatCurrencyInput(val, casas = 2) {
         if (val === null || val === undefined || val === '') return '';
         const num = parseFloat(val);
         if (isNaN(num)) return '';
-        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: casas, maximumFractionDigits: casas });
     }
 
     function parseCurrency(val) {
@@ -230,7 +228,15 @@ const OPME = (() => {
     }
 
     function formatCell(val, col, row) {
-        if (col.type === 'currency') return formatCurrency(val);
+        if (col.type === 'currency') {
+            let casas = 2;
+            if (row.contrato && window.contratosCasasMap && window.contratosCasasMap[row.contrato]) {
+                casas = window.contratosCasasMap[row.contrato];
+            } else if (row.id_contrato && window.contratosCasasMap && window.contratosCasasMap[row.id_contrato]) {
+                casas = window.contratosCasasMap[row.id_contrato];
+            }
+            return formatCurrency(val, casas);
+        }
         if (col.type === 'date') return formatDate(val);
         if (col.type === 'boolean') {
             return val ? `<span class="inline-block w-3 h-3 rounded-full bg-nexo-500 shadow-sm" title="Sim"></span>` : `<span class="inline-block w-3 h-3 rounded-full bg-steel-300 dark:bg-steel-600 shadow-sm" title="Não"></span>`;
@@ -322,6 +328,28 @@ const OPME = (() => {
             if (tbody) tbody.innerHTML = `<tr><td colspan="${cols.length}" class="px-6 py-12 text-center text-red-500">Erro ao carregar dados do servidor.</td></tr>`;
         } finally {
             if (loading) loading.classList.add('hidden');
+        }
+    }
+
+    async function loadContratos() {
+        try {
+            const res = await fetch('/api/opme/contratos', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            if (res.ok) {
+                state.contratos = await res.json();
+                
+                window.contratosCasasMap = {};
+                state.contratos.forEach(c => {
+                    window.contratosCasasMap[c.id_contrato] = c.decimais ? (c.casas || 2) : 2;
+                });
+                
+                populateSelect('fcContrato', state.contratos, 'id_contrato', 'id_contrato');
+                populateSelect('fcUnidadeContrato', state.contratos, 'id_contrato', 'id_contrato');
+                populateFilterSelect('filter-contrato', state.contratos, 'id_contrato', 'id_contrato');
+            }
+        } catch (e) {
+            console.error('Erro ao carregar contratos:', e);
         }
     }
 
@@ -1826,6 +1854,7 @@ const OPME = (() => {
     function init() {
         fetchKpis();
         fetchData();
+        loadContratos();
 
         const selectLimit = document.getElementById('itemsPerPage');
         if (selectLimit) {
@@ -1969,6 +1998,25 @@ const OPME = (() => {
             document.getElementById('fcContratoTermino').value = row.termino_ata ? row.termino_ata.split('T')[0] : '';
             
             document.getElementById('fcDescricaoDetalhada').checked = row.descricao_detalhada === true;
+            
+            // Decimals (visible but disabled in edit mode)
+            document.getElementById('fcCasasDecimaisBlock').classList.remove('hidden');
+            const checkbox = document.getElementById('fcAplicarDecimais');
+            const casasInput = document.getElementById('fcCasas');
+            const container = document.getElementById('fcCasasDecimaisContainer');
+            
+            checkbox.checked = row.decimais === true;
+            checkbox.disabled = true;
+            
+            if (row.decimais) {
+                container.classList.remove('hidden');
+                casasInput.value = row.casas || 2;
+            } else {
+                container.classList.add('hidden');
+                casasInput.value = 2;
+            }
+            casasInput.disabled = true;
+
         } else {
             // New mode
             editingContratoId = null;
@@ -1991,6 +2039,17 @@ const OPME = (() => {
             document.getElementById('fcContratoInicio').value = '';
             document.getElementById('fcContratoTermino').value = '';
             document.getElementById('fcDescricaoDetalhada').checked = false;
+            
+            document.getElementById('fcCasasDecimaisBlock').classList.remove('hidden');
+            const checkbox = document.getElementById('fcAplicarDecimais');
+            const casasInput = document.getElementById('fcCasas');
+            const container = document.getElementById('fcCasasDecimaisContainer');
+            
+            checkbox.checked = false;
+            checkbox.disabled = false;
+            casasInput.value = '2';
+            casasInput.disabled = false;
+            container.classList.add('hidden');
         }
 
         modal.classList.remove('hidden');
@@ -2030,7 +2089,9 @@ const OPME = (() => {
             total_ata: document.getElementById('fcContratoTotalAta').value,
             inicio_ata: document.getElementById('fcContratoInicio').value,
             termino_ata: document.getElementById('fcContratoTermino').value,
-            descricao_detalhada: document.getElementById('fcDescricaoDetalhada').checked
+            descricao_detalhada: document.getElementById('fcDescricaoDetalhada').checked,
+            decimais: document.getElementById('fcAplicarDecimais').checked,
+            casas: parseInt(document.getElementById('fcCasas').value) || 2
         };
 
         if (!payload.id_contrato || !payload.cliente) {
@@ -2358,11 +2419,21 @@ const OPME = (() => {
     // Array para rastrear IDs de itens removidos (para exclusão no PUT)
     let deletedItemIds = [];
 
+    function getCirurgiaModalCasas() {
+        const fcContrato = document.getElementById('fcContrato');
+        const selectedContrato = fcContrato ? fcContrato.value : null;
+        if (selectedContrato && window.contratosCasasMap && window.contratosCasasMap[selectedContrato]) {
+            return window.contratosCasasMap[selectedContrato];
+        }
+        return 2;
+    }
+
     function renderProductRow(item, idx) {
         const tbody = document.getElementById('cirurgiaProductsTbody');
         const tr = document.createElement('tr');
         tr.className = 'product-row border-b border-gray-100 dark:border-steel-700 hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors align-middle';
         tr.dataset.idx = idx;
+        const casas = getCirurgiaModalCasas();
 
         const idHtml = item.id ? `<input type="hidden" class="prod-id" value="${item.id}">` : '';
         const itemPregaoHtml = `<input type="hidden" class="prod-item-pregao" value="${item.item_pregao || ''}">`;
@@ -2397,10 +2468,10 @@ const OPME = (() => {
                 <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}" style="width:40px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
-                <input type="text" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value)); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
+                <input type="text" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
-                <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total)}</span>
+                <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total, casas)}</span>
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
                 <input type="text" class="prod-empenho ${cellInput} uppercase" value="${item.empenho || ''}" style="min-width:55px">
@@ -2461,6 +2532,7 @@ const OPME = (() => {
 
     function calculateTotalCirurgia() {
         let globalTotal = 0;
+        const casas = getCirurgiaModalCasas();
         document.querySelectorAll('.product-row').forEach(tr => {
             const qtdeInput = tr.querySelector('.prod-qtde');
             const vlrUnEl = tr.querySelector('.prod-vlr-un');
@@ -2475,11 +2547,11 @@ const OPME = (() => {
                 vlrTotEl.textContent = '';
             } else {
                 const total = qtde * vlrUn;
-                vlrTotEl.textContent = formatCurrencyInput(total);
+                vlrTotEl.textContent = formatCurrencyInput(total, casas);
                 globalTotal += total;
             }
         });
-        document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal);
+        document.getElementById('fcTotalGlobal').textContent = formatCurrency(globalTotal, casas);
     }
 
     // Header select bulk-fill: ao clicar no cabeçalho de Ret. Consig. ou Aut. OPME, mostra dropdown e preenche todas as linhas
@@ -2675,7 +2747,8 @@ const OPME = (() => {
             
             const vlrUnEl = row.querySelector('.prod-vlr-un');
             if (vlrUnEl) {
-                vlrUnEl.value = formatCurrencyInput(data.valor_unitario);
+                const casas = getCirurgiaModalCasas();
+                vlrUnEl.value = formatCurrencyInput(data.valor_unitario, casas);
                 if (parseFloat(data.valor_unitario || 0) === 0) {
                     vlrUnEl.removeAttribute('readonly');
                     vlrUnEl.classList.remove('text-steel-600', 'dark:text-steel-400', 'cursor-default');
@@ -3049,11 +3122,11 @@ const OPME = (() => {
                         <!-- Linha 2 -->
                         <div>
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Unitário</label>
-                            <input type="text" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAta(this)" class="sa-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario) : ''}">
+                            <input type="text" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAta(this)" class="sa-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario, casas) : ''}">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Total</label>
-                            <input type="text" readonly class="sa-vlrtot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total) : ''}">
+                            <input type="text" readonly class="sa-vlrtot w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none transition-all cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total, casas) : ''}">
                         </div>
                     </div>
                     
@@ -3090,6 +3163,7 @@ const OPME = (() => {
 
     function calculateTotalSaldoAta(input) {
         const block = input.closest('.saldoata-block');
+        const casas = getSaldoAtaCasas(block);
         const qtdeStr = block.querySelector('.sa-qtde').value;
         const qtde = parseFloat(qtdeStr) || 0;
 
@@ -3097,7 +3171,7 @@ const OPME = (() => {
         const vlrUn = parseCurrency(vlrUnStr) || 0;
 
         const total = qtde * vlrUn;
-        block.querySelector('.sa-vlrtot').value = formatCurrencyInput(total);
+        block.querySelector('.sa-vlrtot').value = formatCurrencyInput(total, casas);
     }
 
     async function saveSaldoAta() {
@@ -3183,6 +3257,14 @@ const OPME = (() => {
     // ==========================================
     let currentSaldoAtaHospitalEditId = null;
     let availableUnidades = [];
+
+    function getSaldoAtaHospitalCasas(block) {
+        const contrato = document.getElementById('fcSaldoAtaHospitalContrato').value;
+        if (contrato && window.contratosCasasMap && window.contratosCasasMap[contrato]) {
+            return window.contratosCasasMap[contrato];
+        }
+        return 2;
+    }
 
     async function fetchUnidadesForContract(contrato) {
         try {
@@ -3277,6 +3359,7 @@ const OPME = (() => {
         const container = document.getElementById('saldoAtaHospitalProductsContainer');
         const block = document.createElement('div');
         block.className = 'sah-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
+        const casas = getSaldoAtaHospitalCasas(block);
 
         let removeBtnHtml = '';
         if (canRemove) {
@@ -3329,11 +3412,11 @@ const OPME = (() => {
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Unitário *</label>
-                            <input type="text" class="sah-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario) : ''}" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAtaHospital(this)">
+                            <input type="text" class="sah-vlrunit w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all" value="${item.valor_unitario ? formatCurrencyInput(item.valor_unitario, casas) : ''}" oninput="formatCurrencyLive(this); OPME.calculateTotalSaldoAtaHospital(this)">
                         </div>
                         <div class="col-span-2">
                             <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Vlr. Total</label>
-                            <input type="text" readonly class="sah-vlrtot font-bold text-emerald-600 dark:text-emerald-400 w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg outline-none cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total) : ''}">
+                            <input type="text" readonly class="sah-vlrtot font-bold text-emerald-600 dark:text-emerald-400 w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg outline-none cursor-not-allowed" value="${item.valor_total ? formatCurrencyInput(item.valor_total, casas) : ''}">
                         </div>
                     </div>
                     
@@ -3369,6 +3452,7 @@ const OPME = (() => {
 
     function calculateTotalSaldoAtaHospital(input) {
         const block = input.closest('.sah-block');
+        const casas = getSaldoAtaHospitalCasas(block);
         const qtdeStr = block.querySelector('.sah-qtde').value;
         const qtde = parseFloat(qtdeStr) || 0;
 
@@ -3376,7 +3460,7 @@ const OPME = (() => {
         const vlrUn = parseCurrency(vlrUnStr) || 0;
 
         const total = qtde * vlrUn;
-        block.querySelector('.sah-vlrtot').value = formatCurrencyInput(total);
+        block.querySelector('.sah-vlrtot').value = formatCurrencyInput(total, casas);
     }
 
     async function saveSaldoAtaHospital() {
@@ -3550,6 +3634,7 @@ const OPME = (() => {
             contractToToggle = null;
             document.getElementById('toggleContractModal').classList.add('hidden');
         },
-        confirmToggleContract
+        confirmToggleContract,
+        getCirurgiaModalCasas
     };
 })();
