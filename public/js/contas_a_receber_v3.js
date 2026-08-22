@@ -2,26 +2,26 @@ const ContasGrid = (function () {
 
     // 1. Definição das Colunas
     const columns = [
-        { key: 'empresa', label: 'Empresa Vendedora', sticky: true },
-        { key: 'nota', label: 'Nota', sticky: true },
-        { key: 'codCliente', label: 'Cód. Cliente' },
+        { key: 'empresa', label: 'Empresa Vendedora', sticky: true, center: true },
+        { key: 'nota', label: 'Nota', sticky: true, center: true },
+        { key: 'codCliente', label: 'Cód. Cliente', center: true },
         { key: 'cliente', label: 'Cliente' },
-        { key: 'esfera', label: 'Esfera' },
-        { key: 'uf', label: 'UF' },
-        { key: 'contrato', label: 'Contrato' },
-        { key: 'tipoContrato', label: 'Tipo Contrato' },
-        { key: 'edital', label: 'Edital' },
-        { key: 'classificacao', label: 'Classificação' },
-        { key: 'empenho', label: 'Nº Empenho' },
-        { key: 'documento', label: 'Nº Documento' },
-        { key: 'valor', label: 'Valor Nota', type: 'currency' },
-        { key: 'boletoEmitido', label: 'Boleto Emitido' },
-        { key: 'valorRecebido', label: 'Valor Depósito', type: 'currency' },
-        { key: 'dataEmissao', label: 'Data de Emissão', type: 'date' },
-        { key: 'dataVencimento', label: 'Data de Vencimento', type: 'date' },
-        { key: 'dataPagamento', label: 'Data de Pagamento', type: 'date' },
+        { key: 'esfera', label: 'Esfera', center: true },
+        { key: 'uf', label: 'UF', center: true },
+        { key: 'contrato', label: 'Contrato', center: true },
+        { key: 'tipoContrato', label: 'Tipo Contrato', center: true },
+        { key: 'edital', label: 'Edital', center: true },
+        { key: 'classificacao', label: 'Classificação', center: true },
+        { key: 'empenho', label: 'Nº Empenho', center: true },
+        { key: 'documento', label: 'Nº Documento', center: true },
+        { key: 'valor', label: 'Valor Nota', type: 'currency', center: true },
+        // { key: 'boletoEmitido', label: 'Boleto Emitido' }, // Ocultado
+        { key: 'valorRecebido', label: 'Valor Depósito', type: 'currency', center: true },
+        { key: 'dataEmissao', label: 'Data de Emissão', type: 'date', center: true },
+        { key: 'dataVencimento', label: 'Data de Vencimento', type: 'date', center: true },
+        { key: 'dataPagamento', label: 'Data de Pagamento', type: 'date', center: true },
         {
-            key: 'status', label: 'Status do Pagamento', render: v => {
+            key: 'status', label: 'Status do Pagamento', center: true, render: v => {
                 const styles = {
                     'PAGO': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
                     'ATRASADO': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
@@ -31,8 +31,8 @@ const ContasGrid = (function () {
                 return `<span style="background:${s.grad};color:${s.color};padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
             }
         },
-        { key: 'conta', label: 'Banco' },
-        { key: 'retemIr', label: 'Retém IR?' }
+        { key: 'conta', label: 'Banco', center: true },
+        { key: 'retemIr', label: 'Retém IR?', center: true }
     ];
 
     // 2. Estado Global
@@ -282,8 +282,9 @@ const ContasGrid = (function () {
                 
                 // Formatação especial de Link para a Nota removida, agora a linha inteira é clicável.
                 const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
+                const alignClass = col.center ? 'text-center' : '';
 
-                html += `<td class="px-3 py-1.5 text-[12px] whitespace-nowrap ${isSticky}">${val}</td>`;
+                html += `<td class="px-3 py-1.5 text-[12px] whitespace-nowrap ${isSticky} ${alignClass}">${val}</td>`;
             });
             html += '</tr>';
         });
