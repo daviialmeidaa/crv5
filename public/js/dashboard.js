@@ -559,7 +559,7 @@ function renderChartTopContratos() {
         chart: {
             type: 'donut',
             height: 320,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Outfit, sans-serif',
             background: 'transparent'
         },
         theme: { mode: isDark ? 'dark' : 'light' },
@@ -664,7 +664,7 @@ function renderChartTopClientes() {
         chart: {
             type: 'bar',
             height: 320,
-            fontFamily: 'Inter, sans-serif',
+            fontFamily: 'Outfit, sans-serif',
             background: 'transparent',
             toolbar: { show: false }
         },
@@ -752,7 +752,7 @@ function renderChartBancos() {
 
     const opts = {
         series: [{ name: 'Recebido', data: seriesData }],
-        chart: { type: 'bar', height: 240, fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent' },
+        chart: { type: 'bar', height: 240, fontFamily: 'Outfit, sans-serif', toolbar: { show: false }, background: 'transparent' },
         plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '55%' } },
         dataLabels: {
             enabled: true,
@@ -787,7 +787,7 @@ function renderChartGauge(metaValor, recebidoNoMes) {
 
     const opts = {
         series: [parseFloat(perc.toFixed(1))],
-        chart: { type: 'radialBar', height: 220, fontFamily: 'Inter, sans-serif', background: 'transparent' },
+        chart: { type: 'radialBar', height: 220, fontFamily: 'Outfit, sans-serif', background: 'transparent' },
         plotOptions: {
             radialBar: {
                 startAngle: -135,
@@ -834,7 +834,7 @@ function renderChartEsfera() {
     const opts = {
         series: seriesData.length ? seriesData : [1],
         labels: labels.length ? labels : ['Sem dados'],
-        chart: { type: 'donut', height: 240, fontFamily: 'Inter, sans-serif', background: 'transparent' },
+        chart: { type: 'donut', height: 240, fontFamily: 'Outfit, sans-serif', background: 'transparent' },
         colors: ['#0097A7', '#f43f5e', '#f59e0b', '#8b5cf6', '#10b981', '#6366f1'],
         stroke: { show: false },
         legend: { position: 'bottom', fontSize: '11px', labels: { colors: getTextColor() } },
@@ -906,7 +906,7 @@ function renderChartEvolucao() {
             { name: 'Recebido', data: dataRec },
             { name: 'Em Aberto', data: dataAb }
         ],
-        chart: { height: 240, type: 'line', fontFamily: 'Inter, sans-serif', toolbar: { show: false }, background: 'transparent' },
+        chart: { height: 240, type: 'line', fontFamily: 'Outfit, sans-serif', toolbar: { show: false }, background: 'transparent' },
         stroke: { curve: 'smooth', width: 3 },
         xaxis: { categories: labels, labels: { style: { fontSize: '10px', colors: getTextColor() }, rotate: -45, rotateAlways: keys.length > 10 } },
         yaxis: { labels: { formatter: (val) => { if (val >= 1e6) return 'R$ ' + (val/1e6).toFixed(1) + 'M'; if (val >= 1e3) return 'R$ ' + (val/1e3).toFixed(0) + 'k'; return 'R$ ' + val; }, style: { colors: getTextColor() } } },

@@ -26,27 +26,33 @@ Todo código de interface deve seguir estritamente o padrão estabelecido na pas
 1. **Páginas HTML e Tailwind CDN:**
    - Criadas como arquivos `.html` na raiz da pasta `public/`.
    - Devem sempre importar o script do Tailwind via CDN: `<script src="https://cdn.tailwindcss.com"></script>`.
-   - **Crucial:** Devem conter o script de configuração do Tailwind (`tailwind.config`) injetando a paleta de cores própria do projeto antes de renderizar os estilos (veja o padrão no `index.html` ou `dashboard.html`).
-   - A fonte oficial do projeto é a **Inter** (do Google Fonts), que deve ser importada no `<head>`.
+   - **Crucial:** Devem conter o script de configuração do Tailwind (`tailwind.config`) injetando a paleta de cores própria do projeto antes de renderizar os estilos.
+   - A fonte oficial do projeto é a **Outfit** (do Google Fonts), que deve ser importada no `<head>`. A fonte `Outfit` garante um kerning compacto e moderno, ideal para tabelas e dados numéricos.
 
-2. **Paleta de Cores e Tema (Tailwind Config):**
+2. **Tipografia e Responsividade de Telas (Obrigatório para Laptops):**
+   - O sistema deve obrigatoriamente prever restrições de espaço vertical e horizontal em resoluções como `1024x768` ou `1280x720` (Padrão Notebook HD).
+   - **Paddings Globais:** Os contêineres principais de conteúdo nunca devem usar apenas `p-6`. Devem utilizar sempre margens responsivas como `p-4 lg:p-6` para não roubar espaço útil nas bordas em monitores menores.
+   - **KPIs e Cartões:** Fontes e dimensões internas de cartões devem escalar usando classes condicionais (ex: `text-[10px] lg:text-[11px]`, `h-7 lg:h-10`, `grid-cols-1 lg:grid-cols-4`). Não force `xl:` para quebras de colunas se puder utilizar `lg:`.
+   - **Grids e Tabelas (Javascript):** Quando forçar alturas rígidas em linhas de listagem para dar aparência de planilhas, NUNCA travar em uma altura excessiva (como `h-[150px]`). Use design escalonável como `h-[110px] 2xl:h-[150px]`.
+
+3. **Paleta de Cores e Tema (Tailwind Config):**
    - O projeto não utiliza cores genéricas do Tailwind para sua identidade.
    - **`nexo`**: Tons de Teal/Cyan (ex: `nexo-500: '#0097A7'`, `nexo-600: '#00838F'`) - Utilizados para marca, botões primários e destaques (accent).
    - **`steel`**: Tons de Cinza/Grafite (ex: `steel-800: '#1f2937'`, `steel-900: '#111827'`) - Utilizados para fundos estruturais, painéis, sidebar e tipografia.
-   - As fontes devem usar a classe `font-sans` configurada para priorizar a fonte 'Inter'.
+   - As fontes devem usar a classe `font-sans` configurada para priorizar a fonte 'Outfit'.
 
-3. **Suporte a Dark Mode:**
+4. **Suporte a Dark Mode:**
    - A configuração do Tailwind exige `darkMode: 'class'`.
    - O suporte ao tema escuro é obrigatório em todas as páginas.
    - Utilize o prefixo `dark:` (ex: `bg-white dark:bg-steel-800`, `text-steel-800 dark:text-gray-100`).
    - A preferência do tema do usuário é salva no `localStorage` sob a chave `'theme'`.
 
-4. **Estética, Animações e Micro-interações:**
+5. **Estética, Animações e Micro-interações:**
    - Priorize uma interface *premium*, limpa e dinâmica (UI/UX).
    - Elementos interativos devem ter transições suaves utilizando classes utilitárias (ex: `transition-all duration-200`).
    - Efeitos de `hover`, `focus` em inputs (ex: *glow* suave com cor primária) e animações de entrada (ex: *fade-in-up*) são essenciais e podem ser definidos em blocos `<style>` locais quando não forem facilmente cobertos pelo Tailwind.
 
-5. **Organização de Arquivos Frontend:**
+6. **Organização de Arquivos Frontend:**
    - **JavaScript (`public/js/`):** Arquivos modularizados por responsabilidade da página (ex: `dashboard.js`, `theme.js`). Não misture regras de páginas diferentes no mesmo arquivo.
    - **Imagens/Mídias (`public/assets/`):** Organizadas na pasta de assets.
    - **CSS (`public/css/`):** Usar primariamente para estilos globais que realmente não possam ser resolvidos via utilitários do Tailwind (o que é raro neste projeto).

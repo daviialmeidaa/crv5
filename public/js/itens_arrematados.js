@@ -245,7 +245,7 @@ const IA = (() => {
         let html = '';
         state.viewData.forEach(row => {
             const safeContratoConcat = String(row['COD_CONTRATO_CONCAT'] || '').replace(/'/g, "\\'");
-            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; IA.openContratoModal('${safeContratoConcat}')" class="h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
+            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; IA.openContratoModal('${safeContratoConcat}')" class="h-[110px] 2xl:h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
             columns.forEach(col => {
                 let val = row[col.key];
                 let displayVal;

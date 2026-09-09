@@ -48,7 +48,7 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ── Animações ── */
         @keyframes fadeInUp {
@@ -173,10 +173,10 @@
                 py-6">
 
         <div class="glass-card relative w-full max-w-md
-                    lg:w-[360px] xl:w-[380px] 2xl:w-[420px]
+                    lg:w-[340px] xl:w-[360px] 2xl:w-[420px]
                     rounded-3xl
-                    px-7 lg:px-8 2xl:px-11
-                    py-8 lg:py-9 2xl:py-11
+                    px-6 lg:px-7 2xl:px-11
+                    py-7 lg:py-8 2xl:py-11
                     animate-card-in">
 
             <!-- Accent bar top -->
@@ -184,12 +184,12 @@
 
             <!-- Logo -->
             <div class="mb-7 lg:mb-7 2xl:mb-9 animate-fade-in-up flex justify-center">
-                <img src="/assets/images/logo.png" alt="Nexomed" class="h-9 lg:h-9 2xl:h-11">
+                <img src="/assets/images/logo.png" alt="Nexomed" class="h-8 lg:h-8 2xl:h-11">
             </div>
 
             <!-- Header -->
             <div class="w-full mb-5 lg:mb-5 2xl:mb-7 animate-fade-in-up-delay">
-                <h1 class="text-xl lg:text-xl 2xl:text-2xl font-semibold text-steel-800 tracking-tight">Primeiro Acesso</h1>
+                <h1 class="text-lg lg:text-xl 2xl:text-2xl font-semibold text-steel-800 tracking-tight">Primeiro Acesso</h1>
                 <p class="text-steel-500 text-sm mt-1">Crie sua senha definitiva para acessar o sistema.</p>
             </div>
 
@@ -206,20 +206,20 @@
             <!-- Formulário -->
             <form id="firstAccessForm" class="w-full space-y-4 lg:space-y-4 2xl:space-y-5 animate-fade-in-up-delay-2">
                 <div>
-                    <label for="newPassword" class="block text-xs font-medium text-steel-500 uppercase tracking-wider mb-1.5 2xl:mb-2">Nova Senha</label>
+                    <label for="newPassword" class="block text-[11px] lg:text-xs 2xl:text-xs font-medium text-steel-500 uppercase tracking-wider mb-1 2xl:mb-2">Nova Senha</label>
                     <input id="newPassword" name="password" type="password" required 
-                           class="input-nexo w-full px-3.5 2xl:px-4 py-2.5 2xl:py-3 bg-white/80 border border-gray-200/70 rounded-xl text-steel-800 text-sm outline-none transition-all duration-200 focus:border-nexo-500 focus:bg-white" 
+                           class="input-nexo w-full px-3.5 2xl:px-4 py-2 2xl:py-3 bg-white/80 border border-gray-200/70 rounded-xl text-steel-800 text-[13px] 2xl:text-sm outline-none transition-all duration-200 focus:border-nexo-500 focus:bg-white" 
                            placeholder="Mínimo de 6 caracteres" minlength="6">
                 </div>
 
                 <div>
-                    <label for="confirmPassword" class="block text-xs font-medium text-steel-500 uppercase tracking-wider mb-1.5 2xl:mb-2">Confirmar Nova Senha</label>
+                    <label for="confirmPassword" class="block text-[11px] lg:text-xs 2xl:text-xs font-medium text-steel-500 uppercase tracking-wider mb-1 2xl:mb-2">Confirmar Nova Senha</label>
                     <input id="confirmPassword" name="confirmPassword" type="password" required 
-                           class="input-nexo w-full px-3.5 2xl:px-4 py-2.5 2xl:py-3 bg-white/80 border border-gray-200/70 rounded-xl text-steel-800 text-sm outline-none transition-all duration-200 focus:border-nexo-500 focus:bg-white" 
+                           class="input-nexo w-full px-3 2xl:px-4 py-2 2xl:py-3 bg-white/80 border border-gray-200/70 rounded-xl text-steel-800 text-[13px] 2xl:text-sm outline-none transition-all duration-200 focus:border-nexo-500 focus:bg-white" 
                            placeholder="Repita a nova senha" minlength="6">
                 </div>
 
-                <button type="submit" id="submitBtn" class="btn-nexo w-full bg-nexo-500 hover:bg-nexo-600 text-white font-medium py-2.5 2xl:py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98] flex justify-center items-center gap-2 shadow-lg shadow-nexo-500/25 mt-1">
+                <button type="submit" id="submitBtn" class="btn-nexo w-full bg-nexo-500 hover:bg-nexo-600 text-white font-medium py-2 2xl:py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98] flex justify-center items-center gap-2 shadow-lg shadow-nexo-500/25 mt-2 text-[14px] 2xl:text-base">
                     <span id="btnText">Salvar Senha e Acessar</span>
                     <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

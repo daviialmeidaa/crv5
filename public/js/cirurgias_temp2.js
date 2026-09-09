@@ -439,7 +439,7 @@ const OPME = (() => {
         state.viewData.forEach((row, idx) => {
             const isContratosTab = state.currentTab === 'contratos' || state.currentTab === 'contratos_inativos';
             const cursorClass = 'cursor-pointer';
-            const hoverClass = 'h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
+            const hoverClass = 'h-[110px] 2xl:h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 group';
             const clickHandler = `onclick="OPME.handleRowClick(${idx}, '${state.currentTab}')"`;
 
             html += `<tr class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
