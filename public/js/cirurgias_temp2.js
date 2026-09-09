@@ -392,7 +392,7 @@ const OPME = (() => {
         const thead = document.getElementById('opmeTableHead');
         if (!thead) return;
 
-        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[12px] font-medium">';
+        let html = '<tr class="text-steel-600 dark:text-gray-300 text-[10px] 2xl:text-[12px] font-medium">';
         cols.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
             const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
@@ -401,7 +401,7 @@ const OPME = (() => {
             const filterColor = isFiltered ? 'text-nexo-500' : 'text-steel-300 dark:text-steel-600 hover:text-steel-500';
 
             html += `
-                <th class="px-3 py-2 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[70px] select-none relative align-middle"
+                <th class="px-2 py-1.5 2xl:px-3 2xl:py-2 border-b border-gray-200 dark:border-steel-700 whitespace-normal break-words h-[70px] select-none relative align-middle"
                      data-col="${col.key}">
                     <div class="flex items-center justify-center gap-1.5 w-full h-full px-4">
                         <div class="cursor-pointer hover:text-nexo-600 transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
@@ -454,7 +454,7 @@ const OPME = (() => {
                         `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>`;
                     const toggleTitle = isInactive ? 'Ativar Contrato' : 'Desativar Contrato';
 
-                    html += `<td class="px-3 py-3 text-center align-middle w-24">
+                    html += `<td class="px-2 py-1.5 2xl:px-3 2xl:py-3 text-center align-middle w-24">
                         <div class="flex items-center justify-center gap-2">
                             <button onclick="event.stopPropagation(); OPME.openContratoModal(${idx})" class="p-1.5 rounded-lg text-nexo-600 hover:bg-nexo-50 dark:text-nexo-400 dark:hover:bg-nexo-900/30 transition-colors" title="Editar Contrato">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
@@ -475,7 +475,7 @@ const OPME = (() => {
                         wrapClass = 'whitespace-normal break-words min-w-[250px] max-w-[450px]';
                     }
                     
-                    html += `<td class="px-3 py-3 text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
+                    html += `<td class="px-2 py-1.5 2xl:px-3 2xl:py-3 text-[11px] 2xl:text-[13px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${val}</td>`;
                 }
             });
             html += '</tr>';

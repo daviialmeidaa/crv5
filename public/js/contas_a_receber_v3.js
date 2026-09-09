@@ -229,7 +229,7 @@ const ContasGrid = (function () {
 
     function renderHeaders() {
         const thead = document.getElementById('contasTableHeader');
-        let html = '<tr class="text-white text-[12px] font-medium">';
+        let html = '<tr class="text-white text-[10px] 2xl:text-[12px] font-medium">';
 
         columns.forEach(col => {
             const isSticky = col.sticky ? 'sticky-col bg-nexo-600 dark:bg-steel-900 border-r shadow-[1px_0_0_rgba(229,231,235,1)] dark:shadow-[1px_0_0_rgba(55,65,81,1)]' : '';
@@ -242,7 +242,7 @@ const ContasGrid = (function () {
             const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
 
             html += `
-                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative text-center align-middle ${isSticky}">
+                <th class="px-2 py-1.5 2xl:px-3 2xl:py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative text-center align-middle ${isSticky}">
                     <div class="flex items-center justify-center cursor-pointer hover:text-white/80 transition-colors w-full px-4" onclick="ContasGrid.toggleSort('${col.key}')">
                         ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
                     </div>
@@ -284,7 +284,7 @@ const ContasGrid = (function () {
                 const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
                 const alignClass = col.center ? 'text-center' : '';
 
-                html += `<td class="px-3 py-1.5 text-[12px] whitespace-nowrap ${isSticky} ${alignClass}">${val}</td>`;
+                html += `<td class="px-2 py-1 2xl:px-3 2xl:py-1.5 text-[11px] 2xl:text-[12px] whitespace-nowrap ${isSticky} ${alignClass}">${val}</td>`;
             });
             html += '</tr>';
         });

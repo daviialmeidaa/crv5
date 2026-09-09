@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         tableBody.innerHTML = users.map(user => `
             <tr class="hover:bg-gray-50/50 dark:hover:bg-steel-800/50 transition-colors group">
-                <td class="px-6 py-4">
+                <td class="px-3 py-2 2xl:px-6 2xl:py-4 text-[12px] 2xl:text-sm">
                     <div class="flex items-center gap-3">
                         ${user.avatar_url 
                             ? `<img src="${user.avatar_url}" alt="${user.nome}" class="w-8 h-8 rounded-full object-cover bg-steel-200 shadow-sm border border-gray-100 dark:border-steel-700">`
@@ -88,9 +88,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="font-medium text-steel-800 dark:text-gray-200">${user.nome}</span>
                     </div>
                 </td>
-                <td class="px-6 py-4 text-steel-600 dark:text-steel-400">${user.email}</td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                <td class="px-3 py-2 2xl:px-6 2xl:py-4 text-steel-600 dark:text-steel-400 text-[12px] 2xl:text-sm">${user.email}</td>
+                <td class="px-3 py-2 2xl:px-6 2xl:py-4">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] 2xl:text-xs font-medium ${
                         user.role.trim().toUpperCase() === 'ADMIN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' :
                         user.role.startsWith('CR') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' :
                         user.role.startsWith('LC') ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' :
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ${user.role}
                     </span>
                 </td>
-                <td class="px-6 py-4 text-right">
+                <td class="px-3 py-2 2xl:px-6 2xl:py-4 text-right">
                     ${(canManageUsers && canAssignRole(currentUser.role, user.role)) ? `
                     <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onclick="window.openEditModal(${user.id})" class="p-1.5 text-steel-400 hover:text-nexo-600 hover:bg-nexo-50 dark:hover:bg-steel-700 rounded transition-colors" title="Editar Usuário">

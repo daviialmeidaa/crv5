@@ -344,7 +344,7 @@ const ClienteDetalhe = (() => {
     // ==========================================
     const renderHeaders = () => {
         if (!elements.tableHeader) return;
-        let html = '<tr class="text-white text-[12px] font-medium">';
+        let html = '<tr class="text-white text-[10px] 2xl:text-[12px] font-medium">';
 
         columns.forEach(col => {
             const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
@@ -352,7 +352,7 @@ const ClienteDetalhe = (() => {
             const filterColor = hasFilter ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
 
             html += `
-                <th class="px-3 py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle text-center">
+                <th class="px-2 py-1.5 2xl:px-3 2xl:py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle text-center">
                     <div class="flex items-center justify-center w-full px-4">
                         <div class="cursor-pointer hover:text-white/80 transition-colors text-center" onclick="ClienteDetalhe.toggleSort('${col.key}')">
                             ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
@@ -385,7 +385,7 @@ const ClienteDetalhe = (() => {
         state.viewData.forEach(row => {
             const clientName = document.getElementById('clienteNome') ? document.getElementById('clienteNome').textContent.replace(/'/g, "\\'") : '';
             const args = `'${row.empresa}', '${row.nota}', '${row.documento || ''}', '${clientName}', '', '', '${row.valor || '0'}'`;
-            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; ClienteDetalhe.openNotaModal(${args})" class="h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
+            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; ClienteDetalhe.openNotaModal(${args})" class="h-[38px] 2xl:h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
 
             columns.forEach(col => {
                 let val = row[col.key];
@@ -404,7 +404,7 @@ const ClienteDetalhe = (() => {
                     val = col.render(row[col.key]);
                 }
 
-                html += `<td class="px-4 py-2 text-[13px] whitespace-nowrap text-center">${val}</td>`;
+                html += `<td class="px-2 py-1 2xl:px-4 2xl:py-2 text-[11px] 2xl:text-[13px] whitespace-nowrap text-center">${val}</td>`;
             });
 
             html += '</tr>';
