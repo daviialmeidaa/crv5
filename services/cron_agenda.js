@@ -3,6 +3,8 @@ const pgPool = require('../db/pgConnection');
 const nodemailer = require('nodemailer');
 const eventBus = require('./eventBus');
 
+/*
+// Configuração Antiga: Google Workspace (Gmail) - BACKUP
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -10,6 +12,22 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: 'davi.almeida@iebtinnovation.com',
         pass: process.env.GMAIL_APP_PASSWORD
+    }
+});
+*/
+
+// Nova Configuração: HostGator
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'sh-pro76.hostgator.com.br',
+    port: process.env.SMTP_PORT || 465,
+    secure: true,
+    auth: {
+        user: process.env.SMTP_USER || 'hub@nexomed.com.br',
+        pass: process.env.SMTP_PASSWORD
+    },
+    name: 'nexomed.com.br',
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
@@ -175,9 +193,9 @@ async function runAgendaCronLogic(options = {}) {
 
             if (destinatarios.length > 0) {
                 const mailOptions = {
-                    from: '"Nexomed Licitações" <davi.almeida@iebtinnovation.com>',
+                    from: '"HUB - Nexomed" <hub@nexomed.com.br>',
                     to: destinatarios,
-                    subject: 'LEMBRETE DE PREGÕES AGENDADOS',
+                    subject: `Pregões agendados para ${isFridayRoutine ? 'segunda-feira' : 'amanhã'}`,
                     html: emailHtml
                 };
 

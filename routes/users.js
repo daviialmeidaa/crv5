@@ -23,7 +23,8 @@ const transporter = nodemailer.createTransport({
 });
 */
 
-// Nova Configuração: Google Workspace (Gmail)
+/*
+// Nova Configuração: Google Workspace (Gmail) - BACKUP
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
@@ -31,6 +32,22 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: 'davi.almeida@iebtinnovation.com',
         pass: process.env.GMAIL_APP_PASSWORD
+    }
+});
+*/
+
+// Nova Configuração: HostGator
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || 'sh-pro76.hostgator.com.br',
+    port: process.env.SMTP_PORT || 465,
+    secure: true,
+    auth: {
+        user: process.env.SMTP_USER || 'hub@nexomed.com.br',
+        pass: process.env.SMTP_PASSWORD
+    },
+    name: 'nexomed.com.br',
+    tls: {
+        rejectUnauthorized: false
     }
 });
 
@@ -139,7 +156,7 @@ router.post('/', authMiddleware, requirePermission('canManageUsers'), async (req
 
         const mailOptions = {
             // from: '"Nexomed Sistemas" <ti@nexomed.com.br>', // Histórico
-            from: '"Nexomed Sistemas" <davi.almeida@iebtinnovation.com>',
+            from: '"HUB - Nexomed" <hub@nexomed.com.br>',
             to: email,
             subject: 'Bem vindo ao HUB - Nexomed',
             html: `
