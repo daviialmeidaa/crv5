@@ -40,6 +40,7 @@ app.use('/api/heroku', require('./routes/heroku'));
 app.use('/api/vba', require('./routes/vba_integration'));
 app.use('/api/perfis', require('./routes/perfis'));
 app.use('/api/opme', require('./routes/opme'));
+app.use('/api/financeiro', require('./routes/financeiro'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
@@ -59,6 +60,11 @@ app.get('/perfis', (req, res) => {
 // Nova rota para Cobrança (Clientes)
 app.get('/clientes', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'clientes.html'));
+});
+
+// Nova rota para Custos Produtos
+app.get('/custos_produtos', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'custos_produtos.html'));
 });
 
 // Detalhe do Cliente (rota parametrizada)
