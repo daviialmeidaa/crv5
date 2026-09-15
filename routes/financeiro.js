@@ -39,6 +39,46 @@ router.post('/custos/sincronizar', async (req, res) => {
 });
 
 // =============================================================
+// GET /api/financeiro/custos/sincronizar/stream
+// Dispara a sincronização e retorna progresso via SSE
+// =============================================================
+router.get('/custos/sincronizar/stream', async (req, res) => {
+    const { ano, mes } = req.query;
+    
+    // Headers necessários para Server-Sent Events
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders(); // Envia os headers imediatamente
+
+    if (!ano || !mes) {
+        res.write(`data: ${JSON.stringify({ error: 'Ano e mês são obrigatórios' })}\n\n`);
+        return res.end();
+    }
+
+    const onProgress = (data) => {
+        const payload = typeof data === 'object' ? data : { message: data };
+        res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    };
+
+    try {
+        const resultado = await syncAnoMes(parseInt(ano), parseInt(mes), onProgress);
+        
+        // Limpar cache após sucesso
+        await clearCache(`financeiro:resumo:${ano}`);
+        await clearCache(`financeiro:historico:${ano}`);
+        
+        // Envia o resultado final
+        res.write(`data: ${JSON.stringify({ done: true, result: resultado })}\n\n`);
+    } catch (error) {
+        console.error('Erro na sincronização stream:', error);
+        res.write(`data: ${JSON.stringify({ error: error.message || 'Erro interno' })}\n\n`);
+    } finally {
+        res.end();
+    }
+});
+
+// =============================================================
 // GET /api/financeiro/custos/resumo?ano=2025
 // Retorna totais gerais, mensais e trimestrais para o ano selecionado
 // =============================================================

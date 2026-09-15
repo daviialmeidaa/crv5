@@ -18,7 +18,7 @@ async function getMostRecentCostFromPool(pool, codProduto, lote) {
             .input('codProduto', sql.NVarChar, codProduto)
             .input('lote', sql.NVarChar, lote)
             .query(`
-                SELECT TOP 1 c.data_entrada, ci.valor_custo
+                SELECT TOP 1 c.data_entrada, COALESCE(ci.valor_custo, ci.custo_real_unitario, ci.valor_unitario) as valor_custo
                 FROM compra_item_lote cil
                 JOIN compra_item ci ON cil.comit_comp_codigo = ci.comp_codigo AND cil.comit_codigo = ci.codigo
                 JOIN compra c ON ci.comp_codigo = c.codigo
@@ -35,7 +35,7 @@ async function getMostRecentCostFromPool(pool, codProduto, lote) {
     const resN2 = await pool.request()
         .input('codProduto', sql.NVarChar, codProduto)
         .query(`
-            SELECT TOP 1 c.data_entrada, ci.valor_custo
+            SELECT TOP 1 c.data_entrada, COALESCE(ci.valor_custo, ci.custo_real_unitario, ci.valor_unitario) as valor_custo
             FROM compra_item ci
             JOIN compra c ON ci.comp_codigo = c.codigo
             WHERE ci.prod_codigo = @codProduto
@@ -65,7 +65,9 @@ async function getMostRecentCostFromPool(pool, codProduto, lote) {
  * @returns {number} Custo encontrado ou 0
  */
 async function findCusto(empresa, codProduto, lote) {
-    if (!codProduto) return 0;
+    if (!codProduto) {
+        return { cost: 0, level: 5 };
+    }
     
     try {
         const poolSGC = await getPool();
@@ -77,26 +79,35 @@ async function findCusto(empresa, codProduto, lote) {
         ]);
 
         let bestResult = null;
+        let sourceDb = '';
         
         // Compara SGC e SGC2 e pega o mais recente (ou o melhor nivel)
         if (sgcResult && sgc2Result) {
-            // Se um for nivel 1 e o outro nivel 2, preferimos o nivel 1 (lote exato)
-            if (sgcResult.level < sgc2Result.level) bestResult = sgcResult;
-            else if (sgc2Result.level < sgcResult.level) bestResult = sgc2Result;
-            else {
-                // Mesmo nivel, compara data
+            if (sgcResult.level < sgc2Result.level) {
+                bestResult = sgcResult;
+                sourceDb = 'SGC';
+            } else if (sgc2Result.level < sgcResult.level) {
+                bestResult = sgc2Result;
+                sourceDb = 'SGC2';
+            } else {
                 if (new Date(sgcResult.date) >= new Date(sgc2Result.date)) {
                     bestResult = sgcResult;
+                    sourceDb = 'SGC';
                 } else {
                     bestResult = sgc2Result;
+                    sourceDb = 'SGC2';
                 }
             }
-        } else {
-            bestResult = sgcResult || sgc2Result;
+        } else if (sgcResult) {
+            bestResult = sgcResult;
+            sourceDb = 'SGC';
+        } else if (sgc2Result) {
+            bestResult = sgc2Result;
+            sourceDb = 'SGC2';
         }
 
         if (bestResult) {
-            return bestResult.cost;
+            return { cost: bestResult.cost, level: bestResult.level }; // level 1 or 2
         }
 
         // NÍVEL 3: Postgres (Lote/Produto)
@@ -110,7 +121,8 @@ async function findCusto(empresa, codProduto, lote) {
             `, [codProduto, lote]);
 
             if (resN3.rows.length > 0) {
-                return parseFloat(resN3.rows[0].custo_unitario);
+                const c = parseFloat(resN3.rows[0].custo_unitario);
+                return { cost: c, level: 3 };
             }
         }
 
@@ -124,14 +136,15 @@ async function findCusto(empresa, codProduto, lote) {
         `, [codProduto]);
 
         if (resN4.rows.length > 0) {
-            return parseFloat(resN4.rows[0].custo_unitario);
+            const c = parseFloat(resN4.rows[0].custo_unitario);
+            return { cost: c, level: 4 };
         }
 
         // NÍVEL 5: Fallback
-        return 0.00;
+        return { cost: 0.00, level: 5 };
     } catch (err) {
         console.error('Erro no cost_engine:', err);
-        return 0;
+        return { cost: 0, level: 5 };
     }
 }
 

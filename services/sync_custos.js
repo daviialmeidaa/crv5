@@ -14,8 +14,12 @@ const CFOP_VENDA = [5102, 6102];
 const CFOP_DEVOLUCAO = [1202, 2202];
 const CFOPS_VALIDOS = [...CFOP_VENDA, ...CFOP_DEVOLUCAO];
 
-async function syncAnoMes(ano, mes) {
-    console.log(`\n🔄 Iniciando sincronização: ${mes}/${ano}`);
+async function syncAnoMes(ano, mes, onProgress = null) {
+    const notify = (data) => {
+        if (onProgress) onProgress(data);
+    };
+
+    notify({ message: `Iniciando sincronização: ${mes}/${ano}`, isHighlight: true });
     
     // 1. Buscar notas já importadas no Postgres para o mês/ano
     const pgNotasResult = await pgPool.query(`
@@ -26,7 +30,7 @@ async function syncAnoMes(ano, mes) {
     
     const notasImportadas = new Set();
     pgNotasResult.rows.forEach(r => notasImportadas.add(`${r.empresa}-${r.nota_fiscal}`));
-    console.log(`   ✓ ${notasImportadas.size} notas já existem no histórico local.`);
+    notify({ message: `${notasImportadas.size} itens já existem no histórico local (ignorado).`, isSuccess: true });
 
     const conexoes = [
         { pool: await getPool(), empresa: 'Nexomed' },
@@ -36,18 +40,33 @@ async function syncAnoMes(ano, mes) {
     let totalAnalisadas = 0;
     let novasInsercoes = 0;
     
+    // Estatísticas
+    const notasProcessadas = new Set();
+    let notasVenda = 0;
+    let notasDevolucao = 0;
+    let totalItensProcessados = 0;
+    let custosEncontrados = 0;
+    let semCusto = 0;
+    
+    // Estatísticas de Nível para UI em Tempo Real
+    let custosNivel1e2 = 0;
+    let custosNivel3e4 = 0;
+    let custosNivel5 = 0;
+    
     const pgClient = await pgPool.connect();
 
     try {
         await pgClient.query('BEGIN');
 
+        let allItensSupra = [];
+
         for (const cx of conexoes) {
             if (!cx.pool) {
-                console.error(`⚠️  Ignorando empresa ${cx.empresa} (sem conexão com o banco).`);
+                notify({ message: `Ignorando empresa ${cx.empresa} (sem conexão com o banco).`, isWarning: true });
                 continue;
             }
 
-            console.log(`\n🔍 Consultando banco Supra da empresa: ${cx.empresa}`);
+            notify({ message: `Consultando banco Supra da empresa: ${cx.empresa}`, isHighlight: true });
 
             // Query unificando os itens e seus lotes (se existirem)
             const querySupra = `
@@ -87,63 +106,127 @@ async function syncAnoMes(ano, mes) {
                 .query(querySupra);
 
             const itensSupra = supraResult.recordset;
-            totalAnalisadas += itensSupra.length;
-            console.log(`   ✓ ${itensSupra.length} itens encontrados para ${cx.empresa}.`);
-
-            for (const item of itensSupra) {
-                const notaFiscal = item.numero_nota;
-                
-                // Pular se a nota já foi importada inteiramente
-                if (notasImportadas.has(`${cx.empresa}-${notaFiscal}`)) {
-                    continue;
-                }
-
-                const tipoNota = CFOP_DEVOLUCAO.includes(item.cfop_codigo) ? 'DEVOLUÇÃO RETORNO DE VENDA' : 'VENDA';
-                const multiplier = tipoNota === 'DEVOLUÇÃO RETORNO DE VENDA' ? -1 : 1;
-
-                const qtd = (item.quantidade || 0) * multiplier;
-                const valUnit = item.valor_unitario || 0;
-                const valTotal = qtd * valUnit;
-
-                // 4. Buscar custo via Cost Engine
-                // A Cost Engine agora procura nos dois bancos independentemente de quem gerou a venda
-                const custoUnitario = await findCusto(cx.empresa, item.prod_codigo, item.lote);
-                const custoTotal = qtd * custoUnitario; 
-
-                // 5. Inserir no Postgres
-                await pgClient.query(`
-                    INSERT INTO financeiro.vendas_custos (
-                        empresa, nota_fiscal, codigo_cliente, cliente, cidade, uf, data_emissao, tipo_nota,
-                        cod_produto, produto, lote, classificacao, fabricante, unidade,
-                        quantidade, valor_unitario, valor_total, custo_unitario, custo_total
-                    ) VALUES (
-                        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
-                    )
-                `, [
-                    cx.empresa, 
-                    notaFiscal, 
-                    item.codigo_cliente, 
-                    item.cliente || '(Não Informado)', 
-                    null, 
-                    item.uf_sigla, 
-                    item.data_emissao, 
-                    tipoNota,
-                    item.prod_codigo, 
-                    item.produto, 
-                    item.lote || null, 
-                    item.classificacao, 
-                    item.fabricante, 
-                    item.unidade,
-                    qtd, valUnit, valTotal, custoUnitario, custoTotal
-                ]);
-
-                novasInsercoes++;
-            }
+            itensSupra.forEach(i => i.empresa_origem = cx.empresa);
+            allItensSupra = allItensSupra.concat(itensSupra);
+            
+            notify({ message: `${itensSupra.length} registros encontrados para ${cx.empresa}.`, isSuccess: true });
         }
 
+        const totalItensToProcess = allItensSupra.length;
+        
+        if (totalItensToProcess > 0) {
+            notify({ message: `Iniciando análise de ${totalItensToProcess} registros no total...`, isHighlight: true });
+        } else {
+            notify({ message: `Nenhum registro encontrado para este período.`, isWarning: true });
+        }
+
+        for (let i = 0; i < totalItensToProcess; i++) {
+            const item = allItensSupra[i];
+            const cxEmpresa = item.empresa_origem;
+            const notaFiscal = item.numero_nota;
+
+            if (i % 5 === 0) {
+                notify({ progress: (i / totalItensToProcess) * 100 });
+            }
+            
+            // Pular se a nota já foi importada inteiramente
+            if (notasImportadas.has(`${cxEmpresa}-${notaFiscal}`)) {
+                continue;
+            }
+
+            const tipoNota = CFOP_DEVOLUCAO.includes(item.cfop_codigo) ? 'DEVOLUÇÃO RETORNO DE VENDA' : 'VENDA';
+            
+            // Rastrear Notas Fiscais unicas processadas agora
+            const notaKey = `${cxEmpresa}-${notaFiscal}`;
+            if (!notasProcessadas.has(notaKey)) {
+                notasProcessadas.add(notaKey);
+                if (tipoNota === 'VENDA') {
+                    notasVenda++;
+                } else {
+                    notasDevolucao++;
+                }
+            }
+
+            totalItensProcessados++;
+
+            const multiplier = tipoNota === 'DEVOLUÇÃO RETORNO DE VENDA' ? -1 : 1;
+
+            const qtd = (item.quantidade || 0) * multiplier;
+            const valUnit = item.valor_unitario || 0;
+            const valTotal = qtd * valUnit;
+
+            // 4. Buscar custo via Cost Engine
+            const engineResult = await findCusto(cxEmpresa, item.prod_codigo, item.lote);
+            const custoUnitario = engineResult.cost;
+            const level = engineResult.level;
+
+            if (level === 1 || level === 2) custosNivel1e2++;
+            else if (level === 3 || level === 4) custosNivel3e4++;
+            else custosNivel5++;
+
+            // Emitir progresso e status em tempo real (stats)
+            const currentItemDesc = `Produto [${item.prod_codigo}]${item.lote ? ` Lote [${item.lote}]` : ''}`;
+            notify({ 
+                progress: (i / totalItensToProcess) * 100,
+                currentItem: currentItemDesc,
+                stats: { n12: custosNivel1e2, n34: custosNivel3e4, n5: custosNivel5 }
+            });
+
+            const custoTotal = qtd * custoUnitario; 
+            
+            if (custoUnitario > 0) {
+                custosEncontrados++;
+            } else {
+                semCusto++;
+            }
+
+            // 5. Inserir no Postgres
+            await pgClient.query(`
+                INSERT INTO financeiro.vendas_custos (
+                    empresa, nota_fiscal, codigo_cliente, cliente, cidade, uf, data_emissao, tipo_nota,
+                    cod_produto, produto, lote, classificacao, fabricante, unidade,
+                    quantidade, valor_unitario, valor_total, custo_unitario, custo_total
+                ) VALUES (
+                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+                )
+            `, [
+                cxEmpresa, 
+                notaFiscal, 
+                item.codigo_cliente, 
+                item.cliente || '(Não Informado)', 
+                null, 
+                item.uf_sigla, 
+                item.data_emissao, 
+                tipoNota,
+                item.prod_codigo, 
+                item.produto, 
+                item.lote || null, 
+                item.classificacao, 
+                item.fabricante, 
+                item.unidade,
+                qtd, valUnit, valTotal, custoUnitario, custoTotal
+            ]);
+
+            novasInsercoes++;
+        }
+
+        notify({ progress: 100 });
         await pgClient.query('COMMIT');
-        console.log(`\n   ✅ Sincronização concluída! ${novasInsercoes} novos itens inseridos.`);
-        return { success: true, analisadas: totalAnalisadas, inseridas: novasInsercoes };
+        
+        return { 
+            success: true, 
+            analisadas: totalItensToProcess, 
+            inseridas: novasInsercoes,
+            totalNotas: notasProcessadas.size,
+            notasVenda,
+            notasDevolucao,
+            totalItens: totalItensProcessados,
+            custosEncontrados,
+            semCusto,
+            n12: custosNivel1e2,
+            n34: custosNivel3e4,
+            n5: custosNivel5
+        };
 
     } catch (err) {
         await pgClient.query('ROLLBACK');

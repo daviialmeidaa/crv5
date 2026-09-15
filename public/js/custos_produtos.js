@@ -221,39 +221,16 @@ const CustosApp = (() => {
             renderNulosGrid();
         });
 
-        document.getElementById('nulosBtnRefresh').addEventListener('click', async (e) => {
-            const btn = e.currentTarget;
-            const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Sincronizando...`;
-            btn.disabled = true;
-            btn.classList.add('opacity-75', 'cursor-not-allowed');
-
-            try {
-                const ano = document.getElementById('nulosAnoSelect').value;
-                const mes = document.getElementById('nulosMesSelect').value;
-                
-                const resp = await fetch('/api/financeiro/custos/sincronizar', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + getToken() 
-                    },
-                    body: JSON.stringify({ ano, mes })
-                });
-                
-                const data = await resp.json();
-                if (!resp.ok) throw new Error(data.error || 'Erro ao sincronizar');
-                
-                alert(`Sincronização concluída!\\nNotas analisadas: ${data.analisadas}\\nNovos itens: ${data.inseridas}`);
-                loadCustosNulos(); // Recarrega o grid e o badge
-            } catch (err) {
-                console.error(err);
-                alert(err.message);
-            } finally {
-                btn.innerHTML = originalHtml;
-                btn.disabled = false;
-                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        document.getElementById('nulosBtnRefresh').addEventListener('click', (e) => {
+            const ano = document.getElementById('nulosAnoSelect').value;
+            const mes = document.getElementById('nulosMesSelect').value;
+            
+            if (!ano || !mes) {
+                CustosApp.openAlertModal('Selecione um ano e um mês para sincronizar os custos.');
+                return;
             }
+
+            CustosApp.openSyncModal(ano, mes);
         });
 
         document.getElementById('nulosBtnExport').addEventListener('click', () => {
@@ -1144,6 +1121,185 @@ const CustosApp = (() => {
     }
 
     // ==========================================
+    // MODALS LOGIC
+    // ==========================================
+    function openAlertModal(msg) {
+        document.getElementById('alertModalMessage').textContent = msg;
+        const modal = document.getElementById('alertModal');
+        const content = document.getElementById('alertModalContent');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        });
+    }
+
+    function closeAlertModal() {
+        const modal = document.getElementById('alertModal');
+        const content = document.getElementById('alertModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    function openSyncModal(ano, mes) {
+        const modal = document.getElementById('syncModal');
+        const content = document.getElementById('syncModalContent');
+        const logContainer = document.getElementById('syncLog');
+        const footer = document.getElementById('syncModalFooter');
+        const icon = document.getElementById('syncModalIcon');
+        const title = document.getElementById('syncModalTitle');
+        const subtitle = document.getElementById('syncModalSubtitle');
+        const progressBar = document.getElementById('syncProgressBar');
+        const progressText = document.getElementById('syncProgressText');
+
+        // Reset state
+        logContainer.innerHTML = '<div class="text-center opacity-50 italic mt-16">Conectando...</div>';
+        progressBar.style.width = '0%';
+        progressText.textContent = '0%';
+        footer.classList.add('hidden');
+        icon.className = 'mx-auto w-16 h-16 rounded-full bg-nexo-50 dark:bg-nexo-900/20 flex items-center justify-center text-nexo-500 mb-4 shadow-inner';
+        icon.innerHTML = `<svg class="animate-spin h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>`;
+        title.textContent = 'Sincronizando Custos...';
+        title.className = 'text-lg font-bold text-steel-900 dark:text-gray-100';
+        subtitle.textContent = 'Não feche esta janela. O processo pode levar alguns instantes.';
+
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        });
+
+        const eventSource = new EventSource(`/api/financeiro/custos/sincronizar/stream?ano=${ano}&mes=${mes}`);
+        let isFirstMessage = true;
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (isFirstMessage) {
+                logContainer.innerHTML = '';
+                isFirstMessage = false;
+            }
+
+            if (data.progress !== undefined) {
+                const percent = Math.round(data.progress);
+                progressBar.style.width = `${percent}%`;
+                progressText.textContent = `${percent}%`;
+            }
+            
+            if (data.stats) {
+                logContainer.innerHTML = `
+                    <div class="mb-5 text-green-300">
+                        <span class="opacity-60">> Processando:</span> ${data.currentItem}
+                    </div>
+                    <div class="space-y-3 pl-2">
+                        <div class="flex justify-between items-center border-b border-steel-800 pb-2">
+                            <span>- Supra SGC/SGC2 (Níveis 1 e 2):</span>
+                            <span class="font-bold text-white">${data.stats.n12} encontrados</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-steel-800 pb-2">
+                            <span>- Histórico Local (Níveis 3 e 4):</span>
+                            <span class="font-bold text-white">${data.stats.n34} encontrados</span>
+                        </div>
+                        <div class="flex justify-between items-center text-red-400">
+                            <span>- Fallback (Custo Zero):</span>
+                            <span class="font-bold">${data.stats.n5} registros</span>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            if (data.error) {
+                logContainer.insertAdjacentHTML('beforeend', `<div class="text-red-500 mb-2 font-bold">Erro: ${data.error}</div>`);
+                logContainer.scrollTop = logContainer.scrollHeight;
+                eventSource.close();
+                showSyncComplete(false);
+                return;
+            }
+
+            if (data.done) {
+                progressBar.style.width = '100%';
+                progressText.textContent = '100%';
+                const stats = data.result;
+                logContainer.innerHTML = `
+                    <div class="mt-8 pt-4 border-t border-steel-700">
+                        <div class="text-white font-bold mb-3">> Resumo da Sincronização</div>
+                        <ul class="space-y-1 text-steel-400">
+                            <li>Total de Notas Únicas: <strong class="text-white">${stats.totalNotas}</strong></li>
+                            <li class="pl-4 text-[11px]">- Vendas: ${stats.notasVenda}</li>
+                            <li class="pl-4 text-[11px]">- Devoluções: ${stats.notasDevolucao}</li>
+                            <li class="mt-2 text-white">Total de Produtos (Itens): <strong>${stats.totalItens}</strong></li>
+                            <li class="pl-4 text-[11px] text-green-400">- Custos encontrados: ${stats.custosEncontrados}</li>
+                            <li class="pl-4 text-[11px] text-red-400">- Sem custo cadastrado: ${stats.semCusto}</li>
+                        </ul>
+                    </div>`;
+                logContainer.scrollTop = logContainer.scrollHeight;
+                eventSource.close();
+                showSyncComplete(true);
+                return;
+            }
+
+            if (data.message) {
+                let colorClass = 'text-steel-500';
+                if (data.isSuccess) colorClass = 'text-green-500';
+                if (data.isHighlight) colorClass = 'text-white font-semibold';
+                if (data.isWarning) colorClass = 'text-amber-500';
+
+                logContainer.insertAdjacentHTML('beforeend', `<div class="mb-1.5 ${colorClass}">${data.message.replace(/\\n/g, '<br>')}</div>`);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+        };
+
+        eventSource.onerror = (err) => {
+            console.error('SSE Error:', err);
+            logContainer.insertAdjacentHTML('beforeend', `<div class="text-red-500 mb-2 font-bold">A conexão com o servidor foi interrompida.</div>`);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            eventSource.close();
+            showSyncComplete(false);
+        };
+    }
+
+    function showSyncComplete(success) {
+        const icon = document.getElementById('syncModalIcon');
+        const title = document.getElementById('syncModalTitle');
+        const subtitle = document.getElementById('syncModalSubtitle');
+        const footer = document.getElementById('syncModalFooter');
+
+        if (success) {
+            icon.className = 'mx-auto w-16 h-16 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-500 mb-4 shadow-inner';
+            icon.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            title.textContent = 'Sincronização Finalizada!';
+            title.className = 'text-lg font-bold text-green-600 dark:text-green-400';
+            subtitle.textContent = 'Os dados foram atualizados com sucesso.';
+        } else {
+            icon.className = 'mx-auto w-16 h-16 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 mb-4 shadow-inner';
+            icon.innerHTML = `<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+            title.textContent = 'Falha na Sincronização';
+            title.className = 'text-lg font-bold text-red-600 dark:text-red-400';
+            subtitle.textContent = 'Houve um erro durante o processo. Verifique os logs acima.';
+        }
+
+        footer.classList.remove('hidden');
+    }
+
+    function closeSyncModal() {
+        const modal = document.getElementById('syncModal');
+        const content = document.getElementById('syncModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            loadCustosNulos();
+            loadResumo();
+            loadHistorico();
+        }, 300);
+    }
+
+    // ==========================================
     // INIT
     // ==========================================
     function init() {
@@ -1166,5 +1322,9 @@ const CustosApp = (() => {
         _goToPage,
         saveCost,
         formatInputCurrency,
+        openAlertModal,
+        closeAlertModal,
+        openSyncModal,
+        closeSyncModal
     };
 })();
