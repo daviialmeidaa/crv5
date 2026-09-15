@@ -12,6 +12,31 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db/pgConnection');
 const { getCache, setCache, clearCache } = require('../db/redis');
+const { syncAnoMes } = require('../services/sync_custos');
+
+// =============================================================
+// POST /api/financeiro/custos/sincronizar
+// Dispara a sincronização Supra -> Postgres
+// =============================================================
+router.post('/custos/sincronizar', async (req, res) => {
+    const { ano, mes } = req.body;
+    if (!ano || !mes) {
+        return res.status(400).json({ error: 'Ano e mês são obrigatórios' });
+    }
+
+    try {
+        const resultado = await syncAnoMes(parseInt(ano), parseInt(mes));
+        
+        // Limpar cache de totais do ano
+        await clearCache(`financeiro:resumo:${ano}`);
+        await clearCache(`financeiro:historico:${ano}`);
+        
+        res.json(resultado);
+    } catch (error) {
+        console.error('Erro na rota de sincronização:', error);
+        res.status(500).json({ error: 'Erro interno na sincronização' });
+    }
+});
 
 // =============================================================
 // GET /api/financeiro/custos/resumo?ano=2025
@@ -125,7 +150,7 @@ router.get('/custos/nulos', async (req, res) => {
 
     try {
         let query = `
-            SELECT id, empresa, nota_fiscal, cliente, cod_produto, produto, lote, classificacao, fabricante, quantidade, valor_unitario, valor_total, custo_unitario
+            SELECT id, empresa, nota_fiscal, cliente, cod_produto, produto, lote, classificacao, fabricante, quantidade, valor_unitario, valor_total, custo_unitario, custo_total, data_emissao, tipo_nota
             FROM financeiro.vendas_custos
             WHERE (custo_unitario = 0 OR custo_unitario IS NULL)
             AND EXTRACT(YEAR FROM data_emissao) = $1
