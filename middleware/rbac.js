@@ -1,5 +1,5 @@
 let rolePermissionsCache = {
-    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true, canViewOPME: true }
+    'ADMIN': { canViewCR: true, canViewLC: true, canViewUsers: true, canManageUsers: true, canViewClientes: true, canCreateUsers: true, canManageRoles: true, canResetHeroku: true, canViewOPME: true, canReceiveEmailsLC: true, canReceiveEmailsCR: true, canViewCustos: true }
 };
 
 const loadCustomRoles = async (pgPool) => {
