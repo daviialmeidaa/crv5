@@ -1123,8 +1123,30 @@ const CustosApp = (() => {
     // ==========================================
     // MODALS LOGIC
     // ==========================================
-    function openAlertModal(msg) {
-        document.getElementById('alertModalMessage').textContent = msg;
+    function openAlertModal(msg, type = 'warning') {
+        const titleEl = document.getElementById('alertModalTitle');
+        const iconContainer = document.getElementById('alertModalIconContainer');
+        const msgEl = document.getElementById('alertModalMessage');
+        
+        msgEl.textContent = msg;
+        
+        // Reset classes
+        iconContainer.className = 'shrink-0 w-10 h-10 rounded-full flex items-center justify-center';
+        
+        if (type === 'success') {
+            titleEl.textContent = 'Sucesso';
+            iconContainer.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-600', 'dark:text-green-400');
+            iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+        } else if (type === 'error') {
+            titleEl.textContent = 'Erro';
+            iconContainer.classList.add('bg-red-100', 'dark:bg-red-900/30', 'text-red-600', 'dark:text-red-400');
+            iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+        } else {
+            titleEl.textContent = 'Atenção';
+            iconContainer.classList.add('bg-yellow-100', 'dark:bg-yellow-900/30', 'text-yellow-600', 'dark:text-yellow-400');
+            iconContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>`;
+        }
+
         const modal = document.getElementById('alertModal');
         const content = document.getElementById('alertModalContent');
         modal.classList.remove('hidden');
@@ -1300,6 +1322,71 @@ const CustosApp = (() => {
     }
 
     // ==========================================
+    // EMAIL
+    // ==========================================
+    function openEmailModal() {
+        const modal = document.getElementById('emailModal');
+        const content = document.getElementById('emailModalContent');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            content.classList.remove('scale-95', 'opacity-0');
+            content.classList.add('scale-100', 'opacity-100');
+        });
+    }
+
+    function closeEmailModal() {
+        const modal = document.getElementById('emailModal');
+        const content = document.getElementById('emailModalContent');
+        content.classList.remove('scale-100', 'opacity-100');
+        content.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            document.getElementById('emailForm').reset();
+        }, 300);
+    }
+
+    async function submitEmailForm(e) {
+        e.preventDefault();
+        
+        const to = document.getElementById('emailTo').value.replace(/;/g, ',');
+        const cc = document.getElementById('emailCc').value.replace(/;/g, ',');
+        const year = document.getElementById('resumoAnoSelect').value;
+        
+        const btn = document.getElementById('btnSendEmail');
+        const spinner = document.getElementById('emailSpinner');
+        
+        btn.disabled = true;
+        spinner.classList.remove('hidden');
+        
+        try {
+            const response = await fetch('/api/financeiro/custos/email-contabilidade', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ to, cc, year })
+            });
+            
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Erro ao enviar e-mail');
+            
+            closeEmailModal();
+            setTimeout(() => {
+                openAlertModal('E-mail enviado com sucesso para a contabilidade!', 'success');
+            }, 350);
+        } catch (error) {
+            console.error(error);
+            closeEmailModal();
+            setTimeout(() => {
+                openAlertModal('Falha ao enviar e-mail: ' + error.message, 'error');
+            }, 350);
+        } finally {
+            btn.disabled = false;
+            spinner.classList.add('hidden');
+        }
+    }
+
+    // ==========================================
     // INIT
     // ==========================================
     function init() {
@@ -1325,6 +1412,9 @@ const CustosApp = (() => {
         openAlertModal,
         closeAlertModal,
         openSyncModal,
-        closeSyncModal
+        closeSyncModal,
+        openEmailModal,
+        closeEmailModal,
+        submitEmailForm
     };
 })();
