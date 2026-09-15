@@ -156,7 +156,7 @@ async function syncAnoMes(ano, mes, onProgress = null) {
             const valTotal = qtd * valUnit;
 
             // 4. Buscar custo via Cost Engine
-            const engineResult = await findCusto(cxEmpresa, item.prod_codigo, item.lote);
+            const engineResult = await findCusto(cxEmpresa, item.prod_codigo, item.lote, item.classificacao);
             const custoUnitario = engineResult.cost;
             const level = engineResult.level;
 

@@ -62,25 +62,31 @@ async function getMostRecentCostFromPool(pool, codProduto, lote) {
  * @param {string} empresa 'Nexomed' ou 'BML'
  * @param {string} codProduto Código do produto
  * @param {string} lote Lote do produto
+ * @param {string} classificacao Classificação do produto
  * @returns {number} Custo encontrado ou 0
  */
-async function findCusto(empresa, codProduto, lote) {
+async function findCusto(empresa, codProduto, lote, classificacao) {
     if (!codProduto) {
         return { cost: 0, level: 5 };
     }
     
     try {
-        const poolSGC = await getPool();
-        const poolSGC2 = await getPoolSGC2();
-
-        const [sgcResult, sgc2Result] = await Promise.all([
-            getMostRecentCostFromPool(poolSGC, codProduto, lote),
-            getMostRecentCostFromPool(poolSGC2, codProduto, lote)
-        ]);
-
         let bestResult = null;
         let sourceDb = '';
-        
+
+        // Regra de Negócio Especial: Fixadores Externos devem pular a busca no Supra (Nível 1 e 2)
+        const isFixadorExterno = classificacao && classificacao.toUpperCase() === 'FIXADORES EXTERNOS';
+
+        if (!isFixadorExterno) {
+            const poolSGC = await getPool();
+            const poolSGC2 = await getPoolSGC2();
+
+            const [sgcResult, sgc2Result] = await Promise.all([
+                getMostRecentCostFromPool(poolSGC, codProduto, lote),
+                getMostRecentCostFromPool(poolSGC2, codProduto, lote)
+            ]);
+
+
         // Compara SGC e SGC2 e pega o mais recente (ou o melhor nivel)
         if (sgcResult && sgc2Result) {
             if (sgcResult.level < sgc2Result.level) {
@@ -105,6 +111,7 @@ async function findCusto(empresa, codProduto, lote) {
             bestResult = sgc2Result;
             sourceDb = 'SGC2';
         }
+        } // Fim if (!isFixadorExterno)
 
         if (bestResult) {
             return { cost: bestResult.cost, level: bestResult.level }; // level 1 or 2
