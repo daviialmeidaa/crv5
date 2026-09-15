@@ -205,10 +205,10 @@ router.get('/custos/historico', async (req, res) => {
 // Atualiza o custo unitário de um registro (input manual)
 // =============================================================
 router.put('/custos/save-batch', async (req, res) => {
-    const { empresa, nota_fiscal, cod_produto, lote, custo_unitario } = req.body;
+    const { id, custo_unitario } = req.body;
 
-    if (custo_unitario === undefined || custo_unitario === null || !empresa || !nota_fiscal || !cod_produto) {
-        return res.status(400).json({ error: 'Dados insuficientes. Exige empresa, nota_fiscal, cod_produto e custo_unitario.' });
+    if (custo_unitario === undefined || custo_unitario === null || !id) {
+        return res.status(400).json({ error: 'Dados insuficientes. Exige id e custo_unitario.' });
     }
 
     const custoNum = parseFloat(custo_unitario);
@@ -222,18 +222,10 @@ router.put('/custos/save-batch', async (req, res) => {
             SET custo_unitario = $1,
                 custo_total = quantidade * $1,
                 updated_at = NOW()
-            WHERE empresa = $2 AND nota_fiscal = $3 AND cod_produto = $4
+            WHERE id = $2
+            RETURNING id, custo_unitario, custo_total
         `;
-        let params = [custoNum, empresa, nota_fiscal, cod_produto];
-
-        if (lote) {
-            query += ` AND lote = $5`;
-            params.push(lote);
-        } else {
-            query += ` AND lote IS NULL`;
-        }
-
-        query += ` RETURNING id, custo_unitario, custo_total`;
+        let params = [custoNum, id];
 
         const result = await pool.query(query, params);
 

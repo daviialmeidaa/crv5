@@ -194,14 +194,15 @@ const CustosApp = (() => {
     };
 
     const NULOS_COLUMNS = [
-        { key: 'empresa', label: 'Empresa', type: 'text', width: 'w-24' },
-        { key: 'nota_fiscal', label: 'Nota Fiscal', type: 'number', width: 'w-24' },
-        { key: 'cliente', label: 'Cliente', type: 'text', width: 'w-48' },
+        { key: 'empresa', label: 'Empresa', type: 'text', width: 'w-auto' },
+        { key: 'nota_fiscal', label: 'Nota Fiscal', type: 'number', width: 'w-auto' },
+        { key: 'cliente', label: 'Cliente', type: 'text', width: 'w-auto max-w-[200px]' },
         { key: 'tipo_nota', label: 'Tipo', type: 'text', width: 'w-32' },
-        { key: 'cod_produto', label: 'Cód. Produto', type: 'text', width: 'w-28' },
-        { key: 'produto', label: 'Produto', type: 'text', width: 'w-48' },
-        { key: 'lote', label: 'Lote', type: 'text', width: 'w-24' },
-        { key: 'classificacao', label: 'Classificação', type: 'text', width: 'w-32' },
+        { key: 'cod_produto', label: 'Cód. Produto', type: 'text', width: 'w-auto' },
+        { key: 'produto', label: 'Produto', type: 'text', width: 'w-auto' },
+        { key: 'lote', label: 'Lote', type: 'text', width: 'w-auto' },
+        { key: 'classificacao', label: 'Classificação', type: 'text', width: 'w-auto' },
+        { key: 'fabricante', label: 'Fabricante', type: 'text', width: 'w-auto' },
         { key: 'quantidade', label: 'Qtd', type: 'number', width: 'w-16' },
         { key: 'custo_unitario', label: 'Custo Unit.', type: 'input', width: 'w-32' },
     ];
@@ -258,6 +259,11 @@ const CustosApp = (() => {
         document.getElementById('nulosBtnExport').addEventListener('click', () => {
             if (!nulosState.filteredData.length) return;
             exportToExcel(nulosState.filteredData, NULOS_COLUMNS.filter(c => c.type !== 'input'), 'custos_nulos');
+        });
+
+        document.getElementById('nulosBtnClearFilters').addEventListener('click', () => {
+            nulosState.filters = {};
+            applyNulosFilters();
         });
 
         renderNulosHeader();
@@ -337,6 +343,14 @@ const CustosApp = (() => {
         }
         
         nulosState.filteredData = result;
+
+        const activeNulosFilters = Object.values(nulosState.filters).some(s => s.size > 0 && !s.has('__NONE__'));
+        const btnClearNulos = document.getElementById('nulosBtnClearFilters');
+        if (btnClearNulos) {
+            if (activeNulosFilters) btnClearNulos.classList.remove('hidden');
+            else btnClearNulos.classList.add('hidden');
+        }
+
         renderNulosHeader();
         renderNulosGrid();
     }
@@ -406,7 +420,8 @@ const CustosApp = (() => {
                     } else {
                         const val = row[col.key] || '-';
                         const truncate = col.key === 'cliente' || col.key === 'produto' ? 'max-w-[200px] truncate' : '';
-                        html += `<td class="px-3 py-2 text-xs whitespace-nowrap ${truncate}" title="${val}">${val}</td>`;
+                        const alignment = col.key === 'cliente' || col.key === 'produto' ? 'text-left' : 'text-center';
+                        html += `<td class="px-3 py-2 text-xs whitespace-nowrap ${alignment} ${truncate}" title="${val}">${val}</td>`;
                     }
                 });
                 html += '</tr>';
@@ -437,10 +452,7 @@ const CustosApp = (() => {
         input.disabled = true;
         try {
             const payload = {
-                empresa: record.empresa,
-                nota_fiscal: record.nota_fiscal,
-                cod_produto: record.cod_produto,
-                lote: record.lote,
+                id: record.id,
                 custo_unitario: custoNum
             };
 
@@ -455,12 +467,8 @@ const CustosApp = (() => {
 
             if (!resp.ok) throw new Error('Falha ao salvar');
 
-            nulosState.rawData = nulosState.rawData.filter(r => 
-                !(r.empresa === record.empresa && r.nota_fiscal === record.nota_fiscal && r.cod_produto === record.cod_produto && r.lote === record.lote)
-            );
-            nulosState.filteredData = nulosState.filteredData.filter(r => 
-                !(r.empresa === record.empresa && r.nota_fiscal === record.nota_fiscal && r.cod_produto === record.cod_produto && r.lote === record.lote)
-            );
+            nulosState.rawData = nulosState.rawData.filter(r => r.id !== record.id);
+            nulosState.filteredData = nulosState.filteredData.filter(r => r.id !== record.id);
 
             const badge = document.getElementById('nullCostsBadge');
             badge.textContent = nulosState.filteredData.length;
@@ -490,24 +498,23 @@ const CustosApp = (() => {
     };
 
     const HIST_COLUMNS = [
-        { key: 'empresa', label: 'Empresa', type: 'text', width: 'w-24' },
-        { key: 'data_emissao', label: 'Data', type: 'date', width: 'w-28' },
-        { key: 'nota_fiscal', label: 'Nota Fiscal', type: 'number', width: 'w-24' },
-        { key: 'tipo_nota', label: 'Tipo', type: 'text', width: 'w-32' },
-        { key: 'cliente', label: 'Cliente', type: 'text', width: 'w-44' },
-        { key: 'cidade', label: 'Cidade', type: 'text', width: 'w-28' },
-        { key: 'uf', label: 'UF', type: 'text', width: 'w-12' },
-        { key: 'cod_produto', label: 'Cód. Produto', type: 'text', width: 'w-28' },
-        { key: 'produto', label: 'Produto', type: 'text', width: 'w-44' },
-        { key: 'lote', label: 'Lote', type: 'text', width: 'w-24' },
-        { key: 'classificacao', label: 'Classificação', type: 'text', width: 'w-32' },
-        { key: 'fabricante', label: 'Fabricante', type: 'text', width: 'w-32' },
+        { key: 'empresa', label: 'Empresa', type: 'text', width: 'w-auto' },
+        { key: 'data_emissao', label: 'Data', type: 'date', width: 'w-auto' },
+        { key: 'nota_fiscal', label: 'Nota Fiscal', type: 'number', width: 'w-auto' },
+        { key: 'tipo_nota', label: 'Tipo', type: 'text', width: 'w-auto' },
+        { key: 'cliente', label: 'Cliente', type: 'text', width: 'w-auto' },
+        { key: 'uf', label: 'UF', type: 'text', width: 'w-auto' },
+        { key: 'cod_produto', label: 'Cód. Produto', type: 'text', width: 'w-auto' },
+        { key: 'produto', label: 'Produto', type: 'text', width: 'w-auto' },
+        { key: 'lote', label: 'Lote', type: 'text', width: 'w-auto' },
+        { key: 'classificacao', label: 'Classificação', type: 'text', width: 'w-auto' },
+        { key: 'fabricante', label: 'Fabricante', type: 'text', width: 'w-auto' },
         { key: 'unidade', label: 'Un', type: 'text', width: 'w-12' },
-        { key: 'quantidade', label: 'Qtd', type: 'number', width: 'w-16' },
-        { key: 'valor_unitario', label: 'Vlr Unit.', type: 'currency', width: 'w-24' },
-        { key: 'valor_total', label: 'Vlr Total', type: 'currency', width: 'w-28' },
-        { key: 'custo_unitario', label: 'Custo Unit.', type: 'currency', width: 'w-24' },
-        { key: 'custo_total', label: 'Custo Total', type: 'currency', width: 'w-28' },
+        { key: 'quantidade', label: 'Qtd', type: 'number', width: 'w-auto' },
+        { key: 'valor_unitario', label: 'Vlr Unit.', type: 'currency', width: 'w-auto' },
+        { key: 'valor_total', label: 'Vlr Total', type: 'currency', width: 'w-auto' },
+        { key: 'custo_unitario', label: 'Custo Unit.', type: 'currency', width: 'w-auto' },
+        { key: 'custo_total', label: 'Custo Total', type: 'currency', width: 'w-auto' },
     ];
 
     function initHistorico() {
@@ -534,6 +541,11 @@ const CustosApp = (() => {
         document.getElementById('histBtnExport').addEventListener('click', () => {
             if (!histState.filteredData.length) return;
             exportToExcel(histState.filteredData, HIST_COLUMNS, 'historico_custos');
+        });
+
+        document.getElementById('histBtnClearFilters').addEventListener('click', () => {
+            histState.filters = {};
+            applyHistFilters();
         });
 
         renderHistHeader();
@@ -629,26 +641,11 @@ const CustosApp = (() => {
         
         histState.filteredData = result;
 
-        // Render Clear Filter button
         const activeFilters = Object.values(histState.filters).some(s => s.size > 0 && !s.has('__NONE__'));
-        const actionsContainer = document.getElementById('histActions');
-        if (actionsContainer) {
-            let clearBtn = document.getElementById('histClearFilterBtn');
-            if (activeFilters) {
-                if (!clearBtn) {
-                    clearBtn = document.createElement('button');
-                    clearBtn.id = 'histClearFilterBtn';
-                    clearBtn.className = 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 rounded-lg px-3 py-1.5 text-xs font-medium mr-2 shadow-sm transition-colors';
-                    clearBtn.textContent = 'Remover Filtros';
-                    clearBtn.onclick = () => {
-                        histState.filters = {};
-                        applyHistFilters();
-                    };
-                    actionsContainer.prepend(clearBtn);
-                }
-            } else if (clearBtn) {
-                clearBtn.remove();
-            }
+        const btnClear = document.getElementById('histBtnClearFilters');
+        if (btnClear) {
+            if (activeFilters) btnClear.classList.remove('hidden');
+            else btnClear.classList.add('hidden');
         }
 
         renderHistHeader();
@@ -680,22 +677,26 @@ const CustosApp = (() => {
                 HIST_COLUMNS.forEach(col => {
                     if (col.key === 'data_emissao') {
                         html += `<td class="px-3 py-2 text-center text-[11px] whitespace-nowrap">${formatDate(row[col.key])}</td>`;
-                    } else if (col.key === 'custo_total') {
-                        let renderCustoTotal = formatCurrency(row[col.key]);
-                        if (isDevolucao && row[col.key]) {
-                            renderCustoTotal = `(${formatCurrency(row[col.key])})`;
+                    } else if (col.type === 'currency' || col.key === 'custo_total') {
+                        let val = parseFloat(row[col.key]) || 0;
+                        if (isDevolucao) val = -Math.abs(val); // Força negativo para devoluções
+                        
+                        let colorClass = '';
+                        if (col.key === 'custo_total') {
+                            colorClass = 'font-medium text-nexo-600 dark:text-nexo-400';
                         }
-                        html += `<td class="px-3 py-2 text-right text-[11px] whitespace-nowrap font-medium text-nexo-600 dark:text-nexo-400">${renderCustoTotal}</td>`;
-                    } else if (col.type === 'currency') {
-                        const val = parseFloat(row[col.key]) || 0;
-                        html += `<td class="px-3 py-2 text-right text-[11px] whitespace-nowrap">${formatCurrency(val)}</td>`;
+                        
+                        html += `<td class="px-3 py-2 text-center text-[11px] whitespace-nowrap ${colorClass}">${formatCurrency(val)}</td>`;
                     } else if (col.type === 'number') {
-                        const val = row[col.key];
+                        let val = row[col.key];
+                        if (isDevolucao && col.key === 'quantidade' && val > 0) {
+                            val = -Math.abs(val);
+                        }
                         html += `<td class="px-3 py-2 text-center text-[11px] whitespace-nowrap">${val ?? '-'}</td>`;
                     } else {
                         const val = row[col.key] || '-';
-                        const truncate = (col.key === 'cliente' || col.key === 'produto') ? 'max-w-[180px] truncate' : '';
-                        html += `<td class="px-3 py-2 text-[11px] whitespace-nowrap ${truncate}" title="${val}">${val}</td>`;
+                        const alignment = (col.key === 'cliente' || col.key === 'produto') ? 'text-left' : 'text-center';
+                        html += `<td class="px-3 py-2 text-[11px] whitespace-nowrap ${alignment}" title="${val}">${val}</td>`;
                     }
                 });
                 html += '</tr>';
@@ -1091,7 +1092,32 @@ const CustosApp = (() => {
             const obj = {};
             columns.forEach(col => {
                 if (col.type !== 'input') {
-                    obj[col.label] = row[col.key] ?? '';
+                    let val = row[col.key];
+                    const isDevolucao = row.tipo_nota && row.tipo_nota.toUpperCase().includes('DEVOLU');
+                    
+                    if (col.type === 'currency' || col.key === 'custo_total') {
+                        if (val !== '-' && val !== null) {
+                            val = parseFloat(val) || 0;
+                            if (isDevolucao) val = -Math.abs(val);
+                        }
+                    } else if (col.type === 'number' && col.key === 'quantidade') {
+                        if (val > 0 && isDevolucao) {
+                            val = -Math.abs(val);
+                        }
+                    } else if (col.type === 'date' && val !== '-' && val !== null) {
+                        if (String(val).includes('T')) {
+                            const d = new Date(val);
+                            if (!isNaN(d.getTime())) {
+                                val = d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                            }
+                        } else {
+                            const parts = String(val).split('T')[0].split('-');
+                            if (parts.length === 3) {
+                                val = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                            }
+                        }
+                    }
+                    obj[col.label] = val ?? '';
                 }
             });
             return obj;

@@ -61,7 +61,7 @@ async function syncAnoMes(ano, mes) {
                     c.uf_sigla,
                     nfi.prod_codigo,
                     p.nome as produto,
-                    p.classificacao_fiscal as classificacao,
+                    cp.nome as classificacao,
                     f.nome as fabricante,
                     nfi.Unidade as unidade,
                     nfil.lote_numero as lote,
@@ -71,8 +71,9 @@ async function syncAnoMes(ano, mes) {
                 JOIN nota_fiscal_venda_item nfi ON nfi.nf_numero = nf.codigo
                 LEFT JOIN nota_fiscal_venda_item_lote nfil ON nfil.nfit_nf_numero = nfi.nf_numero AND nfil.nfit_codigo = nfi.codigo
                 LEFT JOIN produto p ON nfi.prod_codigo = p.codigo
+                LEFT JOIN classificacao_produto cp ON p.claspro_codigo_1 = cp.codigo
                 LEFT JOIN cliente_fornecedor c ON nf.clifor_codigo = c.codigo
-                LEFT JOIN cliente_fornecedor f ON p.fabr_codigo = f.codigo
+                LEFT JOIN fabricante f ON p.fabr_codigo = f.codigo
                 WHERE YEAR(nf.datahora_emissao_nfe) = @ano 
                   AND MONTH(nf.datahora_emissao_nfe) = @mes
                   AND nf.cfop_codigo IN (${CFOPS_VALIDOS.join(',')})
