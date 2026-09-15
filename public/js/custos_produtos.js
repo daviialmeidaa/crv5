@@ -109,25 +109,30 @@ const CustosApp = (() => {
         const n = data.nexo;
         const b = data.bml;
 
+        const nDevolvidas = -Math.abs(n.devolvidas);
+        const bDevolvidas = -Math.abs(b.devolvidas);
+        const nCustosDev = -Math.abs(n.custosDev);
+        const bCustosDev = -Math.abs(b.custosDev);
+
         document.getElementById('tg-vendas-nexo').textContent = formatCurrency(n.vendas);
         document.getElementById('tg-vendas-bml').textContent = formatCurrency(b.vendas);
         document.getElementById('tg-vendas-total').textContent = formatCurrency(n.vendas + b.vendas);
 
-        document.getElementById('tg-devolvidas-nexo').textContent = formatCurrency(n.devolvidas);
-        document.getElementById('tg-devolvidas-bml').textContent = formatCurrency(b.devolvidas);
-        document.getElementById('tg-devolvidas-total').textContent = formatCurrency(n.devolvidas + b.devolvidas);
+        document.getElementById('tg-devolvidas-nexo').textContent = formatCurrency(nDevolvidas);
+        document.getElementById('tg-devolvidas-bml').textContent = formatCurrency(bDevolvidas);
+        document.getElementById('tg-devolvidas-total').textContent = formatCurrency(nDevolvidas + bDevolvidas);
 
         document.getElementById('tg-custos-nexo').textContent = formatCurrency(n.custos);
         document.getElementById('tg-custos-bml').textContent = formatCurrency(b.custos);
         document.getElementById('tg-custos-total').textContent = formatCurrency(n.custos + b.custos);
 
-        document.getElementById('tg-custos-dev-nexo').textContent = formatCurrency(n.custosDev);
-        document.getElementById('tg-custos-dev-bml').textContent = formatCurrency(b.custosDev);
-        document.getElementById('tg-custos-dev-total').textContent = formatCurrency(n.custosDev + b.custosDev);
+        document.getElementById('tg-custos-dev-nexo').textContent = formatCurrency(nCustosDev);
+        document.getElementById('tg-custos-dev-bml').textContent = formatCurrency(bCustosDev);
+        document.getElementById('tg-custos-dev-total').textContent = formatCurrency(nCustosDev + bCustosDev);
 
         // Total = (vendas + devolvidas) - (custos + custosDev)
-        const totalNexo = (n.vendas + n.devolvidas) - (n.custos + n.custosDev);
-        const totalBml = (b.vendas + b.devolvidas) - (b.custos + b.custosDev);
+        const totalNexo = (n.vendas + nDevolvidas) - (n.custos + nCustosDev);
+        const totalBml = (b.vendas + bDevolvidas) - (b.custos + bCustosDev);
         document.getElementById('tg-total-nexo').textContent = formatCurrency(totalNexo);
         document.getElementById('tg-total-bml').textContent = formatCurrency(totalBml);
         document.getElementById('tg-total-geral').textContent = formatCurrency(totalNexo + totalBml);
@@ -138,14 +143,16 @@ const CustosApp = (() => {
         let html = '';
         for (let i = 0; i < 12; i++) {
             const d = monthData[i];
-            const total = (d.vendas + d.devolvidas) - (d.custos + d.custosDev);
+            const devolvidas = -Math.abs(d.devolvidas);
+            const custosDev = -Math.abs(d.custosDev);
+            const total = (d.vendas + devolvidas) - (d.custos + custosDev);
             const isEven = i % 2 === 0;
             html += `<tr class="${isEven ? '' : 'bg-gray-50/50 dark:bg-steel-700/10'} hover:bg-nexo-50/30 dark:hover:bg-steel-700/30 transition-colors">
                 <td class="px-3 py-2 font-medium text-steel-700 dark:text-gray-300 text-xs">${MESES[i]}</td>
                 <td class="px-3 py-2 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.vendas)}</td>
-                <td class="px-3 py-2 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.devolvidas)}</td>
+                <td class="px-3 py-2 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(devolvidas)}</td>
                 <td class="px-3 py-2 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.custos)}</td>
-                <td class="px-3 py-2 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.custosDev)}</td>
+                <td class="px-3 py-2 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(custosDev)}</td>
                 <td class="px-3 py-2 text-right font-semibold text-steel-800 dark:text-gray-100 text-xs">${formatCurrency(total)}</td>
             </tr>`;
         }
@@ -157,14 +164,16 @@ const CustosApp = (() => {
         let html = '';
         for (let i = 0; i < 4; i++) {
             const d = quarterData[i];
-            const total = (d.vendas + d.devolvidas) - (d.custos + d.custosDev);
+            const devolvidas = -Math.abs(d.devolvidas);
+            const custosDev = -Math.abs(d.custosDev);
+            const total = (d.vendas + devolvidas) - (d.custos + custosDev);
             const isEven = i % 2 === 0;
             html += `<tr class="${isEven ? '' : 'bg-gray-50/50 dark:bg-steel-700/10'} hover:bg-nexo-50/30 dark:hover:bg-steel-700/30 transition-colors">
                 <td class="px-3 py-2.5 font-medium text-steel-700 dark:text-gray-300 text-xs">${TRIMESTRES[i]}</td>
                 <td class="px-3 py-2.5 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.vendas)}</td>
-                <td class="px-3 py-2.5 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.devolvidas)}</td>
+                <td class="px-3 py-2.5 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(devolvidas)}</td>
                 <td class="px-3 py-2.5 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.custos)}</td>
-                <td class="px-3 py-2.5 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(d.custosDev)}</td>
+                <td class="px-3 py-2.5 text-right text-steel-800 dark:text-gray-200 text-xs">${formatCurrency(custosDev)}</td>
                 <td class="px-3 py-2.5 text-right font-semibold text-steel-800 dark:text-gray-100 text-xs">${formatCurrency(total)}</td>
             </tr>`;
         }

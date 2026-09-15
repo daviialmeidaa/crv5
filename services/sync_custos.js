@@ -97,8 +97,8 @@ async function syncAnoMes(ano, mes) {
                     continue;
                 }
 
-                const tipoNota = CFOP_DEVOLUCAO.includes(item.cfop_codigo) ? 'Devolução' : 'Venda';
-                const multiplier = tipoNota === 'Devolução' ? -1 : 1;
+                const tipoNota = CFOP_DEVOLUCAO.includes(item.cfop_codigo) ? 'DEVOLUÇÃO RETORNO DE VENDA' : 'VENDA';
+                const multiplier = tipoNota === 'DEVOLUÇÃO RETORNO DE VENDA' ? -1 : 1;
 
                 const qtd = (item.quantidade || 0) * multiplier;
                 const valUnit = item.valor_unitario || 0;

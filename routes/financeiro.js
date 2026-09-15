@@ -55,10 +55,10 @@ router.get('/custos/resumo', async (req, res) => {
         const totaisResult = await pool.query(`
             SELECT 
                 empresa,
-                SUM(CASE WHEN tipo_nota NOT ILIKE '%DEVOLU%' THEN valor_total ELSE 0 END) as vendas,
-                SUM(CASE WHEN tipo_nota ILIKE '%DEVOLU%' THEN valor_total ELSE 0 END) as devolvidas,
-                SUM(CASE WHEN tipo_nota NOT ILIKE '%DEVOLU%' THEN custo_total ELSE 0 END) as custos,
-                SUM(CASE WHEN tipo_nota ILIKE '%DEVOLU%' THEN custo_total ELSE 0 END) as custos_dev
+                SUM(CASE WHEN tipo_nota = 'VENDA' THEN valor_total ELSE 0 END) as vendas,
+                SUM(CASE WHEN tipo_nota = 'DEVOLUÇÃO RETORNO DE VENDA' THEN valor_total ELSE 0 END) as devolvidas,
+                SUM(CASE WHEN tipo_nota = 'VENDA' THEN custo_total ELSE 0 END) as custos,
+                SUM(CASE WHEN tipo_nota = 'DEVOLUÇÃO RETORNO DE VENDA' THEN custo_total ELSE 0 END) as custos_dev
             FROM financeiro.vendas_custos
             WHERE EXTRACT(YEAR FROM data_emissao) = $1
             GROUP BY empresa
@@ -80,10 +80,10 @@ router.get('/custos/resumo', async (req, res) => {
             SELECT 
                 empresa,
                 EXTRACT(MONTH FROM data_emissao)::int as mes,
-                SUM(CASE WHEN tipo_nota NOT ILIKE '%DEVOLU%' THEN valor_total ELSE 0 END) as vendas,
-                SUM(CASE WHEN tipo_nota ILIKE '%DEVOLU%' THEN valor_total ELSE 0 END) as devolvidas,
-                SUM(CASE WHEN tipo_nota NOT ILIKE '%DEVOLU%' THEN custo_total ELSE 0 END) as custos,
-                SUM(CASE WHEN tipo_nota ILIKE '%DEVOLU%' THEN custo_total ELSE 0 END) as custos_dev
+                SUM(CASE WHEN tipo_nota = 'VENDA' THEN valor_total ELSE 0 END) as vendas,
+                SUM(CASE WHEN tipo_nota = 'DEVOLUÇÃO RETORNO DE VENDA' THEN valor_total ELSE 0 END) as devolvidas,
+                SUM(CASE WHEN tipo_nota = 'VENDA' THEN custo_total ELSE 0 END) as custos,
+                SUM(CASE WHEN tipo_nota = 'DEVOLUÇÃO RETORNO DE VENDA' THEN custo_total ELSE 0 END) as custos_dev
             FROM financeiro.vendas_custos
             WHERE EXTRACT(YEAR FROM data_emissao) = $1
             GROUP BY empresa, mes
@@ -108,10 +108,10 @@ router.get('/custos/resumo', async (req, res) => {
             SELECT 
                 empresa,
                 EXTRACT(QUARTER FROM data_emissao)::int as trimestre,
-                SUM(CASE WHEN tipo_nota NOT ILIKE '%DEVOLU%' THEN valor_total ELSE 0 END) as vendas,
-                SUM(CASE WHEN tipo_nota ILIKE '%DEVOLU%' THEN valor_total ELSE 0 END) as devolvidas,
-                SUM(CASE WHEN tipo_nota NOT ILIKE '%DEVOLU%' THEN custo_total ELSE 0 END) as custos,
-                SUM(CASE WHEN tipo_nota ILIKE '%DEVOLU%' THEN custo_total ELSE 0 END) as custos_dev
+                SUM(CASE WHEN tipo_nota = 'VENDA' THEN valor_total ELSE 0 END) as vendas,
+                SUM(CASE WHEN tipo_nota = 'DEVOLUÇÃO RETORNO DE VENDA' THEN valor_total ELSE 0 END) as devolvidas,
+                SUM(CASE WHEN tipo_nota = 'VENDA' THEN custo_total ELSE 0 END) as custos,
+                SUM(CASE WHEN tipo_nota = 'DEVOLUÇÃO RETORNO DE VENDA' THEN custo_total ELSE 0 END) as custos_dev
             FROM financeiro.vendas_custos
             WHERE EXTRACT(YEAR FROM data_emissao) = $1
             GROUP BY empresa, trimestre
