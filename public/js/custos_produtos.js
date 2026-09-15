@@ -1195,7 +1195,8 @@ const CustosApp = (() => {
             content.classList.add('scale-100', 'opacity-100');
         });
 
-        const eventSource = new EventSource(`/api/financeiro/custos/sincronizar/stream?ano=${ano}&mes=${mes}`);
+        const token = localStorage.getItem('token');
+        const eventSource = new EventSource(`/api/financeiro/custos/sincronizar/stream?ano=${ano}&mes=${mes}&token=${token}`);
         let isFirstMessage = true;
 
         eventSource.onmessage = (event) => {
