@@ -1366,7 +1366,8 @@ const CustosApp = (() => {
             const response = await fetch('/api/financeiro/custos/email-contabilidade', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + localStorage.getItem('token')
                 },
                 body: JSON.stringify({ to, cc, year })
             });
