@@ -401,11 +401,13 @@ const CustosApp = (() => {
                         html += `<td class="px-3 py-1.5 text-center">
                             <div class="flex items-center justify-end gap-1">
                                 <span class="mr-1 text-steel-400 text-[10px]">${isDevolucao ? '(-)' : ''} R$</span>
-                                <input type="number" step="0.01" 
+                                <input type="text" 
                                     id="input-custo-${row.id}"
-                                    class="w-20 text-right px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded-lg focus:ring-2 focus:ring-nexo-500/30 focus:border-nexo-500 outline-none transition-all ${isDevolucao ? 'text-red-500 dark:text-red-400 font-bold' : 'text-steel-800 dark:text-gray-200'}"
-                                    placeholder="0.00"
-                                    value="${row.custo_unitario !== null ? row.custo_unitario : ''}">
+                                    class="w-24 text-right px-2 py-1.5 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700/50 rounded-lg focus:ring-2 focus:ring-nexo-500/30 focus:border-nexo-500 outline-none transition-all ${isDevolucao ? 'text-red-500 dark:text-red-400 font-bold' : 'text-steel-800 dark:text-gray-200'}"
+                                    placeholder="0,00"
+                                    onfocus="this.select()"
+                                    oninput="CustosApp.formatInputCurrency(this)"
+                                    value="${row.custo_unitario !== null ? parseFloat(row.custo_unitario).toFixed(2).replace('.', ',') : ''}">
                                 <button onclick="CustosApp.saveCost(${row.id})" class="px-2 py-1.5 bg-nexo-500 hover:bg-nexo-600 text-white rounded-lg text-xs transition-colors shrink-0" title="Salvar">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -430,6 +432,18 @@ const CustosApp = (() => {
         }
 
         renderPagination('nulosPaginationControls', nulosState, renderNulosGrid);
+    }
+
+    function formatInputCurrency(input) {
+        let value = input.value.replace(/\D/g, ''); 
+        if (!value) {
+            input.value = '';
+            return;
+        }
+        value = (parseInt(value, 10) / 100).toFixed(2);
+        value = value.replace('.', ',');
+        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); 
+        input.value = value;
     }
 
     async function saveCost(id) {
@@ -1151,5 +1165,6 @@ const CustosApp = (() => {
     return {
         _goToPage,
         saveCost,
+        formatInputCurrency,
     };
 })();
