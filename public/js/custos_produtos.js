@@ -224,7 +224,7 @@ const CustosApp = (() => {
         document.getElementById('nulosBtnRefresh').addEventListener('click', (e) => {
             const ano = document.getElementById('nulosAnoSelect').value;
             const mes = document.getElementById('nulosMesSelect').value;
-            
+
             if (!ano || !mes) {
                 CustosApp.openAlertModal('Selecione um ano e um mês para sincronizar os custos.');
                 return;
@@ -281,8 +281,8 @@ const CustosApp = (() => {
         }
     }
 
-    
-    
+
+
     function applyNulosFilters() {
         let result = nulosState.rawData;
 
@@ -300,13 +300,13 @@ const CustosApp = (() => {
             result.sort((a, b) => {
                 let valA = a[nulosState.sortCol];
                 let valB = b[nulosState.sortCol];
-                
+
                 if (valA === null || valA === undefined || valA === '') valA = '';
                 if (valB === null || valB === undefined || valB === '') valB = '';
 
                 if (valA === '' && valB !== '') return 1;
                 if (valB === '' && valA !== '') return -1;
-                
+
                 if (!isNaN(valA) && !isNaN(valB)) {
                     valA = Number(valA); valB = Number(valB);
                 } else {
@@ -318,7 +318,7 @@ const CustosApp = (() => {
                 return 0;
             });
         }
-        
+
         nulosState.filteredData = result;
 
         const activeNulosFilters = Object.values(nulosState.filters).some(s => s.size > 0 && !s.has('__NONE__'));
@@ -412,14 +412,14 @@ const CustosApp = (() => {
     }
 
     function formatInputCurrency(input) {
-        let value = input.value.replace(/\D/g, ''); 
+        let value = input.value.replace(/\D/g, '');
         if (!value) {
             input.value = '';
             return;
         }
         value = (parseInt(value, 10) / 100).toFixed(2);
         value = value.replace('.', ',');
-        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.'); 
+        value = value.replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
         input.value = value;
     }
 
@@ -430,7 +430,7 @@ const CustosApp = (() => {
         let rawVal = input.value.trim();
         rawVal = rawVal.replace('R$', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
         const custoNum = parseFloat(rawVal);
-        
+
         if (isNaN(custoNum) || custoNum <= 0) {
             input.classList.add('border-red-500');
             input.focus();
@@ -564,7 +564,7 @@ const CustosApp = (() => {
         }
     }
 
-    
+
     window.openHistFilterModal = (event, colKey) => {
         const col = HIST_COLUMNS.find(c => c.key === colKey);
         openFilterModal(event, col, histState, 'rawData', applyHistFilters);
@@ -588,7 +588,7 @@ const CustosApp = (() => {
 
         if (histState.searchTerm) {
             const term = histState.searchTerm.toLowerCase();
-            result = result.filter(r => 
+            result = result.filter(r =>
                 (r.nota_fiscal && String(r.nota_fiscal).includes(term)) ||
                 (r.cliente && r.cliente.toLowerCase().includes(term)) ||
                 (r.produto && r.produto.toLowerCase().includes(term)) ||
@@ -611,13 +611,13 @@ const CustosApp = (() => {
             result.sort((a, b) => {
                 let valA = a[histState.sortCol];
                 let valB = b[histState.sortCol];
-                
+
                 if (valA === null || valA === undefined || valA === '') valA = '';
                 if (valB === null || valB === undefined || valB === '') valB = '';
 
                 if (valA === '' && valB !== '') return 1;
                 if (valB === '' && valA !== '') return -1;
-                
+
                 if (!isNaN(valA) && !isNaN(valB)) {
                     valA = Number(valA); valB = Number(valB);
                 } else {
@@ -629,7 +629,7 @@ const CustosApp = (() => {
                 return 0;
             });
         }
-        
+
         histState.filteredData = result;
 
         const activeFilters = Object.values(histState.filters).some(s => s.size > 0 && !s.has('__NONE__'));
@@ -671,12 +671,12 @@ const CustosApp = (() => {
                     } else if (col.type === 'currency' || col.key === 'custo_total') {
                         let val = parseFloat(row[col.key]) || 0;
                         if (isDevolucao) val = -Math.abs(val); // Força negativo para devoluções
-                        
+
                         let colorClass = '';
                         if (col.key === 'custo_total') {
                             colorClass = 'font-medium text-nexo-600 dark:text-nexo-400';
                         }
-                        
+
                         html += `<td class="px-3 py-2 text-center text-[11px] whitespace-nowrap ${colorClass}">${formatCurrency(val)}</td>`;
                     } else if (col.type === 'number') {
                         let val = row[col.key];
@@ -704,9 +704,9 @@ const CustosApp = (() => {
     function renderPagination(containerId, state, renderFn) {
         const controls = document.getElementById(containerId);
         if (!controls) return;
-        
+
         const totalPages = Math.ceil(state.filteredData.length / state.perPage) || 1;
-        
+
         let html = '';
 
         // First button
@@ -743,7 +743,7 @@ const CustosApp = (() => {
                  </button>`;
 
         controls.innerHTML = html;
-        
+
         // Update total records info if applicable
         const infoId = containerId.replace('Controls', 'Info');
         const info = document.getElementById(infoId);
@@ -771,7 +771,7 @@ const CustosApp = (() => {
     // ==========================================
     // SHARED: EXPORT EXCEL
     // ==========================================
-    
+
     // ==========================================
     // FILTER LOGIC
     // ==========================================
@@ -824,7 +824,7 @@ const CustosApp = (() => {
 
         function renderCheckboxes(term = '') {
             listContainer.innerHTML = '';
-            
+
             const filteredVals = uniqueValues.filter(v => {
                 if (!term) return true;
                 let displayVal = v;
@@ -855,7 +855,7 @@ const CustosApp = (() => {
             if (col.type === 'date' && !term) {
                 const tree = {};
                 const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
+
                 filteredVals.forEach(val => {
                     if (val === '-' || !val) {
                         if (!tree['-']) tree['-'] = {};
@@ -863,7 +863,7 @@ const CustosApp = (() => {
                         tree['-']['-'].push(val);
                         return;
                     }
-                    
+
                     let y, m, d;
                     const valStr = String(val);
                     if (valStr.includes('-')) {
@@ -881,10 +881,10 @@ const CustosApp = (() => {
                     tree[y][m].push(val);
                 });
 
-                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
+                Object.keys(tree).sort((a, b) => b.localeCompare(a)).forEach(year => {
                     const yearDiv = document.createElement('div');
                     yearDiv.className = 'pl-1';
-                    
+
                     let yearAllChecked = true;
                     let yearAnyChecked = false;
                     const yearVals = [];
@@ -903,10 +903,10 @@ const CustosApp = (() => {
                     `;
                     const yCb = yHeader.querySelector('input');
                     yCb.indeterminate = yearAnyChecked && !yearAllChecked;
-                    
+
                     const mContainer = document.createElement('div');
                     mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                    
+
                     yHeader.onclick = (e) => {
                         if (e.target === yCb) return;
                         const isHidden = mContainer.classList.contains('hidden');
@@ -925,10 +925,10 @@ const CustosApp = (() => {
                         renderCheckboxes(term);
                     };
 
-                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
+                    Object.keys(tree[year]).sort((a, b) => a.localeCompare(b)).forEach(month => {
                         const monthVals = tree[year][month];
-                        const mName = (month !== '-') ? monthsNames[parseInt(month)-1] : month;
-                        
+                        const mName = (month !== '-') ? monthsNames[parseInt(month) - 1] : month;
+
                         let monthAllChecked = true;
                         let monthAnyChecked = false;
                         monthVals.forEach(v => {
@@ -948,7 +948,7 @@ const CustosApp = (() => {
 
                         const dContainer = document.createElement('div');
                         dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                        
+
                         const monthKey = `${year}-${month}`;
                         mHeader.onclick = (e) => {
                             if (e.target === mCb) return;
@@ -1047,13 +1047,13 @@ const CustosApp = (() => {
     function renderGenericHeader(theadId, columns, stateObj, sortCallback, filterCallback) {
         const thead = document.getElementById(theadId);
         if (!thead) return;
-        
+
         let html = '<tr class="text-white text-[10px] 2xl:text-[11px] font-medium">';
         columns.forEach(col => {
             const sortIcon = stateObj.sortCol === col.key
                 ? (stateObj.sortDir === 'asc' ? '↑' : '↓')
                 : '↕';
-            
+
             const hasFilter = stateObj.filters[col.key] && stateObj.filters[col.key].size > 0 && !stateObj.filters[col.key].has('__NONE__');
             const hasNoneFilter = stateObj.filters[col.key] && stateObj.filters[col.key].has('__NONE__');
             const isFiltered = hasFilter || hasNoneFilter;
@@ -1078,14 +1078,14 @@ const CustosApp = (() => {
 
     function exportToExcel(data, columns, filename) {
         if (typeof XLSX === 'undefined') return alert('Biblioteca XLSX não carregada.');
-        
+
         const exportData = data.map(row => {
             const obj = {};
             columns.forEach(col => {
                 if (col.type !== 'input') {
                     let val = row[col.key];
                     const isDevolucao = row.tipo_nota && row.tipo_nota.toUpperCase().includes('DEVOLU');
-                    
+
                     if (col.type === 'currency' || col.key === 'custo_total') {
                         if (val !== '-' && val !== null) {
                             val = parseFloat(val) || 0;
@@ -1127,12 +1127,12 @@ const CustosApp = (() => {
         const titleEl = document.getElementById('alertModalTitle');
         const iconContainer = document.getElementById('alertModalIconContainer');
         const msgEl = document.getElementById('alertModalMessage');
-        
+
         msgEl.textContent = msg;
-        
+
         // Reset classes
         iconContainer.className = 'shrink-0 w-10 h-10 rounded-full flex items-center justify-center';
-        
+
         if (type === 'success') {
             titleEl.textContent = 'Sucesso';
             iconContainer.classList.add('bg-green-100', 'dark:bg-green-900/30', 'text-green-600', 'dark:text-green-400');
@@ -1200,7 +1200,7 @@ const CustosApp = (() => {
 
         eventSource.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            
+
             if (isFirstMessage) {
                 logContainer.innerHTML = '';
                 isFirstMessage = false;
@@ -1211,7 +1211,7 @@ const CustosApp = (() => {
                 progressBar.style.width = `${percent}%`;
                 progressText.textContent = `${percent}%`;
             }
-            
+
             if (data.stats) {
                 logContainer.innerHTML = `
                     <div class="mb-5 text-green-300">
@@ -1315,9 +1315,12 @@ const CustosApp = (() => {
         content.classList.add('scale-95', 'opacity-0');
         setTimeout(() => {
             modal.classList.add('hidden');
-            loadCustosNulos();
-            loadResumo();
-            loadHistorico();
+            try { loadCustosNulos(); } catch (e) { console.error(e); }
+            try {
+                const anoResumo = document.getElementById('anoResumo');
+                if (anoResumo) loadResumoData(parseInt(anoResumo.value));
+            } catch (e) { console.error(e); }
+            try { loadHistorico(); } catch (e) { console.error(e); }
         }, 300);
     }
 
@@ -1347,17 +1350,17 @@ const CustosApp = (() => {
 
     async function submitEmailForm(e) {
         e.preventDefault();
-        
+
         const to = document.getElementById('emailTo').value.replace(/;/g, ',');
         const cc = document.getElementById('emailCc').value.replace(/;/g, ',');
         const year = document.getElementById('resumoAnoSelect').value;
-        
+
         const btn = document.getElementById('btnSendEmail');
         const spinner = document.getElementById('emailSpinner');
-        
+
         btn.disabled = true;
         spinner.classList.remove('hidden');
-        
+
         try {
             const response = await fetch('/api/financeiro/custos/email-contabilidade', {
                 method: 'POST',
@@ -1366,13 +1369,13 @@ const CustosApp = (() => {
                 },
                 body: JSON.stringify({ to, cc, year })
             });
-            
+
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || 'Erro ao enviar e-mail');
-            
+
             closeEmailModal();
             setTimeout(() => {
-                openAlertModal('E-mail enviado com sucesso para a contabilidade!', 'success');
+                openAlertModal('E-mail enviado com sucesso!', 'success');
             }, 350);
         } catch (error) {
             console.error(error);

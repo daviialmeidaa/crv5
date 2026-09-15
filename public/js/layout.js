@@ -57,9 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const canLC = hideLink('/itens_arrematados', perms.canViewLC || isAdmin);
             hideLink('/agenda_licitacoes', perms.canViewLC || isAdmin);
             const canOPME = hideLink('/cirurgias', perms.canViewOPME || isAdmin);
+            const canCustos = hideLink('/custos_produtos', perms.canViewCustos || isAdmin);
             
             // Oculta grupos inteiros se não houver permissão
-            if (!canCR && !canClientes) {
+            if (!canCR && !canClientes && !canCustos) {
                 const groupFinanceiro = document.getElementById('menu-group-financeiro');
                 if (groupFinanceiro) groupFinanceiro.style.display = 'none';
             }

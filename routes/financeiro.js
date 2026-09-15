@@ -13,6 +13,12 @@ const router = express.Router();
 const pool = require('../db/pgConnection');
 const { getCache, setCache, clearCache } = require('../db/redis');
 const { syncAnoMes } = require('../services/sync_custos');
+const { authMiddleware } = require('../middleware/authMiddleware');
+const { requirePermission } = require('../middleware/rbac');
+
+// Middleware global: autenticação + permissão Custos
+router.use(authMiddleware);
+router.use(requirePermission('canViewCustos'));
 
 // =============================================================
 // POST /api/financeiro/custos/sincronizar
