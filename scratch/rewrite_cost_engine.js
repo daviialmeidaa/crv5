@@ -1,4 +1,9 @@
-/**
+const fs = require('fs');
+const path = require('path');
+
+const filePath = path.join(__dirname, '../services/cost_engine.js');
+
+const newContent = `/**
  * services/cost_engine.js
  * 
  * Implementa o motor de precificação para encontrar
@@ -17,14 +22,14 @@ async function getMostRecentCostFromPool(pool, codProduto, lote) {
         const resN1 = await pool.request()
             .input('codProduto', sql.NVarChar, codProduto)
             .input('lote', sql.NVarChar, lote)
-            .query(`
+            .query(\`
                 SELECT TOP 1 c.data_entrada, ci.valor_custo
                 FROM compra_item_lote cil
                 JOIN compra_item ci ON cil.comit_comp_codigo = ci.comp_codigo AND cil.comit_codigo = ci.codigo
                 JOIN compra c ON ci.comp_codigo = c.codigo
                 WHERE cil.prod_codigo = @codProduto AND cil.lote_numero = @lote
                 ORDER BY c.data_entrada DESC, ci.comp_codigo DESC
-            `);
+            \`);
         
         if (resN1.recordset.length > 0 && resN1.recordset[0].valor_custo > 0) {
             return { date: resN1.recordset[0].data_entrada, cost: parseFloat(resN1.recordset[0].valor_custo), level: 1 };
@@ -34,13 +39,13 @@ async function getMostRecentCostFromPool(pool, codProduto, lote) {
     // Nível 2: Produto genérico
     const resN2 = await pool.request()
         .input('codProduto', sql.NVarChar, codProduto)
-        .query(`
+        .query(\`
             SELECT TOP 1 c.data_entrada, ci.valor_custo
             FROM compra_item ci
             JOIN compra c ON ci.comp_codigo = c.codigo
             WHERE ci.prod_codigo = @codProduto
             ORDER BY c.data_entrada DESC, ci.comp_codigo DESC
-        `);
+        \`);
     
     if (resN2.recordset.length > 0 && resN2.recordset[0].valor_custo > 0) {
         return { date: resN2.recordset[0].data_entrada, cost: parseFloat(resN2.recordset[0].valor_custo), level: 2 };
@@ -101,13 +106,13 @@ async function findCusto(empresa, codProduto, lote) {
 
         // NÍVEL 3: Postgres (Lote/Produto)
         if (lote) {
-            const resN3 = await pgPool.query(`
+            const resN3 = await pgPool.query(\`
                 SELECT custo_unitario 
                 FROM financeiro.vendas_custos
                 WHERE cod_produto = $1 AND lote = $2 AND custo_unitario > 0
                 ORDER BY data_emissao DESC, id DESC
                 LIMIT 1
-            `, [codProduto, lote]);
+            \`, [codProduto, lote]);
 
             if (resN3.rows.length > 0) {
                 return parseFloat(resN3.rows[0].custo_unitario);
@@ -115,13 +120,13 @@ async function findCusto(empresa, codProduto, lote) {
         }
 
         // NÍVEL 4: Postgres (Produto genérico)
-        const resN4 = await pgPool.query(`
+        const resN4 = await pgPool.query(\`
             SELECT custo_unitario 
             FROM financeiro.vendas_custos
             WHERE cod_produto = $1 AND custo_unitario > 0
             ORDER BY data_emissao DESC, id DESC
             LIMIT 1
-        `, [codProduto]);
+        \`, [codProduto]);
 
         if (resN4.rows.length > 0) {
             return parseFloat(resN4.rows[0].custo_unitario);
@@ -138,3 +143,7 @@ async function findCusto(empresa, codProduto, lote) {
 module.exports = {
     findCusto
 };
+`;
+
+fs.writeFileSync(filePath, newContent, 'utf8');
+console.log('Rewritten cost_engine.js');

@@ -178,8 +178,8 @@ router.get('/custos/nulos', async (req, res) => {
 // Retorna todo o histórico de vendas_custos do ano
 // =============================================================
 router.get('/custos/historico', async (req, res) => {
-    const ano = parseInt(req.query.ano) || new Date().getFullYear();
-    const cacheKey = `financeiro:historico:${ano}`;
+    // Retiramos o limite de ano para exibir todo o histórico
+    const cacheKey = `financeiro:historico:all`;
 
     try {
         const cached = await getCache(cacheKey);
@@ -188,9 +188,8 @@ router.get('/custos/historico', async (req, res) => {
         const result = await pool.query(`
             SELECT id, empresa, nota_fiscal, tipo_nota, cliente, cidade, uf, cod_produto, produto, lote, classificacao, fabricante, unidade, quantidade, valor_unitario, valor_total, custo_unitario, custo_total, data_emissao
             FROM financeiro.vendas_custos
-            WHERE EXTRACT(YEAR FROM data_emissao) = $1
             ORDER BY data_emissao DESC, nota_fiscal DESC
-        `, [ano]);
+        `);
 
         await setCache(cacheKey, result.rows, 3600);
         res.json(result.rows);
@@ -205,12 +204,11 @@ router.get('/custos/historico', async (req, res) => {
 // PUT /api/financeiro/custos/:id
 // Atualiza o custo unitário de um registro (input manual)
 // =============================================================
-router.put('/custos/:id', async (req, res) => {
-    const { id } = req.params;
-    const { custo_unitario } = req.body;
+router.put('/custos/save-batch', async (req, res) => {
+    const { empresa, nota_fiscal, cod_produto, lote, custo_unitario } = req.body;
 
-    if (custo_unitario === undefined || custo_unitario === null) {
-        return res.status(400).json({ error: 'custo_unitario é obrigatório.' });
+    if (custo_unitario === undefined || custo_unitario === null || !empresa || !nota_fiscal || !cod_produto) {
+        return res.status(400).json({ error: 'Dados insuficientes. Exige empresa, nota_fiscal, cod_produto e custo_unitario.' });
     }
 
     const custoNum = parseFloat(custo_unitario);
@@ -219,27 +217,41 @@ router.put('/custos/:id', async (req, res) => {
     }
 
     try {
-        const result = await pool.query(`
+        let query = `
             UPDATE financeiro.vendas_custos
             SET custo_unitario = $1,
                 custo_total = quantidade * $1,
                 updated_at = NOW()
-            WHERE id = $2
-            RETURNING id, custo_unitario, custo_total
-        `, [custoNum, id]);
+            WHERE empresa = $2 AND nota_fiscal = $3 AND cod_produto = $4
+        `;
+        let params = [custoNum, empresa, nota_fiscal, cod_produto];
+
+        if (lote) {
+            query += ` AND lote = $5`;
+            params.push(lote);
+        } else {
+            query += ` AND lote IS NULL`;
+        }
+
+        query += ` RETURNING id, custo_unitario, custo_total`;
+
+        const result = await pool.query(query, params);
 
         if (result.rowCount === 0) {
-            return res.status(404).json({ error: 'Registro não encontrado.' });
+            return res.status(404).json({ error: 'Nenhum registro encontrado para atualizar.' });
         }
 
-        // Limpar caches para todos os anos possíveis
+        // Limpar caches (nulos, resumo, historico)
         const currentYear = new Date().getFullYear();
-        for (let y = 2023; y <= currentYear; y++) {
+        await clearCache(`financeiro:historico:all`);
+        for (let y = 2023; y <= currentYear + 1; y++) {
             await clearCache(`financeiro:resumo:${y}`);
-            await clearCache(`financeiro:historico:${y}`);
+            for(let m = 1; m <= 12; m++) {
+                await clearCache(`financeiro:custos_nulos:${y}:${m}`);
+            }
         }
 
-        res.json({ success: true, data: result.rows[0] });
+        res.json({ success: true, count: result.rowCount, data: result.rows });
 
     } catch (err) {
         console.error('Erro ao atualizar custo:', err.message);

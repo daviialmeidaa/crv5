@@ -413,7 +413,6 @@ const CustosApp = (() => {
         if (!input) return;
 
         let rawVal = input.value.trim();
-        // Parse BRL formatted or plain number
         rawVal = rawVal.replace('R$', '').replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
         const custoNum = parseFloat(rawVal);
         
@@ -423,22 +422,36 @@ const CustosApp = (() => {
             return;
         }
 
+        const record = nulosState.rawData.find(r => r.id === id);
+        if (!record) return;
+
         input.disabled = true;
         try {
-            const resp = await fetch(`/api/financeiro/custos/${id}`, {
+            const payload = {
+                empresa: record.empresa,
+                nota_fiscal: record.nota_fiscal,
+                cod_produto: record.cod_produto,
+                lote: record.lote,
+                custo_unitario: custoNum
+            };
+
+            const resp = await fetch(`/api/financeiro/custos/save-batch`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + getToken()
                 },
-                body: JSON.stringify({ custo_unitario: custoNum })
+                body: JSON.stringify(payload)
             });
 
             if (!resp.ok) throw new Error('Falha ao salvar');
 
-            // Success — remove row from the list
-            nulosState.rawData = nulosState.rawData.filter(r => r.id !== id);
-            nulosState.filteredData = nulosState.filteredData.filter(r => r.id !== id);
+            nulosState.rawData = nulosState.rawData.filter(r => 
+                !(r.empresa === record.empresa && r.nota_fiscal === record.nota_fiscal && r.cod_produto === record.cod_produto && r.lote === record.lote)
+            );
+            nulosState.filteredData = nulosState.filteredData.filter(r => 
+                !(r.empresa === record.empresa && r.nota_fiscal === record.nota_fiscal && r.cod_produto === record.cod_produto && r.lote === record.lote)
+            );
 
             const badge = document.getElementById('nullCostsBadge');
             badge.textContent = nulosState.filteredData.length;
@@ -519,7 +532,6 @@ const CustosApp = (() => {
     }
 
     async function loadHistorico() {
-        const ano = document.getElementById('histAnoSelect').value;
         const tbody = document.getElementById('histTableBody');
         tbody.innerHTML = `<tr><td colspan="${HIST_COLUMNS.length}" class="p-8 text-center text-steel-400">
             <svg class="animate-spin h-6 w-6 text-nexo-500 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -527,7 +539,7 @@ const CustosApp = (() => {
         </td></tr>`;
 
         try {
-            const data = await apiFetch(`/api/financeiro/custos/historico?ano=${ano}`);
+            const data = await apiFetch(`/api/financeiro/custos/historico`);
             histState.rawData = data;
             histState.filteredData = [...data];
             histState.page = 1;
