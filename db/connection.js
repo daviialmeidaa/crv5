@@ -15,7 +15,14 @@ const dbConfig = {
     requestTimeout: 300000, // 5 minutos para queries pesadas
 };
 
+const dbConfigSGC2 = {
+    ...dbConfig,
+    database: 'SGC2'
+};
+
+
 let poolPromise;
+let poolPromiseSGC2;
 
 async function getPool() {
     if (!poolPromise) {
@@ -26,19 +33,37 @@ async function getPool() {
                 return pool;
             })
             .catch(err => {
-                console.error('⚠️  Falha ao conectar no banco de dados:', err.message);
-                console.error('   O servidor continuará rodando. A conexão será tentada novamente nas próximas requisições.');
-                poolPromise = null; // Resetar para tentar novamente depois
+                console.error('⚠️  Falha ao conectar no banco de dados SGC:', err.message);
+                poolPromise = null;
                 return null;
             });
     }
     return poolPromise;
 }
 
-// Iniciar a conexão de forma não-bloqueante (não crasha o servidor)
+async function getPoolSGC2() {
+    if (!poolPromiseSGC2) {
+        poolPromiseSGC2 = new sql.ConnectionPool(dbConfigSGC2)
+            .connect()
+            .then(pool => {
+                console.log('✅ Conectado ao banco de dados SQL Server (SGC2)!');
+                return pool;
+            })
+            .catch(err => {
+                console.error('⚠️  Falha ao conectar no banco de dados SGC2:', err.message);
+                poolPromiseSGC2 = null;
+                return null;
+            });
+    }
+    return poolPromiseSGC2;
+}
+
+// Iniciar as conexões de forma não-bloqueante
 getPool();
+getPoolSGC2();
 
 module.exports = {
     sql,
-    getPool
+    getPool,
+    getPoolSGC2
 };

@@ -9,7 +9,8 @@ const SYSTEM_PERMISSIONS = [
     { id: 'canManageRoles', name: 'Módulo Perfis de Acesso' },
     { id: 'canResetHeroku', name: 'Ferramenta de Reset do Heroku' },
     { id: 'canReceiveEmailsLC', name: 'Notificações: E-mails de Licitações' },
-    { id: 'canReceiveEmailsCR', name: 'Notificações: E-mails de Cobrança' }
+    { id: 'canReceiveEmailsCR', name: 'Notificações: E-mails de Cobrança' },
+    { id: 'canViewCustos', name: 'Módulo Custos Produtos' }
 ];
 
 const PerfisModule = (() => {

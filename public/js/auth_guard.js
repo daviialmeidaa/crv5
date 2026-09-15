@@ -112,4 +112,9 @@
         window.location.replace('/403');
         return;
     }
+
+    if (currentPath === '/custos_produtos' && user.role !== 'ADMIN' && !permissions.canViewCustos) {
+        window.location.replace('/403');
+        return;
+    }
 })();
