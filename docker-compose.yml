@@ -17,14 +17,16 @@ services:
   app:
     build: .
     container_name: nexomed_app
-    command: npm run dev
+    command: npm start
     ports:
       - "3000:3000"
     volumes:
       - ./:/app
       - /app/node_modules
+      - /app/.venv
     environment:
       PG_HOST: db
+      PORT: 3000
       PG_PORT: 5432
       PG_USER: ${PG_USER:-nexomed}
       PG_PASSWORD: ${PG_PASSWORD}
@@ -33,6 +35,12 @@ services:
       SUPRA_PASSWORD: ${SUPRA_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       APP_URL: ${APP_URL}
+      VBA_API_KEY: ${VBA_API_KEY}
+      REDISCLOUD_URL: ${REDISCLOUD_URL}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
     depends_on:
       - db
     restart: unless-stopped
