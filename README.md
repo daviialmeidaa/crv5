@@ -8,7 +8,7 @@ O sistema foi desenhado para ser uma aplicação leve, responsiva e com uma inte
 
 ## 🚀 Stack Tecnológica
 
-- **Backend:** Node.js com Express.js.
+- **Backend:** Node.js com Express.js e FastAPI/Python para a API de integração.
 - **Bancos de Dados:** PostgreSQL (Banco Local) e SQL Server / mssql (Supra ERP).
 - **Autenticação:** JWT (JSON Web Tokens) e senhas encriptadas com `bcryptjs`.
 - **Frontend:** Vanilla HTML, CSS e JavaScript puros (Sem frameworks pesados como React ou Angular).
@@ -66,7 +66,25 @@ O ecossistema não atua isolado. Ele lê ativamente dados do legado e os enrique
   - Sincronização inteligente baseada em *Diff* de campos (cruzando `nf_numero` contra `codigo`).
 - **MS Access Legado (OPME):** Script auxiliar Python que realiza o UPSERT de dados vitais do VBA diretamente no PostgreSQL local.
 - **E-mails Transacionais (SMTP/Nodemailer):** Envio corporativo (com templates HTML rigorosos da Nexomed) para boas-vindas e relatórios (ex: Resumo diário de cobrança ou agenda de pregões).
-- **Integração Temporária VBA (Shadowing):** API em Node protegida por `API_KEY` para alimentar o antigo sistema Access enquanto este não for descontinuado.
+- **Integração VBA:** endpoints da agenda executados pela FastAPI, protegidos pelo mesmo header `x-api-key`. O Hub encaminha as URLs existentes para a API no mesmo servidor. O GET permite à planilha ler também o que foi inserido/alterado no Hub, usando o mesmo PostgreSQL. [Instalação, Swagger e contrato](hub_api/README.md) e [macro da agenda sem Access](vba/README.md).
+
+## Executar o Hub e a FastAPI
+
+Requer Node.js 20+ e Python 3.11+ (3.12 recomendado). Preserve o `.env` existente.
+
+```bash
+npm ci
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+npm run dev
+```
+
+O comando inicia os dois processos e encerra ambos ao parar o serviço. O Hub continua
+na porta `PORT` (padrão `3001`) e o Swagger fica em `http://localhost:3001/docs`
+(também disponível em `/api/docs`).
+Se a porta interna `8000` estiver ocupada, outra porta livre é escolhida automaticamente.
+Para execução sem reinício automático, use `npm start`.
+Detalhes de desenvolvimento, Docker e hospedagem em [hub_api/README.md](hub_api/README.md).
 
 ---
 

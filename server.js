@@ -38,6 +38,10 @@ app.use('/api/agenda_licitacoes', require('./routes/agenda_licitacoes'));
 app.use('/api/clientes', require('./routes/clientes'));
 app.use('/api/heroku', require('./routes/heroku'));
 app.use('/api/vba', require('./routes/vba_integration'));
+const { createFastapiProxy } = require('./services/fastapiProxy');
+app.use('/docs', createFastapiProxy());
+app.use('/api/docs', createFastapiProxy());
+app.use('/api/openapi.json', createFastapiProxy());
 app.use('/api/perfis', require('./routes/perfis'));
 app.use('/api/opme', require('./routes/opme'));
 app.use('/api/financeiro', require('./routes/financeiro'));
@@ -135,6 +139,7 @@ initCobrancaLiveReminders();
 
 // Iniciando o servidor
 loadCustomRoles(pgPool).then(() => {
+    require('./services/notificationBridge').start();
     app.listen(PORT, () => {
         console.log(`🚀 Servidor rodando na porta ${PORT}`);
         console.log(`🔗 Acesse: http://localhost:${PORT}`);
