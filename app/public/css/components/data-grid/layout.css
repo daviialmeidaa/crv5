@@ -1,0 +1,227 @@
+/* Shared table structure and density: Contas a Receber is the reference. */
+.hub-data-grid,
+.hub-data-grid-table,
+.hub-grid-filter,
+.hub-grid-selection-bar,
+.hub-grid-clear,
+.hub-grid-export {
+    font-family: var(--font-data-grid, Inter, ui-sans-serif, system-ui, sans-serif);
+}
+
+.hub-data-grid {
+    display: flex;
+    flex: 1 1 0%;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+}
+.hub-grid-scroll {
+    min-height: 0;
+    overflow: auto;
+    flex: 1 1 0%;
+}
+.hub-data-grid-table {
+    width: 100%;
+    min-width: max-content;
+    border-collapse: collapse;
+    text-align: left;
+}
+.hub-grid-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--color-nexo-600);
+    color: white;
+}
+.dark .hub-grid-header {
+    background: var(--color-steel-900);
+}
+.hub-grid-header th {
+    position: relative;
+    padding: 0.375rem 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 10px;
+    font-weight: 500;
+    user-select: none;
+}
+.dark .hub-grid-header th {
+    border-color: var(--color-steel-700);
+}
+.hub-grid-sort {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0 1rem;
+    font: inherit;
+    color: inherit;
+}
+button.hub-grid-sort:hover {
+    color: rgb(255 255 255 / 0.8);
+}
+.hub-grid-sort-icon {
+    margin-left: 0.25rem;
+    font-size: 10px;
+    opacity: 0.5;
+}
+.hub-data-grid-table > tbody > tr {
+    transition:
+        background-color 0.2s,
+        box-shadow 0.2s;
+}
+.hub-data-grid-table > tbody > tr:hover {
+    background: rgb(224 247 250 / 0.8);
+}
+.dark .hub-data-grid-table > tbody > tr:hover {
+    background: rgb(var(--color-nexo-500-rgb) / 0.1);
+}
+.hub-data-grid-table > tbody > tr.hub-grid-clickable {
+    cursor: pointer;
+}
+.hub-data-grid-table > tbody > tr[data-grid-row] > td {
+    padding: 0.25rem 0.5rem;
+    font-size: 11px;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+.hub-data-grid-table > tbody > tr > .hub-grid-cell-wrap {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    min-width: 150px;
+    max-width: 350px;
+}
+.hub-data-grid-table > tbody > tr > td.hub-grid-empty {
+    padding: 3rem 1.5rem;
+    text-align: center;
+    color: var(--color-steel-500);
+}
+.hub-data-grid-table .hub-grid-sticky {
+    position: sticky;
+    z-index: 10;
+    background: white;
+    border-right: 1px solid #f3f4f6;
+}
+.hub-data-grid-table .hub-grid-header .hub-grid-sticky {
+    z-index: 22;
+    background: var(--color-nexo-600);
+}
+.dark .hub-data-grid-table .hub-grid-sticky {
+    background: var(--color-steel-800);
+    border-color: var(--color-steel-700);
+}
+.dark .hub-data-grid-table .hub-grid-header .hub-grid-sticky {
+    background: var(--color-steel-900);
+}
+.hub-data-grid-table tbody tr:hover .hub-grid-sticky {
+    background: var(--color-nexo-50);
+}
+.dark .hub-data-grid-table tbody tr:hover .hub-grid-sticky {
+    background: #1f3642;
+}
+.hub-grid-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding: 0.75rem 1rem;
+}
+.hub-grid-toolbar[hidden] {
+    display: none;
+}
+.hub-grid-clear,
+.hub-grid-export {
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.hub-grid-clear {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+}
+.dark .hub-grid-clear {
+    background: rgb(127 29 29 / 0.2);
+    border-color: rgb(153 27 27 / 0.3);
+    color: #f87171;
+}
+@media (min-width: 1536px) {
+    .hub-grid-header th {
+        padding: 0.625rem 0.75rem;
+        font-size: 12px;
+    }
+    .hub-data-grid-table > tbody > tr[data-grid-row] > td {
+        padding: 0.375rem 0.75rem;
+        font-size: 12px;
+    }
+}
+.hub-grid-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+.hub-grid-action {
+    padding: 0.375rem;
+    color: var(--color-steel-400);
+    border-radius: 0.5rem;
+    transition:
+        background-color 0.2s,
+        color 0.2s;
+}
+.hub-grid-action:hover {
+    color: var(--color-nexo-600);
+    background: var(--color-nexo-50);
+}
+.hub-grid-action-danger:hover {
+    color: #ef4444;
+    background: #fef2f2;
+}
+.dark .hub-grid-action:hover {
+    color: var(--color-nexo-400);
+    background: var(--color-steel-700);
+}
+.dark .hub-grid-action-danger:hover {
+    color: #f87171;
+    background: rgb(127 29 29 / 0.2);
+}
+.hub-grid-clear,
+.hub-grid-export {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+}
+.hub-grid-export {
+    color: var(--color-steel-700);
+    background: white;
+}
+.dark .hub-grid-export {
+    background: var(--color-steel-800);
+    color: #e5e7eb;
+    border-color: var(--color-steel-600);
+}
+
+.hub-grid-clear {
+    border-color: #fecaca;
+}
+
+/* Optional inline heading preserves the intrinsic column widths of Licitações. */
+.hub-grid-header-inline .hub-grid-heading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0 1rem;
+}
+.hub-grid-header-inline .hub-grid-sort {
+    display: block;
+    width: auto;
+    padding: 0;
+}
+.hub-grid-header-inline th {
+    font-weight: 700;
+}

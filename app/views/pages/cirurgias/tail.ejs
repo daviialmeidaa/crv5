@@ -853,7 +853,13 @@
     </script>
     
     <script src="/js/components/datepicker.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="/js/pages/cirurgias/cirurgias.js"></script>
     <div id="toast" class="toast"></div>
+
+<!-- Shared grid markup for dialogs created on demand by the page controller. -->
+<template id="bancoCodigosGridTemplate">
+    <%- include('../../components/data-grid/grid', {grid:{id:'bcLookup',bodyId:'bcLookupBody',headerId:'bcLookupHeaders',export:false,pagination:false}}) %>
+</template>
+<template id="cirurgiasAbertasGridTemplate">
+    <%- include('../../components/data-grid/grid', {grid:{id:'kpiModal',bodyId:'kpiModalTableBody',toolbar:true,export:false}}) %>
+</template>

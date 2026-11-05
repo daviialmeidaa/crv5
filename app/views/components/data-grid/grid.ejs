@@ -1,0 +1,14 @@
+<% const prefix = grid.id || grid.bodyId;
+   grid = { bodyId: prefix + 'Body', headerId: prefix + 'Header', pageSizeId: prefix + 'PerPage', infoId: prefix + 'Info', paginationId: prefix + 'Pagination', clearId: prefix + 'Clear', exportId: prefix + 'Export', ...grid }; %>
+<div class="hub-data-grid" data-grid="<%= grid.bodyId %>" data-grid-export-enabled="<%= grid.export !== false %>" data-grid-pagination-enabled="<%= grid.pagination !== false %>">
+    <% if (grid.toolbar) { %><div class="hub-grid-toolbar" <%= grid.export === false ? 'hidden' : '' %>><%- include('toolbar', { grid }) %></div><% } %>
+    <div class="hub-grid-scroll table-container custom-scrollbar">
+        <table class="hub-data-grid-table">
+            <thead id="<%= grid.headerId %>" class="hub-grid-header"></thead>
+            <tbody id="<%= grid.bodyId %>" class="divide-y divide-gray-100 dark:divide-steel-700 text-steel-700 dark:text-gray-300">
+                <tr data-grid-empty="true"><td class="hub-grid-empty">Carregando dados...</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <% if (grid.pagination !== false) { %><%- include('pagination', { grid }) %><% } %>
+</div>

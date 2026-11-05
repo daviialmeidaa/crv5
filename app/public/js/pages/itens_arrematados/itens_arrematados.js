@@ -39,7 +39,6 @@ const IA = (() => {
     };
 
     let currentTab = 'NEXOMED';
-    let activeFilterModal = null;
 
     // ==========================================
     // 3. Helpers e Permissões
@@ -85,6 +84,79 @@ const IA = (() => {
     // ==========================================
     // 4. Data Fetching
     // ==========================================
+    const gridColumns = [
+        ...columns.map((col) => ({
+            ...col,
+            wrap: ['ORGAO', 'MATERIAL', 'SITUACAO_STATUS'].includes(col.key),
+            align: ['ORGAO', 'MATERIAL'].includes(col.key) ? 'left' : 'center'
+        })),
+        {
+            key: '_actions',
+            label: 'Excluir',
+            type: 'actions',
+            render: (_value, row) =>
+                canDelete
+                    ? HubDataGrid.components.Actions.button({
+                          label: 'Excluir',
+                          icon: 'delete',
+                          danger: true,
+                          onClick: () => requestDelete(row.CHAVE)
+                      })
+                    : '-'
+        }
+    ];
+    const grid = HubDataGrid.create({
+        bodyId: 'iaTableBody',
+        headerId: 'iaTableHeader',
+        infoId: 'paginationInfo',
+        paginationId: 'paginationControls',
+        pageSizeId: 'itemsPerPage',
+        clearId: 'btnClearFilters',
+        state,
+        columns: gridColumns,
+        headerLayout: 'inline',
+        defaultCompare: (a, b) => {
+            const ccA = (a.COD_CONTRATO_CONCAT || '').toUpperCase();
+            const ccB = (b.COD_CONTRATO_CONCAT || '').toUpperCase();
+            const numA = parseInt(ccA.replace(/[^0-9]/g, '')) || 0;
+            const numB = parseInt(ccB.replace(/[^0-9]/g, '')) || 0;
+
+            if (currentTab === 'NEXOMED') {
+                // BIO primeiro (maior número no topo), ML no final
+                const aIsBio = ccA.includes('BIO');
+                const bIsBio = ccB.includes('BIO');
+                const aIsMl = ccA.includes('ML');
+                const bIsMl = ccB.includes('ML');
+
+                // Prioridade: BIO > outros > ML
+                const prioA = aIsBio ? 0 : aIsMl ? 2 : 1;
+                const prioB = bIsBio ? 0 : bIsMl ? 2 : 1;
+
+                if (prioA !== prioB) return prioA - prioB;
+                // Dentro do mesmo grupo, maior número primeiro
+                return numB - numA;
+            } else {
+                // BML: maior número primeiro (simples)
+                return numB - numA;
+            }
+        },
+
+        onRowClick: (row) => openContratoModal(row.COD_CONTRATO_CONCAT),
+        onEmptyExport: () => showToast('Nenhum dado para exportar', 'warning'),
+        renderCell: (value, col, row) => {
+            if (col.type === 'actions') return col.render(value, row);
+            if (col.key === 'SITUACAO_STATUS') return HubDataGrid.components.values.escape(getStatusBadge(value));
+            if (col.type === 'date')
+                return HubDataGrid.components.values.escape(HubDataGrid.components.values.date(value));
+            if (col.type === 'currency') return formatCurrency(value);
+            let text = value == null || value === '' ? '-' : String(value);
+            if (['ORGAO', 'MUNICIPIO', 'UF', 'CLASSIFICACAO', 'MATERIAL'].includes(col.key))
+                text = text.toUpperCase();
+            text = HubDataGrid.components.values.escape(text);
+            return col.link ? '<span class="font-medium">' + text + '</span>' : text;
+        }
+    });
+
     async function fetchData() {
         document.getElementById('tableLoading').classList.remove('hidden');
         try {
@@ -110,567 +182,38 @@ const IA = (() => {
     // 6. Pipeline: Filtro -> Ordenação -> Paginação
     // ==========================================
     function processData() {
-        // 6.1 Filtros em cascata
-        state.filteredData = state.rawData.filter(row => {
-            for (let key in state.filters) {
-                const selected = state.filters[key];
-                if (selected && selected.size > 0 && !selected.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? String(row[key]) : '(Vazio)';
-                    if (!selected.has(val)) return false;
-                } else if (selected && selected.has('__NONE__')) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        // 6.2 Ordenação
-        if (state.sort.key) {
-            // Ordenação por coluna selecionada pelo usuário
-            const col = columns.find(c => c.key === state.sort.key);
-            const dir = state.sort.dir === 'asc' ? 1 : -1;
-            state.filteredData.sort((a, b) => {
-                let valA = a[state.sort.key];
-                let valB = b[state.sort.key];
-                const aEmpty = valA === null || valA === undefined || valA === '' || valA === '-';
-                const bEmpty = valB === null || valB === undefined || valB === '' || valB === '-';
-                if (aEmpty && bEmpty) return 0;
-                if (aEmpty) return 1;
-                if (bEmpty) return -1;
-                if (col && col.type === 'currency') { valA = parseFloat(valA) || 0; valB = parseFloat(valB) || 0; }
-                else if (col && col.type === 'number') { valA = parseInt(valA) || 0; valB = parseInt(valB) || 0; }
-                else { valA = String(valA).toLowerCase(); valB = String(valB).toLowerCase(); }
-                if (valA < valB) return -1 * dir;
-                if (valA > valB) return 1 * dir;
-                return 0;
-            });
-        } else {
-            // Ordenação padrão customizada por COD_CONTRATO_CONCAT
-            state.filteredData.sort((a, b) => {
-                const ccA = (a.COD_CONTRATO_CONCAT || '').toUpperCase();
-                const ccB = (b.COD_CONTRATO_CONCAT || '').toUpperCase();
-                const numA = parseInt(ccA.replace(/[^0-9]/g, '')) || 0;
-                const numB = parseInt(ccB.replace(/[^0-9]/g, '')) || 0;
-
-                if (currentTab === 'NEXOMED') {
-                    // BIO primeiro (maior número no topo), ML no final
-                    const aIsBio = ccA.includes('BIO');
-                    const bIsBio = ccB.includes('BIO');
-                    const aIsMl = ccA.includes('ML');
-                    const bIsMl = ccB.includes('ML');
-
-                    // Prioridade: BIO > outros > ML
-                    const prioA = aIsBio ? 0 : (aIsMl ? 2 : 1);
-                    const prioB = bIsBio ? 0 : (bIsMl ? 2 : 1);
-
-                    if (prioA !== prioB) return prioA - prioB;
-                    // Dentro do mesmo grupo, maior número primeiro
-                    return numB - numA;
-                } else {
-                    // BML: maior número primeiro (simples)
-                    return numB - numA;
-                }
-            });
-        }
-
-        // 6.3 Paginação
-        state.pagination.total = state.filteredData.length;
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit);
-        if (state.pagination.current > totalPages) state.pagination.current = Math.max(1, totalPages);
-        const start = (state.pagination.current - 1) * state.pagination.limit;
-        state.viewData = state.filteredData.slice(start, start + state.pagination.limit);
-
-        renderHeaders();
-        renderTableBody();
-        renderPagination();
-
-        // Controlar botão Limpar Filtros
-        const btnClear = document.getElementById('btnClearFilters');
-        let hasAnyFilter = false;
-        for (let key in state.filters) {
-            if (state.filters[key] && state.filters[key].size > 0) { hasAnyFilter = true; break; }
-        }
-        if (hasAnyFilter) {
-            btnClear.classList.remove('hidden'); btnClear.classList.add('flex');
-        } else {
-            btnClear.classList.add('hidden'); btnClear.classList.remove('flex');
-        }
+        grid.process();
     }
 
     // ==========================================
     // 7. Renderização (DOM) — Idêntico ao Contas a Receber
     // ==========================================
     function renderHeaders() {
-        const thead = document.getElementById('iaTableHeader');
-        let html = '<tr class="text-white text-[10px] 2xl:text-[12px] font-medium">';
-
-        columns.forEach(col => {
-            const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
-            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
-            const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
-            const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
-
-            html += `
-                <th class="px-2 py-1.5 2xl:px-3 2xl:py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle text-center">
-                    <div class="flex items-center justify-center w-full px-4">
-                        <div class="cursor-pointer hover:text-white/80 transition-colors text-center" onclick="IA.toggleSort('${col.key}')">
-                            ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
-                        </div>
-                        <button onclick="IA.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none flex-shrink-0 ${filterColor} absolute right-2 top-1/2 -translate-y-1/2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-                </th>
-            `;
-        });
-
-        // Coluna de ações (apenas excluir)
-        html += `<th class="px-2 py-1.5 2xl:px-3 2xl:py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none text-center align-middle w-[50px]">
-            <svg class="w-3.5 h-3.5 mx-auto opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-        </th>`;
-        html += '</tr>';
-        thead.innerHTML = html;
+        grid.renderHeaders();
     }
 
     function renderTableBody() {
-        const tbody = document.getElementById('iaTableBody');
-        if (state.viewData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${columns.length + 1}" class="px-6 py-12 text-center text-steel-500">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
-            return;
-        }
-
-        let html = '';
-        state.viewData.forEach(row => {
-            const safeContratoConcat = String(row['COD_CONTRATO_CONCAT'] || '').replace(/'/g, "\\'");
-            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; IA.openContratoModal('${safeContratoConcat}')" class="h-[110px] 2xl:h-[150px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
-            columns.forEach(col => {
-                let val = row[col.key];
-                let displayVal;
-
-                if (col.type === 'currency') {
-                    displayVal = formatCurrency(val);
-                } else if (col.key === 'SITUACAO_STATUS') {
-                    displayVal = getStatusBadge(val);
-                } else if (col.key === 'DATA_INICIO' || col.key === 'DATA_TERMINO') {
-                    displayVal = val || '-';
-                } else {
-                    displayVal = (val !== null && val !== undefined && val !== '') ? val : '-';
-                }
-
-                if (['ORGAO', 'MUNICIPIO', 'UF', 'CLASSIFICACAO', 'MATERIAL'].includes(col.key) && displayVal !== '-') {
-                    displayVal = String(displayVal).toUpperCase();
-                }
-
-                // Link clicável no contrato
-                if (col.link && displayVal !== '-') {
-                    displayVal = `<span class="text-steel-800 dark:text-gray-100 font-medium group-hover:text-nexo-600 dark:group-hover:text-nexo-400 transition-colors">${val}</span>`;
-                }
-
-                let alignClass = 'text-center whitespace-nowrap';
-                if (col.key === 'ORGAO' || col.key === 'MATERIAL') {
-                    alignClass = 'text-left whitespace-normal break-words min-w-[250px] max-w-[350px]';
-                } else if (col.key === 'SITUACAO_STATUS') {
-                    alignClass = 'text-center whitespace-normal break-words min-w-[120px] max-w-[200px]';
-                }
-
-                html += `<td class="px-2 py-1.5 2xl:px-3 2xl:py-1.5 text-[11px] 2xl:text-[12px] align-middle ${alignClass}" title="${String(row[col.key] || '').replace(/"/g, '&quot;')}">${displayVal}</td>`;
-            });
-
-            // Ações (apenas excluir)
-            html += `<td class="px-2 py-1.5 2xl:px-3 2xl:py-1.5 text-[11px] 2xl:text-[12px] align-middle text-center whitespace-nowrap">`;
-            if (canDelete) {
-                html += `
-                <button onclick="event.stopPropagation(); IA.requestDelete(${row.CHAVE})" class="p-1.5 text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all" title="Excluir">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>`;
-            } else {
-                html += `-`;
-            }
-            html += `</td></tr>`;
-        });
-        tbody.innerHTML = html;
+        grid.renderBody();
     }
 
     // ==========================================
     // 8. Paginação — Idêntica ao Contas a Receber (SVGs)
     // ==========================================
     function renderPagination() {
-        const info = document.getElementById('paginationInfo');
-        const controls = document.getElementById('paginationControls');
-        const start = state.pagination.total === 0 ? 0 : ((state.pagination.current - 1) * state.pagination.limit) + 1;
-        const end = Math.min(state.pagination.current * state.pagination.limit, state.pagination.total);
-        info.textContent = `Mostrando ${start} a ${end} de ${state.pagination.total} registros`;
-
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit);
-        let html = '';
-
-        // First
-        html += `<button onclick="IA.setPage(1)" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === 1 ? 'disabled' : ''} title="Primeira Página">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-        </button>`;
-        // Prev
-        html += `<button onclick="IA.setPage(${state.pagination.current - 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === 1 ? 'disabled' : ''} title="Anterior">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-        </button>`;
-        // Pages
-        let startPage = Math.max(1, state.pagination.current - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === state.pagination.current) {
-                html += `<button class="px-3 py-1 text-sm font-medium rounded bg-nexo-50 dark:bg-nexo-900/30 text-nexo-600 dark:text-nexo-400">${i}</button>`;
-            } else {
-                html += `<button onclick="IA.setPage(${i})" class="px-3 py-1 text-sm font-medium rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700">${i}</button>`;
-            }
-        }
-        // Next
-        html += `<button onclick="IA.setPage(${state.pagination.current + 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === totalPages || totalPages === 0 ? 'disabled' : ''} title="Próxima">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-        </button>`;
-        // Last
-        html += `<button onclick="IA.setPage(${totalPages})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === totalPages || totalPages === 0 ? 'disabled' : ''} title="Última Página">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zm6 0a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-        </button>`;
-        controls.innerHTML = html;
+        grid.pagination.render();
     }
 
     // ==========================================
     // 9. Filtros em Cascata (idênticos ao Contas a Receber)
     // ==========================================
     function openFilter(event, colKey) {
-        event.stopPropagation();
-        closeFilter();
-
-        const col = columns.find(c => c.key === colKey);
-
-        // Valores respeitando filtros de outras colunas (cascata)
-        const preFilteredData = state.rawData.filter(row => {
-            for (let key in state.filters) {
-                if (key === colKey) continue;
-                const selected = state.filters[key];
-                if (selected && selected.size > 0 && !selected.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? String(row[key]) : '(Vazio)';
-                    if (!selected.has(val)) return false;
-                } else if (selected && selected.has('__NONE__')) {
-                    return false;
-                }
-            }
-            return true;
-        });
-        
-        const rawValuesMapped = preFilteredData.map(row => {
-            const v = row[colKey];
-            return (v !== null && v !== undefined && v !== '') ? String(v) : '(Vazio)';
-        });
-
-        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
-            if (a === '(Vazio)') return 1;
-            if (b === '(Vazio)') return -1;
-            if (typeof a === 'number' && typeof b === 'number') return a - b;
-            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
-        });
-
-        if (!state.filters[colKey]) state.filters[colKey] = new Set();
-
-        const modal = document.createElement('div');
-        modal.id = 'filterModal';
-        modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm';
-        modal.classList.add('data-grid-filter');
-        modal.addEventListener('click', e => e.stopPropagation());
-
-        const rect = event.currentTarget.getBoundingClientRect();
-        let left = rect.left;
-        if (left + 256 > window.innerWidth) left = window.innerWidth - 266;
-        modal.style.top = `${rect.bottom + window.scrollY + 8}px`;
-        modal.style.left = `${left}px`;
-
-        modal.innerHTML = `
-            <div class="p-3 border-b border-gray-100 dark:border-steel-700">
-                <input type="text" id="filterSearchInput" placeholder="Pesquisar..." class="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded outline-none focus:ring-1 focus:ring-nexo-500 text-steel-700 dark:text-gray-200">
-            </div>
-            <div class="flex-1 max-h-48 overflow-y-auto p-2 custom-scrollbar" id="filterCheckboxList"></div>
-            <div class="p-3 border-t border-gray-100 dark:border-steel-700 flex justify-between bg-gray-50 dark:bg-steel-800/50 rounded-b-lg">
-                <button id="btnClearFilter" class="text-xs text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 font-medium">Limpar</button>
-                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium shadow-sm">Aplicar</button>
-            </div>
-        `;
-        document.body.appendChild(modal);
-        activeFilterModal = modal;
-
-        const listContainer = modal.querySelector('#filterCheckboxList');
-        const searchInput = modal.querySelector('#filterSearchInput');
-        const tempSelected = new Set(state.filters[colKey]);
-        if (tempSelected.size === 0 || tempSelected.has('__NONE__')) {
-            if (!tempSelected.has('__NONE__')) uniqueValues.forEach(v => tempSelected.add(v));
-            else tempSelected.clear();
-        }
-
-        let expandedState = {};
-
-        function renderCheckboxes(term = '') {
-            listContainer.innerHTML = '';
-            
-            const filteredVals = uniqueValues.filter(v => {
-                if (!term) return true;
-                let displayVal = v;
-                if (col && col.type === 'currency') displayVal = formatCurrency(v);
-                if (col && col.type === 'date') displayVal = formatDate(v);
-                return String(displayVal).toLowerCase().includes(term.toLowerCase());
-            });
-
-            if (filteredVals.length === 0) {
-                listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
-                return;
-            }
-
-            // Select All
-            const allChecked = filteredVals.length > 0 && filteredVals.every(v => tempSelected.has(v));
-            const selectAllDiv = document.createElement('div');
-            selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
-            selectAllDiv.innerHTML = `
-                <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${allChecked ? 'checked' : ''}>
-                <span class="font-medium text-steel-700 dark:text-gray-300">(Selecionar Tudo)</span>
-            `;
-            selectAllDiv.querySelector('input').onclick = (e) => {
-                if (e.target.checked) {
-                    filteredVals.forEach(v => tempSelected.add(v));
-                } else {
-                    filteredVals.forEach(v => tempSelected.delete(v));
-                }
-                renderCheckboxes(term);
-            };
-            listContainer.appendChild(selectAllDiv);
-
-            if (col && col.type === 'date' && !term) {
-                // Renderização hierárquica (Ano > Mês > Dia)
-                const tree = {};
-                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
-                filteredVals.forEach(val => {
-                    if (val === '-' || !val) {
-                        if (!tree['-']) tree['-'] = {};
-                        if (!tree['-']['-']) tree['-']['-'] = [];
-                        tree['-']['-'].push(val);
-                        return;
-                    }
-                    
-                    let y, m, d;
-                    const valStr = String(val);
-                    
-                    if (valStr.includes('-') && valStr.split('-').length >= 3) {
-                        const datePart = valStr.split('T')[0];
-                        const parts = datePart.split('-');
-                        if (parts.length === 3) {
-                            [y, m, d] = parts;
-                        }
-                    } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
-                        const datePart = valStr.split(' ')[0];
-                        const parts = datePart.split('/');
-                        if (parts.length === 3) {
-                            d = parts[0];
-                            m = parts[1];
-                            y = parts[2];
-                        }
-                    }
-
-                    if (!y || !m || !d || isNaN(y) || isNaN(m) || isNaN(d)) {
-                        if (!tree['Outros']) tree['Outros'] = {};
-                        if (!tree['Outros']['-']) tree['Outros']['-'] = [];
-                        tree['Outros']['-'].push(val);
-                        return;
-                    }
-                    if (!tree[y]) tree[y] = {};
-                    if (!tree[y][m]) tree[y][m] = [];
-                    tree[y][m].push(val);
-                });
-
-                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
-                    const yearDiv = document.createElement('div');
-                    yearDiv.className = 'pl-1';
-                    
-                    let yearAllChecked = true;
-                    let yearAnyChecked = false;
-                    const yearVals = [];
-                    Object.keys(tree[year]).forEach(m => tree[year][m].forEach(v => {
-                        yearVals.push(v);
-                        if (tempSelected.has(v)) yearAnyChecked = true;
-                        else yearAllChecked = false;
-                    }));
-
-                    const yHeader = document.createElement('div');
-                    yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
-                    yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                        <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
-                        <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
-                    `;
-                    
-                    const yCb = yHeader.querySelector('input');
-                    yCb.indeterminate = yearAnyChecked && !yearAllChecked;
-                    
-                    const mContainer = document.createElement('div');
-                    mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                    
-                    yHeader.onclick = (e) => {
-                        if (e.target === yCb) return;
-                        const isHidden = mContainer.classList.contains('hidden');
-                        expandedState[year] = isHidden;
-                        mContainer.classList.toggle('hidden');
-                        yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
-                    };
-                    
-                    if (expandedState[year]) {
-                        mContainer.classList.remove('hidden');
-                        yHeader.querySelector('span').textContent = '-';
-                    }
-
-                    yCb.onclick = (e) => {
-                        e.stopPropagation();
-                        const isChecked = e.target.checked;
-                        yearVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                        renderCheckboxes(term);
-                    };
-
-                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
-                        const monthVals = tree[year][month];
-                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
-                        
-                        let monthAllChecked = true;
-                        let monthAnyChecked = false;
-                        monthVals.forEach(v => {
-                            if (tempSelected.has(v)) monthAnyChecked = true;
-                            else monthAllChecked = false;
-                        });
-
-                        const mHeader = document.createElement('div');
-                        mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                        mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                            <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
-                            <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
-                        `;
-
-                        const mCb = mHeader.querySelector('input');
-                        mCb.indeterminate = monthAnyChecked && !monthAllChecked;
-
-                        const dContainer = document.createElement('div');
-                        dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                        
-                        const monthKey = `${year}-${month}`;
-                        mHeader.onclick = (e) => {
-                            if (e.target === mCb) return;
-                            const isHidden = dContainer.classList.contains('hidden');
-                            expandedState[monthKey] = isHidden;
-                            dContainer.classList.toggle('hidden');
-                            mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
-                        };
-                        
-                        if (expandedState[monthKey]) {
-                            dContainer.classList.remove('hidden');
-                            mHeader.querySelector('span').textContent = '-';
-                        }
-
-                        mCb.onclick = (e) => {
-                            e.stopPropagation();
-                            const isChecked = e.target.checked;
-                            monthVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                            renderCheckboxes(term);
-                        };
-
-                        monthVals.forEach(val => {
-                            const isChecked = tempSelected.has(val);
-                            const dHeader = document.createElement('div');
-                            dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                            let displayVal = formatDate(val);
-                            
-                            const valStr = String(val);
-                            if (valStr.includes('-') && valStr.split('-').length >= 3) {
-                                const datePart = valStr.split('T')[0];
-                                if (datePart.split('-').length === 3) {
-                                    displayVal = datePart.split('-')[2];
-                                }
-                            } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
-                                const datePart = valStr.split(' ')[0];
-                                if (datePart.split('/').length === 3) {
-                                    displayVal = datePart.split('/')[0];
-                                }
-                            }
-                            
-                            dHeader.innerHTML = `
-                                <div class="w-3"></div>
-                                <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                                <span class="truncate text-steel-500 dark:text-gray-500 text-[11px]">${displayVal}</span>
-                            `;
-                            const dCb = dHeader.querySelector('input');
-                            dHeader.onclick = (e) => {
-                                if (e.target !== dCb) dCb.checked = !dCb.checked;
-                                if (dCb.checked) tempSelected.add(val);
-                                else tempSelected.delete(val);
-                                renderCheckboxes(term);
-                            };
-                            dContainer.appendChild(dHeader);
-                        });
-
-                        mContainer.appendChild(mHeader);
-                        mContainer.appendChild(dContainer);
-                    });
-
-                    yearDiv.appendChild(yHeader);
-                    yearDiv.appendChild(mContainer);
-                    listContainer.appendChild(yearDiv);
-                });
-            } else {
-                // Flat list
-                filteredVals.forEach(val => {
-                    const isChecked = tempSelected.has(val);
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                    let display = val;
-                    if (col && col.type === 'currency') display = formatCurrency(val);
-                    if (col && col.type === 'date') display = formatDate(val);
-                    div.innerHTML = `<input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}><span class="truncate text-steel-600 dark:text-gray-400" title="${display}">${display}</span>`;
-                    const cb = div.querySelector('input');
-                    div.onclick = e => {
-                        if (e.target !== cb) cb.checked = !cb.checked;
-                        if (cb.checked) tempSelected.add(val); else tempSelected.delete(val);
-                        renderCheckboxes(term);
-                    };
-                    listContainer.appendChild(div);
-                });
-            }
-        }
-
-        renderCheckboxes();
-        searchInput.focus();
-        let hasTyped = false;
-        searchInput.addEventListener('input', e => {
-            if (!hasTyped && e.target.value.length > 0) { tempSelected.clear(); hasTyped = true; }
-            renderCheckboxes(e.target.value);
-        });
-
-        modal.querySelector('#btnApplyFilter').onclick = () => {
-            if (tempSelected.size === uniqueValues.length) state.filters[colKey] = new Set();
-            else if (tempSelected.size === 0) state.filters[colKey] = new Set(['__NONE__']);
-            else state.filters[colKey] = new Set(tempSelected);
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
-        modal.querySelector('#btnClearFilter').onclick = () => {
-            if (state.filters[colKey]) state.filters[colKey].clear();
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
+        grid.openFilter(event, colKey);
     }
 
     function closeFilter() {
-        if (activeFilterModal) { activeFilterModal.remove(); activeFilterModal = null; }
+        grid.filters.close();
     }
-    document.addEventListener('click', e => { if (activeFilterModal && !activeFilterModal.contains(e.target)) closeFilter(); });
+
 
     // ==========================================
     // 10. Modal de Contrato (Agrupado por COD_CONTRATO_CONCAT)
@@ -1237,131 +780,24 @@ const IA = (() => {
     // ==========================================
     // 14. Export
     // ==========================================
-    function exportXLS() {
-        if (state.filteredData.length === 0) { showToast('Nenhum dado para exportar', 'warning'); return; }
-        const ws = XLSX.utils.json_to_sheet(state.filteredData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, `IA_${currentTab}`);
-        XLSX.writeFile(wb, `itens_arrematados_${currentTab.toLowerCase()}_${new Date().toISOString().split('T')[0]}.xlsx`);
-        showToast('Exportação concluída!');
-    }
+    function exportXLS() { return grid.export({ filename:'itens_arrematados_'+currentTab.toLowerCase()+'_'+new Date().toISOString().slice(0,10)+'.xlsx', sheetName:'IA_'+currentTab }); }
 
     // ==========================================
     // 15. Init
     // ==========================================
     function init() {
-        document.getElementById('btnClearFilters').addEventListener('click', () => {
-            state.filters = {};
-            state.sort = { key: null, dir: 'desc' };
-            state.pagination.current = 1;
-            processData();
-        });
-        document.getElementById('itemsPerPage').addEventListener('change', e => {
-            state.pagination.limit = parseInt(e.target.value);
-            state.pagination.current = 1;
-            processData();
-        });
-
-        const updateCodContratoConcat = () => {
-            const participante = document.getElementById('formParticipante').value;
-            const cod = document.getElementById('formCodContrato').value;
-            const prefix = participante === 'NEXOMED' ? 'BIO' : (participante === 'BML HOSPITALAR' ? 'BML' : '');
-            document.getElementById('formCodContratoConcat').value = cod ? `${prefix}${cod}` : '';
-        };
-        document.getElementById('formParticipante').addEventListener('change', updateCodContratoConcat);
-        document.getElementById('formCodContrato').addEventListener('input', updateCodContratoConcat);
-
-        // Setup Custom Dropdowns
-        function setupCustomDropdown(inputId, dropdownId, listId, dataFetcher = null, onChange = null) {
-            const input = document.getElementById(inputId);
-            const dropdown = document.getElementById(dropdownId);
-            const ul = document.getElementById(listId);
-            let optionsData = [];
-
-            const renderOptions = (filter = '') => {
-                ul.innerHTML = '';
-                const filtered = optionsData.filter(opt => opt.includes(filter.toUpperCase()));
-                if (filtered.length === 0) {
-                    ul.innerHTML = '<li class="px-4 py-2 text-steel-400 text-xs text-center italic">Nenhum resultado</li>';
-                    return;
-                }
-                filtered.forEach(opt => {
-                    const li = document.createElement('li');
-                    li.textContent = opt;
-                    li.className = 'px-4 py-2 cursor-pointer hover:bg-nexo-50 dark:hover:bg-steel-700 transition-colors text-steel-700 dark:text-gray-200';
-                    li.onmousedown = (e) => { // mousedown dispara antes do blur
-                        e.preventDefault();
-                        input.value = opt;
-                        dropdown.classList.add('hidden');
-                        if (onChange) onChange(opt);
-                    };
-                    ul.appendChild(li);
-                });
-            };
-
-            const loadData = async () => {
-                if (dataFetcher && optionsData.length === 0) {
-                    optionsData = await dataFetcher();
-                }
-                renderOptions(input.value);
-            };
-
-            input.addEventListener('focus', async () => {
-                dropdown.classList.remove('hidden');
-                await loadData();
-                renderOptions();
-            });
-
-            input.addEventListener('input', async (e) => {
-                dropdown.classList.remove('hidden');
-                await loadData();
-                renderOptions(e.target.value);
-            });
-
-            input.addEventListener('blur', () => { dropdown.classList.add('hidden'); });
-
-            return {
-                setOptions: (data) => { optionsData = data; renderOptions(); },
-                clearOptions: () => { optionsData = []; }
-            };
-        }
-
-        const ufs = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
-        
-        let munDropdown;
-        const ufDropdown = setupCustomDropdown('formUF', 'ufDropdown', 'ufList', null, (uf) => {
-            document.getElementById('formMunicipio').value = '';
-            if (munDropdown) munDropdown.clearOptions();
-        });
-        ufDropdown.setOptions(ufs);
-
-        munDropdown = setupCustomDropdown('formMunicipio', 'municipioDropdown', 'municipiosList', async () => {
-            const uf = document.getElementById('formUF').value;
-            if (!uf) return [];
-            try {
-                const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
-                const data = await res.json();
-                return data.map(m => m.nome.toUpperCase());
-            } catch (e) {
-                return [];
-            }
-        });
-
-        // Botão Adicionar Produto
-        document.getElementById('btnAddProduto').addEventListener('click', () => addProdutoBox());
-
         fetchData();
 
         // Seleção de células (Ctrl+Click+Arrasto)
-        if (typeof CellSelector !== 'undefined') CellSelector.init('iaTableBody');
+
     }
 
     document.addEventListener('DOMContentLoaded', init);
 
     // Public API
     return {
-        switchTab, toggleSort: key => { if (state.sort.key === key) state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc'; else { state.sort.key = key; state.sort.dir = 'asc'; } processData(); },
-        setPage: p => { state.pagination.current = p; processData(); },
+        switchTab, toggleSort: key => grid.toggleSort(key),
+        setPage: p => grid.setPage(p),
         openFilter, openModal, closeModal, saveItem,
         requestDelete, closeDeleteModal, confirmDelete, deleteFromModal,
         openContratoModal, closeContratoModal, exportXLS,

@@ -1,11 +1,7 @@
-/* Estilos do componente data-grid. */
-
-.sticky-col {
-    position: sticky;
-    left: 0;
-    z-index: 10;
-}
-
-/* Apresentacao dos filtros; selecao e ordenacao continuam nos controllers. */
-:root[data-page] .data-grid-filter { animation: fadeInUp 0.15s ease-out; }
-:root[data-page] .filter-tree-toggle { font-size: 12px; }
+/* One entry point for the Hub Data Grid and its subcomponents. */
+@import url('./data-grid/layout.css');
+@import url('./data-grid/filters.css');
+@import url('./data-grid/pagination.css');
+@import url('./data-grid/selection.css');
+/* Legacy class used by older detail tables. */
+.sticky-col { position: sticky; left: 0; z-index: 10; }

@@ -1,0 +1,12 @@
+<% const includeExport = typeof exportEnabled === 'undefined' || exportEnabled; %>
+<% if (includeExport) { %><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><% } %>
+<link rel="stylesheet" href="/css/components/data-grid.css">
+<script src="/js/components/data-grid/values.js"></script>
+<script src="/js/components/data-grid/sorting.js"></script>
+<script src="/js/components/data-grid/pagination.js"></script>
+<script src="/js/components/data-grid/filters.js"></script>
+<script src="/js/components/data-grid/selection.js"></script>
+<% if (includeExport) { %><script src="/js/components/data-grid/export.js"></script><% } %>
+<script src="/js/components/data-grid/actions.js"></script>
+<script src="/js/components/data-grid/data-grid.js"></script>
+<script src="/js/components/data-grid/presets/nota-items.js"></script>

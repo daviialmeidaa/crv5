@@ -5,9 +5,43 @@
 }
 
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .fade-in-up {
     animation: fadeInUp 0.3s ease-out;
+}
+
+/* Mantém as alturas e as larguras de leitura utilizadas em produção. */
+[data-grid='iaTableBody'] tr[data-grid-row] {
+    height: 110px;
+}
+[data-grid='iaTableBody'] .hub-data-grid-table > tbody > tr[data-grid-row] > td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+[data-grid='iaTableBody'] .hub-data-grid-table > tbody > tr > .hub-grid-cell-wrap {
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+[data-grid='iaTableBody'] .hub-data-grid-table > tbody > tr > td[data-col='ORGAO'],
+[data-grid='iaTableBody'] .hub-data-grid-table > tbody > tr > td[data-col='MATERIAL'] {
+    min-width: 250px;
+    max-width: 350px;
+}
+[data-grid='iaTableBody'] .hub-data-grid-table > tbody > tr > td[data-col='SITUACAO_STATUS'] {
+    min-width: 120px;
+    max-width: 200px;
+}
+@media (min-width: 1536px) {
+    [data-grid='iaTableBody'] tr[data-grid-row] {
+        height: 150px;
+    }
 }

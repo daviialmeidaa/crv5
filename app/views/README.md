@@ -14,6 +14,7 @@ views/
     navbar/theme-toggle.ejs
     navbar/notifications.ejs
     footer.ejs
+    data-grid/                  Estrutura, toolbar, paginação e import dos grids
   pages/<pagina>/
     head.ejs       Bibliotecas e estilos exclusivos da página
     index.ejs      Conteúdo entre a navbar e o footer
@@ -60,3 +61,7 @@ Os templates não são servidos como arquivos públicos.
 O comando permanece `npm run dev`, sem etapa de build. O EJS é instalado pelo
 `npm ci`; não são necessárias novas variáveis de ambiente. O Express mantém o
 cache de templates em produção e relê os templates no desenvolvimento.
+
+As listagens usam o Data Grid compartilhado, baseado em Contas a Receber.
+Para uma nova tabela, incluir os parciais `data-grid/assets` e `data-grid/grid`
+e configurar suas colunas e dados no controller. [Guia e exemplos](../public/js/components/data-grid/README.md).

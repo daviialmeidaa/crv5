@@ -5,7 +5,7 @@
 const ClienteDetalhe = (() => {
     let modalItens = [];
     let modalCurrentPage = 1;
-    const modalItemsPerPage = 10;
+    let modalGrid = null;
     let currentModalContext = {
         empresa: '',
         numero_nota: '',
@@ -76,7 +76,7 @@ const ClienteDetalhe = (() => {
             key: 'status', label: 'Status', render: v => {
                 const variants = { PAGO: 'success', ATRASADO: 'danger', PENDENTE: 'alert' };
                 const variant = variants[v] || 'neutral';
-                return `<span class="status-badge status-badge-${variant}">${v}</span>`;
+                return `<span class="status-badge status-badge-${variant}">${HubDataGrid.components.values.escape(v)}</span>`;
             }
         }
     ];
@@ -93,7 +93,6 @@ const ClienteDetalhe = (() => {
         pagination: { current: 1, limit: 25, total: 0 }
     };
 
-    let activeFilterModal = null;
 
     // ==========================================
     // 6. Elementos DOM
@@ -103,44 +102,32 @@ const ClienteDetalhe = (() => {
     // ==========================================
     // 7. Inicialização
     // ==========================================
+    const grid = HubDataGrid.create({
+        bodyId: 'notasTableBody',
+        headerId: 'notasTableHeader',
+        infoId: 'notasPaginationInfo',
+        paginationId: 'notasPaginationControls',
+        pageSizeId: 'notasPerPage',
+        clearId: 'btnClearFiltersNotas',
+        state,
+        columns,
+        export: false,
+        onChange: () => updateKpis(),
+        onRowClick: (row) =>
+            ClienteDetalhe.openNotaModal(
+                row.empresa,
+                row.nota,
+                row.documento || '',
+                document.getElementById('clienteNome')?.textContent || '',
+                '',
+                '',
+                row.valor || '0'
+            )
+    });
+
     const init = () => {
-        elements.tableHeader = document.getElementById('notasTableHeader');
-        elements.tableBody = document.getElementById('notasTableBody');
-        elements.btnClearFilters = document.getElementById('btnClearFiltersNotas');
-
-        // Buscar e preencher dados da ficha cadastral
-        fetchClienteData();
-
-        // Buscar notas fiscais
-        fetchNotasData();
-
-        // Buscar contatos da agenda (PostgreSQL)
-        loadContatos();
-
-        // Buscar histórico de cobrança (PostgreSQL)
-        loadHistorico();
-
-        // Items per page
-        const perPage = document.getElementById('notasPerPage');
-        if (perPage) {
-            perPage.addEventListener('change', (e) => {
-                state.pagination.limit = parseInt(e.target.value);
-                state.pagination.current = 1;
-                processData();
-            });
-        }
-
-        // Fechar filtro ao clicar fora
-        document.addEventListener('click', (e) => {
-            const modal = document.getElementById('notasFilterModal');
-            if (modal && !modal.classList.contains('hidden') && !modal.contains(e.target) && !e.target.closest('[data-filter-btn]')) {
-                modal.classList.add('hidden');
-                activeFilterModal = null;
-            }
-        });
-
-        // Seleção de células (Ctrl+Click+Arrasto)
-        if (typeof CellSelector !== 'undefined') CellSelector.init('notasTableBody');
+        elements.tableHeader=document.getElementById('notasTableHeader'); elements.tableBody=document.getElementById('notasTableBody'); elements.btnClearFilters=document.getElementById('btnClearFiltersNotas');
+        fetchClienteData();fetchNotasData();loadContatos();loadHistorico();
     };
 
     const fetchClienteData = async () => {
@@ -241,78 +228,7 @@ const ClienteDetalhe = (() => {
     // 9. Processamento de Dados (Filtrar + Ordenar + Paginar)
     // ==========================================
     const processData = () => {
-        // 1. Filtragem
-        let data = [...state.rawData];
-        for (const [colKey, allowedSet] of Object.entries(state.filters)) {
-            if (allowedSet && allowedSet.size > 0 && !allowedSet.has('__NONE__')) {
-                data = data.filter(row => {
-                    const val = row[colKey] !== null && row[colKey] !== undefined && row[colKey] !== '' ? String(row[colKey]) : '(Vazio)';
-                    return allowedSet.has(val);
-                });
-            } else if (allowedSet && allowedSet.has('__NONE__')) {
-                data = [];
-                break;
-            }
-        }
-        state.filteredData = data;
-
-        // 2. Ordenação
-        if (state.sort.key) {
-            const col = columns.find(c => c.key === state.sort.key);
-            const dir = state.sort.dir === 'asc' ? 1 : -1;
-            state.filteredData.sort((a, b) => {
-                let valA = a[state.sort.key];
-                let valB = b[state.sort.key];
-
-                const aEmpty = valA === null || valA === undefined || valA === '' || valA === '-';
-                const bEmpty = valB === null || valB === undefined || valB === '' || valB === '-';
-
-                if (aEmpty && bEmpty) return 0;
-                if (aEmpty) return 1;
-                if (bEmpty) return -1;
-
-                if (col && (col.type === 'number' || col.type === 'currency')) {
-                    valA = parseFloat(valA) || 0;
-                    valB = parseFloat(valB) || 0;
-                } else {
-                    valA = String(valA).toLowerCase();
-                    valB = String(valB).toLowerCase();
-                }
-
-                if (valA < valB) return -1 * dir;
-                if (valA > valB) return 1 * dir;
-                return 0;
-            });
-        }
-
-        // 3. Paginação
-        state.pagination.total = state.filteredData.length;
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit);
-        if (state.pagination.current > totalPages) state.pagination.current = Math.max(1, totalPages);
-        const start = (state.pagination.current - 1) * state.pagination.limit;
-        state.viewData = state.filteredData.slice(start, start + state.pagination.limit);
-
-        // Controlar botão "Remover Filtros"
-        let hasAnyFilter = false;
-        for (let key in state.filters) {
-            if (state.filters[key] && state.filters[key].size > 0) {
-                hasAnyFilter = true; break;
-            }
-        }
-        if (hasAnyFilter) {
-            elements.btnClearFilters.classList.remove('hidden');
-            elements.btnClearFilters.classList.add('flex');
-        } else {
-            elements.btnClearFilters.classList.add('hidden');
-            elements.btnClearFilters.classList.remove('flex');
-        }
-
-        // Atualizar KPIs com dados filtrados
-        updateKpis();
-
-        renderHeaders();
-        renderTableBody();
-        renderPagination();
+        grid.process();
     };
 
     // ==========================================
@@ -339,123 +255,21 @@ const ClienteDetalhe = (() => {
     // 11. Renderização de Cabeçalhos
     // ==========================================
     const renderHeaders = () => {
-        if (!elements.tableHeader) return;
-        let html = '<tr class="text-white text-[10px] 2xl:text-[12px] font-medium">';
-
-        columns.forEach(col => {
-            const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
-            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0;
-            const filterColor = hasFilter ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
-
-            html += `
-                <th class="px-2 py-1.5 2xl:px-3 2xl:py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative align-middle text-center">
-                    <div class="flex items-center justify-center w-full px-4">
-                        <div class="cursor-pointer hover:text-white/80 transition-colors text-center" onclick="ClienteDetalhe.toggleSort('${col.key}')">
-                            ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
-                        </div>
-                    </div>
-                    <button data-filter-btn onclick="ClienteDetalhe.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none flex-shrink-0 ${filterColor} absolute right-2 top-1/2 -translate-y-1/2 z-10">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </th>
-            `;
-        });
-
-        html += '</tr>';
-        elements.tableHeader.innerHTML = html;
+        grid.renderHeaders();
     };
 
     // ==========================================
     // 12. Renderização do Corpo da Tabela
     // ==========================================
     const renderTableBody = () => {
-        if (!elements.tableBody) return;
-        if (state.viewData.length === 0) {
-            elements.tableBody.innerHTML = `<tr><td colspan="${columns.length}" class="px-6 py-12 text-center text-steel-500">Nenhum registro encontrado.</td></tr>`;
-            return;
-        }
-
-        let html = '';
-        state.viewData.forEach(row => {
-            const clientName = document.getElementById('clienteNome') ? document.getElementById('clienteNome').textContent.replace(/'/g, "\\'") : '';
-            const args = `'${row.empresa}', '${row.nota}', '${row.documento || ''}', '${clientName}', '', '', '${row.valor || '0'}'`;
-            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; ClienteDetalhe.openNotaModal(${args})" class="h-[38px] 2xl:h-[52px] hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors duration-200 group cursor-pointer">`;
-
-            columns.forEach(col => {
-                let val = row[col.key];
-                if (val === null || val === undefined) val = '-';
-
-                // Formatação por tipo
-                if (col.type === 'currency' && val !== '-') {
-                    val = parseFloat(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                } else if (col.type === 'date' && val !== '-') {
-                    const d = new Date(val + 'T00:00:00');
-                    if (!isNaN(d)) val = d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-                }
-
-                // Render customizado (ex: status badge)
-                if (col.render && row[col.key] !== null && row[col.key] !== undefined) {
-                    val = col.render(row[col.key]);
-                }
-
-                html += `<td class="px-2 py-1 2xl:px-4 2xl:py-2 text-[11px] 2xl:text-[13px] whitespace-nowrap text-center">${val}</td>`;
-            });
-
-            html += '</tr>';
-        });
-        elements.tableBody.innerHTML = html;
+        grid.renderBody();
     };
 
     // ==========================================
     // 13. Paginação (Padrão minimalista do sistema)
     // ==========================================
     const renderPagination = () => {
-        const info = document.getElementById('notasPaginationInfo');
-        const controls = document.getElementById('notasPaginationControls');
-        if (!info || !controls) return;
-
-        const { current, limit, total } = state.pagination;
-        const totalPages = Math.ceil(total / limit) || 1;
-        const start = Math.min((current - 1) * limit + 1, total);
-        const end = Math.min(current * limit, total);
-
-        info.textContent = `Mostrando ${start} a ${end} de ${total} registros`;
-
-        let html = '';
-
-        // First
-        html += `<button onclick="ClienteDetalhe.changePage(1)" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${current === 1 ? 'disabled' : ''}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-        </button>`;
-
-        // Prev
-        html += `<button onclick="ClienteDetalhe.changePage(${current - 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${current === 1 ? 'disabled' : ''}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-        </button>`;
-
-        // Page numbers
-        let startPage = Math.max(1, current - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-        for (let i = startPage; i <= endPage; i++) {
-            const isActive = i === current;
-            html += `<button onclick="ClienteDetalhe.changePage(${i})" class="w-8 h-8 rounded text-sm font-medium transition-colors ${isActive ? 'bg-nexo-500 text-white shadow-sm' : 'text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700'}">${i}</button>`;
-        }
-
-        // Next
-        html += `<button onclick="ClienteDetalhe.changePage(${current + 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${current === totalPages ? 'disabled' : ''}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-        </button>`;
-
-        // Last
-        html += `<button onclick="ClienteDetalhe.changePage(${totalPages})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${current === totalPages ? 'disabled' : ''}>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zm6 0a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-        </button>`;
-
-        controls.innerHTML = html;
+        grid.pagination.render();
     };
 
     // ==========================================
@@ -473,369 +287,11 @@ const ClienteDetalhe = (() => {
         return val;
     };
 
-    // Declaração de activeFilterModal removida pois já existe no topo do arquivo.
 
-    const closeFilter = () => {
-        if (activeFilterModal) {
-            activeFilterModal.remove();
-            activeFilterModal = null;
-        }
-    };
+    const closeFilter = () => grid.filters.close();
 
     const openFilter = (event, colKey) => {
-        event.stopPropagation();
-        closeFilter(); // Fecha anterior se existir
-
-        const col = columns.find(c => c.key === colKey);
-
-        // Coleta valores únicos para essa coluna respeitando os filtros já aplicados em outras colunas (Filtro em cascata)
-        const preFilteredData = state.rawData.filter(row => {
-            for (let key in state.filters) {
-                if (key === colKey) continue; // Ignora o filtro da própria coluna que estamos abrindo
-                const selectedValues = state.filters[key];
-                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
-                    if (!selectedValues.has(row[key])) {
-                        return false; 
-                    }
-                }
-            }
-            return true;
-        });
-        const rawValuesMapped = preFilteredData.map(row => {
-            const val = row[colKey];
-            return val !== null && val !== undefined && val !== '' ? String(val) : '(Vazio)';
-        });
-
-        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
-            if (a === '(Vazio)') return 1;
-            if (b === '(Vazio)') return -1;
-            if (typeof a === 'number' && typeof b === 'number') return a - b;
-            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
-        });
-
-        // Inicializa o state do filtro se não existir
-        if (!state.filters[colKey]) {
-            state.filters[colKey] = new Set();
-        }
-
-        // Criar DOM do Modal
-        const modal = document.createElement('div');
-        modal.id = 'filterModal';
-        modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm animate-fade-in-up';
-
-        // Evita que cliques dentro do modal propaguem para o document e fechem o filtro
-        modal.addEventListener('click', (e) => e.stopPropagation());
-
-        // Posicionamento abaixo do ícone clicado
-        const rect = event.currentTarget.getBoundingClientRect();
-        let left = rect.left;
-        if (left + 256 > window.innerWidth) left = window.innerWidth - 266;
-
-        modal.style.top = `${rect.bottom + window.scrollY + 8}px`;
-        modal.style.left = `${left}px`;
-
-        // Cabeçalho / Busca
-        modal.innerHTML = `
-            <div class="p-3 border-b border-gray-100 dark:border-steel-700">
-                <input type="text" id="filterSearchInput" placeholder="Pesquisar..." class="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded outline-none focus:ring-1 focus:ring-nexo-500 text-steel-700 dark:text-gray-200">
-            </div>
-            <div class="flex-1 max-h-48 overflow-y-auto p-2" id="filterCheckboxList">
-            </div>
-            <div class="p-3 border-t border-gray-100 dark:border-steel-700 flex justify-between bg-gray-50 dark:bg-steel-800/50 rounded-b-lg">
-                <button id="btnClearFilter" class="text-xs text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 font-medium">Limpar</button>
-                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium shadow-sm">Aplicar</button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        activeFilterModal = modal;
-        
-        const listContainer = modal.querySelector('#filterCheckboxList');
-        const searchInput = modal.querySelector('#filterSearchInput');
-
-        // Estado temporário para as seleções no modal explícito:
-        const tempSelected = new Set(state.filters[colKey]);
-        // Se filtro global estiver limpo, significa que tudo está visivel
-        if (tempSelected.size === 0 || tempSelected.has('__NONE__')) {
-            if (!tempSelected.has('__NONE__')) {
-                uniqueValues.forEach(v => tempSelected.add(v));
-            } else {
-                tempSelected.clear();
-            }
-        }
-
-        // Estado de expansão do modal (árvore de datas)
-        let expandedState = {};
-
-        function renderCheckboxes(searchTerm = '') {
-            listContainer.innerHTML = '';
-            
-            const filteredVals = uniqueValues.filter(v => {
-                if (!searchTerm) return true;
-                let displayVal = v === '__EMPTY__' ? '(Vazio)' : v;
-                if (col.type === 'currency' && v !== '__EMPTY__') displayVal = formatCurrency(v);
-                if (col.type === 'date' && v !== '__EMPTY__') displayVal = formatDate(v);
-                return String(displayVal).toLowerCase().includes(searchTerm.toLowerCase());
-            });
-
-            if (filteredVals.length === 0) {
-                listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
-                return;
-            }
-
-            // Botão "Selecionar Tudo"
-            const allChecked = filteredVals.length > 0 && filteredVals.every(v => tempSelected.has(v));
-            const selectAllDiv = document.createElement('div');
-            selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
-            selectAllDiv.innerHTML = `
-                <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${allChecked ? 'checked' : ''}>
-                <span class="font-medium text-steel-700 dark:text-gray-300">(Selecionar Tudo)</span>
-            `;
-            selectAllDiv.querySelector('input').onclick = (e) => {
-                if (e.target.checked) {
-                    filteredVals.forEach(v => tempSelected.add(v));
-                } else {
-                    filteredVals.forEach(v => tempSelected.delete(v));
-                }
-                renderCheckboxes(searchTerm);
-            };
-            listContainer.appendChild(selectAllDiv);
-
-            if (col.type === 'date' && !searchTerm) {
-                // Renderização hierárquica (Ano > Mês > Dia)
-                const tree = {};
-                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
-                filteredVals.forEach(val => {
-                    if (val === '__EMPTY__' || val === '-' || !val) {
-                        if (!tree['-']) tree['-'] = {};
-                        if (!tree['-']['-']) tree['-']['-'] = [];
-                        tree['-']['-'].push(val);
-                        return;
-                    }
-                    
-                    let y, m, d;
-                    const valStr = String(val);
-                    
-                    if (valStr.includes('-') && valStr.split('-').length >= 3) {
-                        const datePart = valStr.split('T')[0];
-                        const parts = datePart.split('-');
-                        if (parts.length === 3) {
-                            [y, m, d] = parts;
-                        }
-                    } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
-                        const datePart = valStr.split(' ')[0];
-                        const parts = datePart.split('/');
-                        if (parts.length === 3) {
-                            d = parts[0];
-                            m = parts[1];
-                            y = parts[2];
-                        }
-                    }
-
-                    if (!y || !m || !d || isNaN(y) || isNaN(m) || isNaN(d)) {
-                        if (!tree['Outros']) tree['Outros'] = {};
-                        if (!tree['Outros']['-']) tree['Outros']['-'] = [];
-                        tree['Outros']['-'].push(val);
-                        return;
-                    }
-                    if (!tree[y]) tree[y] = {};
-                    if (!tree[y][m]) tree[y][m] = [];
-                    tree[y][m].push(val);
-                });
-
-                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
-                    const yearDiv = document.createElement('div');
-                    yearDiv.className = 'pl-1';
-                    
-                    let yearAllChecked = true;
-                    let yearAnyChecked = false;
-                    const yearVals = [];
-                    Object.keys(tree[year]).forEach(m => tree[year][m].forEach(v => {
-                        yearVals.push(v);
-                        if (tempSelected.has(v)) yearAnyChecked = true;
-                        else yearAllChecked = false;
-                    }));
-
-                    const yHeader = document.createElement('div');
-                    yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
-                    yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                        <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
-                        <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
-                    `;
-                    
-                    const yCb = yHeader.querySelector('input');
-                    yCb.indeterminate = yearAnyChecked && !yearAllChecked;
-                    
-                    const mContainer = document.createElement('div');
-                    mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                    
-                    yHeader.onclick = (e) => {
-                        if (e.target === yCb) return;
-                        const isHidden = mContainer.classList.contains('hidden');
-                        expandedState[year] = isHidden;
-                        mContainer.classList.toggle('hidden');
-                        yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
-                    };
-                    
-                    if (expandedState[year]) {
-                        mContainer.classList.remove('hidden');
-                        yHeader.querySelector('span').textContent = '-';
-                    }
-
-                    yCb.onclick = (e) => {
-                        e.stopPropagation();
-                        const isChecked = e.target.checked;
-                        yearVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                        renderCheckboxes(searchTerm);
-                    };
-
-                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
-                        const monthVals = tree[year][month];
-                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
-                        
-                        let monthAllChecked = true;
-                        let monthAnyChecked = false;
-                        monthVals.forEach(v => {
-                            if (tempSelected.has(v)) monthAnyChecked = true;
-                            else monthAllChecked = false;
-                        });
-
-                        const mHeader = document.createElement('div');
-                        mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                        mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                            <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
-                            <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
-                        `;
-
-                        const mCb = mHeader.querySelector('input');
-                        mCb.indeterminate = monthAnyChecked && !monthAllChecked;
-
-                        const dContainer = document.createElement('div');
-                        dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                        
-                        const monthKey = `${year}-${month}`;
-                        mHeader.onclick = (e) => {
-                            if (e.target === mCb) return;
-                            const isHidden = dContainer.classList.contains('hidden');
-                            expandedState[monthKey] = isHidden;
-                            dContainer.classList.toggle('hidden');
-                            mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
-                        };
-                        
-                        if (expandedState[monthKey]) {
-                            dContainer.classList.remove('hidden');
-                            mHeader.querySelector('span').textContent = '-';
-                        }
-
-                        mCb.onclick = (e) => {
-                            e.stopPropagation();
-                            const isChecked = e.target.checked;
-                            monthVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                            renderCheckboxes(searchTerm);
-                        };
-
-                        monthVals.forEach(val => {
-                            const isChecked = tempSelected.has(val);
-                            const dHeader = document.createElement('div');
-                            dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                            
-                            let displayVal = val === '__EMPTY__' ? '(Vazio)' : formatDate(val);
-                            if (val !== '__EMPTY__' && val !== '-') {
-                                displayVal = displayVal.split('/')[0];
-                            }
-                            
-                            dHeader.innerHTML = `
-                                <div class="w-3"></div>
-                                <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                                <span class="truncate text-steel-500 dark:text-gray-500 text-[11px]">${displayVal}</span>
-                            `;
-                            const dCb = dHeader.querySelector('input');
-                            dHeader.onclick = (e) => {
-                                if (e.target !== dCb) dCb.checked = !dCb.checked;
-                                if (dCb.checked) tempSelected.add(val);
-                                else tempSelected.delete(val);
-                                renderCheckboxes(searchTerm);
-                            };
-                            dContainer.appendChild(dHeader);
-                        });
-
-                        mContainer.appendChild(mHeader);
-                        mContainer.appendChild(dContainer);
-                    });
-
-                    yearDiv.appendChild(yHeader);
-                    yearDiv.appendChild(mContainer);
-                    listContainer.appendChild(yearDiv);
-                });
-            } else {
-                // Flat rendering (lista simples) para outros tipos de dados ou durante pesquisa
-                filteredVals.forEach(val => {
-                    const isChecked = tempSelected.has(val);
-
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-
-                    let displayVal = val === '__EMPTY__' ? '(Vazio)' : val;
-                    if (col.type === 'currency' && val !== '__EMPTY__') displayVal = formatCurrency(val);
-                    if (col.type === 'date' && val !== '__EMPTY__') displayVal = formatDate(val);
-
-                    div.innerHTML = `
-                        <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                        <span class="truncate text-steel-600 dark:text-gray-400" title="${displayVal}">${displayVal}</span>
-                    `;
-
-                    const checkbox = div.querySelector('input');
-                    div.onclick = (e) => {
-                        if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
-
-                        if (checkbox.checked) {
-                            tempSelected.add(val);
-                        } else {
-                            tempSelected.delete(val);
-                        }
-                        renderCheckboxes(searchTerm);
-                    };
-
-                    listContainer.appendChild(div);
-                });
-            }
-        }
-
-        renderCheckboxes();
-        searchInput.focus();
-
-        let hasTyped = false;
-        searchInput.addEventListener('input', (e) => {
-            // Limpa tudo apenas no PRIMEIRO caractere digitado na busca, permitindo acúmulo de buscas manuais depois
-            if (!hasTyped && e.target.value.length > 0) {
-                tempSelected.clear();
-                hasTyped = true;
-            }
-            renderCheckboxes(e.target.value);
-        });
-
-        modal.querySelector('#btnApplyFilter').onclick = () => {
-            if (tempSelected.size === uniqueValues.length) {
-                state.filters[colKey].clear();
-            } else if (tempSelected.size === 0) {
-                state.filters[colKey] = new Set(['__NONE__']);
-            } else {
-                state.filters[colKey] = new Set(tempSelected);
-            }
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
-
-        modal.querySelector('#btnClearFilter').onclick = () => {
-            state.filters[colKey].clear();
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
+        grid.openFilter(event, colKey);
     };
 
     // Fechar filtro ao clicar fora
@@ -849,28 +305,11 @@ const ClienteDetalhe = (() => {
     // ==========================================
     // 15. Ações Públicas
     // ==========================================
-    const toggleSort = (key) => {
-        if (state.sort.key === key) {
-            state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
-        } else {
-            state.sort.key = key;
-            state.sort.dir = 'asc';
-        }
-        processData();
-    };
+    const toggleSort = (key) => { grid.toggleSort(key); };
 
-    const changePage = (page) => {
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit) || 1;
-        if (page < 1 || page > totalPages) return;
-        state.pagination.current = page;
-        processData();
-    };
+    const changePage = (page) => { grid.setPage(page); };
 
-    const clearAllFilters = () => {
-        state.filters = {};
-        state.pagination.current = 1;
-        processData();
-    };
+    const clearAllFilters = () => { grid.clearFilters(); };
 
     // ==========================================
     // 16. Tabs Principais (Notas / Agenda / Histórico)
@@ -1456,89 +895,13 @@ const ClienteDetalhe = (() => {
         },
 
         renderModalItens() {
-            const tbody = document.getElementById('modalItensBody');
-            if (!modalItens || modalItens.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-steel-500">Nenhum item encontrado.</td></tr>';
-                document.getElementById('modalPaginationInfo').textContent = 'Nenhum item';
-                document.getElementById('modalPaginationControls').innerHTML = '';
-                return;
-            }
-
-            const totalItems = modalItens.length;
-            const totalPages = Math.ceil(totalItems / modalItemsPerPage);
-            const startIdx = (modalCurrentPage - 1) * modalItemsPerPage;
-            const endIdx = Math.min(startIdx + modalItemsPerPage, totalItems);
-
-            const pageItens = modalItens.slice(startIdx, endIdx);
-
-            const toTitleCase = (str) => {
-                if (!str) return '';
-                return str.toString().toLowerCase().split(' ').map(word => {
-                    const preps = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'com', 'por', 'para'];
-                    if (preps.includes(word)) return word;
-                    return word.charAt(0).toUpperCase() + word.slice(1);
-                }).join(' ');
-            };
-
-            const escapeHtml = (unsafe) => {
-                return (unsafe || '').toString()
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            };
-
-            let itensHtml = '';
-            pageItens.forEach(item => {
-                const qtd = (item.quantidade !== null && item.quantidade !== undefined) ? Number(item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-                const vUnit = (item.valor_unitario !== null && item.valor_unitario !== undefined) ? Number(item.valor_unitario).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-                const vTotal = (item.valor_total !== null && item.valor_total !== undefined) ? Number(item.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-
-                itensHtml += `<tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors">
-                    <td class="px-4 py-2 font-mono text-steel-600 dark:text-steel-400">${escapeHtml(item.prod_codigo)}</td>
-                    <td class="px-4 py-2 text-steel-800 dark:text-gray-200">${escapeHtml(toTitleCase(item.produto_nome))}</td>
-                    <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(toTitleCase(item.fabricante_nome))}</td>
-                    <td class="px-4 py-2 font-mono text-steel-500">${escapeHtml(item.classificacao_fiscal)}</td>
-                    <td class="px-4 py-2 text-right font-medium text-steel-700 dark:text-gray-300">${qtd}</td>
-                    <td class="px-4 py-2 text-center text-steel-500">${escapeHtml(item.Unidade)}</td>
-                    <td class="px-4 py-2 text-right text-steel-600 dark:text-gray-400">${vUnit}</td>
-                    <td class="px-4 py-2 text-right font-medium text-nexo-600 dark:text-nexo-400">${vTotal}</td>
-                </tr>`;
-            });
-
-            tbody.innerHTML = itensHtml;
-
-            // Info Paginação
-            document.getElementById('modalPaginationInfo').textContent = `Mostrando ${startIdx + 1} a ${endIdx} de ${totalItems} itens`;
-
-            // Controles
-            let paginationHtml = '';
-            
-            const prevDisabled = modalCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
-            paginationHtml += `
-                <button onclick="ClienteDetalhe.changeModalPage(${modalCurrentPage - 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${prevDisabled}" ${modalCurrentPage === 1 ? 'disabled' : ''}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-            `;
-
-            const nextDisabled = modalCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
-            paginationHtml += `
-                <button onclick="ClienteDetalhe.changeModalPage(${modalCurrentPage + 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${nextDisabled}" ${modalCurrentPage === totalPages ? 'disabled' : ''}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-            `;
-
-            document.getElementById('modalPaginationControls').innerHTML = paginationHtml;
+            if (!modalGrid) modalGrid = HubDataGrid.presets.notaItems({ export: false, onChange: state => { modalCurrentPage = state.pagination.current; } });
+            if (modalGrid.state.rawData !== modalItens) { modalGrid.state.rawData = modalItens || []; modalGrid.state.filters = {}; }
+            modalGrid.state.pagination.current = modalCurrentPage;
+            modalGrid.process();
         },
 
-        changeModalPage(page) {
-            const totalPages = Math.ceil(modalItens.length / modalItemsPerPage);
-            if (page >= 1 && page <= totalPages) {
-                                        modalCurrentPage = page;
-                this.renderModalItens();
-            }
-        },
+        changeModalPage(page) { modalGrid?.setPage(page); },
 
         async openNotaModal(empresa, numero_nota, documento, cliente, esfera, uf, valorTotal) {
             const modal = document.getElementById('notaModal');

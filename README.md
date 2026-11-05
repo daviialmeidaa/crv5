@@ -22,7 +22,7 @@ O sistema foi desenhado para ser uma aplicação leve, responsiva e com uma inte
 O Hub foi projetado com premissas rigorosas para economizar rede e banco de dados, sendo hospedado no Heroku:
 - **Compressão Gzip:** Reduz os payloads gigantes de dados JSON em até 80% antes do tráfego na rede (exceto em rotas de SSE/Notificações para não bloquear streaming).
 - **Cache de Memória (Redis):** Toda rota de GET massiva (ex: `/api/titulos`, `/api/opme/cirurgias`) passa pelo Redis antes de ir ao PostgreSQL. O cache possui tempo de vida padrão e é invalidado ativamente após qualquer mutação de dados (POST, PUT, DELETE).
-- **Client-Side Data Grids:** O gerenciamento do estado das tabelas (paginação, ordenação, e filtros complexos estilo Excel) ocorre inteiramente no JavaScript (navegador), garantindo respostas instântaneas ao usuário.
+- **Client-Side Data Grids:** Um componente compartilhado gerencia filtros, ordenação, paginação, seleção/soma estilo Excel e exportação no navegador. Cada página configura suas colunas e ações. [Guia do componente](app/public/js/components/data-grid/README.md).
 
 ---
 

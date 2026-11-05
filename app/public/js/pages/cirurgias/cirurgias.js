@@ -180,7 +180,7 @@ const OPME = (() => {
     } catch (e) { }
     const canEditCirurgia = ['ADMIN', 'OPME3', 'OPME4'].includes(userRole);
     const canDeleteCirurgia = ['ADMIN', 'OPME4'].includes(userRole);
-    let activeFilterModal = null;
+
 
     // ==========================================
     // 3. Helpers
@@ -295,6 +295,65 @@ const OPME = (() => {
     // ==========================================
     // 4. Data Fetching
     // ==========================================
+    Object.values(tabColumns).flat().forEach(col => {
+        if(col.key==='_deadline') { col.value=row=>calcDeadline(row.termino_ata).days; col.filterable=false; }
+        if(['produto','descricao_personalizada','descricao_item','observacoes','cliente','material','hospital'].includes(col.key)) { col.wrap=true; col.align='left'; }
+    });
+    const grid = HubDataGrid.create({
+        bodyId: 'opmeTableBody',
+        headerId: 'opmeTableHead',
+        infoId: 'resultsCount',
+        paginationId: 'paginationContainer',
+        pageSizeId: 'itemsPerPage',
+        clearId: 'btnClearAllFilters',
+        exportId: 'btnExportExcel',
+        export: () => !!state.selectedContract && !['contratos', 'contratos_inativos'].includes(state.currentTab),
+        onExport: () => exportExcel(),
+        state,
+        columns: () => tabColumns[state.currentTab],
+        defaultCompare: (a, b) =>
+            state.currentTab === 'cirurgias'
+                ? ((a, b) => {
+                      // 1. Data Cirurgia DESC
+                      const dateA = a.data_cirurgia ? new Date(a.data_cirurgia).getTime() : 0;
+                      const dateB = b.data_cirurgia ? new Date(b.data_cirurgia).getTime() : 0;
+                      if (dateA !== dateB) return dateB - dateA;
+
+                      // 2. Paciente ASC
+                      const pacA = (a.paciente || '').toLowerCase();
+                      const pacB = (b.paciente || '').toLowerCase();
+                      if (pacA !== pacB) return pacA.localeCompare(pacB);
+
+                      // 3. ID DESC
+                      const idA = a.id || 0;
+                      const idB = b.id || 0;
+                      return idB - idA;
+                  })(a, b)
+                : 0,
+        onRowClick: (_row, index, event) => handleRowClick(event, index, state.currentTab),
+        rowAttributes: (row) => ({ 'data-modalidade': String(row.modalidade || '').toUpperCase() }),
+        renderCell: (value, col, row, index) => {
+            const A = HubDataGrid.components.Actions,
+                V = HubDataGrid.components.values;
+            if (col.type === 'actions')
+                return A.group([
+                    A.button({ label: 'Editar Contrato', icon: 'edit', onClick: () => openContratoModal(index) }),
+                    A.button({
+                        label: row.inativo ? 'Ativar Contrato' : 'Desativar Contrato',
+                        icon: row.inativo ? 'save' : 'block',
+                        danger: !row.inativo,
+                        onClick: () => toggleContractStatus(row.id, row.inativo)
+                    })
+                ]);
+            const text = formatCell(value, col, row);
+            const html = col.type === 'boolean' ? text : V.escape(text);
+            return {
+                html: col.wrap ? `<span class="line-clamp-3">${html}</span>` : html,
+                className: getCellClass(col, row)
+            };
+        }
+    });
+
     async function fetchData() {
         const loading = document.getElementById('tableLoading');
         if (loading) loading.classList.remove('hidden');
@@ -360,548 +419,74 @@ const OPME = (() => {
     // 5. Pipeline: Filtro -> Ordenação -> Paginação
     // ==========================================
     function processData() {
-        // 5.1 Filtros
-        state.filteredData = state.rawData.filter(row => {
-            for (let key in state.filters) {
-                const selectedValues = state.filters[key];
-                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
-                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
-                        return false;
-                    }
-                } else if (selectedValues && selectedValues.has('__NONE__')) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        // 5.2 Ordenação
-        if (state.sort.key) {
-            const col = tabColumns[state.currentTab].find(c => c.key === state.sort.key);
-            state.filteredData.sort((a, b) => {
-                let va = a[state.sort.key];
-                let vb = b[state.sort.key];
-
-                // Deadline virtual
-                if (state.sort.key === '_deadline') {
-                    va = calcDeadline(a.termino_ata).days;
-                    vb = calcDeadline(b.termino_ata).days;
-                }
-
-                const isNull = (v) => v === null || v === undefined || v === '' || v === '-';
-                if (isNull(va) && isNull(vb)) return 0;
-                if (isNull(va)) return 1;
-                if (isNull(vb)) return -1;
-
-                if (col && (col.type === 'currency' || col.type === 'number' || col.type === 'deadline')) {
-                    va = parseFloat(va) || 0;
-                    vb = parseFloat(vb) || 0;
-                } else if (col && col.type === 'date') {
-                    va = new Date(va).getTime();
-                    vb = new Date(vb).getTime();
-                } else {
-                    va = String(va).toLowerCase();
-                    vb = String(vb).toLowerCase();
-                }
-
-                if (va < vb) return state.sort.dir === 'asc' ? -1 : 1;
-                if (va > vb) return state.sort.dir === 'asc' ? 1 : -1;
-                return 0;
-            });
-        } else if (state.currentTab === 'cirurgias') {
-            // Default grouping and sorting for cirurgias
-            state.filteredData.sort((a, b) => {
-                // 1. Data Cirurgia DESC
-                const dateA = a.data_cirurgia ? new Date(a.data_cirurgia).getTime() : 0;
-                const dateB = b.data_cirurgia ? new Date(b.data_cirurgia).getTime() : 0;
-                if (dateA !== dateB) return dateB - dateA;
-
-                // 2. Paciente ASC
-                const pacA = (a.paciente || '').toLowerCase();
-                const pacB = (b.paciente || '').toLowerCase();
-                if (pacA !== pacB) return pacA.localeCompare(pacB);
-
-                // 3. ID DESC
-                const idA = a.id || 0;
-                const idB = b.id || 0;
-                return idB - idA;
-            });
-        }
-
-        // 5.3 Paginação
-        state.pagination.total = state.filteredData.length;
-        const start = (state.pagination.current - 1) * state.pagination.limit;
-        state.viewData = state.filteredData.slice(start, start + state.pagination.limit);
-
-        renderTable();
-        renderPagination();
-        updateResultsCount();
-        updateClearFiltersButton();
+        grid.process();
     }
 
     // ==========================================
     // 6. Render: Tabela
     // ==========================================
     function renderTable() {
-        const cols = tabColumns[state.currentTab];
-        renderTableHeader(cols);
-        renderTableBody(cols);
+        grid.renderHeaders();
+        grid.renderBody();
     }
 
-    function renderTableHeader(cols) {
-        const thead = document.getElementById('opmeTableHead');
-        if (!thead) return;
-
-        let html = '<tr class="text-white dark:text-gray-300 text-[11px] font-medium">';
-        cols.forEach(col => {
-            const sortIcon = state.sort.key === col.key ? (state.sort.dir === 'asc' ? '↑' : '↓') : '↕';
-            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
-            const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
-            const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
-
-            html += `
-                <th class="px-2 py-1.5 border-b border-nexo-700/50 dark:border-steel-700 whitespace-normal break-words h-[46px] select-none relative align-middle"
-                     data-col="${col.key}">
-                    <div class="flex items-center justify-center gap-1 w-full h-full px-3">
-                        <div class="cursor-pointer hover:text-nexo-100 dark:hover:text-white transition-colors text-center" onclick="OPME.handleSort('${col.key}')">
-                            ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
-                        </div>
-                        ${(col.key !== '_deadline' && col.type !== 'actions') ? `
-                        <button onclick="event.stopPropagation(); OPME.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none flex-shrink-0 ${filterColor} absolute right-2 top-1/2 -translate-y-1/2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
-                            </svg>
-                        </button>` : ''}
-                    </div>
-                </th>
-            `;
-        });
-        html += '</tr>';
-        thead.innerHTML = html;
+    function renderTableHeader() {
+        grid.renderHeaders();
     }
 
-    function renderTableBody(cols) {
-        const tbody = document.getElementById('opmeTableBody');
-        if (!tbody) return;
-
-        if (state.viewData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${cols.length}" class="px-6 py-16 text-center text-steel-400 dark:text-steel-500">
-                <div class="flex flex-col items-center gap-2">
-                    <svg class="w-10 h-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
-                    <span class="text-sm">Nenhum registro encontrado</span>
-                </div>
-            </td></tr>`;
-            return;
-        }
-
-        let html = '';
-        state.viewData.forEach((row, idx) => {
-            const isContratosTab = state.currentTab === 'contratos' || state.currentTab === 'contratos_inativos';
-            const cursorClass = 'cursor-pointer';
-            const hoverClass = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 relative z-0 hover:z-10 group';
-            const clickHandler = `onclick="OPME.handleRowClick(event, ${idx}, '${state.currentTab}')"`;
-            const modalidadeAttr = (row.modalidade === 'Doação' || row.modalidade === 'DOAÇÃO') ? 'data-modalidade="DOAÇÃO"' : '';
-
-            html += `<tr ${modalidadeAttr} class="${cursorClass} ${hoverClass} transition-all duration-200 border-b border-gray-100 dark:border-steel-700/50 bg-white dark:bg-steel-800"
-                         ${clickHandler}>`;
-
-            cols.forEach(col => {
-                if (col.type === 'actions') {
-                    const isInactive = row.inativo;
-                    const toggleColor = isInactive ? 'text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30' : 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30';
-                    const toggleIcon = isInactive ?
-                        `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>` :
-                        `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>`;
-                    const toggleTitle = isInactive ? 'Ativar Contrato' : 'Desativar Contrato';
-
-                    html += `<td class="px-3 py-3 text-center align-middle w-24">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="event.stopPropagation(); OPME.openContratoModal(${idx})" class="p-1.5 rounded-lg text-nexo-600 hover:bg-nexo-50 dark:text-nexo-400 dark:hover:bg-nexo-900/30 transition-colors" title="Editar Contrato">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
-                            </button>
-                            <button onclick="event.stopPropagation(); OPME.toggleContractStatus(${row.id}, ${isInactive})" class="p-1.5 rounded-lg transition-colors ${toggleColor}" title="${toggleTitle}">
-                                ${toggleIcon}
-                            </button>
-                        </div>
-                    </td>`;
-                } else {
-                    const val = formatCell(col.key === '_deadline' ? null : row[col.key], col, row);
-                    const extraClass = getCellClass(col, row);
-                    let alignClass = 'text-center';
-                    let wrapClass = 'whitespace-nowrap';
-
-                    // Colunas textuais longas: quebra + line-clamp de 3 linhas
-                    if (col.key === 'produto' || col.key === 'descricao_personalizada' || col.key === 'descricao_item') {
-                        alignClass = 'text-left';
-                        wrapClass = 'max-w-[280px]';
-                    }
-
-                    if (col.key === 'observacoes') {
-                        alignClass = 'text-left';
-                        wrapClass = 'max-w-[220px]';
-                    }
-
-                    if (col.key === 'cliente' || col.key === 'material' || col.key === 'hospital') {
-                        alignClass = 'text-left';
-                        wrapClass = 'max-w-[200px]';
-                    }
-
-                    // Aplicar line-clamp nas colunas com max-w
-                    const needsClamp = wrapClass.includes('max-w');
-                    const cellContent = needsClamp
-                        ? `<span class="line-clamp-3">${val}</span>`
-                        : val;
-
-                    html += `<td class="px-2 py-2 text-[12px] align-middle text-steel-700 dark:text-gray-300 ${alignClass} ${wrapClass} ${extraClass}">${cellContent}</td>`;
-                }
-            });
-            html += '</tr>';
-        });
-        tbody.innerHTML = html;
+    function renderTableBody() {
+        grid.renderBody();
     }
 
     // ==========================================
     // 7. Render: Paginação
     // ==========================================
     function renderPagination() {
-        const container = document.getElementById('paginationContainer');
-        if (!container) return;
-
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit) || 1;
-        const current = state.pagination.current;
-
-        let pages = [];
-        if (totalPages <= 7) {
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else {
-            pages.push(1);
-            if (current > 3) pages.push('...');
-            for (let i = Math.max(2, current - 1); i <= Math.min(totalPages - 1, current + 1); i++) pages.push(i);
-            if (current < totalPages - 2) pages.push('...');
-            pages.push(totalPages);
-        }
-
-        let html = `
-            <button onclick="OPME.goToPage(1)" class="p-1.5 rounded-lg ${current === 1 ? 'text-steel-300 dark:text-steel-600 cursor-not-allowed' : 'text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700'}" ${current === 1 ? 'disabled' : ''}>
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"/></svg>
-            </button>
-            <button onclick="OPME.goToPage(${current - 1})" class="p-1.5 rounded-lg ${current === 1 ? 'text-steel-300 dark:text-steel-600 cursor-not-allowed' : 'text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700'}" ${current === 1 ? 'disabled' : ''}>
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-            </button>`;
-
-        pages.forEach(p => {
-            if (p === '...') {
-                html += `<span class="px-2 text-steel-400 text-sm">…</span>`;
-            } else {
-                const isActive = p === current;
-                html += `<button onclick="OPME.goToPage(${p})" class="px-3 py-1 text-sm font-medium rounded transition-colors ${isActive ? 'bg-nexo-50 dark:bg-nexo-900/30 text-nexo-600 dark:text-nexo-400' : 'text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700'}">${p}</button>`;
-            }
-        });
-
-        html += `
-            <button onclick="OPME.goToPage(${current + 1})" class="p-1.5 rounded-lg ${current === totalPages ? 'text-steel-300 dark:text-steel-600 cursor-not-allowed' : 'text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700'}" ${current === totalPages ? 'disabled' : ''}>
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-            </button>
-            <button onclick="OPME.goToPage(${totalPages})" class="p-1.5 rounded-lg ${current === totalPages ? 'text-steel-300 dark:text-steel-600 cursor-not-allowed' : 'text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700'}" ${current === totalPages ? 'disabled' : ''}>
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg>
-            </button>`;
-
-        container.innerHTML = html;
+        grid.pagination.render();
     }
 
     function updateResultsCount() {
-        const el = document.getElementById('resultsCount');
-        if (el) {
-            const start = ((state.pagination.current - 1) * state.pagination.limit) + 1;
-            const end = Math.min(state.pagination.current * state.pagination.limit, state.pagination.total);
-            el.textContent = state.pagination.total > 0
-                ? `Mostrando ${start}-${end} de ${state.pagination.total.toLocaleString('pt-BR')} registros`
-                : 'Nenhum registro';
-        }
+        grid.pagination.render();
     }
 
     function updateClearFiltersButton() {
-        const btn = document.getElementById('btnClearAllFilters');
-        if (!btn) return;
-        let hasAnyFilter = false;
-        for (let key in state.filters) {
-            if (state.filters[key] && state.filters[key].size > 0) {
-                hasAnyFilter = true; break;
-            }
-        }
-        if (hasAnyFilter) {
-            btn.classList.remove('hidden');
-            btn.classList.add('flex');
-        } else {
-            btn.classList.add('hidden');
-            btn.classList.remove('flex');
-        }
+        grid.render();
     }
 
-    function clearAllFilters() {
-        state.filters = {};
-        state.pagination.current = 1;
-        processData();
-    }
+    function clearAllFilters() { grid.clearFilters(); }
 
     // ==========================================
     // 8.0 Seleção de Células (Estilo Excel - Soma + Arrasto)
     // ==========================================
-    const selectedCells = new Set();
-    const SEL_CLASSES = ['ring-2', 'ring-nexo-500/50', 'bg-nexo-50/50', 'dark:bg-nexo-900/20'];
-    let isDragging = false;
-    let dragStartCell = null;
 
-    function getCellId(td) {
-        return `${td.closest('tr').rowIndex}-${td.cellIndex}`;
-    }
 
-    function selectCell(td) {
-        const cellId = getCellId(td);
-        if (!selectedCells.has(cellId)) {
-            selectedCells.add(cellId);
-            td.classList.add(...SEL_CLASSES);
-        }
-    }
 
-    function deselectCell(td) {
-        const cellId = getCellId(td);
-        selectedCells.delete(cellId);
-        td.classList.remove(...SEL_CLASSES);
-    }
 
-    function getCellsInRect(startTd, endTd, tbody) {
-        const r1 = startTd.closest('tr').rowIndex, c1 = startTd.cellIndex;
-        const r2 = endTd.closest('tr').rowIndex, c2 = endTd.cellIndex;
-        const rMin = Math.min(r1, r2), rMax = Math.max(r1, r2);
-        const cMin = Math.min(c1, c2), cMax = Math.max(c1, c2);
-        const cells = [];
-        const rows = tbody.rows;
-        for (let i = 0; i < rows.length; i++) {
-            const tr = rows[i];
-            if (tr.rowIndex >= rMin && tr.rowIndex <= rMax) {
-                for (let j = cMin; j <= cMax; j++) {
-                    const cell = tr.cells[j];
-                    if (cell) cells.push(cell);
-                }
-            }
-        }
-        return cells;
-    }
 
-    function initCellSelection() {
-        const tbody = document.getElementById('opmeTableBody');
-        if (!tbody) return;
 
-        // Interceptar wheel para evitar zoom do navegador com Ctrl e forçar scroll
-        tbody.addEventListener('wheel', (e) => {
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                const scrollContainer = tbody.closest('.custom-scrollbar') || tbody.closest('.overflow-auto') || window;
-                if (scrollContainer === window) {
-                    window.scrollBy({ top: e.deltaY, left: e.deltaX });
-                } else {
-                    scrollContainer.scrollTop += e.deltaY;
-                    scrollContainer.scrollLeft += e.deltaX;
-                }
-            }
-        }, { passive: false });
 
-        // Função de atualização de seleção refatorada
-        function updateDragSelection(td) {
-            if (!isDragging || !dragStartCell) return;
-            
-            // Limpar seleção do arrasto anterior (manter seleções pré-existentes)
-            tbody.querySelectorAll('td[data-drag-sel]').forEach(cell => {
-                cell.removeAttribute('data-drag-sel');
-                if (!cell.hasAttribute('data-pre-sel')) {
-                    deselectCell(cell);
-                }
-            });
 
-            // Selecionar retângulo
-            const cells = getCellsInRect(dragStartCell, td, tbody);
-            cells.forEach(cell => {
-                cell.setAttribute('data-drag-sel', '1');
-                selectCell(cell);
-            });
-            updateSelectionSumBar();
-        }
 
-        // Ctrl+Click individual OU início de arrasto
-        tbody.addEventListener('mousedown', (e) => {
-            const td = e.target.closest('td');
-            if (!td) return;
-            if (e.target.closest('button') || e.target.closest('a')) return;
-            if (!(e.ctrlKey || e.metaKey)) return;
 
-            e.preventDefault();
-            e.stopPropagation();
 
-            isDragging = true;
-            dragStartCell = td;
-
-            // Marcar cells pré-selecionadas ao iniciar arrasto
-            tbody.querySelectorAll('td.ring-2').forEach(c => c.setAttribute('data-pre-sel', '1'));
-
-            // Toggle individual (será recalculado se virar arrasto)
-            if (selectedCells.has(getCellId(td))) {
-                deselectCell(td);
-            } else {
-                selectCell(td);
-            }
-            updateSelectionSumBar();
-        });
-
-        // Arrasto com Ctrl
-        tbody.addEventListener('mouseover', (e) => {
-            if (!isDragging || !dragStartCell) return;
-            if (!(e.ctrlKey || e.metaKey)) { isDragging = false; return; }
-
-            const td = e.target.closest('td');
-            if (!td) return;
-
-            updateDragSelection(td);
-        });
-
-        // Fim do arrasto
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                // Limpar atributos de marcação de arrasto
-                const tbody = document.getElementById('opmeTableBody');
-                if (tbody) {
-                    tbody.querySelectorAll('td[data-drag-sel]').forEach(td => td.removeAttribute('data-drag-sel'));
-                    tbody.querySelectorAll('td[data-pre-sel]').forEach(td => td.removeAttribute('data-pre-sel'));
-                }
-            }
-        });
-
-        // Limpar seleção ao clicar fora (sem Ctrl)
-        document.addEventListener('click', (e) => {
-            if (!e.ctrlKey && !e.metaKey && !e.target.closest('#selectionSumBar')) {
-                if (selectedCells.size > 0) clearCellSelection();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && selectedCells.size > 0) clearCellSelection();
-        });
-    }
 
     function clearCellSelection() {
-        const tbody = document.getElementById('opmeTableBody');
-        if (tbody) {
-            tbody.querySelectorAll('td.ring-2').forEach(td => td.classList.remove(...SEL_CLASSES));
-        }
-        selectedCells.clear();
-        updateSelectionSumBar();
+        grid.selection.clear();
     }
 
-    function updateSelectionSumBar() {
-        const bar = document.getElementById('selectionSumBar');
-        if (!bar) return;
 
-        if (selectedCells.size === 0) {
-            bar.classList.add('hidden');
-            bar.classList.remove('flex');
-            return;
-        }
-
-        const tbody = document.getElementById('opmeTableBody');
-        if (!tbody) return;
-
-        const numericValues = [];
-        let totalCount = selectedCells.size;
-
-        selectedCells.forEach(cellId => {
-            const [rowIdx, colIdx] = cellId.split('-').map(Number);
-            const row = tbody.querySelector(`tr:nth-child(${rowIdx})`);
-            if (!row) return;
-            const td = row.children[colIdx];
-            if (!td) return;
-
-            const rawText = td.textContent.trim();
-            let numVal = null;
-            if (rawText.includes('R$')) {
-                const cleaned = rawText.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
-                numVal = parseFloat(cleaned);
-            } else {
-                const cleaned = rawText.replace(/\./g, '').replace(',', '.');
-                numVal = parseFloat(cleaned);
-            }
-            if (!isNaN(numVal)) numericValues.push(numVal);
-        });
-
-        const sum = numericValues.reduce((a, b) => a + b, 0);
-        const avg = numericValues.length > 0 ? sum / numericValues.length : 0;
-
-        document.getElementById('selCount').textContent = totalCount;
-        document.getElementById('selSum').textContent = numericValues.length > 0
-            ? sum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            : '-';
-        document.getElementById('selAvg').textContent = numericValues.length > 0
-            ? avg.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            : '-';
-
-        bar.classList.remove('hidden');
-        bar.classList.add('flex');
-    }
 
     document.addEventListener('DOMContentLoaded', () => {
-        initCellSelection();
+
     });
 
     // ==========================================
     // 8.1 Exportar Excel
     // ==========================================
     function exportExcel() {
-        if (typeof XLSX === 'undefined') {
-            showToast('Biblioteca de exportação não carregada.', 'error');
-            return;
-        }
-
-        const cols = tabColumns[state.currentTab];
-        const headers = cols.filter(c => c.type !== 'actions').map(c => c.label);
-        const keys = cols.filter(c => c.type !== 'actions').map(c => c);
-
-        const rows = state.filteredData.map(row => {
-            return keys.map(col => {
-                let val = col.key === '_deadline' ? null : row[col.key];
-                if (col.type === 'deadline') {
-                    const dl = calcDeadline(row.termino_ata);
-                    return dl.days !== null ? dl.days : '';
-                }
-                if (col.type === 'date') {
-                    if (!val || val === '-') return '';
-                    try {
-                        return new Date(val).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-                    } catch (e) { return val; }
-                }
-                if (col.type === 'currency') {
-                    const num = parseFloat(val);
-                    return isNaN(num) ? '' : num;
-                }
-                if (col.type === 'boolean') return val ? 'Sim' : 'Não';
-                if (val === null || val === undefined) return '';
-                return String(val).trim();
-            });
-        });
-
-        const wsData = [headers, ...rows];
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Dados');
-
-        const bannerText = document.getElementById('contractBannerText');
-        const contractLabel = bannerText ? bannerText.textContent.trim() : state.currentTab;
-        const safeName = contractLabel.replace(/[^a-zA-Z0-9_\-\s]/g, '').replace(/\s+/g, '_').substring(0, 80);
-        const fileName = `Cirurgias_${safeName}.xlsx`;
-
-        XLSX.writeFile(wb, fileName);
-        showToast('Excel exportado com sucesso!', 'success');
+        const banner=document.getElementById('contractBannerText');const label=banner?banner.textContent.trim():state.currentTab;
+        const safeName=label.replace(/[^a-zA-Z0-9_\-\s]/g,'').replace(/\s+/g,'_').substring(0,80);
+        return grid.export({filename:'Cirurgias_'+safeName+'.xlsx',sheetName:'Dados'});
     }
 
     async function syncNotasFiscais() {
@@ -952,603 +537,215 @@ const OPME = (() => {
     // ==========================================
     // 8.2 Banco de Códigos Lookup
     // ==========================================
+    let bancoLookupGrid=null,kpiGrid=null,closeBancoLookup=null,closeKpiDialog=null;
     let bancoCodigosCache = [];
     let bancoCodigosTargetInput = null;
     let bancoCodigosAutoAddRow = false;
 
     async function openBancoCodigosLookup(labelEl, autoAddRow = false) {
         bancoCodigosAutoAddRow = autoAddRow;
-        // Try to find the target input from the closest table row, or fallback to null (header click)
         const row = labelEl ? labelEl.closest('tr') : null;
-        const codBioInput = row ? row.querySelector('.prod-cod-bio') : null;
-        bancoCodigosTargetInput = codBioInput;
-
+        bancoCodigosTargetInput = row ? row.querySelector('.prod-cod-bio') : null;
         const contrato = document.getElementById('fcContrato').value;
         if (!contrato) {
             showToast('Nenhum contrato selecionado.', 'error');
             return;
         }
-
-        const existing = document.getElementById('bancoCodigosLookupModal');
-        if (existing) existing.remove();
-
+        closeBancoLookup?.();
+        document.getElementById('bancoCodigosLookupModal')?.remove();
         const BC_COLS = [
             { key: 'cod_bio', label: 'Cód. Bio' },
             { key: 'cod_fab', label: 'Cód. Fab.' },
-            { key: 'produto', label: 'Produto' },
-            { key: 'descricao_personalizada', label: 'Descrição' },
+            { key: 'produto', label: 'Produto', title: true },
+            { key: 'descricao_personalizada', label: 'Descrição', title: true },
             { key: 'classificacao', label: 'Classificação' },
-            { key: 'item_ata', label: 'Item Ata' },
-        ];
-
+            { key: 'item_ata', label: 'Item Ata' }
+        ].map((col) => ({ align: 'left', title: false, sortable: false, filterable: false, ...col }));
         let activeCol = 'all';
-
+        let lookupLoaded = false;
         const modal = document.createElement('div');
         modal.id = 'bancoCodigosLookupModal';
         modal.className = 'fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm';
         modal.innerHTML = `
-            <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-steel-700 w-[1100px] max-w-[95vw] max-h-[50vh] flex flex-col transform transition-all duration-200 scale-95 opacity-0">
-                <!-- Header -->
-                <div class="px-5 py-3 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-2.5">
-                        <div class="p-1.5 bg-nexo-50 dark:bg-nexo-900/30 rounded-lg">
-                            <svg class="w-4 h-4 text-nexo-600 dark:text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                            </svg>
+                <div class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-steel-700 w-[1100px] max-w-[95vw] max-h-[50vh] flex flex-col transform transition-all duration-200 scale-95 opacity-0">
+                    <!-- Header -->
+                    <div class="px-5 py-3 border-b border-gray-100 dark:border-steel-700 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-1.5 bg-nexo-50 dark:bg-nexo-900/30 rounded-lg">
+                                <svg class="w-4 h-4 text-nexo-600 dark:text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-semibold text-steel-800 dark:text-white">Banco de Códigos</h3>
+                                <p class="text-[10px] text-steel-400 leading-tight">Contrato: <span class="text-nexo-600 dark:text-nexo-400 font-medium">${HubDataGrid.components.values.escape(contrato)}</span></p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-xs font-semibold text-steel-800 dark:text-white">Banco de Códigos</h3>
-                            <p class="text-[10px] text-steel-400 leading-tight">Contrato: <span class="text-nexo-600 dark:text-nexo-400 font-medium">${contrato}</span></p>
+                        <button data-close-bc class="p-1 rounded-lg text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Search Bar -->
+                    <div class="px-5 py-2.5 border-b border-gray-100 dark:border-steel-700 flex items-center gap-3 shrink-0">
+                        <div class="relative flex-1">
+                            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+                            <input id="bcLookupSearch" type="text" placeholder="Pesquisar em todas as colunas..." class="w-full pl-9 pr-4 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all" autofocus>
                         </div>
+                        <span id="bcLookupCount" class="text-[10px] text-steel-400 whitespace-nowrap tabular-nums">0 itens</span>
                     </div>
-                    <button onclick="document.getElementById('bancoCodigosLookupModal').remove()" class="p-1 rounded-lg text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
 
-                <!-- Search Bar -->
-                <div class="px-5 py-2.5 border-b border-gray-100 dark:border-steel-700 flex items-center gap-3 shrink-0">
-                    <div class="relative flex-1">
-                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-steel-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
-                        <input id="bcLookupSearch" type="text" placeholder="Pesquisar em todas as colunas..." class="w-full pl-9 pr-4 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all" autofocus>
-                    </div>
-                    <span id="bcLookupCount" class="text-[10px] text-steel-400 whitespace-nowrap tabular-nums">0 itens</span>
-                </div>
 
-                <!-- Table -->
-                <div class="flex-1 overflow-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="sticky top-0 z-10 bg-nexo-600 dark:bg-steel-900">
-                            <tr id="bcLookupHeaders">
-                                ${BC_COLS.map(c => `
-                                    <th data-col="${c.key}" class="bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-nexo-700 dark:border-steel-700 cursor-pointer select-none transition-all text-white dark:text-steel-400 hover:text-nexo-100 dark:hover:text-nexo-400">
-                                        <span class="inline-flex items-center gap-1">${c.label}</span>
-                                    </th>
-                                `).join('')}
-                            </tr>
-                        </thead>
-                        <tbody id="bcLookupBody" class="text-[11px] text-steel-700 dark:text-gray-300"></tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-
+                    <div id="bcLookupGridHost" class="flex-1 flex flex-col min-h-0"></div>
+                </div>        `;
+        const close = () => {
+            bancoLookupGrid?.destroy();
+            bancoLookupGrid = null;
+            modal.remove();
+            closeBancoLookup = null;
+        };
+        closeBancoLookup = close;
+        modal.querySelector('[data-close-bc]').addEventListener('click', close);
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) close();
+        });
         document.body.appendChild(modal);
-
         requestAnimationFrame(() => {
             modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
-            modal.querySelector('.modal-content').classList.add('scale-100', 'opacity-100');
         });
-
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) modal.remove();
+        bancoLookupGrid = HubDataGrid.mount('bancoCodigosGridTemplate', 'bcLookupGridHost', {
+            columns: BC_COLS,
+            searchId: 'bcLookupSearch',
+            searchKeys: BC_COLS.map((col) => col.key),
+            export: false,
+            pagination: false,
+            selection: false,
+            rowLimit: 100,
+            emptyMessage: 'Nenhum item encontrado.',
+            renderHeader: (th, col, lookup) => {
+                th.className =
+                    'bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-nexo-700 dark:border-steel-700 cursor-pointer select-none transition-all text-white dark:text-steel-400 hover:text-nexo-100 dark:hover:text-nexo-400';
+                const active = activeCol === col.key;
+                th.dataset.searchActive = String(active);
+                th.dataset.loading = String(!lookupLoaded);
+                th.classList.add(
+                    ...(active
+                        ? ['text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500']
+                        : [
+                              'text-steel-500',
+                              'dark:text-steel-400',
+                              'border-b-gray-200',
+                              'dark:border-b-steel-700'
+                          ])
+                );
+                if (active) th.classList.remove('dark:text-steel-400', 'dark:border-steel-700');
+                const label = document.createElement('span');
+                label.className = 'inline-flex items-center gap-1';
+                label.textContent = col.label;
+                th.appendChild(label);
+                th.addEventListener('click', () => {
+                    if (!lookupLoaded) return;
+                    activeCol = activeCol === col.key ? 'all' : col.key;
+                    lookup.options.searchKeys =
+                        activeCol === 'all' ? BC_COLS.map((item) => item.key) : [activeCol];
+                    const search = document.getElementById('bcLookupSearch');
+                    search.placeholder =
+                        activeCol === 'all'
+                            ? 'Pesquisar em todas as colunas...'
+                            : 'Pesquisar por ' + col.label + '...';
+                    search.focus();
+                    lookup.process();
+                });
+            },
+            renderCell: (value, col) => {
+                const text = value || '-';
+                if (col.key === 'produto' || col.key === 'descricao_personalizada') {
+                    const span = document.createElement('span');
+                    span.className = 'line-clamp-1';
+                    span.textContent = text;
+                    return span;
+                }
+                return {
+                    text,
+                    className: col.key === 'cod_bio' ? 'font-medium text-nexo-600 dark:text-nexo-400' : ''
+                };
+            },
+            onChange: (state) => {
+                const total = state.pagination.total;
+                document.getElementById('bcLookupCount').textContent = total + (total === 1 ? ' item' : ' itens');
+                if (total > 100) {
+                    const tr = document.createElement('tr'),
+                        td = document.createElement('td');
+                    td.colSpan = BC_COLS.length;
+                    td.className = 'bc-lookup-limit';
+                    td.textContent =
+                        'Mostrando os primeiros 100 resultados de ' + total + '. Use a pesquisa para refinar.';
+                    tr.appendChild(td);
+                    document.getElementById('bcLookupBody').appendChild(tr);
+                }
+            },
+            rowAttributes: (item) => ({
+                'data-cod-bio': item.cod_bio || '',
+                class: 'cursor-pointer hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 border-b border-gray-100 dark:border-steel-700/50 transition-colors'
+            }),
+            onRowClick: (item) => {
+                const codBio = String(item.cod_bio ?? '');
+                let targetInput = bancoCodigosTargetInput;
+                if (bancoCodigosAutoAddRow) {
+                    addCirurgiaProduct();
+                    const rows = document.querySelectorAll('.product-row .prod-cod-bio');
+                    targetInput = rows[rows.length - 1];
+                } else if (!targetInput) {
+                    for (const input of document.querySelectorAll('.product-row .prod-cod-bio')) {
+                        if (!input.value || !input.value.trim()) {
+                            targetInput = input;
+                            break;
+                        }
+                    }
+                }
+                if (targetInput && codBio) {
+                    targetInput.value = codBio;
+                    fetchProdutoInfo(targetInput);
+                }
+                close();
+            }
         });
-
-        // Carregar dados
+        bancoLookupGrid.tbody.replaceChildren();
         try {
-            const res = await fetch(`/api/opme/banco-codigos?contrato=${encodeURIComponent(contrato)}`, {
-                headers: { 'Authorization': `Bearer ${getToken()}` }
+            const res = await fetch('/api/opme/banco-codigos?contrato=' + encodeURIComponent(contrato), {
+                headers: { Authorization: 'Bearer ' + getToken() }
             });
             if (!res.ok) throw new Error('Erro ao buscar banco de códigos');
             bancoCodigosCache = await res.json();
-        } catch (err) {
-            console.error(err);
+            if (!modal.isConnected) return;
+            lookupLoaded = true;
+            bancoLookupGrid.setData(bancoCodigosCache, true);
+        } catch (error) {
+            if (!modal.isConnected) return;
+            console.error(error);
             showToast('Erro ao carregar banco de códigos.', 'error');
-            modal.remove();
-            return;
+            close();
         }
-
-        const searchInput = document.getElementById('bcLookupSearch');
-
-        function updateHeaderHighlight() {
-            document.querySelectorAll('#bcLookupHeaders .bc-th').forEach(th => {
-                const col = th.dataset.col;
-                if (col === activeCol) {
-                    th.classList.add('text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500');
-                    th.classList.remove('text-steel-500', 'dark:text-steel-400', 'border-b-gray-200', 'dark:border-b-steel-700');
-                } else {
-                    th.classList.remove('text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500');
-                    th.classList.add('text-steel-500', 'dark:text-steel-400', 'border-b-gray-200', 'dark:border-b-steel-700');
-                }
-            });
-            // Update placeholder
-            if (activeCol === 'all') {
-                searchInput.placeholder = 'Pesquisar em todas as colunas...';
-            } else {
-                const col = BC_COLS.find(c => c.key === activeCol);
-                searchInput.placeholder = `Pesquisar por ${col ? col.label : ''}...`;
-            }
-        }
-
-        function renderLookupRows() {
-            const tbody = document.getElementById('bcLookupBody');
-            if (!tbody) return;
-            const searchVal = searchInput.value.trim().toLowerCase();
-
-            const filtered = bancoCodigosCache.filter(item => {
-                if (!searchVal) return true;
-                if (activeCol === 'all') {
-                    return BC_COLS.some(c => String(item[c.key] || '').toLowerCase().includes(searchVal));
-                }
-                return String(item[activeCol] || '').toLowerCase().includes(searchVal);
-            });
-
-            document.getElementById('bcLookupCount').textContent = `${filtered.length} ite${filtered.length === 1 ? 'm' : 'ns'}`;
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-8 text-center text-steel-400 dark:text-steel-500 text-xs">Nenhum item encontrado.</td></tr>';
-                return;
-            }
-
-            const LIMIT = 100;
-            const toRender = filtered.slice(0, LIMIT);
-
-            let html = toRender.map(item => `
-                <tr class="cursor-pointer hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 border-b border-gray-100 dark:border-steel-700/50 transition-colors"
-                    data-cod-bio="${item.cod_bio || ''}">
-                    <td class="px-5 py-1.5 font-medium text-nexo-600 dark:text-nexo-400 whitespace-nowrap">${item.cod_bio || '-'}</td>
-                    <td class="px-5 py-1.5 whitespace-nowrap">${item.cod_fab || '-'}</td>
-                    <td class="px-5 py-1.5 max-w-[200px]" title="${(item.produto || '').replace(/"/g, '&quot;')}"><span class="line-clamp-1">${item.produto || '-'}</span></td>
-                    <td class="px-5 py-1.5 max-w-[200px]" title="${(item.descricao_personalizada || '').replace(/"/g, '&quot;')}"><span class="line-clamp-1">${item.descricao_personalizada || '-'}</span></td>
-                    <td class="px-5 py-1.5 whitespace-nowrap">${item.classificacao || '-'}</td>
-                    <td class="px-5 py-1.5 whitespace-nowrap">${item.item_ata || '-'}</td>
-                </tr>
-            `).join('');
-
-            if (filtered.length > LIMIT) {
-                html += `<tr><td colspan="6" class="px-6 py-4 text-center text-steel-400 dark:text-steel-500 text-[10px] bg-gray-50/50 dark:bg-steel-800/50">Mostrando os primeiros ${LIMIT} resultados de ${filtered.length}. Use a pesquisa para refinar.</td></tr>`;
-            }
-
-            tbody.innerHTML = html;
-
-            tbody.querySelectorAll('tr[data-cod-bio]').forEach(tr => {
-                tr.addEventListener('click', () => {
-                    const codBio = tr.getAttribute('data-cod-bio');
-                    let targetInput = bancoCodigosTargetInput;
-                    
-                    if (bancoCodigosAutoAddRow) {
-                        // Create a new empty row
-                        addCirurgiaProduct();
-                        // Find the newly added row's input (the last one)
-                        const rows = document.querySelectorAll('.product-row .prod-cod-bio');
-                        if (rows.length > 0) {
-                            targetInput = rows[rows.length - 1];
-                        }
-                    } else if (!targetInput) {
-                        // Se não veio de uma linha específica e não deve auto-adicionar, encontrar a primeira linha vazia
-                        const emptyRows = document.querySelectorAll('.product-row .prod-cod-bio');
-                        for (const inp of emptyRows) {
-                            if (!inp.value || inp.value.trim() === '') {
-                                targetInput = inp;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (targetInput && codBio) {
-                        targetInput.value = codBio;
-                        fetchProdutoInfo(targetInput);
-                    }
-                    modal.remove();
-                });
-            });
-        }
-
-        // Clickable column headers
-        document.querySelectorAll('#bcLookupHeaders .bc-th').forEach(th => {
-            th.addEventListener('click', () => {
-                const col = th.dataset.col;
-                activeCol = (activeCol === col) ? 'all' : col;
-                updateHeaderHighlight();
-                searchInput.focus();
-                renderLookupRows();
-            });
-        });
-
-        updateHeaderHighlight();
-        renderLookupRows();
-        searchInput.addEventListener('input', renderLookupRows);
-        searchInput.focus();
+        document.getElementById('bcLookupSearch')?.focus();
     }
 
     // ==========================================
     // 8. Filtros (Dropdown com Checkboxes)
     // ==========================================
     function openFilter(event, colKey) {
-        event.stopPropagation();
-        closeFilter(); // Fecha anterior se existir
-
-        const cols = tabColumns[state.currentTab];
-        const col = cols.find(c => c.key === colKey);
-        if (!col) return;
-
-        // Coleta valores únicos para essa coluna respeitando os filtros já aplicados (Cascata)
-        const preFilteredData = state.rawData.filter(row => {
-            for (let key in state.filters) {
-                if (key === colKey) continue;
-                const selectedValues = state.filters[key];
-                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
-                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
-                        return false;
-                    }
-                } else if (selectedValues && selectedValues.has('__NONE__')) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        const rawValuesMapped = preFilteredData.map(row => {
-            return row[colKey] !== null && row[colKey] !== undefined && row[colKey] !== '' ? row[colKey] : '(Vazio)';
-        });
-
-        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
-            if (a === '(Vazio)') return 1;
-            if (b === '(Vazio)') return -1;
-            if (typeof a === 'number' && typeof b === 'number') return a - b;
-            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
-        });
-
-        if (!state.filters[colKey]) {
-            state.filters[colKey] = new Set();
-        }
-
-        const modal = document.createElement('div');
-        modal.id = 'filterModal';
-        modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm animate-fade-in-up';
-
-        modal.addEventListener('click', (e) => e.stopPropagation());
-
-        const rect = event.currentTarget.getBoundingClientRect();
-        let left = rect.left;
-        if (left + 256 > window.innerWidth) left = window.innerWidth - 266;
-
-        modal.style.top = `${rect.bottom + window.scrollY + 8}px`;
-        modal.style.left = `${left}px`;
-
-        modal.innerHTML = `
-            <div class="p-3 border-b border-gray-100 dark:border-steel-700">
-                <input type="text" id="filterSearchInput" placeholder="Pesquisar..." class="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded outline-none focus:ring-1 focus:ring-nexo-500 text-steel-700 dark:text-gray-200">
-            </div>
-            <div class="flex-1 max-h-48 overflow-y-auto p-2 custom-scrollbar" id="filterCheckboxList">
-            </div>
-            <div class="p-3 border-t border-gray-100 dark:border-steel-700 flex justify-between bg-gray-50 dark:bg-steel-800/50 rounded-b-lg">
-                <button id="btnClearFilter" class="text-xs text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 font-medium">Limpar</button>
-                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium shadow-sm transition-colors">Aplicar</button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        activeFilterModal = modal;
-
-        const listContainer = modal.querySelector('#filterCheckboxList');
-        const searchInput = modal.querySelector('#filterSearchInput');
-
-        const tempSelected = new Set(state.filters[colKey]);
-        if (tempSelected.size === 0 || tempSelected.has('__NONE__')) {
-            if (!tempSelected.has('__NONE__')) {
-                uniqueValues.forEach(v => tempSelected.add(v));
-            } else {
-                tempSelected.clear();
-            }
-        }
-
-        let expandedState = {};
-
-        function renderCheckboxes(searchTerm = '') {
-            listContainer.innerHTML = '';
-
-            const filteredVals = uniqueValues.filter(v => {
-                if (!searchTerm) return true;
-                let displayVal = v;
-                if (col.type === 'currency') displayVal = formatCurrency(v);
-                if (col.type === 'date') displayVal = formatDate(v);
-                return String(displayVal).toLowerCase().includes(searchTerm.toLowerCase());
-            });
-
-            if (filteredVals.length === 0) {
-                listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
-                return;
-            }
-
-            const allChecked = filteredVals.length > 0 && filteredVals.every(v => tempSelected.has(v));
-            const selectAllDiv = document.createElement('div');
-            selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
-            selectAllDiv.innerHTML = `
-                <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${allChecked ? 'checked' : ''}>
-                <span class="font-medium text-steel-700 dark:text-gray-300">(Selecionar Tudo)</span>
-            `;
-            selectAllDiv.querySelector('input').onclick = (e) => {
-                if (e.target.checked) {
-                    filteredVals.forEach(v => tempSelected.add(v));
-                } else {
-                    filteredVals.forEach(v => tempSelected.delete(v));
-                }
-                renderCheckboxes(searchTerm);
-            };
-            listContainer.appendChild(selectAllDiv);
-
-            if (col.type === 'date' && !searchTerm) {
-                const tree = {};
-                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-
-                filteredVals.forEach(val => {
-                    let y, m, d;
-                    if (val && String(val).includes('T')) {
-                        const dt = new Date(val);
-                        if (!isNaN(dt.getTime())) {
-                            y = dt.getUTCFullYear().toString();
-                            m = dt.getUTCMonth() + 1;
-                            d = dt.getUTCDate().toString().padStart(2, '0');
-                        }
-                    } else if (val && String(val).includes('-') && val !== '-') {
-                        const parts = String(val).split('T')[0].split('-');
-                        if (parts.length === 3) {
-                            y = parts[0];
-                            m = parseInt(parts[1], 10);
-                            d = parts[2];
-                        }
-                    }
-
-                    if (y && m && d) {
-                        if (!tree[y]) tree[y] = {};
-                        if (!tree[y][m]) tree[y][m] = [];
-                        tree[y][m].push(val);
-                    } else {
-                        if (!tree['-']) tree['-'] = {};
-                        if (!tree['-']['-']) tree['-']['-'] = [];
-                        tree['-']['-'].push(val);
-                    }
-                });
-
-                Object.keys(tree).sort((a, b) => b.localeCompare(a)).forEach(year => {
-                    const yearDiv = document.createElement('div');
-                    yearDiv.className = 'pl-1';
-
-                    let yearAllChecked = true;
-                    let yearAnyChecked = false;
-                    const yearVals = [];
-                    Object.keys(tree[year]).forEach(m => tree[year][m].forEach(v => {
-                        yearVals.push(v);
-                        if (tempSelected.has(v)) yearAnyChecked = true;
-                        else yearAllChecked = false;
-                    }));
-
-                    const yHeader = document.createElement('div');
-                    yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
-                    yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                        <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
-                        <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
-                    `;
-
-                    const yCb = yHeader.querySelector('input');
-                    yCb.indeterminate = yearAnyChecked && !yearAllChecked;
-
-                    const mContainer = document.createElement('div');
-                    mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-
-                    yHeader.onclick = (e) => {
-                        if (e.target === yCb) return;
-                        const isHidden = mContainer.classList.contains('hidden');
-                        expandedState[year] = isHidden;
-                        mContainer.classList.toggle('hidden');
-                        yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
-                    };
-
-                    if (expandedState[year]) {
-                        mContainer.classList.remove('hidden');
-                        yHeader.querySelector('span').textContent = '-';
-                    }
-
-                    yCb.onclick = (e) => {
-                        e.stopPropagation();
-                        const isChecked = e.target.checked;
-                        yearVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                        renderCheckboxes(searchTerm);
-                    };
-
-                    Object.keys(tree[year]).sort((a, b) => a.localeCompare(b)).forEach(month => {
-                        const monthVals = tree[year][month];
-                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month) - 1] : month;
-
-                        let monthAllChecked = true;
-                        let monthAnyChecked = false;
-                        monthVals.forEach(v => {
-                            if (tempSelected.has(v)) monthAnyChecked = true;
-                            else monthAllChecked = false;
-                        });
-
-                        const mHeader = document.createElement('div');
-                        mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                        mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                            <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
-                            <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
-                        `;
-
-                        const mCb = mHeader.querySelector('input');
-                        mCb.indeterminate = monthAnyChecked && !monthAllChecked;
-
-                        const dContainer = document.createElement('div');
-                        dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-
-                        const monthKey = `${year}-${month}`;
-                        mHeader.onclick = (e) => {
-                            if (e.target === mCb) return;
-                            const isHidden = dContainer.classList.contains('hidden');
-                            expandedState[monthKey] = isHidden;
-                            dContainer.classList.toggle('hidden');
-                            mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
-                        };
-
-                        if (expandedState[monthKey]) {
-                            dContainer.classList.remove('hidden');
-                            mHeader.querySelector('span').textContent = '-';
-                        }
-
-                        mCb.onclick = (e) => {
-                            e.stopPropagation();
-                            const isChecked = e.target.checked;
-                            monthVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                            renderCheckboxes(searchTerm);
-                        };
-
-                        monthVals.forEach(val => {
-                            const isChecked = tempSelected.has(val);
-                            const dHeader = document.createElement('div');
-                            dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                            let displayVal = formatDate(val);
-
-                            const valStr = String(val);
-                            if (valStr.includes('-') && valStr.split('-').length >= 3) {
-                                const datePart = valStr.split('T')[0];
-                                if (datePart.split('-').length === 3) {
-                                    displayVal = datePart.split('-')[2];
-                                }
-                            } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
-                                const datePart = valStr.split(' ')[0];
-                                if (datePart.split('/').length === 3) {
-                                    displayVal = datePart.split('/')[0];
-                                }
-                            }
-                            dHeader.innerHTML = `
-                                <div class="w-3"></div>
-                                <input type="checkbox" value="${val}" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                                <span class="truncate text-steel-500 dark:text-gray-500 text-[11px]">${displayVal}</span>
-                            `;
-                            const dCb = dHeader.querySelector('input');
-                            dHeader.onclick = (e) => {
-                                if (e.target !== dCb) dCb.checked = !dCb.checked;
-                                if (dCb.checked) tempSelected.add(val);
-                                else tempSelected.delete(val);
-                                renderCheckboxes(searchTerm);
-                            };
-                            dContainer.appendChild(dHeader);
-                        });
-
-                        mContainer.appendChild(mHeader);
-                        mContainer.appendChild(dContainer);
-                    });
-
-                    yearDiv.appendChild(yHeader);
-                    yearDiv.appendChild(mContainer);
-                    listContainer.appendChild(yearDiv);
-                });
-            } else {
-                filteredVals.forEach(val => {
-                    const isChecked = tempSelected.has(val);
-
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-
-                    let displayVal = val;
-                    if (val === '-') displayVal = '(Vazio)';
-                    else if (col.type === 'currency') displayVal = formatCurrency(val);
-                    else if (col.type === 'date') displayVal = formatDate(val);
-
-                    const isVazio = val === '-';
-                    div.innerHTML = `
-                        <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                        <span class="truncate text-xs ${isVazio ? 'italic text-steel-400 dark:text-steel-500' : 'text-steel-600 dark:text-gray-400'}" title="${displayVal}">${displayVal}</span>
-                    `;
-
-                    const checkbox = div.querySelector('input');
-                    div.onclick = (e) => {
-                        if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
-
-                        if (checkbox.checked) {
-                            tempSelected.add(val);
-                        } else {
-                            tempSelected.delete(val);
-                        }
-                        renderCheckboxes(searchTerm);
-                    };
-
-                    listContainer.appendChild(div);
-                });
-            }
-        }
-
-        renderCheckboxes();
-        searchInput.focus();
-
-        let hasTyped = false;
-        searchInput.addEventListener('input', (e) => {
-            if (!hasTyped && e.target.value.length > 0) {
-                tempSelected.clear();
-                hasTyped = true;
-            }
-            renderCheckboxes(e.target.value);
-        });
-
-        modal.querySelector('#btnApplyFilter').onclick = () => {
-            if (tempSelected.size === uniqueValues.length) {
-                state.filters[colKey].clear();
-            } else if (tempSelected.size === 0) {
-                state.filters[colKey] = new Set(['__NONE__']);
-            } else {
-                state.filters[colKey] = new Set(tempSelected);
-            }
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
-
-        modal.querySelector('#btnClearFilter').onclick = () => {
-            state.filters[colKey].clear();
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
+        grid.openFilter(event, colKey);
     }
 
     function closeFilter() {
-        if (activeFilterModal) {
-            activeFilterModal.remove();
-            activeFilterModal = null;
-        }
+        grid.filters.close();
     }
 
-    document.addEventListener('click', (e) => {
-        if (activeFilterModal && !activeFilterModal.contains(e.target)) {
-            closeFilter();
-        }
-    });
+
 
     // ==========================================
     // 9. Sort
     // ==========================================
-    function handleSort(key) {
-        if (state.sort.key === key) {
-            state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
-        } else {
-            state.sort.key = key;
-            state.sort.dir = 'asc';
-        }
-        processData();
-    }
+    function handleSort(key) { grid.toggleSort(key); }
 
     // ==========================================
     // 10. Navegação de Abas
@@ -1849,12 +1046,7 @@ const OPME = (() => {
     // ==========================================
     // 13. Paginação
     // ==========================================
-    function goToPage(page) {
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit) || 1;
-        if (page < 1 || page > totalPages) return;
-        state.pagination.current = page;
-        processData();
-    }
+    function goToPage(page) { grid.setPage(page); }
 
     // ==========================================
     // 14. Inicialização
@@ -1864,14 +1056,7 @@ const OPME = (() => {
         fetchData();
         loadContratos();
 
-        const selectLimit = document.getElementById('itemsPerPage');
-        if (selectLimit) {
-            selectLimit.addEventListener('change', (e) => {
-                state.pagination.limit = parseInt(e.target.value);
-                state.pagination.current = 1;
-                processData();
-            });
-        }
+
     }
 
     document.addEventListener('DOMContentLoaded', init);
@@ -3611,6 +2796,7 @@ const OPME = (() => {
     // ==========================================
     // API pública
     async function openCirurgiasEmAbertoModal() {
+        closeKpiDialog?.();
         const existing = document.getElementById('cirurgiasEmAbertoModal');
         if (existing) existing.remove();
 
@@ -3638,7 +2824,7 @@ const OPME = (() => {
                 </div>
 
                 <!-- Body (Table) -->
-                <div class="flex-1 overflow-auto p-4">
+                <div class="flex-1 flex flex-col min-h-0 overflow-hidden p-4">
                     <div id="kpiModalLoading" class="flex flex-col items-center justify-center py-10">
                         <svg class="animate-spin h-8 w-8 text-amber-500 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -3647,32 +2833,24 @@ const OPME = (() => {
                         <span class="text-xs text-steel-500">Carregando dados...</span>
                     </div>
                     
-                    <div id="kpiModalContent" class="hidden">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-nexo-600 dark:bg-steel-900 text-white">
-                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider rounded-tl-lg border-b border-nexo-700/50 dark:border-steel-700">Contrato</th>
-                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-center border-b border-nexo-700/50 dark:border-steel-700">Qtd. Cirurgias</th>
-                                    <th class="px-3 py-2 text-[11px] font-semibold uppercase tracking-wider text-right rounded-tr-lg border-b border-nexo-700/50 dark:border-steel-700">Total a Faturar</th>
-                                </tr>
-                            </thead>
-                            <tbody id="kpiModalTableBody" class="divide-y divide-gray-100 dark:divide-steel-700/50">
-                            </tbody>
-                        </table>
+                    <div id="kpiModalContent" class="hidden flex-1 flex flex-col min-h-0">
+                        <div id="kpiGridHost" class="flex-1 flex flex-col min-h-0"></div>
                     </div>
                 </div>
             </div>
         `;
         
         function closeModal() {
+            kpiGrid?.destroy();kpiGrid=null;closeKpiDialog=null;
             if (modal.parentNode) modal.remove();
             document.removeEventListener('keydown', handleEsc);
         }
         
         function handleEsc(e) {
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape' && !document.getElementById('filterModal') && !kpiGrid?.selection.cells.size) closeModal();
         }
         
+        closeKpiDialog=closeModal;
         document.addEventListener('keydown', handleEsc);
         
         modal.addEventListener('mousedown', (e) => {
@@ -3696,21 +2874,10 @@ const OPME = (() => {
             if (!res.ok) throw new Error('Erro ao buscar dados');
             
             const data = await res.json();
-            const tbody = document.getElementById('kpiModalTableBody');
-            tbody.innerHTML = '';
-            
-            if (data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="px-3 py-4 text-center text-sm text-steel-500">Nenhuma cirurgia em aberto.</td></tr>`;
-            } else {
-                data.forEach(item => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 cursor-pointer transition-colors group';
-                    tr.innerHTML = `
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-bold text-steel-800 dark:text-gray-200 group-hover:text-nexo-700 dark:group-hover:text-nexo-400 transition-colors">${item.contrato}</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-bold text-steel-600 dark:text-steel-400 text-center">${item.qtd_cirurgias}</td>
-                        <td class="px-3 py-2.5 whitespace-nowrap text-sm font-mono font-bold text-nexo-600 dark:text-nexo-400 text-right">${formatCurrency(item.total_faturar)}</td>
-                    `;
-                    tr.onclick = () => {
+            if(!modal.isConnected)return;
+            kpiGrid=HubDataGrid.mount('cirurgiasAbertasGridTemplate','kpiGridHost',{
+                columns:[{key:'contrato',label:'Contrato'},{key:'qtd_cirurgias',label:'Qtd. Cirurgias',type:'number'},{key:'total_faturar',label:'Total a Faturar',type:'currency',align:'right',render:value=>({text:formatCurrency(value),numericValue:value,className:'font-mono font-bold text-nexo-600 dark:text-nexo-400'})}],
+                export:false,onRowClick:item=>{
                         // Fecha este modal
                         if (typeof closeModal === 'function') closeModal();
                         else document.getElementById('cirurgiasEmAbertoModal').remove();
@@ -3721,16 +2888,14 @@ const OPME = (() => {
                             cliente: item.cliente
                         };
                         document.getElementById('accessContractModalText').textContent = `Tem certeza que deseja acessar o contrato ${item.contrato}?`;
-                        document.getElementById('accessContractModal').classList.remove('hidden');
-                    };
-                    tbody.appendChild(tr);
-                });
-            }
-            
+                        document.getElementById('accessContractModal').classList.remove('hidden');}
+            });
+            kpiGrid.setData(data,true);
             document.getElementById('kpiModalLoading').classList.add('hidden');
             document.getElementById('kpiModalContent').classList.remove('hidden');
             
         } catch (error) {
+            if(!modal.isConnected)return;
             console.error('Erro:', error);
             document.getElementById('kpiModalLoading').innerHTML = '<span class="text-sm text-red-500">Erro ao carregar os dados.</span>';
         }

@@ -24,7 +24,7 @@ const ContasGrid = (function () {
             key: 'status', label: 'Status do Pagamento', center: true, render: v => {
                 const variants = { PAGO: 'success', ATRASADO: 'danger', PENDENTE: 'alert' };
                 const variant = variants[v] || 'neutral';
-                return `<span class="status-badge status-badge-${variant}">${v}</span>`;
+                return `<span class="status-badge status-badge-${variant}">${HubDataGrid.components.values.escape(v)}</span>`;
             }
         },
         { key: 'conta', label: 'Banco', center: true },
@@ -43,7 +43,7 @@ const ContasGrid = (function () {
     
     let modalItens = [];
     let modalCurrentPage = 1;
-    const modalItemsPerPage = 10;
+    let modalGrid = null;
     
     let currentModalContext = {
         empresa: null,
@@ -54,6 +54,42 @@ const ContasGrid = (function () {
     };
 
     // 3. Integração com Banco de Dados PostgreSQL
+    // Grid owns filtering, sorting, pagination, rendering and cell selection.
+    columns.forEach(col => { if (!col.center) col.align = 'left'; });
+    const grid = HubDataGrid.create({
+        bodyId: 'contasTableBody',
+        headerId: 'contasTableHeader',
+        infoId: 'paginationInfo',
+        paginationId: 'paginationControls',
+        pageSizeId: 'itemsPerPage',
+        clearId: 'btnClearAllFilters',
+        exportId: 'btnExport',
+        columns,
+        state,
+        tieBreaker: (a, b) =>
+            a.nota > b.nota
+                ? -1
+                : a.nota < b.nota
+                  ? 1
+                  : (a.documento || '') < (b.documento || '')
+                    ? -1
+                    : (a.documento || '') > (b.documento || '')
+                      ? 1
+                      : 0,
+        onRowClick: (row) =>
+            ContasGrid.openNotaModal(
+                row.empresa,
+                row.nota,
+                row.documento || '',
+                row.cliente || '',
+                row.esfera || '',
+                row.uf || '',
+                row.valor || '0'
+            ),
+        onExport: () => ContasGrid.exportToExcel(),
+        onEmptyExport: () => alert('Nenhum dado para exportar com os filtros atuais.')
+    });
+
     async function fetchData() {
         try {
             const token = localStorage.getItem('token');
@@ -111,97 +147,7 @@ const ContasGrid = (function () {
 
     // 4. Lógica de Pipeline (Filtro -> Ordenação -> Paginação)
     function processData() {
-        // 4.1 Aplicar Filtros Dinâmicos
-        state.filteredData = state.rawData.filter(row => {
-            for (let key in state.filters) {
-                const selectedValues = state.filters[key];
-                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
-                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
-                        return false; // Falhou em um dos filtros
-                    }
-                } else if (selectedValues && selectedValues.has('__NONE__')) {
-                    return false;
-                }
-            }
-            return true;
-        });
-
-        // 4.2 Aplicar Ordenação
-        if (state.sort.key) {
-            const col = columns.find(c => c.key === state.sort.key);
-            const dir = state.sort.dir === 'asc' ? 1 : -1;
-
-            state.filteredData.sort((a, b) => {
-                let valA = a[state.sort.key];
-                let valB = b[state.sort.key];
-
-                if (col.type === 'currency') {
-                    valA = parseFloat(valA) || 0;
-                    valB = parseFloat(valB) || 0;
-                } else if (col.type === 'date') {
-                    // Trata as datas e joga vazios ('-') sempre para o final
-                    const isValAEmpty = !valA || valA === '-';
-                    const isValBEmpty = !valB || valB === '-';
-                    
-                    if (isValAEmpty && isValBEmpty) return 0;
-                    if (isValAEmpty) return 1; // Joga vazio pro final independente da direção
-                    if (isValBEmpty) return -1;
-                    
-                    valA = new Date(valA).getTime();
-                    valB = new Date(valB).getTime();
-                }
-
-                if (valA < valB) return -1 * dir;
-                if (valA > valB) return 1 * dir;
-                
-                // Empate no critério principal! Desempate (Tie-breaker)
-                
-                // 1º Desempate: Agrupar pela mesma Nota (Ordem Decrescente, notas mais novas primeiro)
-                const notaA = a.nota || '';
-                const notaB = b.nota || '';
-                if (notaA > notaB) return -1;
-                if (notaA < notaB) return 1;
-
-                // 2º Desempate: Se for a mesma nota (ex: parcelamentos), ordenar pelo Documento Crescente (ex: -1 vem antes do -2)
-                const docA = a.documento || '';
-                const docB = b.documento || '';
-                if (docA < docB) return -1;
-                if (docA > docB) return 1;
-
-                return 0;
-            });
-        }
-
-        // 4.3 Aplicar Paginação
-        state.pagination.total = state.filteredData.length;
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit);
-        if (state.pagination.current > totalPages) state.pagination.current = Math.max(1, totalPages);
-
-        const start = (state.pagination.current - 1) * state.pagination.limit;
-        const end = start + state.pagination.limit;
-        state.viewData = state.filteredData.slice(start, end);
-
-        // Atualiza a tela
-        renderTableBody();
-        renderPagination();
-
-        // Controlar visibilidade do botão Remover Filtros
-        const btnClearAll = document.getElementById('btnClearAllFilters');
-        if (btnClearAll) {
-            let hasAnyFilter = false;
-            for (let key in state.filters) {
-                if (state.filters[key] && state.filters[key].size > 0 && !state.filters[key].has('__NONE__')) {
-                    hasAnyFilter = true;
-                    break;
-                }
-            }
-            if (hasAnyFilter) {
-                btnClearAll.classList.remove('hidden');
-            } else {
-                btnClearAll.classList.add('hidden');
-            }
-        }
+        grid.process();
     }
 
     // 5. Renderização (DOM)
@@ -224,533 +170,35 @@ const ContasGrid = (function () {
     }
 
     function renderHeaders() {
-        const thead = document.getElementById('contasTableHeader');
-        let html = '<tr class="text-white text-[10px] 2xl:text-[12px] font-medium">';
-
-        columns.forEach(col => {
-            const isSticky = col.sticky ? 'sticky-col bg-nexo-600 dark:bg-steel-900 border-r shadow-[1px_0_0_rgba(229,231,235,1)] dark:shadow-[1px_0_0_rgba(55,65,81,1)]' : '';
-            const sortIcon = state.sort.key === col.key
-                ? (state.sort.dir === 'asc' ? '↑' : '↓')
-                : '↕';
-            const hasFilter = state.filters[col.key] && state.filters[col.key].size > 0 && !state.filters[col.key].has('__NONE__');
-            const hasNoneFilter = state.filters[col.key] && state.filters[col.key].has('__NONE__');
-            const isFiltered = hasFilter || hasNoneFilter;
-            const filterColor = isFiltered ? 'text-white dark:text-nexo-400 opacity-100' : 'text-white/60 dark:text-steel-500 hover:text-white dark:hover:text-steel-300';
-
-            html += `
-                <th class="px-2 py-1.5 2xl:px-3 2xl:py-2.5 border-b border-gray-200 dark:border-steel-700 whitespace-nowrap select-none relative text-center align-middle ${isSticky}">
-                    <div class="flex items-center justify-center cursor-pointer hover:text-white/80 transition-colors w-full px-4" onclick="ContasGrid.toggleSort('${col.key}')">
-                        ${col.label} <span class="text-[10px] ml-1 opacity-50">${sortIcon}</span>
-                    </div>
-                    <button onclick="ContasGrid.openFilter(event, '${col.key}')" class="p-1 rounded focus:outline-none absolute right-2 top-1/2 -translate-y-1/2 ${filterColor}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" />
-                        </svg>
-                    </button>
-                </th>
-            `;
-        });
-        html += '</tr>';
-        thead.innerHTML = html;
+        grid.renderHeaders();
     }
 
     function renderTableBody() {
-        const tbody = document.getElementById('contasTableBody');
-
-        if (state.viewData.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="${columns.length}" class="px-6 py-12 text-center text-steel-500">Nenhum registro encontrado com os filtros atuais.</td></tr>`;
-            return;
-        }
-
-        let html = '';
-        state.viewData.forEach(row => {
-            const safeCliente = row.cliente ? row.cliente.replace(/'/g, "\\'") : '';
-            html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; ContasGrid.openNotaModal('${row.empresa}', '${row.nota}', '${row.documento || ''}', '${safeCliente}', '${row.esfera || ''}', '${row.uf || ''}', '${row.valor || '0'}')" class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 hover:shadow-md hover:scale-[1.001] relative z-0 hover:z-10 transition-all duration-200 group cursor-pointer">`;
-            columns.forEach(col => {
-                let val = row[col.key];
-
-                // Formatação
-                if (col.type === 'currency') val = formatCurrency(val);
-                else if (col.type === 'date') val = formatDate(val);
-
-                // Custom render?
-                if (col.render) val = col.render(val);
-                
-                // Formatação especial de Link para a Nota removida, agora a linha inteira é clicável.
-                const isSticky = col.sticky ? 'sticky-col bg-white dark:bg-steel-800 group-hover:bg-nexo-50 dark:group-hover:bg-[#1f3642] border-r border-gray-100 dark:border-steel-700 font-medium transition-colors duration-200' : '';
-                const alignClass = col.center ? 'text-center' : '';
-
-                html += `<td class="px-2 py-1 2xl:px-3 2xl:py-1.5 text-[11px] 2xl:text-[12px] whitespace-nowrap ${isSticky} ${alignClass}">${val}</td>`;
-            });
-            html += '</tr>';
-        });
-        tbody.innerHTML = html;
-        renderHeaders(); // Atualiza ícones
+        grid.renderBody();
     }
 
     function renderPagination() {
-        const info = document.getElementById('paginationInfo');
-        const controls = document.getElementById('paginationControls');
-
-        const start = state.pagination.total === 0 ? 0 : ((state.pagination.current - 1) * state.pagination.limit) + 1;
-        const end = Math.min(state.pagination.current * state.pagination.limit, state.pagination.total);
-        info.textContent = `Mostrando ${start} a ${end} de ${state.pagination.total} registros`;
-
-        const totalPages = Math.ceil(state.pagination.total / state.pagination.limit);
-
-        let html = '';
-
-        // First button
-        html += `<button onclick="ContasGrid.setPage(1)" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === 1 ? 'disabled' : ''} title="Primeira Página">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" /></svg>
-                 </button>`;
-
-        // Prev button
-        html += `<button onclick="ContasGrid.setPage(${state.pagination.current - 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === 1 ? 'disabled' : ''} title="Anterior">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                 </button>`;
-
-        // Simplificação de botões (mostra 5 páginas no máx)
-        let startPage = Math.max(1, state.pagination.current - 2);
-        let endPage = Math.min(totalPages, startPage + 4);
-        if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === state.pagination.current) {
-                html += `<button class="px-3 py-1 text-sm font-medium rounded bg-nexo-50 dark:bg-nexo-900/30 text-nexo-600 dark:text-nexo-400">${i}</button>`;
-            } else {
-                html += `<button onclick="ContasGrid.setPage(${i})" class="px-3 py-1 text-sm font-medium rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700">${i}</button>`;
-            }
-        }
-
-        // Next button
-        html += `<button onclick="ContasGrid.setPage(${state.pagination.current + 1})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === totalPages || totalPages === 0 ? 'disabled' : ''} title="Próxima">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                 </button>`;
-
-        // Last button
-        html += `<button onclick="ContasGrid.setPage(${totalPages})" class="p-1 rounded text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors disabled:opacity-50" ${state.pagination.current === totalPages || totalPages === 0 ? 'disabled' : ''} title="Última Página">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414zm6 0a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L14.586 10l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                 </button>`;
-
-        controls.innerHTML = html;
+        grid.pagination.render();
     }
 
     // 6. Componente do Dropdown de Filtro (Modal Flutuante)
-    let activeFilterModal = null;
 
     function openFilter(event, colKey) {
-        event.stopPropagation();
-        closeFilter(); // Fecha anterior se existir
-
-        const col = columns.find(c => c.key === colKey);
-
-        // Coleta valores únicos para essa coluna respeitando os filtros já aplicados em outras colunas (Filtro em cascata)
-        const preFilteredData = state.rawData.filter(row => {
-            for (let key in state.filters) {
-                if (key === colKey) continue; // Ignora o filtro da própria coluna que estamos abrindo
-                const selectedValues = state.filters[key];
-                if (selectedValues && selectedValues.size > 0 && !selectedValues.has('__NONE__')) {
-                    const val = row[key] !== null && row[key] !== undefined && row[key] !== '' ? row[key] : '(Vazio)';
-                    if (!selectedValues.has(val) && !selectedValues.has(String(val))) {
-                        return false; 
-                    }
-                } else if (selectedValues && selectedValues.has('__NONE__')) {
-                    return false;
-                }
-            }
-            return true;
-        });
-        
-        const rawValuesMapped = preFilteredData.map(row => {
-            const val = row[colKey];
-            return val !== null && val !== undefined && val !== '' ? val : '(Vazio)';
-        });
-
-        const uniqueValues = [...new Set(rawValuesMapped)].sort((a, b) => {
-            if (a === '(Vazio)') return 1;
-            if (b === '(Vazio)') return -1;
-            if (typeof a === 'number' && typeof b === 'number') return a - b;
-            return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
-        });
-
-        // Inicializa o state do filtro se não existir
-        if (!state.filters[colKey]) {
-            state.filters[colKey] = new Set();
-        }
-
-        // Criar DOM do Modal
-        const modal = document.createElement('div');
-        modal.id = 'filterModal';
-        modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm animate-fade-in-up';
-
-        // Evita que cliques dentro do modal propaguem para o document e fechem o filtro
-        modal.addEventListener('click', (e) => e.stopPropagation());
-
-        // Posicionamento abaixo do ícone clicado
-        const rect = event.currentTarget.getBoundingClientRect();
-        let left = rect.left;
-        if (left + 256 > window.innerWidth) left = window.innerWidth - 266;
-
-        modal.style.top = `${rect.bottom + window.scrollY + 8}px`;
-        modal.style.left = `${left}px`;
-
-        // Cabeçalho / Busca
-        modal.innerHTML = `
-            <div class="p-3 border-b border-gray-100 dark:border-steel-700">
-                <input type="text" id="filterSearchInput" placeholder="Pesquisar..." class="w-full px-3 py-1.5 text-sm bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded outline-none focus:ring-1 focus:ring-nexo-500 text-steel-700 dark:text-gray-200">
-            </div>
-            <div class="flex-1 max-h-48 overflow-y-auto p-2" id="filterCheckboxList">
-            </div>
-            <div class="p-3 border-t border-gray-100 dark:border-steel-700 flex justify-between bg-gray-50 dark:bg-steel-800/50 rounded-b-lg">
-                <button id="btnClearFilter" class="text-xs text-steel-500 hover:text-steel-700 dark:hover:text-gray-300 font-medium">Limpar</button>
-                <button id="btnApplyFilter" class="text-xs bg-nexo-600 hover:bg-nexo-700 text-white px-3 py-1.5 rounded font-medium shadow-sm">Aplicar</button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        activeFilterModal = modal;
-
-        const listContainer = modal.querySelector('#filterCheckboxList');
-        const searchInput = modal.querySelector('#filterSearchInput');
-
-        // Estado temporário para as seleções no modal explícito:
-        const tempSelected = new Set(state.filters[colKey]);
-        // Se filtro global estiver limpo, significa que tudo está visivel
-        if (tempSelected.size === 0 || tempSelected.has('__NONE__')) {
-            if (!tempSelected.has('__NONE__')) {
-                uniqueValues.forEach(v => tempSelected.add(v));
-            } else {
-                tempSelected.clear();
-            }
-        }
-
-        // Estado de expansão do modal (árvore de datas)
-        let expandedState = {};
-
-        function renderCheckboxes(searchTerm = '') {
-            listContainer.innerHTML = '';
-            
-            const filteredVals = uniqueValues.filter(v => {
-                if (!searchTerm) return true;
-                let displayVal = v;
-                if (col.type === 'currency') displayVal = formatCurrency(v);
-                if (col.type === 'date') displayVal = formatDate(v);
-                return String(displayVal).toLowerCase().includes(searchTerm.toLowerCase());
-            });
-
-            if (filteredVals.length === 0) {
-                listContainer.innerHTML = '<p class="text-xs text-steel-400 p-2 text-center">Nenhum valor encontrado.</p>';
-                return;
-            }
-
-            // Botão "Selecionar Tudo" (agora inteligente, considera apenas os itens filtrados na busca)
-            const allChecked = filteredVals.length > 0 && filteredVals.every(v => tempSelected.has(v));
-            const selectAllDiv = document.createElement('div');
-            selectAllDiv.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mb-1 border-b border-gray-100 dark:border-steel-700';
-            selectAllDiv.innerHTML = `
-                <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${allChecked ? 'checked' : ''}>
-                <span class="font-medium text-steel-700 dark:text-gray-300">(Selecionar Tudo)</span>
-            `;
-            selectAllDiv.querySelector('input').onclick = (e) => {
-                if (e.target.checked) {
-                    filteredVals.forEach(v => tempSelected.add(v));
-                } else {
-                    filteredVals.forEach(v => tempSelected.delete(v));
-                }
-                renderCheckboxes(searchTerm);
-            };
-            listContainer.appendChild(selectAllDiv);
-
-            if (col.type === 'date' && !searchTerm) {
-                // Renderização hierárquica (Ano > Mês > Dia)
-                const tree = {};
-                const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
-                filteredVals.forEach(val => {
-                    let y, m, d;
-                    
-                    if (val && val.includes('T')) {
-                        const dt = new Date(val);
-                        if (!isNaN(dt.getTime())) {
-                            y = dt.getUTCFullYear().toString();
-                            m = dt.getUTCMonth() + 1;
-                            d = dt.getUTCDate().toString().padStart(2, '0');
-                        }
-                    }
-                    
-                    if (!y && val && val !== '-') {
-                        const parts = String(val).split('T')[0].split('-');
-                        if (parts.length === 3) {
-                            y = parts[0];
-                            m = parseInt(parts[1], 10);
-                            d = parts[2];
-                        }
-                    }
-
-                    if (y && m && d) {       
-                        if (!tree[y]) tree[y] = {};
-                        if (!tree[y][m]) tree[y][m] = [];
-                        tree[y][m].push(val);
-                    } else {
-                        if (!tree['-']) tree['-'] = {};
-                        if (!tree['-']['-']) tree['-']['-'] = [];
-                        tree['-']['-'].push(val);
-                    }
-                });
-
-                Object.keys(tree).sort((a,b) => b.localeCompare(a)).forEach(year => {
-                    const yearDiv = document.createElement('div');
-                    yearDiv.className = 'pl-1';
-                    
-                    let yearAllChecked = true;
-                    let yearAnyChecked = false;
-                    const yearVals = [];
-                    Object.keys(tree[year]).forEach(m => tree[year][m].forEach(v => {
-                        yearVals.push(v);
-                        if (tempSelected.has(v)) yearAnyChecked = true;
-                        else yearAllChecked = false;
-                    }));
-
-                    const yHeader = document.createElement('div');
-                    yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
-                    yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                        <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
-                        <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
-                    `;
-                    
-                    const yCb = yHeader.querySelector('input');
-                    yCb.indeterminate = yearAnyChecked && !yearAllChecked;
-                    
-                    const mContainer = document.createElement('div');
-                    mContainer.className = 'hidden pl-2 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                    
-                    yHeader.onclick = (e) => {
-                        if (e.target === yCb) return;
-                        const isHidden = mContainer.classList.contains('hidden');
-                        expandedState[year] = isHidden;
-                        mContainer.classList.toggle('hidden');
-                        yHeader.querySelector('span').textContent = mContainer.classList.contains('hidden') ? '+' : '-';
-                    };
-                    
-                    if (expandedState[year]) {
-                        mContainer.classList.remove('hidden');
-                        yHeader.querySelector('span').textContent = '-';
-                    }
-
-                    yCb.onclick = (e) => {
-                        e.stopPropagation();
-                        const isChecked = e.target.checked;
-                        yearVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                        renderCheckboxes(searchTerm);
-                    };
-
-                    Object.keys(tree[year]).sort((a,b) => a.localeCompare(b)).forEach(month => {
-                        const monthVals = tree[year][month];
-                        const mName = (month !== '-' && !isNaN(month)) ? monthsNames[parseInt(month)-1] : month;
-                        
-                        let monthAllChecked = true;
-                        let monthAnyChecked = false;
-                        monthVals.forEach(v => {
-                            if (tempSelected.has(v)) monthAnyChecked = true;
-                            else monthAllChecked = false;
-                        });
-
-                        const mHeader = document.createElement('div');
-                        mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                        mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
-                            <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
-                            <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
-                        `;
-
-                        const mCb = mHeader.querySelector('input');
-                        mCb.indeterminate = monthAnyChecked && !monthAllChecked;
-
-                        const dContainer = document.createElement('div');
-                        dContainer.className = 'hidden pl-3 border-l border-gray-100 dark:border-steel-700 ml-2.5 mt-0.5';
-                        
-                        const monthKey = `${year}-${month}`;
-                        mHeader.onclick = (e) => {
-                            if (e.target === mCb) return;
-                            const isHidden = dContainer.classList.contains('hidden');
-                            expandedState[monthKey] = isHidden;
-                            dContainer.classList.toggle('hidden');
-                            mHeader.querySelector('span').textContent = dContainer.classList.contains('hidden') ? '+' : '-';
-                        };
-                        
-                        if (expandedState[monthKey]) {
-                            dContainer.classList.remove('hidden');
-                            mHeader.querySelector('span').textContent = '-';
-                        }
-
-                        mCb.onclick = (e) => {
-                            e.stopPropagation();
-                            const isChecked = e.target.checked;
-                            monthVals.forEach(v => isChecked ? tempSelected.add(v) : tempSelected.delete(v));
-                            renderCheckboxes(searchTerm);
-                        };
-
-                        monthVals.forEach(val => {
-                            const isChecked = tempSelected.has(val);
-                            const dHeader = document.createElement('div');
-                            dHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-                            let displayVal = formatDate(val);
-                            
-                            const valStr = String(val);
-                            if (valStr.includes('-') && valStr.split('-').length >= 3) {
-                                const datePart = valStr.split('T')[0];
-                                if (datePart.split('-').length === 3) {
-                                    displayVal = datePart.split('-')[2];
-                                }
-                            } else if (valStr.includes('/') && valStr.split('/').length >= 3) {
-                                const datePart = valStr.split(' ')[0];
-                                if (datePart.split('/').length === 3) {
-                                    displayVal = datePart.split('/')[0];
-                                }
-                            }
-                            dHeader.innerHTML = `
-                                <div class="w-3"></div>
-                                <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                                <span class="truncate text-steel-500 dark:text-gray-500 text-[11px]">${displayVal}</span>
-                            `;
-                            const dCb = dHeader.querySelector('input');
-                            dHeader.onclick = (e) => {
-                                if (e.target !== dCb) dCb.checked = !dCb.checked;
-                                if (dCb.checked) tempSelected.add(val);
-                                else tempSelected.delete(val);
-                                renderCheckboxes(searchTerm);
-                            };
-                            dContainer.appendChild(dHeader);
-                        });
-
-                        mContainer.appendChild(mHeader);
-                        mContainer.appendChild(dContainer);
-                    });
-
-                    yearDiv.appendChild(yHeader);
-                    yearDiv.appendChild(mContainer);
-                    listContainer.appendChild(yearDiv);
-                });
-            } else {
-                // Flat rendering (lista simples) para outros tipos de dados ou durante pesquisa
-                filteredVals.forEach(val => {
-                    const isChecked = tempSelected.has(val);
-
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center gap-2 p-1.5 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
-
-                    let displayVal = val;
-                    if (col.type === 'currency') displayVal = formatCurrency(val);
-                    if (col.type === 'date') displayVal = formatDate(val);
-
-                    div.innerHTML = `
-                        <input type="checkbox" value="${val}" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${isChecked ? 'checked' : ''}>
-                        <span class="truncate text-steel-600 dark:text-gray-400" title="${displayVal}">${displayVal}</span>
-                    `;
-
-                    const checkbox = div.querySelector('input');
-                    div.onclick = (e) => {
-                        if (e.target !== checkbox) checkbox.checked = !checkbox.checked;
-
-                        if (checkbox.checked) {
-                            tempSelected.add(val);
-                        } else {
-                            tempSelected.delete(val);
-                        }
-                        renderCheckboxes(searchTerm);
-                    };
-
-                    listContainer.appendChild(div);
-                });
-            }
-        }
-
-        renderCheckboxes();
-        searchInput.focus();
-
-        let hasTyped = false;
-        searchInput.addEventListener('input', (e) => {
-            // Limpa tudo apenas no PRIMEIRO caractere digitado na busca, permitindo acúmulo de buscas manuais depois
-            if (!hasTyped && e.target.value.length > 0) {
-                tempSelected.clear();
-                hasTyped = true;
-            }
-            renderCheckboxes(e.target.value);
-        });
-
-        modal.querySelector('#btnApplyFilter').onclick = () => {
-            if (tempSelected.size === uniqueValues.length) {
-                state.filters[colKey].clear();
-            } else if (tempSelected.size === 0) {
-                state.filters[colKey] = new Set(['__NONE__']);
-            } else {
-                state.filters[colKey] = new Set(tempSelected);
-            }
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
-
-        modal.querySelector('#btnClearFilter').onclick = () => {
-            state.filters[colKey].clear();
-            state.pagination.current = 1;
-            processData();
-            closeFilter();
-        };
+        grid.openFilter(event, colKey);
     }
 
     function closeFilter() {
-        if (activeFilterModal) {
-            activeFilterModal.remove();
-            activeFilterModal = null;
-        }
+        grid.filters.close();
     }
 
     // Fechar filtro ao clicar fora
-    document.addEventListener('click', (e) => {
-        if (activeFilterModal && !activeFilterModal.contains(e.target)) {
-            closeFilter();
-        }
-    });
+
 
     // 7. API Exposta Globalmente
     return {
         init: function () {
             // Busca dados do backend
             fetchData();
-
-            // Listeners da interface (Ex: Items per page)
-            const selectLimit = document.getElementById('itemsPerPage');
-            if (selectLimit) {
-                selectLimit.addEventListener('change', (e) => {
-                    state.pagination.limit = parseInt(e.target.value);
-                    state.pagination.current = 1;
-                    processData();
-                });
-            }
-
-            // Botão de Exportar
-            const btnExport = document.getElementById('btnExport');
-            if (btnExport) {
-                btnExport.addEventListener('click', () => {
-                    ContasGrid.exportToExcel();
-                });
-            }
-
-            // Botão Remover Filtros
-            const btnClearAll = document.getElementById('btnClearAllFilters');
-            if (btnClearAll) {
-                btnClearAll.addEventListener('click', () => {
-                    state.filters = {};
-                    state.pagination.current = 1;
-                    processData();
-                });
-            }
-
-            // Seleção de células (Ctrl+Click+Arrasto)
-            if (typeof CellSelector !== 'undefined') CellSelector.init('contasTableBody');
 
             // Botão de Sincronização com Modal
             const btnSync = document.getElementById('btnSyncSupra');
@@ -933,64 +381,10 @@ const ContasGrid = (function () {
                 });
             }
         },
-        toggleSort: function (key) {
-            if (state.sort.key === key) {
-                state.sort.dir = state.sort.dir === 'asc' ? 'desc' : 'asc';
-            } else {
-                state.sort.key = key;
-                state.sort.dir = 'asc';
-            }
-            processData();
-        },
-        setPage: function (page) {
-            state.pagination.current = page;
-            processData();
-        },
+        toggleSort(key) { grid.toggleSort(key); },
+        setPage(page) { grid.setPage(page); },
         openFilter: openFilter,
-        exportToExcel: function () {
-            if (state.filteredData.length === 0) {
-                alert("Nenhum dado para exportar com os filtros atuais.");
-                return;
-            }
-
-            // Mapeia usando os labels corretos das colunas
-            const exportData = state.filteredData.map(row => {
-                const rowObj = {};
-                columns.forEach(col => {
-                    let val = row[col.key];
-                    
-                    // Formatações nativas para o Excel aceitar melhor os dados
-                    if (col.type === 'currency' && val !== '-' && val !== null) {
-                        val = parseFloat(val) || 0;
-                    } else if (col.type === 'date' && val !== '-' && val !== null) {
-                        if (String(val).includes('T')) {
-                            const d = new Date(val);
-                            if (!isNaN(d.getTime())) {
-                                val = d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-                            }
-                        } else {
-                            const parts = String(val).split('T')[0].split('-');
-                            if (parts.length === 3) {
-                                val = `${parts[2]}/${parts[1]}/${parts[0]}`; // Formato BR (DD/MM/YYYY)
-                            }
-                        }
-                    }
-                    
-                    rowObj[col.label] = val;
-                });
-                return rowObj;
-            });
-
-            // Cria a planilha em memória usando a lib XLSX (SheetJS)
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Contas_a_Receber");
-
-            // Gera o arquivo
-            const today = new Date();
-            const dateStr = today.toISOString().split('T')[0];
-            XLSX.writeFile(workbook, `Contas_Receber_Export_${dateStr}.xlsx`);
-        },
+        exportToExcel() { return grid.export({ filename: 'Contas_Receber_Export_' + new Date().toISOString().slice(0,10) + '.xlsx', sheetName: 'Contas_a_Receber' }); },
         
         switchNotaTab(tab) {
             const btnProd = document.getElementById('tabBtnProdutos');
@@ -1013,89 +407,13 @@ const ContasGrid = (function () {
         },
 
         renderModalItens() {
-            const tbody = document.getElementById('modalItensBody');
-            if (!modalItens || modalItens.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-steel-500">Nenhum item encontrado.</td></tr>';
-                document.getElementById('modalPaginationInfo').textContent = 'Nenhum item';
-                document.getElementById('modalPaginationControls').innerHTML = '';
-                return;
-            }
-
-            const totalItems = modalItens.length;
-            const totalPages = Math.ceil(totalItems / modalItemsPerPage);
-            const startIdx = (modalCurrentPage - 1) * modalItemsPerPage;
-            const endIdx = Math.min(startIdx + modalItemsPerPage, totalItems);
-
-            const pageItens = modalItens.slice(startIdx, endIdx);
-
-            const toTitleCase = (str) => {
-                if (!str) return '';
-                return str.toString().toLowerCase().split(' ').map(word => {
-                    const preps = ['de', 'da', 'do', 'das', 'dos', 'e', 'em', 'na', 'no', 'com', 'por', 'para'];
-                    if (preps.includes(word)) return word;
-                    return word.charAt(0).toUpperCase() + word.slice(1);
-                }).join(' ');
-            };
-
-            const escapeHtml = (unsafe) => {
-                return (unsafe || '').toString()
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            };
-
-            let itensHtml = '';
-            pageItens.forEach(item => {
-                const qtd = (item.quantidade !== null && item.quantidade !== undefined) ? Number(item.quantidade).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-                const vUnit = (item.valor_unitario !== null && item.valor_unitario !== undefined) ? Number(item.valor_unitario).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-                const vTotal = (item.valor_total !== null && item.valor_total !== undefined) ? Number(item.valor_total).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-';
-
-                itensHtml += `<tr class="hover:bg-nexo-50/80 dark:hover:bg-nexo-500/10 transition-colors">
-                    <td class="px-4 py-2 font-mono text-steel-600 dark:text-steel-400">${escapeHtml(item.prod_codigo)}</td>
-                    <td class="px-4 py-2 text-steel-800 dark:text-gray-200">${escapeHtml(toTitleCase(item.produto_nome))}</td>
-                    <td class="px-4 py-2 text-steel-600 dark:text-gray-400">${escapeHtml(toTitleCase(item.fabricante_nome))}</td>
-                    <td class="px-4 py-2 font-mono text-steel-500">${escapeHtml(item.classificacao_fiscal)}</td>
-                    <td class="px-4 py-2 text-right font-medium text-steel-700 dark:text-gray-300">${qtd}</td>
-                    <td class="px-4 py-2 text-center text-steel-500">${escapeHtml(item.Unidade)}</td>
-                    <td class="px-4 py-2 text-right text-steel-600 dark:text-gray-400">${vUnit}</td>
-                    <td class="px-4 py-2 text-right font-medium text-nexo-600 dark:text-nexo-400">${vTotal}</td>
-                </tr>`;
-            });
-
-            tbody.innerHTML = itensHtml;
-
-            // Info Paginação
-            document.getElementById('modalPaginationInfo').textContent = `Mostrando ${startIdx + 1} a ${endIdx} de ${totalItems} itens`;
-
-            // Controles
-            let paginationHtml = '';
-            
-            const prevDisabled = modalCurrentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
-            paginationHtml += `
-                <button onclick="ContasGrid.changeModalPage(${modalCurrentPage - 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${prevDisabled}" ${modalCurrentPage === 1 ? 'disabled' : ''}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                </button>
-            `;
-
-            const nextDisabled = modalCurrentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 dark:hover:bg-steel-700 hover:text-nexo-600 dark:hover:text-nexo-400';
-            paginationHtml += `
-                <button onclick="ContasGrid.changeModalPage(${modalCurrentPage + 1})" class="p-1.5 rounded-lg border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-800 text-steel-500 dark:text-steel-400 transition-colors ${nextDisabled}" ${modalCurrentPage === totalPages ? 'disabled' : ''}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                </button>
-            `;
-
-            document.getElementById('modalPaginationControls').innerHTML = paginationHtml;
+            if (!modalGrid) modalGrid = HubDataGrid.presets.notaItems({ export: false, onChange: state => { modalCurrentPage = state.pagination.current; } });
+            if (modalGrid.state.rawData !== modalItens) { modalGrid.state.rawData = modalItens || []; modalGrid.state.filters = {}; }
+            modalGrid.state.pagination.current = modalCurrentPage;
+            modalGrid.process();
         },
 
-        changeModalPage(page) {
-            const totalPages = Math.ceil(modalItens.length / modalItemsPerPage);
-            if (page >= 1 && page <= totalPages) {
-                                        modalCurrentPage = page;
-                this.renderModalItens();
-            }
-        },
+        changeModalPage(page) { modalGrid?.setPage(page); },
 
         async openNotaModal(empresa, numero_nota, documento, cliente, esfera, uf, valorTotal) {
             const modal = document.getElementById('notaModal');

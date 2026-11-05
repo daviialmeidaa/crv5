@@ -15,7 +15,8 @@ css/
     badges.css                 Badges gerais e indicadores financeiros
     buttons.css                Tratamento dos botões de entrada
     cell-selector.css          Barra de seleção e soma das células
-    data-grid.css              Colunas fixas e apresentação dos filtros
+    data-grid.css              Entrada do componente Data Grid
+    data-grid/                 Tabela, filtros, paginação e seleção/soma
     datepicker.css             Apresentação do calendário
     forms.css                  Tratamentos compartilhados dos inputs
     modal.css                  Animação compartilhada dos modais
@@ -78,6 +79,7 @@ a prioridade dos antigos estilos inline em relação às utilidades do Tailwind.
 Não adicione seletores específicos de uma página a um componente compartilhado,
 exceto quando necessários para manter uma variação já existente documentada.
 
-Esta etapa separa apresentação e comportamento. Seleção, filtros, ordenação,
-paginação e requisições dos grids continuam nos controllers atuais; a extração
-de um componente JavaScript de data grid será uma etapa posterior.
+O Data Grid tem HTML, CSS e JavaScript compartilhados. Filtros, ordenação,
+paginação, seleção/soma e exportação pertencem aos subcomponentes do grid;
+requisições e ações de negócio continuam nos controllers das páginas.
+Veja a [documentação do Data Grid](../js/components/data-grid/README.md).

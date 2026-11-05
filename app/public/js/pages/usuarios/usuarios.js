@@ -71,49 +71,85 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    const renderTable = (users) => {
-        if (!users.length) {
-            tableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-steel-500">Nenhum usuário encontrado.</td></tr>';
-            return;
-        }
+    const grid = HubDataGrid.create({
+        bodyId: 'usersTableBody',
+        headerId: 'usersTableHeader',
+        infoId: 'usersPaginationInfo',
+        paginationId: 'usersPaginationControls',
+        pageSizeId: 'usersPerPage',
+        clearId: 'usersGridClear',
+        export: false,
+        columns: [
+            {
+                key: 'nome',
+                label: 'Usuário',
+                align: 'left',
+                render: (_value, user) => {
+                    const box = document.createElement('div');
+                    box.className = 'flex items-center gap-3';
+                    let avatar;
+                    if (user.avatar_url) {
+                        avatar = document.createElement('img');
+                        avatar.src = user.avatar_url;
+                        avatar.alt = user.nome || 'Avatar';
+                        avatar.className = 'w-8 h-8 rounded-full object-cover';
+                    } else {
+                        avatar = document.createElement('div');
+                        avatar.className =
+                            'w-8 h-8 rounded-full bg-nexo-600 flex items-center justify-center text-xs font-bold text-white';
+                        avatar.textContent = (user.nome || 'U').charAt(0).toUpperCase();
+                    }
+                    const label = document.createElement('span');
+                    label.className = 'font-medium';
+                    label.textContent = user.nome || '-';
+                    box.append(avatar, label);
+                    return box;
+                }
+            },
+            { key: 'email', label: 'E-mail', align: 'left' },
+            {
+                key: 'role',
+                label: 'Acesso',
+                render: (value) => {
+                    const badge = document.createElement('span');
+                    badge.className =
+                        'inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ' +
+                        (value?.trim().toUpperCase() === 'ADMIN'
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                            : value?.startsWith('CR')
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              : value?.startsWith('LC')
+                                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                : 'bg-gray-100 text-steel-600 dark:bg-steel-800 dark:text-steel-400');
+                    badge.textContent = value || '-';
+                    return badge;
+                }
+            },
+            {
+                key: '_actions',
+                label: 'Ações',
+                type: 'actions',
+                render: (_value, user) =>
+                    canManageUsers && canAssignRole(currentUser.role, user.role)
+                        ? HubDataGrid.components.Actions.group([
+                              HubDataGrid.components.Actions.button({
+                                  label: 'Editar Usuário',
+                                  icon: 'edit',
+                                  onClick: () => window.openEditModal(user.id)
+                              }),
+                              HubDataGrid.components.Actions.button({
+                                  label: 'Excluir Usuário',
+                                  icon: 'delete',
+                                  danger: true,
+                                  onClick: () => window.deleteUser(user.id)
+                              })
+                          ])
+                        : '<span class="text-xs text-steel-400 italic">Restrito</span>'
+            }
+        ]
+    });
 
-        tableBody.innerHTML = users.map(user => `
-            <tr class="hover:bg-gray-50/50 dark:hover:bg-steel-800/50 transition-colors group">
-                <td class="px-3 py-2 2xl:px-6 2xl:py-4 text-[12px] 2xl:text-sm">
-                    <div class="flex items-center gap-3">
-                        ${user.avatar_url 
-                            ? `<img src="${user.avatar_url}" alt="${user.nome}" class="w-8 h-8 rounded-full object-cover bg-steel-200 shadow-sm border border-gray-100 dark:border-steel-700">`
-                            : `<div class="w-8 h-8 rounded-full bg-nexo-600 flex items-center justify-center text-xs font-bold text-white shadow-sm">${user.nome.charAt(0).toUpperCase()}</div>`
-                        }
-                        <span class="font-medium text-steel-800 dark:text-gray-200">${user.nome}</span>
-                    </div>
-                </td>
-                <td class="px-3 py-2 2xl:px-6 2xl:py-4 text-steel-600 dark:text-steel-400 text-[12px] 2xl:text-sm">${user.email}</td>
-                <td class="px-3 py-2 2xl:px-6 2xl:py-4">
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] 2xl:text-xs font-medium ${
-                        user.role.trim().toUpperCase() === 'ADMIN' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800/50' :
-                        user.role.startsWith('CR') ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800/50' :
-                        user.role.startsWith('LC') ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/50' :
-                        'bg-gray-100 text-steel-600 dark:bg-steel-800 dark:text-steel-400 border-gray-200 dark:border-steel-700'
-                    } border shadow-sm">
-                        ${user.role}
-                    </span>
-                </td>
-                <td class="px-3 py-2 2xl:px-6 2xl:py-4 text-right">
-                    ${(canManageUsers && canAssignRole(currentUser.role, user.role)) ? `
-                    <div class="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick="window.openEditModal(${user.id})" class="p-1.5 text-steel-400 hover:text-nexo-600 hover:bg-nexo-50 dark:hover:bg-steel-700 rounded transition-colors" title="Editar Usuário">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                        </button>
-                        <button onclick="window.deleteUser(${user.id}, '${user.nome}')" class="p-1.5 text-steel-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" title="Excluir Usuário">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
-                    </div>
-                    ` : '<span class="text-xs text-steel-400 italic">Restrito</span>'}
-                </td>
-            </tr>
-        `).join('');
-    };
+    const renderTable = (users) => grid.setData(users, true);
 
     let loadedRoles = [];
     const loadRoles = async () => {
