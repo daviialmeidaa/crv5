@@ -2,7 +2,7 @@ const path = require('path');
 
 const publicDir = path.join(__dirname, '..', 'public');
 
-// Caminhos fisicos; as URLs publicas continuam definidas no servidor.
+// Public HTML URLs retained for compatibility; internal pages render app/views.
 const pages = {
     "agenda_licitacoes": "html/agenda_licitacoes/index.html",
     "403": "html/403/index.html",
@@ -22,7 +22,7 @@ const pages = {
     "index": "html/login/index.html"
 };
 
-// Compatibilidade com paginas antigas em cache e links ja distribuidos.
+// Compatibilidade com caminhos anteriores e links ja distribuidos.
 const legacyScripts = {
     "agenda_licitacoes.js": "js/pages/agenda_licitacoes/agenda_licitacoes.js",
     "custos_produtos.js": "js/pages/custos_produtos/custos_produtos.js",
@@ -34,13 +34,13 @@ const legacyScripts = {
     "auth_guard.js": "js/shared/auth_guard.js",
     "perfil.js": "js/pages/perfil/perfil.js",
     "login.js": "js/pages/login/login.js",
-    "theme.js": "js/shared/theme.js",
+    "theme.js": "js/components/navbar/theme-toggle.js",
     "cell_selector.js": "js/shared/cell_selector.js",
     "cirurgias.js": "js/pages/cirurgias/cirurgias.js",
     "dashboard.js": "js/pages/dashboard/dashboard.js",
     "cadastro_usuario.js": "js/pages/cadastro_usuario/cadastro_usuario.js",
     "usuarios.js": "js/pages/usuarios/usuarios.js",
-    "notifications.js": "js/shared/notifications.js",
+    "notifications.js": "js/components/navbar/notifications.js",
     "perfis.js": "js/pages/perfis/perfis.js",
     "reset_heroku.js": "js/pages/reset_heroku/reset_heroku.js",
     "layout.js": "js/shared/layout.js"

@@ -3,8 +3,14 @@
 ```text
 css/
   global.css                   Paleta, fontes e estados semânticos
-  shared/layout.css            Sidebar e estrutura compartilhada
+  shared/layout.css            Compatibilidade com o caminho anterior do layout
   components/
+    sidebar.css                Sidebar e estado recolhido
+    navbar.css                 Estrutura e alturas da navbar
+    navbar/profile-menu.css    Avatar e apresentação do perfil
+    navbar/theme-toggle.css    Botão de alternância de tema
+    navbar/notifications.css   Painel de notificações
+    footer.css                 Rodapé e variação de espaçamento
     auth-card.css              Superfícies e animações de login/primeiro acesso
     badges.css                 Badges gerais e indicadores financeiros
     buttons.css                Tratamento dos botões de entrada
@@ -13,7 +19,7 @@ css/
     datepicker.css             Apresentação do calendário
     forms.css                  Tratamentos compartilhados dos inputs
     modal.css                  Animação compartilhada dos modais
-    notifications.css          Painel de notificações
+    notifications.css          Compatibilidade com o caminho anterior
     scrollbar.css              Barras de rolagem compartilhadas
     tabs.css                   Apresentação das abas do módulo de custos
     timepicker.css             Apresentação do seletor de horário
@@ -21,9 +27,11 @@ css/
   pages/<pagina>/<pagina>.css   Ajustes exclusivos de cada página
 ```
 
-Cada HTML possui `data-page="nome_da_pagina"` no elemento `<html>` e carrega seu
+Cada página possui `data-page="nome_da_pagina"` no elemento `<html>` e carrega seu
 próprio CSS, mesmo quando ainda não precisa de sobrescritas específicas.
-Os arquivos de componentes são carregados pelas páginas que os utilizam.
+A base EJS carrega os componentes estruturais nas páginas internas. Os parciais
+`views/pages/<pagina>/head.ejs` carregam os componentes utilizados pelo conteúdo
+de cada página. Login, primeiro acesso e 403 continuam com HTML independente.
 
 ## Paleta e estados
 

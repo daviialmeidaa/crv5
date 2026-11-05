@@ -1,0 +1,36 @@
+<!-- Content Area -->
+        <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-steel-900 transition-colors duration-200 p-4 lg:p-6 md:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+                <!-- Header Actions -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-steel-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-steel-700 transition-colors">
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Gerenciamento de Usuários</h2>
+                        <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Lista completa de usuários registrados no sistema.</p>
+                    </div>
+                </div>
+
+                <!-- Tabela de Usuários -->
+                <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-sm border border-gray-100 dark:border-steel-700 overflow-hidden transition-colors">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse min-w-max">
+                            <thead>
+                                <tr class="bg-gray-50/50 dark:bg-steel-900/50 border-b border-gray-100 dark:border-steel-700">
+                                    <th class="px-3 py-2 2xl:px-6 2xl:py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Usuário</th>
+                                    <th class="px-3 py-2 2xl:px-6 2xl:py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">E-mail</th>
+                                    <th class="px-3 py-2 2xl:px-6 2xl:py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider">Acesso</th>
+                                    <th class="px-3 py-2 2xl:px-6 2xl:py-4 text-xs font-semibold text-steel-500 dark:text-steel-400 uppercase tracking-wider text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody" class="divide-y divide-gray-50 dark:divide-steel-700/50 text-sm text-steel-700 dark:text-gray-300">
+                                <!-- Preenchido via JS -->
+                                <tr>
+                                    <td colspan="4" class="px-6 py-8 text-center text-steel-500">Carregando usuários...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->

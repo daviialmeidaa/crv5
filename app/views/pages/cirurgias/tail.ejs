@@ -1,0 +1,859 @@
+<!-- ========================================== -->
+    <!-- Modal de Edição/Visualização de Cirurgia -->
+    <!-- ========================================== -->
+    <div id="cirurgiaModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeCirurgiaModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-[98vw] xl:max-w-[95vw] 2xl:max-w-[1600px] max-h-[95vh] flex flex-col relative z-10 mx-2 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="cirurgiaModalTitle"
+                    class="text-base font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Cirurgia: <span id="cirurgiaModalSubtitle"></span>
+                </h3>
+                <div class="flex items-center gap-2">
+                    <button id="btnGerarPedidoSupra" onclick="OPME.gerarPedidoSupra()"
+                        class="hidden px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Gerar Pedido Supra
+                    </button>
+                    <button id="btnDeleteCirurgia" onclick="OPME.deleteCirurgia()"
+                        class="hidden px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/40 rounded-lg transition-colors flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Excluir
+                    </button>
+                    <button onclick="OPME.closeCirurgiaModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Tabs (Cirurgia vs Observações) -->
+            <div class="px-4 pt-1 pb-0 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 shrink-0">
+                <nav class="flex gap-6" aria-label="Tabs">
+                    <button type="button" onclick="OPME.switchCirurgiaModalTab('dados')" id="tabBtnCirurgiaDados"
+                        class="px-1 py-2 text-xs font-medium border-b-2 transition-colors border-nexo-500 text-nexo-600 dark:text-nexo-400">
+                        Dados da Cirurgia
+                    </button>
+                    <button type="button" onclick="OPME.switchCirurgiaModalTab('obs')" id="tabBtnCirurgiaObs"
+                        class="px-1 py-2 text-xs font-medium border-b-2 transition-colors border-transparent text-steel-500 hover:text-steel-700 dark:text-steel-400 dark:hover:text-gray-300">
+                        Observações
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Body do Modal (Formulário) -->
+            <div class="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
+                <form id="cirurgiaForm" onsubmit="event.preventDefault(); OPME.saveCirurgia();">
+
+                    <!-- Aba: Dados da Cirurgia -->
+                    <div id="cirurgiaTabDados" class="block">
+
+                    <!-- Hidden: Contrato (usado internamente pelo saveCirurgia) -->
+                    <input type="hidden" id="fcContrato">
+
+                    <!-- Seção: Identificação da Cirurgia (2 colunas × 2 linhas) -->
+                    <div
+                        class="mb-4 bg-white dark:bg-steel-800 px-4 py-3 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4
+                            class="text-xs font-semibold text-steel-800 dark:text-gray-100 mb-3 flex items-center gap-2">
+                            <span class="w-1 h-3.5 bg-nexo-500 rounded-full"></span>
+                            Identificação da Cirurgia
+                        </h4>
+                        <div class="grid grid-cols-2 gap-x-6 gap-y-2">
+                            <!-- Coluna Esquerda -->
+                            <div class="grid grid-cols-2 gap-x-3 gap-y-2">
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Ação</label>
+                                    <select id="fcAcao"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all">
+                                        <option value="">Selecione...</option>
+                                        <option value="CIRURGIA">CIRURGIA</option>
+                                        <option value="RETORNO">RETORNO</option>
+                                        <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Local da Cirurgia</label>
+                                    <select id="fcLocal"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all">
+                                        <option value="">Selecione...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Cód. Cliente</label>
+                                    <input type="number" id="fcCodCliente" readonly tabindex="-1"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-md text-steel-800 dark:text-gray-200 outline-none transition-all pointer-events-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Data da Cirurgia</label>
+                                    <input type="date" id="fcData"
+                                        class="custom-datepicker w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all">
+                                </div>
+                            </div>
+                            <!-- Coluna Direita -->
+                            <div class="grid grid-cols-2 gap-x-3 gap-y-2">
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Nome do Paciente</label>
+                                    <input type="text" id="fcPaciente"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all uppercase">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Prontuário</label>
+                                    <input type="text" id="fcProntuario"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">Médico</label>
+                                    <input type="text" id="fcMedico"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all uppercase">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-medium text-steel-500 dark:text-steel-400 mb-0.5">CRM</label>
+                                    <input type="text" id="fcCRM"
+                                        class="w-full px-2 py-1.5 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-md text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all uppercase">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Produtos / Itens (Tabela) -->
+                    <div class="mb-2">
+                        <div class="flex items-center justify-between mb-2 px-1">
+                            <h4 class="text-xs font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                                <span class="w-1 h-3.5 bg-nexo-500 rounded-full"></span>
+                                Produtos / Itens
+                            </h4>
+                            <div class="flex items-center gap-2">
+                                <!-- Botão Colunas -->
+                                <div class="relative" id="colToggleWrapper">
+                                    <button type="button" onclick="OPME.toggleColumnMenu()" title="Colunas visíveis"
+                                        class="px-2 py-1 text-[11px] font-medium text-steel-500 bg-gray-50 hover:bg-gray-100 dark:text-steel-400 dark:bg-steel-700 dark:hover:bg-steel-600 rounded-md transition-colors flex items-center gap-1 border border-gray-200 dark:border-steel-600">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"/></svg>
+                                        Colunas
+                                    </button>
+                                </div>
+                                <button type="button" onclick="OPME.openBancoCodigosLookup(null, true)"
+                                    class="px-2.5 py-1 text-[11px] font-medium text-nexo-600 bg-nexo-50 hover:bg-nexo-100 dark:text-nexo-400 dark:bg-nexo-500/10 dark:hover:bg-nexo-500/20 rounded-md transition-colors flex items-center gap-1 border border-nexo-200 dark:border-nexo-500/20">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Adicionar Produto
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto custom-scrollbar">
+                                <table id="cirurgiaProductsTable" class="w-full text-xs">
+                                    <thead>
+                                        <tr class="bg-nexo-600 dark:bg-steel-900 text-white">
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap sticky left-0 bg-nexo-600 dark:bg-steel-900 z-10">
+                                                Cód. Bio
+                                            </th>
+                                            <th class="col-tipoCirurgia px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center">Tipo Cirurgia</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap min-w-[140px]">Produto</th>
+                                            <th class="col-descPersonalizada px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap min-w-[160px]">Desc. Personalizada</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Lote</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Qtde</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Vlr. Unit.</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Vlr. Total</th>
+                                            <th class="col-modalidade px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Modalidade</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Empenho</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Autorização</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Pedido</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap cursor-pointer hover:text-nexo-100 transition-colors relative" onclick="OPME.toggleHeaderSelect('retConsig', this)">
+                                                <span class="inline-flex items-center gap-0.5">Ret. Consig. <svg class="w-2.5 h-2.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></span>
+                                            </th>
+                                            <th class="col-expedicao px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Expedição</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap cursor-pointer hover:text-nexo-100 transition-colors relative" onclick="OPME.toggleHeaderSelect('autOpme', this)">
+                                                <span class="inline-flex items-center gap-0.5">Aut. OPME <svg class="w-2.5 h-2.5 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg></span>
+                                            </th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap">Nota Fiscal</th>
+                                            <th class="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-center whitespace-nowrap w-8"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cirurgiaProductsTbody">
+                                        <!-- Linhas inseridas dinamicamente via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    </div> <!-- Fim Aba: Dados da Cirurgia -->
+
+                    <!-- Aba: Observações (usa min-height para manter altura consistente) -->
+                    <div id="cirurgiaTabObs" class="hidden">
+                        <div class="bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm cirurgias-surgery-tab-panel" >
+                            <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                                <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                                Observações Gerais
+                            </h4>
+                            <textarea id="fcCirurgiaObservacoes"
+                                class="w-full px-3 py-3 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all resize-none overflow-hidden"
+                                placeholder="Digite as observações desta cirurgia..."></textarea>
+                        </div>
+                    </div> <!-- Fim Aba: Observações -->
+
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div
+                class="px-4 py-3 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-steel-600 dark:text-steel-400">Total da Cirurgia:</span>
+                    <span id="fcTotalGlobal"
+                        class="text-base font-bold text-emerald-600 dark:text-emerald-400 tracking-tight">R$ 0,00</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="OPME.closeCirurgiaModal()"
+                        class="px-4 py-1.5 text-xs font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnSaveCirurgia" onclick="OPME.saveCirurgia()"
+                        class="hidden px-4 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg shadow-sm transition-colors">
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ========================================== -->
+    <!-- Modal de Edição/Inserção de Contrato -->
+    <!-- ========================================== -->
+    <div id="contratoModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeContratoModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="contratoModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Novo Contrato</span>
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="OPME.closeContratoModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body do Modal (Formulário) -->
+            <div class="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
+                <form id="contratoForm" onsubmit="event.preventDefault(); OPME.saveContrato();">
+
+                    <!-- Seção: Informações Básicas -->
+                    <div class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Dados do Contrato
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Empresa *</label>
+                                <select id="fcContratoEmpresa" required
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    <option value="" disabled selected>Selecione a Empresa</option>
+                                    <option value="Nexomed">Nexomed</option>
+                                    <option value="Bml">Bml</option>
+                                </select>
+                            </div>
+
+                            <!-- Toggle Descrição Detalhada -->
+                            <div class="md:col-span-1 flex items-center gap-3 bg-gray-50 dark:bg-steel-900/50 p-3 rounded-lg border border-gray-100 dark:border-steel-700">
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="fcDescricaoDetalhada" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-steel-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-nexo-500"></div>
+                                </label>
+                                <div>
+                                    <span class="block text-sm font-medium text-steel-700 dark:text-gray-200">Contém Descrição Detalhada?</span>
+                                    <span class="block text-xs text-steel-500 dark:text-steel-400">Puxar do Banco de Códigos.</span>
+                                </div>
+                            </div>
+
+                            <!-- Toggle Casas Decimais -->
+                            <div id="fcCasasDecimaisBlock" class="md:col-span-1 flex flex-col xl:flex-row xl:items-center justify-between gap-3 bg-gray-50 dark:bg-steel-900/50 p-3 rounded-lg border border-gray-100 dark:border-steel-700">
+                                <div class="flex items-center gap-3">
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" id="fcAplicarDecimais" class="sr-only peer" onchange="document.getElementById('fcCasasDecimaisContainer').classList.toggle('hidden', !this.checked)">
+                                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-steel-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-nexo-500 peer-disabled:opacity-50 peer-disabled:cursor-not-allowed"></div>
+                                    </label>
+                                    <div>
+                                        <span class="block text-sm font-medium text-steel-700 dark:text-gray-200">Aplicar Casa Decimais</span>
+                                        <span class="block text-xs text-steel-500 dark:text-steel-400">Ativar no faturamento.</span>
+                                    </div>
+                                </div>
+                                <div id="fcCasasDecimaisContainer" class="hidden flex items-center justify-end gap-2">
+                                    <label class="text-xs font-medium text-steel-600 dark:text-steel-400 whitespace-nowrap">Qtd de Casas:</label>
+                                    <input type="number" id="fcCasas" min="2" max="5" value="2" onblur="if(this.value < 2) this.value = 2; if(this.value > 5) this.value = 5;" class="w-16 px-2 py-1 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 transition-all text-center disabled:bg-gray-100 disabled:dark:bg-steel-800 disabled:text-steel-400 disabled:cursor-not-allowed">
+                                </div>
+                            </div>
+
+
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato *</label>
+                                <input type="text" id="fcContratoId" required
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Cliente</label>
+                                <input type="number" id="fcContratoCodCliente"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cliente *</label>
+                                <input type="text" id="fcContratoCliente" required
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Detalhes da Licitação -->
+                    <div class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Detalhes da Licitação
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Material</label>
+                                <input type="text" id="fcContratoMaterial"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">UF</label>
+                                <select id="fcContratoUf"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all custom-scrollbar">
+                                    <option value="">Selecione...</option>
+                                    <option value="AC">AC</option><option value="AL">AL</option>
+                                    <option value="AM">AM</option><option value="AP">AP</option>
+                                    <option value="BA">BA</option><option value="CE">CE</option>
+                                    <option value="DF">DF</option><option value="ES">ES</option>
+                                    <option value="GO">GO</option><option value="MA">MA</option>
+                                    <option value="MG">MG</option><option value="MS">MS</option>
+                                    <option value="MT">MT</option><option value="PA">PA</option>
+                                    <option value="PB">PB</option><option value="PE">PE</option>
+                                    <option value="PI">PI</option><option value="PR">PR</option>
+                                    <option value="RJ">RJ</option><option value="RN">RN</option>
+                                    <option value="RO">RO</option><option value="RR">RR</option>
+                                    <option value="RS">RS</option><option value="SC">SC</option>
+                                    <option value="SE">SE</option><option value="SP">SP</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Pregão</label>
+                                <input type="text" id="fcContratoPregao"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Total da Ata</label>
+                                <input type="text" id="fcContratoTotalAta" oninput="maskCurrency(this)"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Vigência -->
+                    <div class="mb-2 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Vigência
+                        </h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Início</label>
+                                <input type="date" id="fcContratoInicio"
+                                    class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Término</label>
+                                <input type="date" id="fcContratoTermino"
+                                    class="custom-datepicker w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div
+                class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex items-center justify-end shrink-0 gap-3">
+                <button type="button" onclick="OPME.closeContratoModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
+                    Cancelar
+                </button>
+                <button type="button" id="btnSaveContrato" onclick="OPME.saveContrato()"
+                    class="px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg shadow-sm transition-colors">
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Detalhes (Genérico) -->
+    <!-- ========================================== -->
+    <div id="detailModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeDetailModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-200 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl">
+                <h3 id="detailModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Detalhes
+                </h3>
+                <button onclick="OPME.closeDetailModal()"
+                    class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Body do Modal -->
+            <div id="detailModalBody" class="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar">
+                <!-- Conteúdo injetado via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Confirmação de Acesso ao Contrato -->
+    <!-- ========================================== -->
+    <div id="accessContractModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="OPME.closeAccessContractModal()"></div>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-4 lg:p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-nexo-50 dark:bg-nexo-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Acessar Contrato</h3>
+            <p id="accessContractModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Tem certeza que
+                deseja acessar este contrato?</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="OPME.closeAccessContractModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Não</button>
+                <button onclick="OPME.confirmAccessContract()" id="btnConfirmAccess"
+                    class="px-5 py-2 text-sm font-medium text-white bg-nexo-500 hover:bg-nexo-600 rounded-lg transition-colors shadow-sm">Sim</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Confirmação de Alteração de Status do Contrato -->
+    <!-- ========================================== -->
+    <div id="toggleContractModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="OPME.closeToggleContractModal()"></div>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-4 lg:p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Alterar Status</h3>
+            <p id="toggleContractModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Deseja realmente
+                alterar o status deste contrato?</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="OPME.closeToggleContractModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="OPME.confirmToggleContract()" id="btnConfirmToggle"
+                    class="px-5 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors shadow-sm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Confirmação de Exclusão -->
+    <!-- ========================================== -->
+    <div id="deleteModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="OPME.closeDeleteModal()"></div>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-md relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-4 lg:p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Confirmar Exclusão</h3>
+            <p id="deleteModalText" class="text-sm text-steel-500 dark:text-steel-400 mb-6">Tem certeza que deseja
+                excluir esta cirurgia? Esta ação não pode ser desfeita.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="OPME.closeDeleteModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-700 hover:bg-gray-50 dark:hover:bg-steel-600 border border-gray-200 dark:border-steel-600 rounded-lg transition-colors">Cancelar</button>
+                <button onclick="OPME.confirmDeleteCirurgia()" id="btnConfirmDelete"
+                    class="px-5 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Unidade (OPME) -->
+    <!-- ========================================== -->
+    <div id="modalUnidade" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeUnidadeModal()"></div>
+
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="unidadeModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <span>Nova Unidade</span>
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="OPME.closeUnidadeModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body do Modal (Formulário) -->
+            <div class="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
+                <form id="unidadeForm" onsubmit="event.preventDefault(); OPME.saveUnidade();">
+
+                    <!-- Seção: Informações da Unidade -->
+                    <div class="bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Dados da Unidade
+                        </h4>
+
+                        <input type="hidden" id="fcUnidadeId">
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato *</label>
+                                <input type="text" id="fcUnidadeContrato" required disabled
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-700/50 rounded-lg text-steel-500 dark:text-gray-400 cursor-not-allowed">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Cliente</label>
+                                <input type="number" id="fcUnidadeCodCliente"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Hospital</label>
+                                <input type="text" id="fcUnidadeHospital"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Sigla</label>
+                                <input type="text" id="fcUnidadeSigla"
+                                    class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all uppercase">
+                            </div>
+                            <div class="md:col-span-2 flex items-center justify-between bg-gray-50 dark:bg-steel-700/50 p-3 rounded-lg border border-gray-200 dark:border-steel-600">
+                                <div>
+                                    <label class="block text-sm font-medium text-steel-800 dark:text-gray-200">IR?</label>
+                                    <span class="text-xs text-steel-500 dark:text-steel-400">Marque se a unidade exige retenção de IR</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="fcUnidadeIR" class="sr-only peer" onchange="OPME.toggleIRObservacoes()">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-nexo-300 dark:peer-focus:ring-nexo-800 rounded-full peer dark:bg-steel-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-nexo-500"></div>
+                                </label>
+                            </div>
+                            <div class="md:col-span-2 hidden" id="unidadeObsContainer">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Alíquota (%)</label>
+                                        <input type="text" id="fcUnidadeAliquota" placeholder="Ex: 1,2"
+                                            class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all">
+                                    </div>
+                                </div>
+                                <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Observações</label>
+                                <textarea id="fcUnidadeObservacoes" rows="3"
+                                    class="w-full px-3 py-2 text-xs border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-steel-800 dark:text-gray-200 outline-none focus:border-nexo-500 input-glow transition-all custom-scrollbar resize-none"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div
+                class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex justify-end gap-3 shrink-0">
+                <button type="button" onclick="OPME.closeUnidadeModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
+                    Cancelar
+                </button>
+                <button type="button" onclick="OPME.saveUnidade()"
+                    class="px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Modal de Erro do Banco de Códigos -->
+    <!-- ========================================== -->
+    <div id="errorModal" class="hidden fixed inset-0 z-[120] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm"
+            onclick="document.getElementById('errorModal').classList.add('hidden')"></div>
+        <div
+            class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-sm relative z-10 mx-4 slide-in border border-gray-100 dark:border-steel-700 p-4 lg:p-6 text-center">
+            <div
+                class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                    stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-steel-800 dark:text-gray-100 mb-2">Código não encontrado</h3>
+            <p class="text-sm text-steel-500 dark:text-steel-400 mb-6">O código informado não está cadastrado no Banco
+                de Códigos do contrato.</p>
+            <div class="flex justify-center">
+                <button onclick="document.getElementById('errorModal').classList.add('hidden')"
+                    class="px-6 py-2 text-sm font-medium text-white bg-nexo-500 hover:bg-nexo-600 rounded-lg transition-colors shadow-sm">Entendi</button>
+            </div>
+        </div>
+    </div>
+    <!-- ========================================== -->
+    <!-- Modal de Saldo Ata (Inserir/Editar) -->
+    <!-- ========================================== -->
+    <div id="modalSaldoAta" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeSaldoAtaModal()"></div>
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="saldoAtaModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Novo Item de Ata
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="OPME.closeSaldoAtaModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body do Modal -->
+            <div class="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
+                <form id="saldoAtaForm" onsubmit="event.preventDefault(); OPME.saveSaldoAta();">
+                    <!-- Info Contrato -->
+                    <div
+                        class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Dados do Contrato
+                        </h4>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato *</label>
+                            <input type="text" id="fcSaldoAtaContrato" disabled tabindex="-1"
+                                class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none cursor-not-allowed">
+                        </div>
+                    </div>
+
+                    <!-- Seção de Itens da Ata -->
+                    <div class="mb-2">
+                        <div class="flex items-center justify-between mb-4 px-1">
+                            <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                                <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                                Itens de Ata
+                            </h4>
+                            <button type="button" id="btnAdicionarSaldoAtaBlock" onclick="OPME.addSaldoAtaProduct()"
+                                class="px-3 py-1.5 text-xs font-medium text-nexo-600 bg-nexo-50 hover:bg-nexo-100 dark:text-nexo-400 dark:bg-nexo-500/10 dark:hover:bg-nexo-500/20 rounded-lg transition-colors flex items-center gap-1.5 border border-nexo-200 dark:border-nexo-500/20">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Adicionar Item
+                            </button>
+                        </div>
+
+                        <!-- Container para Blocos Colapsáveis -->
+                        <div id="saldoAtaProductsContainer" class="space-y-3">
+                            <!-- Os blocos serão gerados via JS -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div
+                class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onclick="OPME.closeSaldoAtaModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
+                    Cancelar
+                </button>
+                <button type="button" onclick="OPME.saveSaldoAta()"
+                    class="px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Saldo Ata Hospital (Inserir/Editar) -->
+    <!-- ========================================== -->
+    <div id="modalSaldoAtaHospital" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
+        <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity"
+            onclick="OPME.closeSaldoAtaHospitalModal()"></div>
+        <div
+            class="modal-content bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col relative z-10 mx-4 border border-gray-100 dark:border-steel-700 transform transition-all duration-300 scale-95 opacity-0">
+            <!-- Header do Modal -->
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-t-2xl shrink-0">
+                <h3 id="saldoAtaHospitalModalTitle"
+                    class="text-lg font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                    <svg class="h-5 w-5 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                        stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Novo Item Ata Hospital
+                </h3>
+                <div class="flex items-center gap-3">
+                    <button onclick="OPME.closeSaldoAtaHospitalModal()"
+                        class="text-steel-400 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 bg-white dark:bg-steel-700 hover:bg-red-50 dark:hover:bg-steel-600 rounded-lg border border-gray-200 dark:border-steel-600 shadow-sm">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Body do Modal -->
+            <div class="flex-1 overflow-y-auto p-4 lg:p-6 custom-scrollbar bg-gray-50/30 dark:bg-steel-900/20">
+                <form id="saldoAtaHospitalForm" onsubmit="event.preventDefault(); OPME.saveSaldoAtaHospital();">
+                    <!-- Info Contrato -->
+                    <div
+                        class="mb-6 bg-white dark:bg-steel-800 p-5 rounded-xl border border-gray-100 dark:border-steel-700 shadow-sm">
+                        <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+                            <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                            Dados do Contrato
+                        </h4>
+                        <div>
+                            <label class="block text-xs font-medium text-steel-600 dark:text-steel-400 mb-1">Cód. Contrato *</label>
+                            <input type="text" id="fcSaldoAtaHospitalContrato" disabled tabindex="-1"
+                                class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-steel-600 bg-gray-100 dark:bg-steel-800 rounded-lg text-steel-800 dark:text-gray-200 outline-none cursor-not-allowed">
+                        </div>
+                    </div>
+
+                    <!-- Seção de Itens da Ata -->
+                    <div class="mb-2">
+                        <div class="flex items-center justify-between mb-4 px-1">
+                            <h4 class="text-sm font-semibold text-steel-800 dark:text-gray-100 flex items-center gap-2">
+                                <span class="w-1.5 h-4 bg-nexo-500 rounded-full"></span>
+                                Itens de Ata
+                            </h4>
+                            <button type="button" id="btnAdicionarSaldoAtaHospitalBlock" onclick="OPME.addSaldoAtaHospitalProduct()"
+                                class="px-3 py-1.5 text-xs font-medium text-nexo-600 bg-nexo-50 hover:bg-nexo-100 dark:text-nexo-400 dark:bg-nexo-500/10 dark:hover:bg-nexo-500/20 rounded-lg transition-colors flex items-center gap-1.5 border border-nexo-200 dark:border-nexo-500/20">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Adicionar Item
+                            </button>
+                        </div>
+
+                        <!-- Container para Blocos Colapsáveis -->
+                        <div id="saldoAtaHospitalProductsContainer" class="space-y-3">
+                            <!-- Os blocos serão gerados via JS -->
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Footer do Modal -->
+            <div
+                class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-gray-50/50 dark:bg-steel-900/50 rounded-b-2xl flex items-center justify-end gap-3 shrink-0">
+                <button type="button" onclick="OPME.closeSaldoAtaHospitalModal()"
+                    class="px-5 py-2 text-sm font-medium text-steel-600 dark:text-gray-300 bg-white dark:bg-steel-600 border border-gray-200 dark:border-steel-500 rounded-lg hover:bg-gray-50 dark:hover:bg-steel-500 transition-colors shadow-sm">
+                    Cancelar
+                </button>
+                <button type="button" onclick="OPME.saveSaldoAtaHospital()"
+                    class="px-5 py-2 text-sm font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-colors shadow-sm flex items-center gap-2">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.remove('loading-auth');
+        });
+    </script>
+    
+    <script src="/js/components/datepicker.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="/js/pages/cirurgias/cirurgias.js"></script>
+    <div id="toast" class="toast"></div>

@@ -1,42 +1,4 @@
-/* Estrutura compartilhada do portal. */
-
-aside {
-    transition: width 0.3s ease;
-}
-
-body.sidebar-collapsed aside {
-    width: 5rem !important;
-}
-
-body.sidebar-collapsed .sidebar-text {
-    display: none;
-}
-
-body.sidebar-collapsed .logo-full {
-    display: none;
-}
-
-body.sidebar-collapsed .logo-mini {
-    display: block;
-}
-
-body.sidebar-collapsed aside h4 {
-    text-align: center;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn {
-    justify-content: center;
-    padding-left: 0;
-    padding-right: 0;
-}
-
-.logo-mini {
-    display: none;
-}
-
-:root[data-page] .sidebar-chevron-expanded {
-    transform: rotate(90deg);
-}
+/* Compatibility with previously distributed pages. */
+@import url("../components/sidebar.css");
+@import url("../components/navbar.css");
+@import url("../components/footer.css");

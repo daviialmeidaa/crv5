@@ -1,7 +1,2 @@
-/* Escopo proprio para preservar a scrollbar do painel de notificacoes. */
-#notifDropdown .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
-#notifDropdown .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); border-radius: 8px; }
-.dark #notifDropdown .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-#notifDropdown .custom-scrollbar::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
-.dark #notifDropdown .custom-scrollbar::-webkit-scrollbar-thumb { background-color: var(--scrollbar-thumb-dark); }
-#notifDropdown .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: var(--scrollbar-thumb-hover); }
+/* Compatibility with previously distributed pages. */
+@import url("./navbar/notifications.css");

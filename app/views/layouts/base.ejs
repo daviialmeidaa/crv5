@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html data-page="<%= page.name %>" lang="pt-BR" class="h-full">
+<head>
+    <script src="/js/shared/auth_guard.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= page.title %></title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/shared/tailwind.config.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/components/sidebar.css">
+    <link rel="stylesheet" href="/css/components/navbar.css">
+    <link rel="stylesheet" href="/css/components/navbar/profile-menu.css">
+    <link rel="stylesheet" href="/css/components/navbar/theme-toggle.css">
+    <link rel="stylesheet" href="/css/components/navbar/notifications.css">
+    <link rel="stylesheet" href="/css/components/footer.css">
+    <%- include('../pages/' + page.name + '/head') %>
+    <script src="/js/components/navbar/theme-toggle.js"></script>
+</head>
+<body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
+    <%- include('../components/sidebar') %>
+    <main class="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <%- include('../components/navbar') %>
+        <%- include('../pages/' + page.name + '/index') %>
+        <%- include('../components/footer') %>
+    </main>
+    <script src="/js/shared/session.js"></script>
+    <script src="/js/components/modal.js"></script>
+    <script src="/js/components/sidebar.js"></script>
+    <script src="/js/components/navbar/profile-menu.js"></script>
+    <script src="/js/components/navbar/notifications.js"></script>
+    <script src="/js/components/navbar.js"></script>
+    <script src="/js/components/footer.js"></script>
+    <script src="/js/shared/layout.js"></script>
+    <%- include('../pages/' + page.name + '/tail') %>
+</body>
+</html>

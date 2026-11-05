@@ -4,9 +4,12 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const compression = require('compression');
-const { publicDir, pages, legacyScripts, pageFile } = require('./config/publicPaths');
+const { publicDir, pages, legacyScripts } = require('./config/publicPaths');
+
+const { configureViews, sendPage } = require('./services/pageRenderer');
 
 const app = express();
+configureViews(app);
 const PORT = process.env.PORT || 3001;
 
 // Middleware
@@ -22,13 +25,21 @@ app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
+// Preserve the previous physical HTML URLs after moving internal pages to views.
+for (const [name, relativePath] of Object.entries(pages)) {
+    app.get('/' + relativePath, (req, res) => sendPage(res, name));
+}
+// Preserve nested script URLs used by previously distributed pages.
+app.get('/js/shared/theme.js', (req, res) => res.sendFile(path.join(publicDir, legacyScripts['theme.js'])));
+app.get('/js/shared/notifications.js', (req, res) => res.sendFile(path.join(publicDir, legacyScripts['notifications.js'])));
+
 // Arquivos estáticos do frontend (HTML, CSS, JS, Images)
 app.use(express.static(publicDir));
 app.use('/assets', express.static(path.join(publicDir, 'assets')));
 
 // Preserva os caminhos de arquivos acessiveis antes da reorganizacao.
-for (const [name, relativePath] of Object.entries(pages)) {
-    app.get('/' + name + '.html', (req, res) => res.sendFile(path.join(publicDir, relativePath)));
+for (const name of Object.keys(pages)) {
+    app.get('/' + name + '.html', (req, res) => sendPage(res, name));
 }
 for (const [name, relativePath] of Object.entries(legacyScripts)) {
     app.get('/js/' + name, (req, res) => res.sendFile(path.join(publicDir, relativePath)));
@@ -57,80 +68,80 @@ app.use('/api/financeiro', require('./routes/financeiro'));
 
 // Rota padrão cai no index (Login)
 app.get('/', (req, res) => {
-    res.sendFile(pageFile('index'));
+    sendPage(res, 'index');
 });
 
 // Nova rota para Contas a Receber
 app.get('/contas_a_receber', (req, res) => {
-    res.sendFile(pageFile('contas_a_receber'));
+    sendPage(res, 'contas_a_receber');
 });
 
 // Nova rota para Perfis
 app.get('/perfis', (req, res) => {
-    res.sendFile(pageFile('perfis'));
+    sendPage(res, 'perfis');
 });
 
 // Nova rota para Cobrança (Clientes)
 app.get('/clientes', (req, res) => {
-    res.sendFile(pageFile('clientes'));
+    sendPage(res, 'clientes');
 });
 
 // Nova rota para Custos Produtos
 app.get('/custos_produtos', (req, res) => {
-    res.sendFile(pageFile('custos_produtos'));
+    sendPage(res, 'custos_produtos');
 });
 
 // Detalhe do Cliente (rota parametrizada)
 app.get('/clientes/:id', (req, res) => {
-    res.sendFile(pageFile('cliente_detalhe'));
+    sendPage(res, 'cliente_detalhe');
 });
 
 // Nova rota para Itens Arrematados
 app.get('/itens_arrematados', (req, res) => {
-    res.sendFile(pageFile('itens_arrematados'));
+    sendPage(res, 'itens_arrematados');
 });
 
 // Nova rota para Agenda de Licitações
 app.get('/agenda_licitacoes', (req, res) => {
-    res.sendFile(pageFile('agenda_licitacoes'));
+    sendPage(res, 'agenda_licitacoes');
 });
 
 // Nova rota para Dashboard
 app.get('/cirurgias', (req, res) => {
-    res.sendFile(pageFile('cirurgias'));
+    sendPage(res, 'cirurgias');
 });
 
 app.get('/dashboard', (req, res) => {
-    res.sendFile(pageFile('dashboard'));
+    sendPage(res, 'dashboard');
 });
 
 // Nova rota para Usuários
 app.get('/usuarios', (req, res) => {
-    res.sendFile(pageFile('usuarios'));
+    sendPage(res, 'usuarios');
 });
 
 // Nova rota para Cadastro de Usuário
 app.get('/cadastro_usuario', (req, res) => {
-    res.sendFile(pageFile('cadastro_usuario'));
+    sendPage(res, 'cadastro_usuario');
 });
 
 // Nova rota para Primeiro Acesso
 app.get('/primeiro_acesso', (req, res) => {
-    res.sendFile(pageFile('primeiro_acesso'));
+    sendPage(res, 'primeiro_acesso');
 });
 
 // Nova rota para Perfil
 app.get('/perfil', (req, res) => {
-    res.sendFile(pageFile('perfil'));
+    sendPage(res, 'perfil');
 });
 
 // Nova rota para Reset do Heroku
 app.get('/reset-heroku', (req, res) => {
-    res.sendFile(pageFile('reset_heroku'));
+    sendPage(res, 'reset_heroku');
 });
 
 app.get('/403', (req, res) => {
-    res.sendFile(pageFile('403'));
+    sendPage(res, '403');
 });
 
 const cron = require('node-cron');

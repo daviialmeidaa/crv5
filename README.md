@@ -11,7 +11,7 @@ O sistema foi desenhado para ser uma aplicação leve, responsiva e com uma inte
 - **Backend:** Node.js com Express.js e FastAPI/Python para a API de integração.
 - **Bancos de Dados:** PostgreSQL (Banco Local) e SQL Server / mssql (Supra ERP).
 - **Autenticação:** JWT (JSON Web Tokens) e senhas encriptadas com `bcryptjs`.
-- **Frontend:** Vanilla HTML, CSS e JavaScript puros (Sem frameworks pesados como React ou Angular).
+- **Frontend:** HTML renderizado pelo Express com EJS, CSS e JavaScript no navegador.
 - **Estilização:** Tailwind CSS (via CDN) com configurações e paletas injetadas customizadas.
 - **Cache & Performance:** Redis Cloud (Camada em memória) + Compressão de Rede (Gzip).
 
@@ -74,13 +74,18 @@ O ecossistema não atua isolado. Ele lê ativamente dados do legado e os enrique
 app/                           Hub Node.js e frontend
   server.js                    Entrada do servidor Express
   config/publicPaths.js        Caminhos das páginas e compatibilidade de URLs
+  config/pageViews.js          Títulos, navegação ativa e variações das páginas internas
   routes/                      Endpoints atuais do Hub
   services/                    Serviços, integrações, cron e comunicação com a FastAPI
   middleware/                  Autenticação e permissões
   db/                          Conexões e arquivos de banco
   scripts/                     Entradas dos agendamentos do Hub
+  views/
+    layouts/base.ejs            Estrutura comum das páginas internas
+    components/                Sidebar, navbar, footer e subcomponentes da navbar
+    pages/<pagina>/            Conteúdo, recursos e diálogos de cada página interna
   public/
-    html/<pagina>/index.html   Uma pasta para cada página
+    html/<pagina>/index.html   Login, primeiro acesso e 403, independentes da base
     js/pages/<pagina>/        Scripts específicos de cada página
     js/shared/                Scripts compartilhados entre páginas
     js/components/            Componentes reutilizáveis
@@ -108,11 +113,16 @@ package.json                   Comandos e dependências Node do projeto
 Os estilos ficam em arquivos CSS separados por página e componente. A paleta
 compartilhada alimenta também a configuração do Tailwind. Veja as convenções em
 [app/public/css/README.md](app/public/css/README.md).
+As páginas internas usam a base compartilhada, composta no servidor antes de
+enviar o HTML ao navegador. Sidebar, navbar e footer têm seus próprios templates,
+CSS e JS. Login, primeiro acesso e 403 continuam independentes; telas futuras de
+recuperação/troca de senha também devem permanecer fora dessa base. Veja como
+adicionar páginas em [app/views/README.md](app/views/README.md).
 O `.env`, `node_modules/` e `.venv/` permanecem na raiz. Os comandos npm são
 executados na raiz, inclusive os comandos usados pelo Heroku Scheduler.
 As URLs públicas de páginas, APIs, imagens, áudios e uploads foram mantidas.
 Os caminhos antigos `/js/<arquivo>.js` e `/<pagina>.html` também continuam
-disponíveis para páginas em cache e links existentes; as páginas atualizadas
+disponíveis para links existentes; as páginas atualizadas
 referenciam os novos caminhos dos scripts.
 
 ## Executar o Hub e a FastAPI
