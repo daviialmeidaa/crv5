@@ -40,20 +40,20 @@ sleep 10
 
 echo ""
 echo "[4/4] Criando tabelas no banco de dados (Seed)..."
-if [ -f db/seed.js ]; then
-    docker exec -it nexomed_app node db/seed.js
+if [ -f app/db/seed.js ]; then
+    docker exec -it nexomed_app node app/db/seed.js
     echo "✅ Tabelas criadas e usuário Admin inserido!"
 else
-    echo "❌ Arquivo db/seed.js não encontrado. Não foi possível criar as tabelas."
+    echo "❌ Arquivo app/db/seed.js não encontrado. Não foi possível criar as tabelas."
 fi
 
 echo ""
 echo "📊 Alimentando o banco com as planilhas Excel base..."
 echo "-> Importando contratos (contrato_insert.xlsx)..."
-docker exec -it nexomed_app node scripts/import_contratos.js
+docker exec -it nexomed_app node app/scripts/import_contratos.js
 
 echo "-> Importando títulos (contas a receber base inicial.xlsx)..."
-docker exec -it nexomed_app node scripts/seed_from_excel.js
+docker exec -it nexomed_app node app/scripts/seed_from_excel.js
 echo "✅ Planilhas importadas com sucesso!"
 
 echo ""

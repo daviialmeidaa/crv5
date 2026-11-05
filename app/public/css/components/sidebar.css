@@ -1,0 +1,42 @@
+/* Estrutura compartilhada do portal. */
+
+.app-sidebar {
+    transition: width 0.3s ease;
+}
+
+body.sidebar-collapsed .app-sidebar {
+    width: 5rem !important;
+}
+
+body.sidebar-collapsed .sidebar-text {
+    display: none;
+}
+
+body.sidebar-collapsed .logo-full {
+    display: none;
+}
+
+body.sidebar-collapsed .logo-mini {
+    display: block;
+}
+
+body.sidebar-collapsed .app-sidebar h4 {
+    text-align: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+body.sidebar-collapsed .app-sidebar nav a,
+        body.sidebar-collapsed .app-sidebar nav .sidebar-group-btn {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.logo-mini {
+    display: none;
+}
+
+:root[data-page] .sidebar-chevron-expanded {
+    transform: rotate(90deg);
+}

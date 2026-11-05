@@ -2,7 +2,7 @@ require('dotenv').config();
 const { spawn } = require('child_process');
 const { existsSync } = require('fs');
 const path = require('path');
-const { resolveFastapiRuntime } = require('../services/fastapiRuntime');
+const { resolveFastapiRuntime } = require('../app/services/fastapiRuntime');
 const root = path.resolve(__dirname, '..');
 const venvPython = path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
 const python = process.env.FASTAPI_PYTHON || (existsSync(venvPython) ? venvPython : 'python3');
@@ -40,14 +40,14 @@ async function main() {
     process.env.FASTAPI_URL = runtime.url;
     if (runtime.fallback) console.log('[Hub] Porta 8000 ocupada; selecionada outra porta interna livre.');
     console.log('[Hub] FastAPI interna: ' + runtime.url);
-    const api = startChild(python, ['-m', 'uvicorn', 'hub_api.main:app', '--host', '127.0.0.1', '--port', String(runtime.port), '--workers', '1']);
+    const api = startChild(python, ['-m', 'uvicorn', 'api.main:app', '--host', '127.0.0.1', '--port', String(runtime.port), '--workers', '1']);
     const deadline = Date.now() + 30000;
     while (!stopping && Date.now() < deadline) {
         try {
             const response = await fetch(new URL('/api/health', runtime.url), { signal: AbortSignal.timeout(1000) });
             const health = response.ok ? await response.json() : null;
             if (health?.service === 'nexomed-api' && health.pid === api.pid && api.exitCode === null) {
-                startChild(process.execPath, ['server.js']);
+                startChild(process.execPath, ['app/server.js']);
                 return;
             }
         } catch (_) { /* Aguarda a inicialização da API. */ }

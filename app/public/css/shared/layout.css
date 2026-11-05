@@ -1,0 +1,4 @@
+/* Compatibility with previously distributed pages. */
+@import url("../components/sidebar.css");
+@import url("../components/navbar.css");
+@import url("../components/footer.css");

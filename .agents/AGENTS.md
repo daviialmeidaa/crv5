@@ -1,400 +1,301 @@
-# Contexto do Projeto: Contas a Receber v5 (Nexomed)
+# Instruções para agentes de IA — Hub Nexomed
 
-Este arquivo define as regras e o contexto arquitetural do projeto. **Todos os agentes de IA devem ler e seguir estas diretrizes antes de realizar alterações no código.**
+Leia este guia antes de alterar o projeto. Ele se aplica ao repositório inteiro.
+Siga também as instruções específicas da área alterada e as orientações atuais
+do usuário. O código em uso e seus contratos devem ser examinados antes de
+propor qualquer mudança; este documento não substitui essa leitura.
 
-## Stack Tecnológica
-- **Backend:** Node.js com Express.js.
-- **Bancos de Dados:** PostgreSQL (`pg`) e SQL Server (`mssql`).
-- **Autenticação:** JWT (`jsonwebtoken`) e senhas encriptadas com `bcryptjs`.
-- **Frontend:** Vanilla HTML, CSS, JavaScript (sem frameworks como React, Vue ou Angular).
-- **Estilização:** Tailwind CSS (carregado via CDN) com configurações customizadas injetadas no próprio HTML.
+## 1. Conduta e limites de autorização
 
-## Arquitetura de Performance e Cache (Heroku/Redis)
-O sistema é projetado para operar com extrema eficiência e baixíssimo consumo de rede e banco de dados, utilizando as seguintes premissas obrigatórias:
-1. **Compressão de Rede (Gzip):** O `server.js` obrigatoriamente roda o middleware `compression()`. Nenhuma resposta de API REST deve trafegar arrays JSON brutos na rede sem essa camada de compressão. Isso reduz payloads gigantes em até 80%, sendo crucial para o nosso modelo de UI (grids que carregam tudo no client-side). **Exceção de Notificações (SSE):** A compressão NÃO deve ser aplicada a rotas de Server-Sent Events (como o streaming de notificações), pois o buffering do Gzip retém os "chunks" do event-stream e bloqueia a entrega em tempo real para o frontend, causando travamentos.
-2. **Camada de Cache na Memória (Redis Cloud):** 
-   - A conexão primária é feita através do módulo `db/redis.js` conectando-se a `process.env.REDISCLOUD_URL` (Redis Cloud 30MB Free Tier).
-   - **MANDATÓRIO:** Toda rota HTTP do tipo `GET` que busque arrays pesados (como `/api/titulos`, `/api/opme/cirurgias`, `/api/opme/banco-codigos`) **DEVE** tentar buscar os dados no cache usando `getCache(chave)` antes de disparar o comando no PostgreSQL. Se o cache não existir, busca no banco, salva com `setCache()` (tempo de vida padrão: 3600s) e retorna ao usuário.
-3. **Invalidation (Limpeza de Cache):** Sempre que um Agente de IA criar ou alterar rotas do tipo `POST`, `PUT` ou `DELETE` nestas tabelas mastigadas, é **obrigatório** chamar a função utilitária `clearCache('nome_da_chave')` após o comando SQL bem-sucedido. Nunca deixe dados estáticos mortos rodando no Redis.
-4. **Indexação Manual (Banco de Dados):** Índices no PostgreSQL **não** são automáticos nem globais. Eles são atrelados a colunas específicas de tabelas específicas. Os índices criados até o momento (ex: `opme.cirurgias(contrato)`) só aceleram buscas daquelas tabelas. 
-   - **Regra para o Futuro:** Ao criar *novas* tabelas ou *novas* queries de filtro pesadas, os agentes de IA devem sugerir ativamente e executar a criação de novos `INDEX` nas colunas que aparecerão na cláusula `WHERE`. Sem isso, o banco fará *Full Table Scans* e destruirá a performance do Heroku.
+- **Nunca faça commit, push, merge, criação/publicação de PR, tag, release ou
+  deploy automaticamente.** Execute uma dessas ações somente quando o usuário
+  pedir explicitamente aquela ação. Pedido de desenvolvimento, teste ou limpeza
+  não autoriza publicar, nem autoriza toda a sequência de entrega.
+- Não reescreva histórico, não use `push --force`, `reset --hard`, `clean` ou
+  descarte alterações do usuário como parte de uma tarefa comum. Antes de uma
+  operação destrutiva, apresente seu alcance e obtenha autorização específica.
+- Verifique `git status` e o diff antes de editar. Preserve alterações existentes
+  e mantenha o trabalho dentro do escopo solicitado. Não inclua reorganizações,
+  novas dependências ou mudanças de regra de negócio sem necessidade.
+- **Preserve o `.env`**, arquivos locais de configuração, uploads e dados dos
+  usuários. Limpeza do repositório não autoriza excluí-los. Não imprima valores
+  secretos em logs, respostas, capturas, testes, exemplos ou documentação.
+- Não versione credenciais, macros com chaves reais, dumps com dados ou artefatos
+  de execução. Use nomes de variáveis e exemplos fictícios para documentar.
+- Não reinicie serviços externos, altere configurações do Heroku ou envie e-mails
+  e mensagens reais sem autorização explícita. Scripts e botões do próprio Hub
+  também podem produzir esses efeitos: examine-os antes de executar.
+- Identifique o ambiente de banco antes de testar gravações. A existência de
+  credenciais no `.env` não autoriza usar produção como laboratório.
+- Comunique o que mudou, como foi verificado e os limites restantes. Não declare
+  estabilidade absoluta nem cobertura de cenários que não foram executados.
 
+## 2. Arquitetura atual e localização das responsabilidades
 
-## Regras de Estrutura de Frontend (Obrigatórias)
-Todo código de interface deve seguir estritamente o padrão estabelecido na pasta `public/`:
+O Hub combina Node.js/Express com FastAPI/Python. O frontend usa EJS, HTML, CSS e
+JavaScript no navegador, sem React, Vue, Angular ou etapa de bundling.
+PostgreSQL mantém os dados do portal; SQL Server integra o Supra; Redis é cache.
+JWT e `bcryptjs` fazem parte da autenticação existente.
 
-1. **Páginas HTML e Tailwind CDN:**
-   - Criadas como arquivos `.html` na raiz da pasta `public/`.
-   - Devem sempre importar o script do Tailwind via CDN: `<script src="https://cdn.tailwindcss.com"></script>`.
-   - **Crucial:** Devem conter o script de configuração do Tailwind (`tailwind.config`) injetando a paleta de cores própria do projeto antes de renderizar os estilos.
-   - A fonte oficial do projeto é a **Outfit** (do Google Fonts), que deve ser importada no `<head>`. A fonte `Outfit` garante um kerning compacto e moderno, ideal para tabelas e dados numéricos.
-
-2. **Tipografia e Responsividade de Telas (Obrigatório para Laptops):**
-   - O sistema deve obrigatoriamente prever restrições de espaço vertical e horizontal em resoluções como `1024x768` ou `1280x720` (Padrão Notebook HD).
-   - **Paddings Globais:** Os contêineres principais de conteúdo nunca devem usar apenas `p-6`. Devem utilizar sempre margens responsivas como `p-4 lg:p-6` para não roubar espaço útil nas bordas em monitores menores.
-   - **KPIs e Cartões:** Fontes e dimensões internas de cartões devem escalar usando classes condicionais (ex: `text-[10px] lg:text-[11px]`, `h-7 lg:h-10`, `grid-cols-1 lg:grid-cols-4`). Não force `xl:` para quebras de colunas se puder utilizar `lg:`.
-   - **Grids e Tabelas (Javascript):** Quando forçar alturas rígidas em linhas de listagem para dar aparência de planilhas, NUNCA travar em uma altura excessiva (como `h-[150px]`). Use design escalonável como `h-[110px] 2xl:h-[150px]`.
-
-3. **Paleta de Cores e Tema (Tailwind Config):**
-   - O projeto não utiliza cores genéricas do Tailwind para sua identidade.
-   - **`nexo`**: Tons de Teal/Cyan (ex: `nexo-500: '#0097A7'`, `nexo-600: '#00838F'`) - Utilizados para marca, botões primários e destaques (accent).
-   - **`steel`**: Tons de Cinza/Grafite (ex: `steel-800: '#1f2937'`, `steel-900: '#111827'`) - Utilizados para fundos estruturais, painéis, sidebar e tipografia.
-   - As fontes devem usar a classe `font-sans` configurada para priorizar a fonte 'Outfit'.
-
-4. **Suporte a Dark Mode:**
-   - A configuração do Tailwind exige `darkMode: 'class'`.
-   - O suporte ao tema escuro é obrigatório em todas as páginas.
-   - Utilize o prefixo `dark:` (ex: `bg-white dark:bg-steel-800`, `text-steel-800 dark:text-gray-100`).
-   - A preferência do tema do usuário é salva no `localStorage` sob a chave `'theme'`.
-
-5. **Estética, Animações e Micro-interações:**
-   - Priorize uma interface *premium*, limpa e dinâmica (UI/UX).
-   - Elementos interativos devem ter transições suaves utilizando classes utilitárias (ex: `transition-all duration-200`).
-   - Efeitos de `hover`, `focus` em inputs (ex: *glow* suave com cor primária) e animações de entrada (ex: *fade-in-up*) são essenciais e podem ser definidos em blocos `<style>` locais quando não forem facilmente cobertos pelo Tailwind.
-
-6. **Organização de Arquivos Frontend:**
-   - **JavaScript (`public/js/`):** Arquivos modularizados por responsabilidade da página (ex: `dashboard.js`, `theme.js`). Não misture regras de páginas diferentes no mesmo arquivo.
-   - **Imagens/Mídias (`public/assets/`):** Organizadas na pasta de assets.
-   - **CSS (`public/css/`):** Usar primariamente para estilos globais que realmente não possam ser resolvidos via utilitários do Tailwind (o que é raro neste projeto).
-
-Sempre que um agente criar ou modificar uma página web, ele deve inspecionar `public/index.html` ou `public/dashboard.html` como referência viva de estruturação.
-
-## Arquitetura de Tabelas (Data Grids) e Filtros
-Quando o projeto exigir tabelas complexas (com paginação, ordenação multifacetada e filtros dinâmicos com checkboxes):
-- **Estágio Atual (Mock/Protótipo):** A arquitetura é implementada em **Client-Side**. Isso significa que todo o gerenciamento de estado (Array de dados brutos, filtragem, interseção, ordenação e corte de paginação) ocorre inteiramente no JavaScript do navegador em memória, utilizando Vanilla JS puro.
-- **Transição Futura (Produção em Larga Escala):** Quando a base de dados crescer consideravelmente, os agentes de IA devem auxiliar a migrar essa lógica para **Server-Side**. Ou seja, as interações de filtro, ordenação e paginação no frontend passarão a enviar parâmetros (query strings) nas requisições para a API Node.js. O backend será o responsável por executar a lógica usando SQL dinâmico (`LIMIT`/`OFFSET` e condições de `WHERE`).
-
-### Funcionalidades Obrigatórias de Todo Novo Grid
-Todo novo grid criado no hub **DEVE** implementar as seguintes funcionalidades de fábrica:
-
-1. **Filtros por Coluna (Checkboxes):**
-   - Cada cabeçalho de coluna deve possuir um ícone de funil (posição absoluta, `absolute right-2 top-1/2 -translate-y-1/2`) que abre um dropdown com checkboxes para filtrar valores.
-   - O dropdown deve possuir "(Selecionar Tudo)" ancorado no topo.
-   - Filtros devem suportar **valores vazios** (`(Vazio)`) — equivalente ao Excel. Itens com valor `null`, `undefined` ou string vazia devem ser agrupados sob esta opção.
-   - Filtros de colunas do tipo `date` devem usar o formato hierárquico: Ano > Mês > Dia.
-
-2. **Botão "Remover Filtros":**
-   - Quando qualquer filtro estiver ativo, um botão vermelho "Remover Filtros" deve aparecer na barra de abas (ou na barra de ações do grid).
-   - Estética: `bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/30 rounded-lg text-xs font-medium`.
-   - Ao clicar, limpa `state.filters` completamente e reprocessa os dados.
-
-3. **Botão "Exportar Excel":**
-   - Botão de exportação deve estar presente na barra de abas, ao lado do "Remover Filtros" (ambos agrupados em um container `ml-auto flex items-center gap-2`).
-   - Utiliza a biblioteca **SheetJS** (`xlsx@0.18.5`) via CDN: `<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>`.
-   - A exportação deve gerar um arquivo `.xlsx` contendo **exatamente** os dados filtrados que o usuário está visualizando (`state.filteredData`), nunca os dados brutos.
-   - Colunas do tipo `actions` devem ser omitidas da exportação.
-
-4. **Seleção de Células com Soma (Ctrl+Click e Ctrl+Arrasto):**
-   - O hub possui um **módulo global reutilizável**: `public/js/cell_selector.js` (`CellSelector`).
-   - Este módulo é a implementação canônica da seleção de células estilo Excel.
-
-### Como Integrar o `CellSelector` em um Novo Grid
-Siga estes passos exatos para integrar a seleção de células em qualquer novo grid:
-
-#### Passo 1: Incluir o Script no HTML
-Adicionar a tag `<script>` **ANTES** do script principal do grid:
-```html
-<script src="/js/cell_selector.js"></script>
-<script src="/js/meu_novo_grid.js"></script>
+```text
+app/
+  server.js                   Configuração e entrada do Express
+  config/                     Mapeamento de páginas, URLs e metadados confiáveis
+  routes/                     Endpoints do Hub
+  middleware/                 Autenticação e autorização
+  services/                   Integrações, sincronização, cache/eventos e rotinas
+  db/                         Acesso aos bancos e Redis
+  scripts/                    Entradas dos agendamentos
+  views/layouts/base.ejs       Base das páginas internas
+  views/components/           Componentes EJS e estrutura dos grids
+  views/pages/<pagina>/       head.ejs, index.ejs e tail.ejs
+  public/html/<pagina>/       Login, primeiro acesso e 403 independentes
+  public/css/                 Tokens globais, componentes e CSS de cada página
+  public/js/                  Componentes, scripts compartilhados e controllers
+  public/assets/              Imagens e áudios
+  public/uploads/             Arquivos utilizados pelos usuários
+api/                          Aplicação FastAPI
+scripts/start_hub.js           Inicialização conjunta Node + FastAPI
+tests/e2e/                    Testes com navegador e bancos descartáveis
+requirements.txt              Entrada de instalação: -r api/requirements.txt
 ```
 
-#### Passo 2: Inicializar no JavaScript
-Na função `init()` do grid, após `fetchData()`, chamar:
-```javascript
-if (typeof CellSelector !== 'undefined') CellSelector.init('meuTableBodyId');
-```
-O parâmetro é o `id` do elemento `<tbody>` da tabela HTML. O módulo automaticamente:
-- Injeta a **barra flutuante** de soma/contagem/média (`#selectionSumBar`) no DOM, caso não exista.
-- Registra os event listeners de `mousedown`, `mouseover`, `mouseup`, `click` e `keydown`.
+O comando local padrão é **`npm run dev`**. `npm start` também inicia os dois
+serviços, sem o monitoramento do nodemon. `npm run start:node` inicia só o Node.
+A `.venv` e o `node_modules` ficam na raiz e não devem ser versionados.
+Mantenha o supervisor, Docker, Procfile e comandos npm coerentes quando alterar
+caminhos. Não transforme uma reorganização de arquivos em troca de stack.
 
-#### Passo 3: Proteger o Row Click (Guard)
-Se o `<tr>` do grid possuir `onclick` para abrir modais ou navegações, o evento **DEVE** ser protegido para não disparar durante a seleção de células. Adicionar o guard `if(event.ctrlKey||event.metaKey)return;` no **início** do atributo `onclick`:
-```javascript
-// ❌ ERRADO — Modal abre junto com a seleção de célula
-html += `<tr onclick="Grid.openModal(${row.id})">`;
+## 3. Reutilização obrigatória dos componentes existentes
 
-// ✅ CORRETO — Ctrl+Click não dispara o modal
-html += `<tr onclick="if(event.ctrlKey||event.metaKey)return; Grid.openModal(${row.id})">`;
-```
+Antes de criar HTML, CSS ou JS reutilizável, procure a implementação equivalente
+no projeto. **Use e estenda os componentes existentes; não copie sua lógica
+para uma página.** Uma particularidade de tela deve ser configuração, callback,
+preset ou variação delimitada do componente, conforme os padrões já usados.
 
-#### Comportamento do CellSelector
-- **Ctrl+Click**: Seleciona/deseleciona uma célula individual. O anel visual `ring-2 ring-nexo-500/50 bg-nexo-50/50 dark:bg-nexo-900/20` é aplicado.
-- **Ctrl+Click+Arrasto**: Seleciona um retângulo de células (como Excel). Arrastar com Ctrl seguro seleciona todas as células no retângulo formado entre a célula de início e a célula atual do mouse.
-- **Escape** ou **Clique fora** (sem Ctrl): Limpa toda a seleção.
-- **Barra Flutuante**: Fixa no canto inferior direito (`fixed bottom-12 right-6 z-50`), exibe: **Contagem**, **Soma** (R$) e **Média** (R$) das células numéricas selecionadas. Parseia automaticamente formatos `R$ 1.234,56` e `1.234,56`.
+### Base das páginas
 
-## Segurança de Dados (Integração com Supra ERP)
-> [!CAUTION]
-> **REGRA DE SEGURANÇA MÁXIMA (READ-ONLY NO SUPRA)**
-> Sob **NENHUMA HIPÓTESE** os agentes (backend Node.js ou qualquer script) poderão executar comandos como `INSERT`, `UPDATE`, `DELETE`, `DROP` ou `ALTER` no banco de dados do Supra (SQL Server SGC/SGC2). A integração com o Supra é **ESTRITAMENTE SOMENTE LEITURA (`SELECT`)**. O banco do Supra é de Produção e a sua integridade é inegociável. Todas as mutações e atualizações do sistema ocorrerão EXCLUSIVAMENTE no banco de dados local da aplicação (PostgreSQL).
+- Páginas internas usam `app/views/layouts/base.ejs`. Sidebar, navbar, footer e
+  os subcomponentes da navbar têm templates, CSS e JS próprios. Não repita essa
+  estrutura nem seus listeners nos controllers das páginas.
+- Registre título, navegação ativa e variações em `app/config/pageViews.js`.
+  Registre caminhos em `app/config/publicPaths.js` e use o serviço
+  `app/services/pageRenderer.js` conforme as rotas existentes.
+- Conteúdo e recursos específicos ficam em `views/pages/<pagina>/`;
+  controllers ficam em `public/js/pages/<pagina>/`.
+- **Login, primeiro acesso, recuperação/troca de senha e 403 ficam fora da base
+  compartilhada.** Não aplique sidebar, navbar ou footer a essas telas.
+- Preserve URLs públicas, IDs, namespaces e handlers utilizados pelos scripts.
+  Links novos usam rotas limpas, sem `.html`; mantenha os aliases existentes.
+- Templates e nomes de includes são definidos pelo servidor. Nunca passe
+  caminhos recebidos em requisições para renderização. Escape texto externo
+  com `<%= valor %>`; reserve saída HTML sem escape para conteúdo confiável.
 
-## Melhores Práticas e Lições Aprendidas (Desenvolvimento MVP)
-Durante o desenvolvimento do MVP, algumas decisões e práticas essenciais foram consolidadas e devem ser seguidas para futuras manutenções:
+### CSS e apresentação
 
-1. **Importação e Conversão de Datas do Excel (Seed):**
-   - Ao importar planilhas (`.xlsx`) via biblioteca `xlsx`, o Excel armazena datas nativas como **números seriais** (dias desde 1900).
-   - Scripts de importação devem conter lógica matemática apropriada para converter esse número serial para formato Data em JavaScript (`Math.floor(dt - 25569) * 86400 * 1000`) antes de persistir no PostgreSQL, evitando que colunas de datas vitais assumam valores `null`.
+- `app/public/css/global.css` é a fonte da paleta `nexo`/`steel`, tipografia e
+  estados `success`, `alert`, `danger`, `info` e `neutral`. Reutilize seus tokens.
+- CSS de componente fica em `public/css/components/`; CSS específico fica em
+  `public/css/pages/<pagina>/<pagina>.css`, delimitado por `data-page` quando
+  necessário. Não recrie blocos de estilos estáticos dentro de HTML ou JS.
+- A configuração compartilhada `public/js/shared/tailwind.config.js` lê a paleta
+  global. Não replique `tailwind.config` por página nem invente outra paleta.
+- Preserve a ordem dos recursos: CSS global, configuração/recursos compartilhados,
+  componentes e CSS da página. Carregue componentes JS antes dos controllers.
+- JS pode controlar valores e estados dinâmicos, como posição de popup e
+  dimensão calculada. Prefira classes de estado e variáveis CSS.
+- Preserve tema claro/escuro, tipografia por contexto, responsividade, rolagem,
+  alinhamentos, cores condicionais e interações já existentes. Componentizar não
+  autoriza redesenhar a tela. Verifique também telas de notebook e modais.
+- Use modal, calendário, seletor de horário, notificações e demais componentes
+  existentes. Não introduza versões paralelas para resolver um caso de página.
 
-2. **Lógica de Sincronização Inteligente:**
-   - A sincronização entre o Supra (SQL Server) e o banco local (PostgreSQL) não deve usar abordagens destrutivas cegas (`TRUNCATE` / repopulate) no dia a dia.
-   - O algoritmo deve buscar a lista de documentos ativos do Supra, **comparar campo a campo** com os registros locais, e só aplicar comandos `UPDATE` nos registros que realmente sofreram mutação de valor/status/data.
-   - Registros ausentes no Supra mas presentes localmente devem ser identificados por diferença de Conjuntos (Sets) em JavaScript e deletados (limpeza de órfãos).
-   - O Frontend deve ser informado do balanço exato: "Analisados", "Atualizados", "Novos" e "Excluídos".
+### Data Grid
 
-3. **UX de Filtros e Ordenação na Data Grid:**
-   - **Filtros de Datas Hierárquicos:** Colunas do tipo `date` possuem um filtro customizado que agrupa opções no estilo Excel (Ano > Mês > Dia). Ao alterar o componente de filtro (ex: `contas_a_receber.js`), deve-se preservar a capacidade de reter o estado de expansão/colapso (`expandedState`) da árvore de datas.
-   - **Ordenação Segura:** Valores `null` ou vazios (`-`) devem ser tratados de forma resiliente na ordenação client-side, sendo jogados para o **final da tabela**, independentemente da direção do sort (ASC ou DESC), para não "poluir" a primeira página de dados que o usuário quer ver.
+- Toda nova listagem que precise de grid deve usar **`HubDataGrid`**, em
+  `public/js/components/data-grid/`, e os parciais de
+  `views/components/data-grid/`. Contas a Receber é a referência funcional.
+- Filtros, ordenação, paginação, seleção/soma, conversões e exportação pertencem
+  aos subcomponentes. A página fornece colunas, dados, permissões e ações de
+  negócio; o grid não conhece token, API ou persistência.
+- Use o preset `presets/nota-items.js` para a apresentação compartilhada dos
+  produtos das notas. Para grids em modais, use o template/montagem existente e
+  destrua a instância ao removê-la para evitar listeners duplicados.
+- Preserve filtros em cascata, opção de vazios, árvore de datas e seu estado de
+  expansão. Filtro sem seleção significa zero resultados. Vazios ficam no fim
+  da ordenação tanto crescente quanto decrescente.
+- Preserve Ctrl/Meta+clique e arrasto, contagem/soma/média, tratamento de
+  negativos e limpeza de seleção. A exportação contempla todas as linhas
+  filtradas, incluindo outras páginas, e conserva tipos numéricos.
+- **Recursos são opcionais.** Use `export: false`, `pagination: false` e as
+  configurações existentes em vez de esconder botões com CSS ou duplicar lógica.
+  Sem exportação em toda a página, use os assets com `exportEnabled: false`.
+- Não reintroduza exportação em Usuários, Clientes, Notas do Cliente, produtos
+  dos modais de nota, lista de contratos OPME ou modal de cirurgias em aberto.
+  Nas abas do contrato OPME, a exportação permanece em `#tabsContainer`.
+- O modal Banco de Códigos preserva a interação original: cabeçalho seleciona
+  a coluna pesquisada, sem seletor separado `#bcLookupSearchColumn`, sem funis,
+  ordenação, soma, exportação ou paginação. Mantém destaque de Cód. Bio,
+  tooltips, limite de 100 resultados e orientação para refinar a busca.
+  Reutilize `renderHeader`, `headerClassName` e `refreshHeaders: false`.
+- Agenda e Itens Arrematados mantêm as alturas responsivas de referência
+  (110 px e 150 px a partir de 1536 px), podendo crescer com o conteúdo,
+  e as quebras/larguras específicas de suas colunas. Não force densidade única
+  que trunque textos ou elimine a apresentação existente.
 
-4. **Padronização de URLs (Rotas Frontend):**
-   - **NENHUMA URL deve conter a extensão `.html` para os usuários.** 
-   - A configuração de rotas estáticas no Express (em `server.js`) deve mapear nomes limpos (ex: `app.get('/dashboard', ...)` ou `app.get('/perfil', ...)`) para os seus respectivos arquivos `.html`.
-   - Links no frontend (tag `<a>` ou `window.location.href`) sempre devem apontar para a rota limpa: `/dashboard`, `/perfil`, `/contas_a_receber`, etc.
+## 4. Backend, autenticação e contratos
 
-## Regras de Negócio do Dashboard (KPIs e Gráficos)
-As métricas do Dashboard obedecem a uma matemática estrita baseada na tabela de títulos:
-1. **Filtro de Data (Motor do Dashboard):** Os seletores globais de "Ano" e "Mês" operam **exclusivamente** sobre o campo `data_emissao` para delimitar o universo de dados (`filteredData`).
-2. **Total Vendido:** Soma simples e incondicional do campo `valor_nota`.
-3. **Total Recebido:** Soma simples e incondicional do campo `valor_deposito` (independentemente do status pago ou pendente — se houve depósito, é somado).
-4. **Total em Aberto:** Soma do campo `valor_nota`, mas aplicando um filtro rígido: APENAS se o `status` for igual a `PENDENTE` **OU** se o `valor_deposito` for 0/Nulo/Vazio.
-5. **Meta de Recebimento:** É mantida em banco (`metas_recebimento`) através de um **ÚNICO** registro global (`id = 1`). Os selects de mês/ano do painel de meta apenas filtram localmente o gráfico velocímetro verificando se a data real de recebimento (`data_pagamento`) está dentro do período visualizado contra o valor global da meta.
-6. **Gráficos e Dark Mode:** Componentes como ApexCharts sofrem cache das cores no navegador (ex: Legend e DataLabels). Quando a classe `dark` do Tailwind muda, o Javascript DEVE atualizar forçadamente todas as propriedades visuais (`updateOptions(opts, false, false)` passando o objeto completo) para garantir legibilidade nos dois temas.
+- Siga os padrões do router/service alterado. Separe transporte HTTP,
+  persistência, integração e apresentação sem refatorar o domínio inteiro.
+- Preserve métodos, caminhos, parâmetros, status e formatos de resposta usados
+  pelo Hub, VBA e outras integrações. Valide os dois lados ao mover um arquivo.
+- Toda rota protegida exige autenticação e autorização no backend. Ocultar um
+  botão no navegador não concede nem substitui permissão.
+- Consulte `app/middleware/rbac.js` e os perfis carregados do banco. Verifique a
+  permissão específica da ação, respeitando também hierarquia e regras de
+  gerenciamento de usuários. Não substitua o modelo por um booleano de admin.
+- Preserve os guards de sessão e os fluxos de login, primeiro acesso e 403.
+  Não enfraqueça validações nem exponha senha/hash, token ou segredo em respostas.
+- Escape conteúdo externo; use consultas parametrizadas. Identificadores SQL
+  dinâmicos precisam de lista permitida, não de interpolação de entrada livre.
+- Não trate `0` como ausência usando fallback com `||` em valores financeiros.
+  Diferencie zero, vazio e nulo conforme o contrato de cada campo.
 
-## Autenticação, Onboarding e Proteção de Rotas (Auth Guard)
-- **Criação de Usuários e SMTP:** A criação de contas não exige digitação de senha pelo Admin. O backend gera uma senha forte, a encripta e utiliza o `nodemailer` para enviar as credenciais para o e-mail do usuário usando um template HTML responsivo estilizado com estética Tailwind (inline-styles). O e-mail contém um link com o parâmetro `?force_logout=1` para garantir que o cache de sessão seja limpo.
-- **Proteção Global (auth_guard.js):** Para evitar flashes de conteúdo não autorizado, o controle de acesso é implementado injetando a tag `<script src="/js/auth_guard.js"></script>` no topo do `<head>` das páginas HTML protegidas. A lógica não usa mais um campo booleano genérico, mas lê o objeto de permissões explícitas no JWT.
-- **Redirecionamento Rígido:** O `auth_guard.js` é implacável: se não houver token, envia para `/`. Se houver token mas `first_access === true`, tranca o usuário em `/primeiro_acesso`. Se tentar entrar em uma rota sem a permissão específica (`canViewUsers`, `canViewLC`, etc.), despacha o usuário imediatamente para a rota `/403`.
-- **Estética de Telas 403 e Login:** Páginas externas ao layout do painel (como Login, Primeiro Acesso e Acesso Restrito 403) devem obrigatoriamente herdar a paleta suave de "Soft UI" da marca Nexomed (tons de `steel` para fundo e `nexo` para destaque), centralizadas na tela com leves sombras (`shadow-xl`).
+## 5. Bancos de dados, transações e cache
 
-## Controle de Acesso Baseado em Papéis (RBAC)
-- O sistema abandonou flags booleanas para administradores. Agora, existe a coluna `role` na tabela `users` do PostgreSQL, mapeada para um modelo estrito de níveis de permissão no backend (`middleware/rbac.js`).
-- **Nomenclatura de Níveis:** Os papéis atuais seguem a estrutura de departamentalização:
-  - `ADMIN` (Acesso Total)
-  - Contas a Receber: `CR1`, `CR2`, `CR3`, `CR4`
-  - Licitações: `LC1`, `LC2`, `LC3`, `LC4`
-  - Órteses e Próteses (OPME): `OPME1`, `OPME2`, `OPME3`, `OPME4`
-- As regras de visibilidade são definidas de forma explícita por flags booleanas no payload do token: `canViewCR`, `canViewLC`, `canViewOPME`, `canViewUsers`, `canManageUsers`, `canViewClientes`.
-- Os agentes e o frontend nunca devem referenciar "se o usuário é admin", mas sim verificar a permissão específica exigida para o contexto de exibição ou ação (ex: ocultar um link via JS lendo `user.permissions.canViewOPME`).
+**Supra real é somente leitura para os agentes.** Nunca execute `INSERT`,
+`UPDATE`, `DELETE`, `MERGE`, `DROP`, `ALTER`, `TRUNCATE`, `EXEC` ou outra operação
+com efeito de escrita em SGC/SGC2, inclusive por scripts ou endpoints do Hub.
+A existência de integração de pedidos no código não autoriza testá-la no ERP.
+As gravações de teste devem ocorrer no PostgreSQL isolado da suíte.
 
-## Navegação Lateral (Sidebar e Submenus)
-- **Estrutura Expandível:** Os links no menu lateral (Sidebar) agora estão agrupados sob blocos lógicos principais (Ex: `Financeiro`, `Licitações`, `OPME`) categorizados em cabeçalhos (Ex: `MAIN` e `HUB`).
-- A visibilidade de blocos completos é gerenciada dinamicamente pelo `public/js/layout.js`, que utiliza os IDs dos grupos (como `menu-group-financeiro` ou `menu-group-opme`) para omitir itens da tela caso o usuário não possua permissão (RBAC) para ver qualquer item interno do bloco.
-- **Abertura Inteligente de Submenus:** A mecânica de expansão/colapso (`sidebar-submenu`, `.hidden`) é tratada globalmente via JS (`layout.js`), MAS na montagem inicial do HTML (build-time/server-side), o grupo que contém a página atual ativa DEVE ser renderizado já aberto (sem a classe `hidden`) e com a rotação do Chevron em `90deg`.
-- **Rotação do Chevron:** O ícone de seta (`sidebar-chevron`) é desenhado nativamente apontando para a direita (`d="M9 5l7 7-7 7"`). Quando o submenu está aberto, o JS aplica a rotação `transform: rotate(90deg)` (apontando para baixo). O estado fechado retorna a `rotate(0deg)`.
-- **Estética "Sash" (Design Premium):** Botões e links da sidebar NÃO usam fundos sólidos pesados. Quando uma rota está ativa, ela deve utilizar tipografia Semibold na cor primária (`text-nexo-400`) e um background sutil de 10% de opacidade (`bg-nexo-500/10`). Ícones internos de submenu usam um marcador circular vazado (`span` vazio com borda `border-current`).
-- **Comportamento Colapsado (Centralização):** Todas as páginas que possuem a sidebar devem conter um bloco de `<style>` prevendo a classe `sidebar-collapsed` no `body`. É **obrigatório** centralizar os títulos de grupos (`h4`), os links principais (`nav a`) e os botões de submenu (`nav .sidebar-group-btn`) removendo os paddings laterais e forçando o alinhamento centralizado. O padrão CSS a ser injetado é: `body.sidebar-collapsed aside h4 { text-align: center; padding: 0; }` e `body.sidebar-collapsed aside nav a, body.sidebar-collapsed aside nav .sidebar-group-btn { justify-content: center; padding: 0; }`.
-- **ATENÇÃO AO TAILWIND JIT:** Ao injetar classes via scripts dinâmicos (Javascript executado em node, por exemplo), aspas invertidas de *Template Literals* (`${variável}`) NUNCA devem ser escapadas com `\`, pois isso força a string literal no HTML final, inutilizando a compilação do Tailwind CDN (ex: quebrando as classes do `flexbox`).
+- Use as conexões existentes em `app/db/` e `api/database.py`. Não crie outra
+  configuração de banco nem substitua o `.env` para rodar testes.
+- Operações de lote precisam ser atômicas. No Node, obtenha um único
+  `client = await pool.connect()` e execute `BEGIN`, todas as consultas,
+  `COMMIT` ou `ROLLBACK` nesse client, liberando-o em `finally`.
+  **Não use `pool.query('BEGIN')`**: requisições concorrentes podem trocar de
+  conexão e misturar transações. Preserve a disciplina equivalente na FastAPI.
+- Em consultas pesadas, reutilize o padrão de cache e suas chaves. Após uma
+  gravação confirmada, invalide todas as chaves afetadas antes da resposta de
+  sucesso, incluindo listas globais e por contrato. Em exclusões, derive os
+  contratos dos registros realmente removidos, sem depender só do corpo enviado.
+- Falhas de Redis não devem apagar dados nem substituir o banco como fonte de
+  verdade. Evite novas cópias volumosas de cache e investigue consumo real antes
+  de alterar TTL ou política; não suponha plano, memória ou configuração iguais
+  entre desenvolvimento e produção.
+- Preserve compressão das respostas comuns e sua exceção para SSE: buffering
+  pode impedir a entrega dos eventos. Não substitua o fluxo SSE por polling.
+- Considere índices e plano das consultas quando necessário. Prepare alterações
+  de esquema revisáveis; não execute DDL ou migrações em produção por iniciativa.
+- Sincronizações devem respeitar comparação incremental, normalização e regras
+  de remoção existentes. Não substitua o processo por `TRUNCATE` e recarga cega.
 
-## Peculiaridades do Banco de Dados Legado (Supra ERP)
-- **Cruzamento de Tabelas de Itens da Nota:** A arquitetura original do banco de dados do Supra possui um relacionamento anti-intuitivo para o cruzamento entre cabeçalho (`nota_fiscal_venda`) e itens (`nota_fiscal_venda_item`). A coluna `nf_numero` na tabela de itens **NÃO** armazena o número da nota fiscal (`numero_nota`). Ela armazena o ID Primário Interno da tabela pai (`codigo`).
-- **Como realizar o JOIN:** Ao invés de `ON item.nf_numero = cabecalho.numero_nota` (que puxará itens cruzados incorretos caso a nota tenha mesmo número em outra série), todo e qualquer agente que precisar buscar itens de uma nota **deve obrigatoriamente** fazer o cruzamento utilizando `ON item.nf_numero = cabecalho.codigo`.
+## 6. FastAPI e compatibilidade com VBA
 
-## Diretrizes para a Tela "Itens Arrematados"
-As seguintes regras definem o comportamento e design consolidados para o grid de Itens Arrematados (Licitações):
-1. **Minimalismo e Foco (Sem KPIs / Text Search):** A interface deve permanecer limpa. Não inclua cards de KPIs no topo e nem barra de pesquisa global por texto livre (`#searchInput`). Toda e qualquer pesquisa de dados deve ser feita exclusivamente através dos filtros dinâmicos embutidos no cabeçalho de cada coluna (ícone de funil).
-2. **Centralização Estrita de Cabeçalhos:** Todos os títulos de todas as colunas — sem exceção (nem mesmo Órgão e Material), tanto no grid principal quanto na tabela interna do modal de contrato — devem ser forçados ao centro geométrico, horizontal e verticalmente (`text-center`, `justify-center`, `align-middle`).
-3. **Ícones de Filtro Flutuantes:** Para que o texto do cabeçalho permaneça no centro absoluto da célula, o ícone de filtro (funil) deve ser renderizado com posição absoluta (ex: `absolute right-2 top-1/2 -translate-y-1/2`). Ele não deve fazer parte do Flexbox que alinha o texto principal do título.
-4. **Status Textual Simples:** Ao contrário de outros grids do projeto, a coluna de "Status" de itens arrematados não deve utilizar componentes de "Badges" ou "Pills" coloridos, devido à falta de dicionário/padronização dos textos que vêm do legado. Deve-se renderizar apenas o texto limpo, forçado em caixa alta (uppercase).
-5. **Altura de Linha Fixa:** As linhas (`<tr>`) do grid principal possuem uma altura travada (`h-[150px]`) para simular o espaçamento de visualização do Excel, com os textos alinhados verticalmente ao centro. Colunas textuais (como Órgão e Material) devem usar quebra de linha normal (`break-words`, `whitespace-normal`), enquanto dados quantitativos permanecem `whitespace-nowrap`.
-6. **Modal de Criação / Edição de Contrato (Múltiplos Produtos):** A atomicidade do banco de dados para itens arrematados é o **Produto/Item**, não o contrato em si.
-   - O modal de criação de contrato deve permitir a inserção dinâmica de múltiplos produtos.
-   - Os campos burocráticos (Datas e Status) pertencem ao escopo do **Produto**, e não ao escopo do contrato global.
-   - O cálculo do "Total Normalizado" ocorre em tempo real via JavaScript (`* 0.3` para valores entre 10k e 100k, ou "AVALIAÇÃO INDIVIDUAL" para acima de 100k) interceptando eventos de input nos campos "Qtde", "Valor Unitário" e "Valor Total".
-   - Deve existir um recurso de "Aplicar aos Demais" para clonar os campos de Datas e Status do primeiro produto para os subsequentes da interface.
-   - Na inserção (POST), o backend deve gerar *N* registros independentes no banco de dados, onde cada um representa um produto, mas que compartilham as mesmas informações globais (Cód. Contrato, Órgão, Edital).
-   - A geração da chave primária (`CHAVE`) ocorre automaticamente pela *Identity Sequence* do PostgreSQL. É proibido passar o ID no corpo da requisição POST. Em caso de dessincronização de *sequence* (ex: após seeding manual), deve-se usar `setval(pg_get_serial_sequence(...), MAX("CHAVE"))` diretamente no PostgreSQL para realinhar.
+- A aplicação Python fica em `api/`: routers HTTP, services, config, security,
+  schemas e compatibilidade. Novos endpoints seguem essa separação.
+- O Node recebe as URLs públicas e usa o proxy para a FastAPI no mesmo servidor.
+  Preserve `/api/vba/agenda_licitacoes`, `/docs`, `/api/docs` e
+  `/api/openapi.json`. Registre novos prefixos no proxy quando necessário.
+- Preserve `x-api-key` e a configuração **`VBA_API_KEY`**. Não desative a
+  integração por considerá-la temporária e não grave chaves reais em exemplos.
+- O GET e as gravações da Agenda usam a mesma tabela PostgreSQL do Hub. A rota
+  normal da interface `/api/agenda_licitacoes` continua no Node. Não crie outra
+  base nem volte a exigir Access para a integração já migrada.
+- Preserve serialização, sanitização, datas, horas como fração de dia do Excel,
+  distinção entre zero e vazio e os formatos de erro documentados.
+  `CHAVE` bigint deve manter todos os dígitos, inclusive quando transportada
+  como string; não a converta para número JavaScript sem segurança de precisão.
+- Na planilha, mude apenas o que foi solicitado: preserve fórmulas, preparação,
+  formatação e rotinas auxiliares. A ordenação definida para a leitura da macro
+  é CHAVE crescente. Não confunda isso com a ordenação padrão do GET da API.
+- Preserve a comunicação FastAPI → PostgreSQL LISTEN/NOTIFY → Node/SSE.
+  Respeite quando uma operação deve gerar log/notificação ou apenas atualizar
+  dados. Não repita gravações automaticamente ao falhar uma chamada de rede.
+- Detalhes de payloads, conversões, instalação e hospedagem: [API](../api/README.md).
 
-## Sistema de Notificações
-O sistema possui uma central de notificações injetada globalmente, com as seguintes regras de desenvolvimento:
-1. **Frontend Modular:** A UI (`public/js/notifications.js`) é carregada dinamicamente via `layout.js` e não deve ser copiada/colada em arquivos HTML. O estilo do "custom-scrollbar" também é injetado programaticamente por este script para garantir visualização consistente.
-2. **Armazenamento:** As notificações utilizam duas tabelas no PostgreSQL: `notifications` (log central) e `notification_reads` (controle de leitura atrelado ao usuário, garantindo que o estado de leitura seja individual).
-3. **Geração Inteligente (Diff):** Durante uma ação de `UPDATE` (PUT), o sistema realiza a comparação de campos (Diff) verificando os dados antigos contra os novos. Apenas colunas que **realmente sofreram mutação** geram log. Além disso, existe um dicionário de mapeamento (`columnNamesMap`) na rota backend para que nomes de colunas de banco de dados sejam convertidos para rótulos amigáveis (UX) na notificação.
-4. **Proteção de Acesso (RBAC):** Somente perfis `ADMIN, LC1, LC2, LC3, LC4` podem visualizar a UI do sino e consumir a API `/api/notifications`. A interface sequer é renderizada para usuários de outros perfis.
+## 7. Invariantes de negócio que não podem mudar numa reorganização
 
-## Diretrizes para a Tela "Agenda de Licitações"
-A Agenda de Licitações herda a estrutura visual e comportamental (Data Grid, Abas por Empresa, Filtros Hierárquicos) dos Itens Arrematados, com as seguintes regras específicas consolidadas:
-1. **Formatação Automática de Datas (Client-Side):** Todas as colunas do tipo `date` que retornam do banco no formato ISO 8601 (ex: `2026-07-30T03:00:00.000Z`) devem ser convertidas automaticamente pelo Javascript durante a renderização da célula usando `toLocaleDateString('pt-BR', { timeZone: 'UTC' })`. Essa conversão em tela é puramente visual (renderização), garantindo que o array de dados original permaneça intacto para alimentar a árvore do filtro hierárquico (ano/mês) de forma nativa.
-2. **Responsividade do Grid (Sem Scroll Horizontal):** Para acomodar um alto volume de colunas (14+), o grid deve forçar o conteúdo a caber inteiramente na tela do usuário. Deve-se assegurar a ausência da classe `min-w-max` na tag `<table>` e o uso das classes `whitespace-normal break-words` nos cabeçalhos (`<th>`) e células (`<td>`). O cabeçalho deve possuir uma altura fixa maior (ex: `h-[70px]`) para comportar a quebra dos títulos longos.
-3. **Exclusão de Registros (RBAC):** A permissão para exclusão de itens da Agenda é idêntica à de Itens Arrematados. A exclusão (botão de lixeira) só é renderizada caso o usuário possua permissão de alto nível, controlada no frontend pela constante `const canDelete = ['ADMIN', 'LC3', 'LC4'].includes(userRole);`.
-4. **Lembretes e Cron Jobs (Notificações por E-mail):** O sistema possui um robô de cron (`services/cron_agenda.js`) que desperta em horários fixos e estratégicos (08h e 17h). Ele busca pregões do dia seguinte (`CURRENT_DATE + INTERVAL '1 DAY'`) e consolida um lembrete único na central de notificações. Além disso, dispara um **E-mail HTML Dinâmico** (via `nodemailer`) para todos os usuários da hierarquia (`ADMIN`, `LC1` a `LC4` em produção). O e-mail agrupa visualmente os pregões por empresa (NEXOMED vs BML) utilizando tabelas com `table-layout: fixed;` para garantir alinhamento perfeito. Nenhuma lógica complexa de *diff* é necessária para os e-mails, focando apenas no disparo consolidado nesses dois horários.
+### Financeiro, notas e cobrança
 
-## Diretrizes para o Módulo de Clientes (Cobrança)
-O módulo de Clientes, acessado via `/clientes`, serve como base para a frente de Cobrança e segue padrões rigorosos de UI e Arquitetura:
-1. **Fonte de Dados (Supra ERP):** Para garantir dados limpos e indexados, a busca de clientes não é feita na tabela bruta `cliente_fornecedor`, mas obrigatoriamente na View `SGC.dbo.bi_cadastro_clientes`. 
-2. **Proteção e RBAC:** A rota `/clientes` é restrita. Apenas usuários com os perfis `ADMIN, CR2, CR3, CR4, LC3, LC4` possuem permissão para acessá-la.
-3. **Estética do Grid e Paginação:**
-   - **Cabeçalhos:** O título das colunas deve ser estritamente centralizado (`justify-center w-full h-full`), com o ícone de filtro (funil) posicionado como absoluto (`absolute right-2 top-1/2 -translate-y-1/2`) para não interferir no alinhamento flexbox do texto.
-   - **Ícone de Filtro:** O botão do funil deve ser "flat" (sem background colorido persistente), ganhando cor primária apenas quando há um filtro ativo.
-   - **Filtros Dinâmicos:** O modal de filtro segue o padrão do sistema (checkboxes) com a opção inteligente "(Selecionar Tudo)" ancorada no topo.
-   - **Paginação Minimalista:** Os controles numéricos e setas da paginação no rodapé não possuem bordas marcadas. Utilizam-se SVGs vetoriais elegantes para "Primeira/Última" e "Anterior/Próxima", com destaque de cor primária apenas na página ativa.
-4. **Navegação (Drill-down):** Cada linha da tabela é interativa (`cursor-pointer`, hover cinza/nexo). Ao clicar em um registro, o sistema deve redirecionar o usuário para a rota detalhada utilizando o ID do cliente: `window.location.href = '/clientes/' + row.codigo`.
+- Dashboard: filtros globais de ano/mês usam `data_emissao`; vendido soma
+  `valor_nota`; recebido soma `valor_deposito` independentemente do status;
+  aberto segue o critério existente de pendência ou depósito zero/nulo.
+  A meta global usa `metas_recebimento.id = 1`, e seu período considera a data
+  de pagamento. Não reinterprete os indicadores durante manutenção visual.
+- No Supra, `nota_fiscal_venda_item.nf_numero` referencia o `codigo` interno do
+  cabeçalho, **não** `numero_nota`. Preserve a identificação correta de empresa,
+  série/documento e os critérios existentes ao consultar itens de notas.
+- Contatos e histórico de cobrança preservam vínculos, exclusão lógica e
+  agendamento de retorno. Preserve o tratamento de timezone e o contrato de
+  timestamps das queries existentes; não aplique deslocamentos duplicados.
+- No módulo de custos, preserve a cascata de busca do custo por lote/origem/data,
+  histórico e lançamento manual. O endpoint atual de salvamento recebe `id` e
+  `custo_unitario`; não o altere para outra chave por uma suposição documental.
+- Preserve sinais de devolução, CFOPs, precisão, totalizações e exibição contábil
+  entre parênteses tanto na tela quanto nas exportações. Custos usam a permissão
+  específica `canViewCustos`.
 
-## Diretrizes da Tela de Detalhes do Cliente (Cobrança)
-A tela de Detalhes do Cliente (`/clientes/:codigo`) atua como um hub central para as ações de cobrança, dividida em três pilares principais (Abas): **Notas Fiscais**, **Agenda de Contatos** e **Histórico**.
-1. **Estética de Interatividade (Hover/Glow):** Cards informativos (KPIs de vendas, cards de contatos e itens da timeline do histórico) possuem um padrão estrito de elevação sutil e borda colorida no `hover` (ex: `hover:-translate-y-1 hover:shadow-lg hover:border-nexo-400 transition-all duration-300`). O design deve parecer dinâmico e responsivo ao mouse.
-2. **Agenda de Contatos (Relacional):** 
-   - A aba Agenda gerencia contatos/pessoas físicas vinculadas ao cliente (PostgreSQL local: `agenda_contatos`). 
-3. **Histórico de Cobrança e Timeline:**
-   - A lógica de Registro de Histórico de Cobrança exige a vinculação a um contato existente (`agenda_contato_id`). Isso força a alimentação do CRM.
-   - O formulário possui uma seção colapsável de **"Agendar próximo contato"** que é acionada por um botão de toggle com design *Sash/Soft*. O estado real (salvo no banco no campo `has_agendamento`) governa regras futuras de notificação (cron).
-   - **⚠️ Fuso Horário (Timezone):** É obrigatório que qualquer data transacional salva via `CURRENT_TIMESTAMP` na tabela `historico_cobranca` (que seja do tipo `timestamp without time zone`), seja resgatada na query do backend (Node) injetando `AT TIME ZONE 'UTC'` (ex: `h.created_at AT TIME ZONE 'UTC' AS created_at`). Isso impede o driver `pg` de classificar erroneamente a hora gerada pelo servidor como se fosse a hora local, garantindo que a renderização no Javascript do navegador diminua corretamente as 3 horas (-03:00) do fuso de Brasília.
-4. **Isolamento de Escopo JS:** Métodos disparados diretamente por eventos HTML (ex: `onclick="ClienteDetalhe.changeModalPage(1)"`) devem sempre referenciar de forma estrita o Namespace/Objeto da respectiva página para evitar *ReferenceErrors*, pois o sistema não empacota o JS via Webpack, contando com escopo de janela (window) isolado por namespaces definidos no topo dos arquivos Vanilla JS.
+### Licitações e OPME
 
-## Padrões de Interface e Experiência (UX/UI Coesos)
-As seguintes regras foram consolidadas para garantir uma experiência premium uniforme em todas as telas:
-1. **Custom Scrollbar:** O uso da barra de rolagem nativa do navegador (branca e grossa) é proibido. Toda área de rolagem (tabelas, main content do dashboard, modais longos) deve utilizar a classe utilitária `custom-scrollbar`. É necessário garantir que o bloco CSS correspondente (`::-webkit-scrollbar`) esteja injetado na tag `<style>` da página.
-2. **Listas Suspensas (Dropdowns Customizados):** Para manter a estética em modais, abandonou-se a tag nativa `<select>`. Combos de seleção (ex: Modalidade, Portal) devem ser desenhados usando `<div>` relativas e `<ul>` absolutas com `max-h-48 overflow-y-auto custom-scrollbar`, gerenciando a seleção e placeholder visuais via Vanilla JS.
-3. **Data Grids Interativos:** Para facilitar a usabilidade, as linhas inteiras (`<tr>`) dos grids principais (como `/contas_a_receber` e `/itens_arrematados`) devem ser clicáveis (`cursor-pointer hover:bg-gray-50`), acionando a abertura do modal de detalhes, abolindo a necessidade do usuário clicar apenas em uma palavra específica.
-4. **Coesão e Reuso de Componentes:** Funcionalidades de visualização (ex: "Ver Danfe" carregando PDF em nova aba) e componentes de edição interativos (ex: Edição de Contrato em Notas Fiscais) devem estar espelhados de forma idêntica entre os diferentes fluxos (ex: tela de `/contas_a_receber` e tela de `/clientes/:codigo`).
+- Preserve a separação por empresa, chaves geradas pela sequência e os vínculos
+  entre itens arrematados e contratos. Observe o comportamento atual do modal
+  para campos compartilhados e campos por produto; não os redistribua como
+  parte de uma mudança de layout.
+- No OPME, mantenha a seleção de contrato, agrupamento de cirurgias por
+  contrato/paciente/data, abas dependentes, precisão configurada e valores
+  bonificados iguais a zero. Não substitua zero pelo preço do catálogo.
+- Preserve compatibilidade com dados legados: textos longos, nulos e o esquema
+  existente. Não acrescente FKs, restrições ou truncamentos sem avaliar os dados
+  e o fluxo que motivaram o modelo atual.
+- Sincronização de notas OPME aceita os status válidos `4` e `2`; canceladas
+  (`6`) não permanecem vinculadas como válidas. Trate `numero_nota` nulo antes
+  de converter para texto. A limpeza de cancelamentos deve funcionar mesmo
+  quando a busca não encontrar notas válidas.
+- Na manutenção da integração de pedidos, preserve os mapeamentos críticos
+  existentes: bloqueio de geração de código, situação `3`, lista `1`, condição
+  `2`, data do servidor, descrição/CST/unidade/custo do produto, flags dos itens
+  (`1`, `1`, `4`, `1` nos campos correspondentes) e preço zero do Hub.
+  Isso documenta o código; **não autoriza executar pedidos no Supra real**.
 
-## Evoluções na Arquitetura de Dados
-1. **Prazos e Status (Itens Arrematados):** Entendeu-se que campos burocráticos de licitação (Data Proposta, Vigência, Status) pertencem ao ciclo de vida do **Contrato** como um todo, e não a cada produto de forma isolada. Modais de edição devem isolar esses campos em uma sessão separada e, ao salvar, replicar os valores para todos os itens atrelados ao mesmo contrato.
-2. **Filtragem Otimizada (Memória vs BD):** Ao exibir listagens puras vindas do Supra (como o `/api/clientes`), se a regra de negócio exigir exibir **apenas** clientes que já tiveram movimentação, não se deve sobrecarregar o SQL Server com cruzamentos complexos. O padrão correto é fazer um `SELECT DISTINCT` na base local (PostgreSQL), carregar os códigos em um `Set` no Javascript (Node.js) e utilizar `.filter()` na memória do servidor antes de devolver a resposta, garantindo performance excelente.
+### Notificações e e-mails
 
-## Integração Temporária com Legado (VBA)
-Atualmente, existe uma API temporária para o sistema VBA (`/api/vba/agenda_licitacoes`) autenticada por **API Key**. Ela serve como espelho (Shadowing) enquanto o Access não é desativado.
-- **Chave no `.env`:** `VBA_API_KEY`
+- Preserve leitura individual, permissões e geração por mudanças efetivas.
+  Não crie logs de alteração quando os campos comparados não mudaram.
+- Diferencie rotinas do Scheduler e lembretes internos. Não inicialize cron
+  duplicado nem execute rotinas reais apenas para verificar um import.
+- Reutilize templates corporativos de e-mail, com CSS inline compatível com
+  clientes de e-mail e imagens em URL absoluta. Essa necessidade de inline é
+  específica dos e-mails, não uma autorização para duplicar CSS nas páginas.
 
-### Como Desligar a API (Quando o VBA for aposentado):
-1. Remover o import e `app.use('/api/vba', ...)` do arquivo `server.js`.
-2. Excluir o arquivo `routes/vba_integration.js`.
-3. Remover a variável `VBA_API_KEY` das variáveis de ambiente de produção (Heroku e local).
+## 8. Verificação e entrega
 
-## Motor de Agendamento e Notificações (Cobrança)
-O sistema possui um motor autônomo (Cron Jobs) construído em `services/cron_cobranca.js` para alertar os usuários sobre compromissos agendados no CRM de cobranças. Ele é dividido em duas estratégias distintas de execução:
+1. Inspecione o diff e identifique páginas, endpoints, banco, cache e integrações
+   afetados. Compare o fluxo existente antes e depois, inclusive seus modais.
+2. Execute verificações proporcionais à mudança. Para persistência e interação,
+   use a suíte **`npm run test:e2e`**, podendo selecionar cenários relacionados.
+   Preserve e amplie testes quando houver nova regra ou regressão relevante.
+3. A suíte usa Playwright, Express/FastAPI reais, PostgreSQL e Redis descartáveis
+   e dados fictícios. Supra, SMTP e municípios são substituídos em teste.
+   Não remova essas proteções nem intercepte as APIs do Hub para simular um
+   sucesso que deveria ser confirmado no banco.
+4. Verifique gravação e releitura, edição, exclusão/desativação conforme o módulo,
+   falhas, permissões, rollback, concorrência e cache conforme o impacto.
+   Navegar por páginas sem verificar persistência não comprova CRUD.
+5. Preserve relatórios e artefatos em diretórios ignorados pelo Git. Nunca use
+   dados reais ou credenciais fixas como fixtures.
+6. Revise caminhos, imports, assets, documentação e `git diff --check`. Para uma
+   mudança apenas documental, valide conteúdo e links; não execute rotinas com
+   efeitos externos ou toda a suíte sem necessidade.
+7. Entregue o resultado e suas limitações ao usuário. **Pare antes de commit,
+   push ou deploy**, salvo pedido explícito para a ação correspondente.
 
-1. **Sumário Diário (Heroku Scheduler / One-Off Dyno):**
-   - **Objetivo:** Disparar um e-mail matinal consolidado às 08:00h (Horário de Brasília) contendo a lista completa de todos os contatos que o usuário precisa realizar no dia.
-   - **Gatilho:** Não roda em loop no código da aplicação. É acionado externamente via `npm run scheduler:cobranca` (configurado no painel do Heroku Scheduler).
-   - **Estética:** O e-mail utiliza `nodemailer` para gerar uma estrutura HTML Premium com formatação tabular clara (Código, Razão Social, Fantasia, Motivo) para o usuário se organizar sem nem precisar abrir o sistema.
+## Documentação de referência
 
-2. **Lembretes em Tempo Real (Node-Cron Interno):**
-   - **Objetivo:** Alertar o usuário no painel do sistema **exatamente 10 minutos antes** da hora exata do compromisso.
-   - **Gatilho:** Roda nativamente atrelado à memória do próprio servidor web (`server.js`) utilizando `node-cron` (`* * * * 1-5`).
-   - **Mecânica:** A cada virada de minuto, a lógica calcula `Hora de Brasília Atual + 10 minutos` e faz um *polling* pontual no banco de dados. Caso exista um *match* exato de data e minuto na tabela `historico_cobranca`, insere uma notificação na tabela `notifications` com ação prefixada por `REMINDER_`.
-   - **UX:** A notificação aciona o SSE (`eventBus.emit('refresh')`) que despacha o aviso para o navegador do usuário instantaneamente, renderizando a interface de alerta com a tag visual roxa 🟪 e ícone de relógio na aba "Agendamentos". A UI tocará um alarme sonoro unicamente quando o ID da notificação mais recente aumentar.
-   - **Performance:** Como roda puramente no Backend, não existe nenhuma requisição de polling contínuo (AJAX) no client-side poluindo a aba Network do navegador. Apenas a via SSE pré-existente é utilizada.
-
-## Padrão Corporativo de E-mails Transacionais
-Todos os e-mails disparados pelo sistema (Boas-Vindas de novos usuários, Cron de Licitações, Cron de Cobrança, etc.) devem obrigatoriamente seguir a mesma arquitetura de design visual Sóbrio, Corporativo e Premium estabelecida:
-1. **Design Responsivo Seguro para E-mails:** Como os provedores de e-mail (Outlook, Gmail) têm restrições fortes a tags nativas `<style>` e não aceitam classes do Tailwind CDN (`<script>`), a estilização deve ser feita injetando CSS de forma **inline** nas tags HTML (ex: `<div style="background-color: #f3f4f6; padding: 40px 20px;">`).
-2. **Cabeçalho com Logomarca Absoluta:** O topo do e-mail sempre deve conter um cabeçalho escuro (`background-color: #111827; border-bottom: 4px solid #0097A7`) com a logomarca centralizada puxando da URL absoluta oficial de produção: `<img src="https://hub.nexomed.com.br/assets/images/logo.png" ...>`. Isso garante que as imagens abram em qualquer ambiente (produção ou localhost).
-3. **Tom e Linguagem:** A linguagem deve ser corporativa e neutra. Emojis devem ser evitados em e-mails formais de credenciais ou relatórios. Textos soltos e descontraídos devem ser substituídos por frases objetivas e profissionais.
-4. **Data-Grids em E-mails:** Tabelas de dados devem usar estilização limpa e profissional: `border-collapse: collapse`, linhas divisórias suaves (`border-bottom: 1px solid #e5e7eb`), cabeçalhos discretos (`text-transform: uppercase`, texto cinza `color: #4b5563`, fundo `#f9fafb`) e dados alinhados de forma escaneável.
-5. **Rodapé Padronizado:** Todos os e-mails devem terminar com o bloco claro e automático: `© Ano Atual Nexomed. Todos os direitos reservados. Esta é uma mensagem automática. Por favor, não responda.`
-
-## Módulo OPME — Órteses, Próteses e Materiais Especiais
-O módulo OPME é o terceiro pilar do Hub, acessível via o grupo `Opme` na sidebar (ID: `menu-group-opme`). Ele gerencia contratos de consignação, cirurgias e estoque de materiais hospitalares, substituindo uma planilha VBA legada integrada com Microsoft Access.
-
-### Fonte de Dados e Sincronização (Access → PostgreSQL)
-- **Origem:** A base de dados primária do OPME reside em um arquivo Microsoft Access (`.accdb`) localizado no servidor Windows da empresa. Um script Python externo (`sync_opme.py`) executa a sincronização Access → PostgreSQL via `pyodbc` (driver Access Engine 64-bit) usando UPSERT em lote (`execute_values`).
-- **Agendamento:** O `sync_opme.py` é disparado automaticamente pelo **System Scheduler** do Windows de segunda a sexta, das 08h às 18h.
-- **Schema PostgreSQL:** Todas as tabelas residem no schema `opme` (separação lógica do schema `public` principal do sistema).
-- **Sem Foreign Keys:** As constraints de FK no schema `opme` foram **deliberadamente removidas** para espelhar o comportamento permissivo do Access, que aceita registros órfãos e duplicidades. A integridade referencial é gerenciada pela planilha VBA de origem, não pelo banco relacional.
-- **Colunas TEXT:** As colunas de texto das tabelas OPME foram convertidas de `VARCHAR(255)` para `TEXT` no PostgreSQL para evitar erros de truncamento durante a sincronização de dados que excedem 255 caracteres no Access.
-
-### Estrutura de Tabelas (Schema `opme`)
-
-| Tabela | Chave de Relacionamento | Descrição |
-|---|---|---|
-| `contratos` | `id_contrato` (ex: `BIO687`, `BML962`) | Tabela pai com dados do contrato: material, cliente, UF, pregão, total da ata, datas de início/término, flag `inativo` |
-| `cirurgias` | `contrato` → `contratos.id_contrato` | Registros de cirurgias realizadas: paciente, local, data, produto utilizado, médico, CRM, valores, NF, empenho (~18k registros) |
-| `unidades` | `contrato` → `contratos.id_contrato` | Hospitais/unidades vinculados ao contrato: cod_cliente, hospital, sigla |
-| `saldoata` | `contrato` → `contratos.id_contrato` | Saldo consolidado da ata: item, descrição, quantidade, valores, saldo restante |
-| `saldoatahospital` | `contrato` → `contratos.id_contrato` | Saldo da ata desagregado por hospital/unidade |
-| `bancocodigos` | `contrato` → `contratos.id_contrato` | Catálogo de produtos: cod_bio, cod_fab, produto, descrição, classificação, item_ata (~5k registros) |
-
-### API Backend (`routes/opme.js`)
-- **Autenticação:** `authMiddleware` + `requirePermission('canViewOPME')` aplicados globalmente no router.
-- **Endpoints (todos GET, somente leitura):**
-  - `/api/opme/contratos` — Lista contratos. Query param `?inativo=true` para incluir inativos.
-  - `/api/opme/cirurgias?contrato=BIO687` — Cirurgias filtradas por contrato.
-  - `/api/opme/unidades?contrato=BIO687` — Unidades do contrato.
-  - `/api/opme/saldo-ata?contrato=BIO687` — Saldo da ata.
-  - `/api/opme/saldo-ata-hospital?contrato=BIO687` — Saldo por hospital.
-  - `/api/opme/banco-codigos?contrato=BIO687` — Banco de códigos.
-- **Segurança:** Todas as queries usam parâmetros posicionais (`$1`) para prevenir SQL injection.
-
-### Diretrizes da Tela de Cirurgias (`/cirurgias`)
-A rota `/cirurgias` (arquivo `public/cirurgias.html`, controller `public/js/cirurgias.js`) implementa um sistema de abas que espelha as abas da planilha VBA original. As seguintes regras foram consolidadas:
-
-1. **Sistema de 6 Abas:** A barra de abas horizontal renderiza os botões: `Contratos` | `Cirurgias` | `Unidades` | `Saldo Ata` | `Saldo Ata Hospital` | `Banco de Códigos`. A aba ativa recebe borda inferior `border-nexo-500` e texto `text-nexo-500`. As demais ficam em `text-steel-500 border-transparent`.
-2. **Abas Bloqueadas até Seleção:** As abas 2–6 iniciam com `opacity-40 cursor-not-allowed` e só são habilitadas quando o usuário seleciona um contrato na aba principal. A seleção é feita clicando em qualquer linha do grid de Contratos.
-3. **Banner de Contrato Selecionado:** Ao selecionar um contrato, um banner sutil aparece acima da tabela (`bg-nexo-500/10 border-nexo-500/30`) exibindo o código, material e cliente. O botão "Voltar para Contratos" (ícone ✕) limpa a seleção e retorna à aba Contratos.
-4. **Navegação Contratos → Cirurgias:** O clique numa linha da aba Contratos automaticamente seta o `selectedContract` no estado global e redireciona para a aba Cirurgias com os dados já filtrados por aquele `id_contrato`.
-5. **Deadline (Campo Virtual):** A coluna "Deadline" na aba Contratos não existe no banco. Ela é calculada em tempo real como `termino_ata - hoje` em dias, exibindo o resultado com cores condicionais: verde (`text-emerald-600`) para positivo e vermelho (`text-red-600`) para negativo/vencido.
-6. **Grid e Filtros:** Cada aba possui seu próprio array de colunas (`tabColumns`). O grid herda a mesma mecânica consolidada do projeto: filtros por checkbox com dropdown posicionado abaixo do cabeçalho, ordenação por clique, paginação minimalista e ícone de funil flutuante (`absolute right-1 top-1/2 -translate-y-1/2`).
-7. **Modal de Detalhes:** O clique em qualquer linha (exceto na aba Contratos, onde o clique seleciona o contrato) abre um modal genérico (`#detailModal`) com todos os campos da linha renderizados em layout chave-valor (2 colunas, `dl/dt/dd`). O modal usa `backdrop-blur-sm` e animação `scale-95 → scale-100`.
-8. **Controller JS (IIFE `OPME`):** O arquivo `public/js/cirurgias.js` encapsula toda a lógica no namespace `OPME` (padrão IIFE idêntico ao `IA` de itens arrematados). Estado global: `rawData`, `filteredData`, `viewData`, `filters`, `sort`, `pagination`, `currentTab`, `selectedContract`.
-
-## Integração OPME → Faturamento (Supra ERP)
-A geração de pedidos no banco de dados do Supra (`SGC` ou `SGC2`, resolvido dinamicamente pela API com base na empresa do contrato) para faturamento (Nota Fiscal) é o processo mais crítico do módulo OPME. Qualquer violação dessas regras fará com que o sistema de Expedição do Supra ignore o pedido, impossibilitando a emissão da NFe.
-
-1. **Geração do Cabeçalho (`dbo.pedido`):**
-   - É **OBRIGATÓRIO** o uso de bloqueio pessimista na leitura do próximo ID: `SELECT ISNULL(MAX(codigo), 0) + 1 FROM dbo.pedido WITH (UPDLOCK, SERIALIZABLE)`.
-   - Flags estritas obrigatórias: `id_situacao = 3` (Confirmado), `listapr_codigo = 1`, `condpg_codigo = 2` (30 dias).
-   - A data do pedido deve ser `GETDATE()`.
-
-2. **Geração dos Itens (`dbo.pedido_item`):**
-   - **Proibido inserir dados cegos:** Não se deve jamais inserir um item apenas com o `cod_bio` e strings vazias. Antes do `INSERT` na `pedido_item`, é obrigatório realizar um `SELECT` na tabela `dbo.produto` buscando pela coluna `codigo = cod_bio`.
-   - **Tributação e Metadados Padrão:** O `INSERT` deve obrigatoriamente preencher: `id_desconto_acrescimo = 1`, `id_base_calculo_st = 1`, `id_calculo_preco = 4`, `id_metodo_calculo_preco_venda = 1`.
-   - **Dados extraídos do Produto:** Deve-se puxar e injetar na `pedido_item` a exata `descricao`, `codigo_cst`, `preco_custo` e `unid_unidade` que retornaram da `dbo.produto`.
-
-3. **Matemática de Valores (A Regra do Zero):**
-   - Os valores unitários dos itens (`valor_unitario`) DEVEM ser estritamente os mesmos que vieram da tabela do Hub local (PostgreSQL).
-   - É **EXTREMAMENTE COMUM** em licitações (biddings) a existência de parafusos e componentes "bonificados" (inclusos no kit/placa) com valor `0` (Zero).
-   - Se o Hub mandar o valor como `0`, o código **DEVE inserir `0`** no Supra. 
-   - **NUNCA faça fallback** automático para o `preco_venda` da tabela `produto` do Supra caso o valor do Hub seja `0`, ou o total do pedido no ERP inflacionará e não baterá com o total do Hub.
-   - O ERP permite normalmente itens com valor `0` na expedição, desde que a `descricao` seja válida e os CSTs (`codigo_cst`, etc.) não sejam nulos.
-
-## Sincronização de Notas Fiscais (OPME -> Supra ERP)
-A rotina de sincronização de Notas Fiscais do OPME (`/api/opme/cirurgias/sync-notas`) possui regras cruciais de segurança e validação de status que não podem ser violadas, sob pena de exclusão indevida de dados ou falhas fatais no servidor (HTTP 500):
-
-1. **Dicionário de Status NFe do Supra (SGC / SGC2):**
-   - **Status Válido (Transmitida):** O código definitivo no banco de dados para notas fiscais válidas e emitidas é `id_situacao_nfe = 4`.
-   - **Status Inválido (Cancelada):** Notas fiscais canceladas ou inutilizadas assumem o status `id_situacao_nfe = 6`.
-   - **Legado:** Historicamente acreditava-se que o status correto era `2`. Por precaução de retrocompatibilidade, a validação backend DEVE aceitar tanto o status `4` quanto o `2` (`id_situacao_nfe === 4 || id_situacao_nfe === 2`).
-   - Se o script de sincronização buscar apenas o status `2`, ele tratará todas as notas válidas atuais (que são status `4`) como inválidas, causando a **exclusão em massa** dos números de notas do banco de dados local.
-
-2. **Prevenção de Crash Fatal (Anti-Null):**
-   - É comum que notas recém-geradas no ERP, rascunhos, ou notas corrompidas por cancelamento retornem a coluna `numero_nota` como nula (`NULL`) no SQL Server.
-   - Qualquer loop que processe o resultado das queries do Supra DEVE realizar checagens de falsy (`if (numeroNota)`) antes de tentar executar métodos como `.toString()`. 
-   - A falta dessa verificação causa uma exceção `TypeError: Cannot read properties of null/undefined (reading 'toString')` em tempo de execução, derrubando a API e retornando um Erro 500 para o usuário sem completar a sincronização.
-
-3. **Ciclo de Limpeza (Obrigatório):**
-   - A lógica da rota de sincronização foi projetada não apenas para puxar notas novas, mas para limpar notas que foram canceladas no ERP.
-   - O código **NÃO DEVE** usar `early returns` (`return res.json(...)`) caso não encontre nenhuma nota válida no Supra. O fluxo de execução deve obrigatoriamente descer até a rotina que itera sobre os registros locais, para que possa aplicar comandos `UPDATE opme.cirurgias SET nota_fiscal = NULL` nas linhas locais que possuíam notas que sumiram ou foram canceladas no ERP.
-
-## Arquitetura do Módulo de Custos de Produtos (Financeiro)
-O módulo de Custos de Produtos foi refatorado para suportar integração cross-database e lidar com casos onde itens de notas podem ter sido gerados a partir da SGC (Nexomed) ou SGC2 (BML), ou até mesmo não possuir custo nativo de ERP.
-
-### 1. Cost Engine (Motor de Precificação Multibanco)
-- O motor de custos (`services/cost_engine.js`) não se limita à empresa primária informada. Ele dispara queries concorrentes via `Promise.all` para os bancos Supra SGC e SGC2, tentando localizar o custo de compra na raiz (`compra_item` e `compra_item_lote`).
-- A lógica emprega uma cascata de **5 Níveis** de desempate e fallback:
-  1. **Nível 1 (Lote Exato - SGC e SGC2):** Custo de compra buscando na `compra_item_lote` através do `prod_codigo` e `lote_numero` exato.
-  2. **Nível 2 (Produto Genérico - SGC e SGC2):** Custo da compra mais recente buscando apenas pelo `prod_codigo`.
-  3. **Resolução de Conflitos (Supra):** Caso encontre em ambos os bancos, prioriza o Nível 1 sobre o 2. Em caso de empate de nível, compara o campo `data_entrada` (data de fechamento da compra no Supra) e adota estritamente o valor da mais recente.
-  4. **Nível 3 e 4 (Postgres/Local):** Se não achar custo no legado, realiza o fallback buscando no histórico local (tabela `financeiro.vendas_custos`) caso algum outro usuário já tenha preenchido um custo manual para aquele Produto/Lote anteriormente.
-  5. **Nível 5 (Custo Nulo):** Se falhar em tudo, assinala o custo como `0.00`, direcionando a nota para auditoria manual na aba "Custos Nulos".
-
-### 2. Sincronização de Dados (`sync_custos.js`)
-- A sincronização via API (`/api/financeiro/custos/sincronizar`) faz varreduras para um mês/ano iterando sobre pools conectados ao `SGC` e `SGC2`.
-- O cruzamento de cabeçalho e item para resgatar a data de entrada (`data_entrada`) deve ser feito unindo `compra_item ci` com `compra c ON ci.comp_codigo = c.codigo`.
-- CFOPS de Vendas (5102, 6102) entram multiplicados por 1, CFOPs de Devolução (1202, 2202) são inseridos com quantidades multiplicadas por `-1`.
-
-### 3. Frontend e Client-Side State
-- O grid de "Custos Nulos" e "Histórico" carregam todo o seu conteúdo via cache Redis. O grid do Histórico, em particular, abdicou da necessidade de seleção de ano e carrega a vida inteira do módulo ordenando os mais recentes no topo (`data_emissao DESC, nota_fiscal DESC`).
-- A inserção de custo manual no grid envia um `PUT /api/financeiro/custos/save-batch` passando não o ID, mas as chaves lógicas do produto: `empresa, nota_fiscal, cod_produto, lote`.
-- O PostgreSQL atualiza todos os registros gêmeos no histórico e a UI varre seus arrays `rawData` e `filteredData` em memória eliminando visualmente todas as instâncias daquele item pendente resolvido, renderizando dinamicamente a badge do contador sem forçar um refresh na API.
-- **Reload Silencioso (Seamless UX):** Após a finalização de uma sincronização com sucesso via Modal, ao invés de forçar um reload pesado da página (`window.location.reload()`), o frontend intercepta o fechamento do modal e executa chamadas *silenciosas* para atualizar todas as abas concorrentemente (`loadCustosNulos`, `loadResumoData`, `loadHistorico`), poupando banda e proporcionando uma experiência contínua.
-
-### 4. Relatórios, Exportação e Tratamento de Devoluções
-- **Matemática de Devoluções:** Produtos provenientes de CFOPs de devolução (como "DEVOLUÇÃO RETORNO DE VENDA") devem ser manipulados estritamente como *impactos negativos*. Isso significa que toda renderização, seja na tabela em tela, seja nas planilhas Excel geradas, ou no TXT, deve calcular `valor_unitario`, `valor_total`, `custo_unitario`, e `custo_total` como perdas para a empresa.
-- **Formatação Visual Contábil:** Para todo e qualquer valor referente a uma "DEVOLUÇÃO", a estética obrigatória para a exibição de dados não é usar um simples `-`, e sim o padrão financeiro com parênteses. (Ex: `(R$ 1.250,50)` ou `(1.250,50)`). No JavaScript, as funções de formatação forçam o módulo absoluto e encapsulam com os parênteses: `(${Math.abs(val)})`.
-- **Exportação Excel (SheetJS):** A célula Excel das colunas de Devolução deve receber formatação embutida estilo accounting (`z: '#,##0.00;(#,##0.00)'`) para que o Excel nativo reconheça os parênteses como número negativo e permita soma de colunas pelo usuário final.
-- **Relatório TXT (Layout Landscape):** O arquivo `.txt` gerado a partir do resumo possui exigência de formatação "Landscape" (margens expandidas com `padEnd`). Ele também precisa utilizar o formato de datas estrito Brasileiro (`DD/MM/YYYY`) e conter o bloco fundamental de totalizadores mensais: `Mês`, `Total Vendido`, `Total Devolvido`, `Total Custo`, `Total Custo Dev.` e `Total`, sendo todos os débitos também formatados entre parênteses.
-
-### 5. Segurança e Permissionamento (RBAC)
-- O módulo de custos não é público para todos os perfis financeiros. O controle é isolado através da permissão específica `canViewCustos`.
-- A role explícita que concede esse acesso se chama **"Módulo Custos Produtos"** (cadastrada em `public/js/perfis.js`).
-- O `auth_guard.js` é o guardião de frontend para a rota `/custos_produtos`, despachando para a tela estática `403.html` usuários que tentam contornar a sidebar.
-- No backend (`routes/financeiro.js`), é obrigatória a injeção do middleware em cascata: `authMiddleware, requirePermission('canViewCustos')` protegendo as manipulações de banco de dados.
+- [Apresentação e uso diário do Hub](../README.md).
+- [Base EJS e criação de páginas](../app/views/README.md).
+- [CSS e tokens compartilhados](../app/public/css/README.md).
+- [Data Grid, presets e extensões](../app/public/js/components/data-grid/README.md).
+- [FastAPI e contrato VBA](../api/README.md).
+- [Execução, cobertura e limites dos testes](../tests/e2e/README.md).

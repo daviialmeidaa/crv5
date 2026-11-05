@@ -1,0 +1,36 @@
+/* Ajustes exclusivos da pagina cliente_detalhe. */
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out forwards;
+}
+
+.animate-delay-1 {
+    animation-delay: 0.05s;
+}
+
+.animate-delay-2 {
+    animation-delay: 0.1s;
+}
+
+.animate-delay-3 {
+    animation-delay: 0.15s;
+}
+
+.animate-delay-4 {
+    animation-delay: 0.2s;
+}
+
+.table-container {
+    max-height: calc(100vh - 520px);
+}
+
+/* Variante compacta da rolagem no filtro de notas do cliente. */
+:root[data-page="cliente_detalhe"] #filterCheckboxList::-webkit-scrollbar { width: 6px; }
+:root[data-page="cliente_detalhe"] #filterCheckboxList::-webkit-scrollbar-track { background: transparent; }
+:root[data-page="cliente_detalhe"] #filterCheckboxList::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+.dark[data-page="cliente_detalhe"] #filterCheckboxList::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-dark); }

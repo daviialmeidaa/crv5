@@ -1,0 +1,86 @@
+/* Fonte unica da paleta e dos estados semanticos do Hub. */
+:root {
+    --font-ui: Inter;
+    --color-nexo-50: #e0f7fa;
+    --color-nexo-100: #b2ebf2;
+    --color-nexo-200: #80deea;
+    --color-nexo-300: #4dd0e1;
+    --color-nexo-400: #26c6da;
+    --color-nexo-500: #0097A7;
+    --color-nexo-600: #00838F;
+    --color-nexo-700: #006064;
+    --color-nexo-800: #004D40;
+    --color-nexo-900: #003330;
+    --color-steel-400: #9ca3af;
+    --color-steel-500: #6b7280;
+    --color-steel-600: #4b5563;
+    --color-steel-700: #374151;
+    --color-steel-800: #1f2937;
+    --color-steel-900: #111827;
+    --color-nexo-500-rgb: 0 151 167;
+    --color-success: #1cc88a;
+    --color-success-strong: #17a673;
+    --color-success-soft: #d1fae5;
+    --color-success-text: #065f46;
+    --color-alert: #f6c23e;
+    --color-alert-strong: #dda520;
+    --color-alert-soft: #fef3c7;
+    --color-alert-text: #92400e;
+    --color-danger: #e74a3b;
+    --color-danger-strong: #c0392b;
+    --color-danger-soft: #fee2e2;
+    --color-danger-text: #991b1b;
+    --color-info: #3b82f6;
+    --color-info-strong: #007BFF;
+    --scrollbar-thumb: #cbd5e1;
+    --scrollbar-thumb-dark: #475569;
+    --scrollbar-thumb-hover: #94a3b8;
+    --color-info-soft: #dbeafe;
+    --color-info-text: #1e40af;
+    --color-neutral: #858796;
+    --color-neutral-strong: #6c6d7e;
+    --color-neutral-soft: #f3f4f6;
+    --color-neutral-text: #4b5563;
+    --color-on-status: #fff;
+    --gradient-brand: linear-gradient(135deg, var(--color-nexo-500), var(--color-nexo-600));
+    --gradient-success: linear-gradient(135deg, var(--color-success), var(--color-success-strong));
+    --gradient-alert: linear-gradient(135deg, var(--color-alert), var(--color-alert-strong));
+    --gradient-danger: linear-gradient(135deg, var(--color-danger), var(--color-danger-strong));
+    --gradient-neutral: linear-gradient(135deg, var(--color-neutral), var(--color-neutral-strong));
+    --badge-success-bg: var(--color-success-soft);
+    --badge-success-color: var(--color-success-text);
+    --badge-alert-bg: var(--color-alert-soft);
+    --badge-alert-color: var(--color-alert-text);
+    --badge-danger-bg: var(--color-danger-soft);
+    --badge-danger-color: var(--color-danger-text);
+    --badge-info-bg: var(--color-info-soft);
+    --badge-info-color: var(--color-info-text);
+    --badge-neutral-bg: var(--color-neutral-soft);
+    --badge-neutral-color: var(--color-neutral-text);
+}
+
+.dark {
+    --badge-success-bg: rgba(16, 185, 129, 0.15);
+    --badge-success-color: #6ee7b7;
+    --badge-alert-bg: rgba(245, 158, 11, 0.15);
+    --badge-alert-color: #fbbf24;
+    --badge-danger-bg: rgba(239, 68, 68, 0.15);
+    --badge-danger-color: #fca5a5;
+    --badge-info-bg: rgba(59, 130, 246, 0.15);
+    --badge-info-color: #93c5fd;
+    --badge-neutral-bg: rgba(107, 114, 128, 0.15);
+    --badge-neutral-color: #d1d5db;
+}
+
+/* Preserva as fontes atuais enquanto a identidade visual e compartilhada. */
+:root[data-page="403"],
+:root[data-page="custos_produtos"] {
+    --font-ui: Outfit;
+}
+
+body.loading-auth {
+    visibility: hidden;
+}
+
+:root[data-page] .animation-delay-100 { animation-delay: 0.1s; }
+:root[data-page] .animation-delay-150 { animation-delay: 0.15s; }

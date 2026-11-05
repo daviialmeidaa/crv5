@@ -1,0 +1,47 @@
+/* Ajustes exclusivos da pagina agenda_licitacoes. */
+
+.table-container {
+    max-height: calc(100vh - 260px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Densidade e quebra de linhas da agenda em produção. Altura cresce com o conteúdo. */
+[data-grid='alTableBody'] .hub-data-grid-table {
+    min-width: 0;
+}
+[data-grid='alTableBody'] tr[data-grid-row] {
+    height: 110px;
+}
+[data-grid='alTableBody'] .hub-data-grid-table > tbody > tr[data-grid-row] > td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+[data-grid='alTableBody'] .hub-data-grid-table > tbody > tr > .hub-grid-cell-wrap {
+    min-width: 0;
+    max-width: none;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+[data-grid='alTableBody'] .hub-data-grid-table > tbody > tr > td[data-col='observacoes_status'] {
+    min-width: 120px;
+}
+@media (min-width: 1536px) {
+    [data-grid='alTableBody'] tr[data-grid-row] {
+        height: 150px;
+    }
+}

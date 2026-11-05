@@ -1,0 +1,30 @@
+/* Ajustes exclusivos da pagina contas_a_receber. */
+
+.table-container {
+    max-height: calc(100vh - 210px);
+}
+
+:root[data-page="contas_a_receber"] #syncModal {
+    opacity:0;
+}
+
+:root[data-page="contas_a_receber"] #syncModalIcon {
+    background: linear-gradient(135deg, var(--color-nexo-500), var(--color-nexo-600));
+}
+
+:root[data-page="contas_a_receber"] #syncProgressBar {
+    width: 0%
+}
+
+:root[data-page="contas_a_receber"] .contas-a-receber-sync-success {
+    background: var(--gradient-success);
+}
+
+:root[data-page="contas_a_receber"] .contas-a-receber-sync-danger {
+    background: var(--gradient-danger);
+}
+
+:root[data-page="contas_a_receber"] .sync-count-analyzed { color: var(--color-info-strong); }
+:root[data-page="contas_a_receber"] .sync-count-updated { color: var(--color-nexo-500); }
+:root[data-page="contas_a_receber"] .sync-count-new { color: var(--color-success); }
+:root[data-page="contas_a_receber"] .sync-count-deleted { color: var(--color-danger); }

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html data-page="primeiro_acesso" lang="pt-BR" class="h-full">
+<head>
+    <!-- Guard: Verifica autenticação e permissões -->
+    <script src="/js/shared/auth_guard.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Primeiro Acesso - Nexomed</title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <meta name="description" content="Sistema de Contas a Receber - Nexomed SGC Financeiro">
+    <link rel="stylesheet" href="/css/global.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/shared/tailwind.config.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/components/auth-card.css">
+    <link rel="stylesheet" href="/css/components/forms.css">
+    <link rel="stylesheet" href="/css/components/buttons.css">
+    <link rel="stylesheet" href="/css/pages/primeiro_acesso/primeiro_acesso.css">
+</head>
+<body class="h-full font-sans overflow-hidden">
+
+    <!-- CAMADA 1: Background (Gradiente base + Imagem mascarada) -->
+    <div class="fixed inset-0">
+        <div class="absolute inset-0 bg-image-continuation"></div>
+        <div class="absolute inset-y-0 left-0 w-[50%] lg:w-[55%] xl:w-[60%] 2xl:w-[65%] 3xl:w-[58%] 4xl:w-[52%] image-fade-mask">
+            <img src="/assets/images/login-image.png" alt=""
+                class="absolute inset-0 w-full h-full object-cover object-left"
+                aria-hidden="true">
+            <div class="absolute inset-0 bg-gradient-to-r from-steel-900/30 via-transparent to-transparent"></div>
+        </div>
+    </div>
+
+    <!-- CAMADA 2: Card flutuante responsivo -->
+    <div class="relative z-10 flex items-center justify-center lg:justify-end min-h-full
+                px-4 sm:px-8 lg:px-8 xl:px-14 2xl:px-24 3xl:px-36 4xl:px-48
+                py-6">
+
+        <div class="glass-card relative w-full max-w-md
+                    lg:w-[340px] xl:w-[360px] 2xl:w-[420px]
+                    rounded-3xl
+                    px-6 lg:px-7 2xl:px-11
+                    py-7 lg:py-8 2xl:py-11
+                    animate-card-in">
+
+            <!-- Accent bar top -->
+            <div class="absolute top-0 left-8 right-8 h-1 bg-gradient-to-r from-nexo-500 via-nexo-400 to-nexo-600 rounded-b-full"></div>
+
+            <!-- Logo -->
+            <div class="mb-7 lg:mb-7 2xl:mb-9 animate-fade-in-up flex justify-center">
+                <img src="/assets/images/logo.png" alt="Nexomed" class="h-8 lg:h-8 2xl:h-11">
+            </div>
+
+            <!-- Header -->
+            <div class="w-full mb-5 lg:mb-5 2xl:mb-7 animate-fade-in-up-delay">
+                <h1 class="text-lg lg:text-xl 2xl:text-2xl font-semibold text-steel-800 tracking-tight">Primeiro Acesso</h1>
+                <p class="text-steel-500 text-sm mt-1">Crie sua senha definitiva para acessar o sistema.</p>
+            </div>
+
+            <!-- Mensagem de Erro -->
+            <div id="errorMessage" class="hidden w-full mb-4 animate-fade-in-up-delay">
+                <div class="flex items-center gap-2 px-4 py-3 bg-red-50/90 border border-red-100 rounded-xl text-red-600 text-sm backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span id="errorText"></span>
+                </div>
+            </div>
+
+            <!-- Formulário -->
+            <form id="firstAccessForm" class="w-full space-y-4 lg:space-y-4 2xl:space-y-5 animate-fade-in-up-delay-2">
+                <div>
+                    <label for="newPassword" class="block text-[11px] lg:text-xs 2xl:text-xs font-medium text-steel-500 uppercase tracking-wider mb-1 2xl:mb-2">Nova Senha</label>
+                    <input id="newPassword" name="password" type="password" required
+                           class="input-nexo w-full px-3.5 2xl:px-4 py-2 2xl:py-3 bg-white/80 border border-gray-200/70 rounded-xl text-steel-800 text-[13px] 2xl:text-sm outline-none transition-all duration-200 focus:border-nexo-500 focus:bg-white"
+                           placeholder="Mínimo de 6 caracteres" minlength="6">
+                </div>
+
+                <div>
+                    <label for="confirmPassword" class="block text-[11px] lg:text-xs 2xl:text-xs font-medium text-steel-500 uppercase tracking-wider mb-1 2xl:mb-2">Confirmar Nova Senha</label>
+                    <input id="confirmPassword" name="confirmPassword" type="password" required
+                           class="input-nexo w-full px-3 2xl:px-4 py-2 2xl:py-3 bg-white/80 border border-gray-200/70 rounded-xl text-steel-800 text-[13px] 2xl:text-sm outline-none transition-all duration-200 focus:border-nexo-500 focus:bg-white"
+                           placeholder="Repita a nova senha" minlength="6">
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn-nexo w-full bg-nexo-500 hover:bg-nexo-600 text-white font-medium py-2 2xl:py-3 px-4 rounded-xl transition-all duration-200 active:scale-[0.98] flex justify-center items-center gap-2 shadow-lg shadow-nexo-500/25 mt-2 text-[14px] 2xl:text-base">
+                    <span id="btnText">Salvar Senha e Acessar</span>
+                    <svg id="loadingSpinner" class="animate-spin h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Footer -->
+            <div class="mt-7 lg:mt-7 2xl:mt-9 text-center text-xs text-steel-400">
+                &copy; <span id="footerYear">2026</span> All Rights Reserved &mdash; Desenvolvido com ☕ por <a href="https://www.linkedin.com/in/davi-almeidaa/" target="_blank" rel="noopener noreferrer" class="text-nexo-500 hover:text-nexo-600 font-medium transition-colors">Davi Almeida</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('footerYear').textContent = new Date().getFullYear();
+    </script>
+    <script src="/js/pages/primeiro_acesso/primeiro_acesso.js"></script>
+</body>
+</html>

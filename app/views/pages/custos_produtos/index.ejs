@@ -1,0 +1,284 @@
+<!-- Content Area -->
+        <div class="flex-1 p-4 lg:p-6 overflow-hidden flex flex-col">
+
+            <!-- Tabs Navigation -->
+            <div class="flex items-center gap-0 mb-4 border-b border-gray-200 dark:border-steel-700">
+                <button class="tab-btn active px-5 py-3 text-sm font-semibold text-nexo-600 dark:text-nexo-400 transition-colors" data-tab="resumo">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                        </svg>
+                        Resumo
+                    </span>
+                </button>
+                <button class="tab-btn px-5 py-3 text-sm font-medium text-steel-500 dark:text-steel-400 hover:text-steel-700 dark:hover:text-gray-200 transition-colors" data-tab="custos-nulos">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                        Custos Nulos
+                        <span id="nullCostsBadge" class="hidden px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white leading-none">0</span>
+                    </span>
+                </button>
+                <button class="tab-btn px-5 py-3 text-sm font-medium text-steel-500 dark:text-steel-400 hover:text-steel-700 dark:hover:text-gray-200 transition-colors" data-tab="historico">
+                    <span class="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Histórico
+                    </span>
+                </button>
+
+                <!-- Email Button (Right Aligned) -->
+                <button type="button" onclick="CustosApp.openEmailModal()" class="ml-auto mr-2 px-4 py-2 bg-nexo-500 hover:bg-nexo-600 text-white rounded-lg text-xs font-semibold shadow-sm transition-all flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+                    </svg>
+                    Enviar Relatório
+                </button>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- TAB 1: RESUMO -->
+            <!-- ============================================== -->
+            <div id="tab-resumo" class="tab-content active flex-1 overflow-y-auto custom-scrollbar fade-in-up pr-2">
+
+                <!-- Filtro de Ano -->
+                <div class="flex items-center gap-3 mb-6">
+                    <label class="text-sm font-medium text-steel-600 dark:text-steel-400">Ano:</label>
+                    <select id="resumoAnoSelect" class="bg-white dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/30 focus:border-nexo-500 transition-all shadow-sm cursor-pointer">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- TOTAIS GERAIS -->
+                <div class="mb-8">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-steel-600 dark:text-steel-300 mb-3 flex items-center gap-2">
+                        <div class="w-1 h-4 bg-nexo-500 rounded-full"></div>
+                        Totais Gerais
+                    </h3>
+                    <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
+                        <table class="w-full summary-table">
+                            <thead>
+                                <tr class="bg-nexo-600 dark:bg-steel-900">
+                                    <th class="px-4 py-3 text-left text-white font-semibold w-48"></th>
+                                    <th class="px-4 py-3 text-right text-white font-semibold">Nexomed</th>
+                                    <th class="px-4 py-3 text-right text-white font-semibold">BML</th>
+                                    <th class="px-4 py-2.5 text-right text-white font-semibold">Consolidado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="totaisGeraisBody" class="divide-y divide-gray-100 dark:divide-steel-700">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-steel-700/30 transition-colors">
+                                    <td class="px-4 py-2.5 font-medium text-steel-700 dark:text-gray-300">Vendas</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-vendas-nexo">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-vendas-bml">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right font-semibold text-steel-800 dark:text-gray-100" id="tg-vendas-total">R$ 0,00</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-steel-700/30 transition-colors">
+                                    <td class="px-4 py-2.5 font-medium text-steel-700 dark:text-gray-300">Vendas Devolvidas</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-devolvidas-nexo">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-devolvidas-bml">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right font-semibold text-steel-800 dark:text-gray-100" id="tg-devolvidas-total">R$ 0,00</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-steel-700/30 transition-colors">
+                                    <td class="px-4 py-2.5 font-medium text-steel-700 dark:text-gray-300">Custos</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-custos-nexo">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-custos-bml">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right font-semibold text-steel-800 dark:text-gray-100" id="tg-custos-total">R$ 0,00</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50 dark:hover:bg-steel-700/30 transition-colors">
+                                    <td class="px-4 py-2.5 font-medium text-steel-700 dark:text-gray-300">Custos Devolvidos</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-custos-dev-nexo">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right text-steel-800 dark:text-gray-200" id="tg-custos-dev-bml">R$ 0,00</td>
+                                    <td class="px-4 py-2.5 text-right font-semibold text-steel-800 dark:text-gray-100" id="tg-custos-dev-total">R$ 0,00</td>
+                                </tr>
+                                <tr class="bg-nexo-50 dark:bg-nexo-900/20 border-t-2 border-nexo-200 dark:border-nexo-800/50">
+                                    <td class="px-4 py-3 font-bold text-nexo-700 dark:text-nexo-300 uppercase text-xs tracking-wider">Totais Gerais</td>
+                                    <td class="px-4 py-3 text-right font-bold text-nexo-700 dark:text-nexo-300" id="tg-total-nexo">R$ 0,00</td>
+                                    <td class="px-4 py-3 text-right font-bold text-nexo-700 dark:text-nexo-300" id="tg-total-bml">R$ 0,00</td>
+                                    <td class="px-4 py-3 text-right font-bold text-nexo-600 dark:text-nexo-400 bg-nexo-100/50 dark:bg-nexo-900/30" id="tg-total-geral">R$ 0,00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TOTAIS MENSAIS -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                    <!-- Mensais Nexomed -->
+                    <div>
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-steel-600 dark:text-steel-300 mb-3 flex items-center gap-2">
+                            <div class="w-1 h-4 bg-nexo-500 rounded-full"></div>
+                            Totais Mensais Nexomed
+                        </h3>
+                        <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
+                            <table class="w-full summary-table">
+                                <thead>
+                                    <tr class="bg-nexo-600 dark:bg-steel-900">
+                                        <th class="px-3 py-2.5 text-left text-white font-semibold">Mês</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Vendido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Devolvido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo Dev.</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mensaisNexoBody" class="divide-y divide-gray-100 dark:divide-steel-700">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Mensais BML -->
+                    <div>
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-steel-600 dark:text-steel-300 mb-3 flex items-center gap-2">
+                            <div class="w-1 h-4 bg-nexo-500 rounded-full"></div>
+                            Totais Mensais BML
+                        </h3>
+                        <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
+                            <table class="w-full summary-table">
+                                <thead>
+                                    <tr class="bg-nexo-600 dark:bg-steel-900">
+                                        <th class="px-3 py-2.5 text-left text-white font-semibold">Mês</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Vendido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Devolvido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo Dev.</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mensaisBmlBody" class="divide-y divide-gray-100 dark:divide-steel-700">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOTAIS TRIMESTRAIS -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+                    <!-- Trimestrais Nexomed -->
+                    <div>
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-steel-600 dark:text-steel-300 mb-3 flex items-center gap-2">
+                            <div class="w-1 h-4 bg-nexo-500 rounded-full"></div>
+                            Totais Trimestrais Nexomed
+                        </h3>
+                        <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
+                            <table class="w-full summary-table">
+                                <thead>
+                                    <tr class="bg-nexo-600 dark:bg-steel-900">
+                                        <th class="px-3 py-2.5 text-left text-white font-semibold w-40"></th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Vendido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Devolvido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo Dev.</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trimestraisNexoBody" class="divide-y divide-gray-100 dark:divide-steel-700">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Trimestrais BML -->
+                    <div>
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-steel-600 dark:text-steel-300 mb-3 flex items-center gap-2">
+                            <div class="w-1 h-4 bg-nexo-500 rounded-full"></div>
+                            Totais Trimestrais BML
+                        </h3>
+                        <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
+                            <table class="w-full summary-table">
+                                <thead>
+                                    <tr class="bg-nexo-600 dark:bg-steel-900">
+                                        <th class="px-3 py-2.5 text-left text-white font-semibold w-40"></th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Vendido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Devolvido</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total Custo Dev.</th>
+                                        <th class="px-3 py-2.5 text-right text-white font-semibold">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trimestraisBmlBody" class="divide-y divide-gray-100 dark:divide-steel-700">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================== -->
+            <!-- TAB 2: CUSTOS NULOS -->
+            <!-- ============================================== -->
+            <div id="tab-custos-nulos" class="tab-content flex-1 flex flex-col overflow-hidden">
+
+                <!-- Toolbar -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <select id="nulosAnoSelect" class="bg-white dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/30 focus:border-nexo-500 transition-all shadow-sm cursor-pointer">
+                            <!-- Populated by JS -->
+                        </select>
+                        <select id="nulosMesSelect" class="bg-white dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/30 focus:border-nexo-500 transition-all shadow-sm cursor-pointer">
+                            <option value="">Todos os meses</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <%- include('../../components/data-grid/toolbar', { grid: {clearId: 'nulosBtnClearFilters'} }) %>
+                        <%- include('../../components/data-grid/toolbar', { grid: {exportId: 'nulosBtnExport'} }) %>
+                        <button id="nulosBtnRefresh" class="px-3 py-2 flex items-center gap-2 bg-nexo-600 text-white rounded-lg text-xs font-medium hover:bg-nexo-700 transition-colors shadow-sm">
+                            <svg id="nulosRefreshIcon" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Atualizar Custos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Data Grid -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden">
+                    <%- include('../../components/data-grid/grid', { grid: {"bodyId": "nulosTableBody", "headerId": "nulosTableHeader", "pageSizeId": "nulosItemsPerPage", "infoId": "nulosPaginationInfo", "paginationId": "nulosPaginationControls", "clearId": "nulosBtnClearFilters", "exportId": "nulosBtnExport"} }) %>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- TAB 3: HISTÓRICO -->
+            <!-- ============================================== -->
+            <div id="tab-historico" class="tab-content flex-1 flex flex-col overflow-hidden">
+
+                <!-- Toolbar -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <select id="histAnoSelect" class="hidden bg-white dark:bg-steel-700 border border-gray-200 dark:border-steel-600 text-steel-800 dark:text-gray-200 text-sm rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-nexo-500/30 focus:border-nexo-500 transition-all shadow-sm cursor-pointer">
+                            <!-- Populated by JS -->
+                        </select>
+                        <input type="text" id="histSearchInput" placeholder="Buscar por produto, cliente, nota..." class="px-4 py-2 border border-gray-200 dark:border-steel-600 bg-white dark:bg-steel-700 rounded-lg text-sm text-steel-800 dark:text-gray-200 placeholder-steel-400 focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 outline-none w-64 md:w-80 transition-all shadow-sm">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <%- include('../../components/data-grid/toolbar', { grid: {clearId: 'histBtnClearFilters'} }) %>
+                        <%- include('../../components/data-grid/toolbar', { grid: {exportId: 'histBtnExport'} }) %>
+                    </div>
+                </div>
+
+                <!-- Data Grid -->
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden">
+                    <%- include('../../components/data-grid/grid', { grid: {"bodyId": "histTableBody", "headerId": "histTableHeader", "pageSizeId": "histItemsPerPage", "infoId": "histPaginationInfo", "paginationId": "histPaginationControls", "clearId": "histBtnClearFilters", "exportId": "histBtnExport"} }) %>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->

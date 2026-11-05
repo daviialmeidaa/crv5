@@ -1,0 +1,16 @@
+<header class="app-navbar <%= page.navbarTall ? 'app-navbar--tall' : '' %> <%= page.navbarShrink ? 'shrink-0' : '' %> bg-white dark:bg-steel-800 border-b border-gray-200 dark:border-steel-700 flex items-center justify-between px-6 shadow-sm z-40 transition-colors duration-200">
+    <div class="flex items-center gap-4">
+        <button id="sidebarToggleBtn"
+            class="p-1.5 rounded-lg text-steel-500 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+        <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100"><%= page.heading %></h2>
+    </div>
+    <div class="flex items-center gap-4">
+        <%- include('navbar/notifications') %>
+        <%- include('navbar/theme-toggle') %>
+        <%- include('navbar/profile-menu') %>
+    </div>
+</header>

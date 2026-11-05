@@ -1,0 +1,237 @@
+<!-- Content Area -->
+        <div class="flex-1 p-4 lg:p-6 overflow-hidden flex flex-col">
+
+            <!-- Abas Principais (Ativos / Inativos) -->
+            <div id="mainTabsContainer"
+                class="flex items-center justify-between gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
+                <div class="flex items-center gap-1">
+                    <button
+                        class="main-tab px-4 py-2 2xl:py-2.5 text-sm font-medium border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 transition-colors"
+                        data-main-tab="contratos" onclick="OPME.switchTab('contratos')">
+                        Contratos Ativos
+                    </button>
+                    <button
+                        class="main-tab px-4 py-2 2xl:py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 hover:text-steel-700 dark:text-steel-400 dark:hover:text-steel-300 transition-colors"
+                        data-main-tab="contratos_inativos" onclick="OPME.switchTab('contratos_inativos')">
+                        Contratos Inativos
+                    </button>
+                </div>
+                <div class="flex items-center gap-2 mb-2">
+                    <button id="btnFullscreenGridMain" onclick="OPME.toggleFullscreenGrid()" class="btn-fullscreen-grid flex px-2 py-1.5 items-center justify-center bg-white dark:bg-steel-700 text-steel-500 dark:text-gray-400 hover:text-nexo-600 dark:hover:text-nexo-400 border border-gray-200 dark:border-steel-600 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-steel-600 transition-colors shadow-sm" title="Modo Tela Cheia">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        </svg>
+                    </button>
+                    <button id="btnNewContract" onclick="OPME.openContratoModal()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Novo Contrato
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPIs Dashboard -->
+            <div id="kpisContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6 gap-3 mb-4 fade-in-up">
+
+                <!-- Contratos Ativos | Inativos -->
+                <div class="h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300">
+                    <div class="absolute top-3 right-3 opacity-10">
+                        <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-[11px] font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1">Contratos (Ativo|Inativo)</h3>
+                    <p id="kpiContratos" class="text-lg font-bold font-mono text-blue-600 dark:text-blue-400">- | -</p>
+                </div>
+
+                <!-- Cirurgias Realizadas -->
+                <div class="h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-nexo-300 dark:hover:border-nexo-700 transition-all duration-300">
+                    <div class="absolute top-3 right-3 opacity-10">
+                        <svg class="h-6 w-6 text-nexo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-[11px] font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1">Cirurgias Realizadas</h3>
+                    <p id="kpiCirurgiasRealizadas" class="text-lg font-bold font-mono text-steel-800 dark:text-gray-100">-</p>
+                </div>
+
+                <!-- Cirurgias em Aberto -->
+                <div onclick="if(typeof OPME !== 'undefined') OPME.openCirurgiasEmAbertoModal()" class="cursor-pointer h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-amber-300 dark:hover:border-amber-700 transition-all duration-300">
+                    <div class="absolute top-3 right-3 opacity-10">
+                        <svg class="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-[11px] font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1">Cirurgias em Aberto</h3>
+                    <p id="kpiCirurgiasEmAberto" class="text-lg font-bold font-mono text-amber-600 dark:text-amber-400">-</p>
+                </div>
+
+                <!-- Total Realizado -->
+                <div class="h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 transition-all duration-300">
+                    <div class="absolute top-3 right-3 opacity-10">
+                        <svg class="h-6 w-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-[11px] font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1">Total Realizado</h3>
+                    <p id="kpiTotalRealizado" class="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">-</p>
+                </div>
+
+                <!-- Total Faturado -->
+                <div class="h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300">
+                    <div class="absolute top-3 right-3 opacity-10">
+                        <svg class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-[11px] font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1">Total Faturado</h3>
+                    <p id="kpiTotalFaturado" class="text-lg font-bold font-mono text-blue-600 dark:text-blue-400">-</p>
+                </div>
+
+                <!-- Total A Faturar -->
+                <div class="h-full bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-3 relative overflow-hidden hover:-translate-y-0.5 hover:shadow-md hover:border-amber-300 dark:hover:border-amber-700 transition-all duration-300">
+                    <div class="absolute top-3 right-3 opacity-10">
+                        <svg class="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-[11px] font-bold text-steel-500 dark:text-steel-400 uppercase tracking-wider mb-1">Total A Faturar</h3>
+                    <p id="kpiTotalAFaturar" class="text-lg font-bold font-mono text-amber-600 dark:text-amber-400">-</p>
+                </div>
+            </div>
+
+            <!-- Sistema de Abas (Apenas em Detalhes do Contrato) -->
+            <div id="tabsContainer"
+                class="hidden flex items-center gap-1 mb-4 border-b border-gray-200 dark:border-steel-700 fade-in-up">
+                <button
+                    class="opme-tab px-4 py-2 2xl:py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="cirurgias" onclick="OPME.switchTab('cirurgias')">
+                    Cirurgias
+                </button>
+                <button
+                    class="opme-tab px-4 py-2 2xl:py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="unidades" onclick="OPME.switchTab('unidades')">
+                    Unidades
+                </button>
+                <button
+                    class="opme-tab px-4 py-2 2xl:py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="saldoata" onclick="OPME.switchTab('saldoata')">
+                    Saldo Ata
+                </button>
+                <button
+                    class="opme-tab px-4 py-2 2xl:py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="saldoatahospital" onclick="OPME.switchTab('saldoatahospital')">
+                    Saldo Ata Hospital
+                </button>
+                <button
+                    class="opme-tab px-4 py-2 2xl:py-2.5 text-sm font-medium border-b-2 border-transparent text-steel-500 opacity-40 cursor-not-allowed transition-colors"
+                    data-tab="bancocodigos" onclick="OPME.switchTab('bancocodigos')">
+                    Banco de Códigos
+                </button>
+                <div class="ml-auto flex items-center gap-2">
+                    <button id="btnSyncNotas" onclick="OPME.syncNotasFiscais()" class="hidden px-3 py-1.5 items-center gap-1.5 bg-nexo-500 text-white border border-nexo-600 rounded-lg text-xs font-medium hover:bg-nexo-600 transition-colors shadow-sm" title="Sincronizar NFs com Supra">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Sincronizar NFs
+                    </button>
+
+                    <button id="btnExportExcel" onclick="OPME.exportExcel()" class="hidden px-3 py-1.5 items-center gap-1.5 bg-white dark:bg-steel-700 text-steel-600 dark:text-gray-300 border border-gray-200 dark:border-steel-600 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-steel-600 transition-colors shadow-sm" title="Exportar Excel">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Exportar
+                    </button>
+                    <!-- Separator -->
+                    <div class="w-px h-6 bg-gray-200 dark:bg-steel-600 mx-1"></div>
+                    <!-- Fullscreen Button -->
+                    <button id="btnFullscreenGrid" onclick="OPME.toggleFullscreenGrid()" class="btn-fullscreen-grid flex px-2 py-1.5 items-center justify-center bg-white dark:bg-steel-700 text-steel-500 dark:text-gray-400 hover:text-nexo-600 dark:hover:text-nexo-400 border border-gray-200 dark:border-steel-600 rounded-lg text-xs font-medium hover:bg-gray-50 dark:hover:bg-steel-600 transition-colors shadow-sm" title="Modo Tela Cheia">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Banner de Contrato Selecionado -->
+            <div id="contractBanner"
+                class="hidden mb-4 px-4 py-3 rounded-xl bg-nexo-500/10 dark:bg-nexo-900/20 border border-nexo-500/30 dark:border-nexo-700/30 flex items-center justify-between fade-in-up">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-nexo-600 dark:text-nexo-400 shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                    </svg>
+                    <span class="text-sm font-semibold text-nexo-700 dark:text-nexo-300">Contrato:</span>
+                    <span id="contractBannerText"
+                        class="text-sm text-steel-700 dark:text-gray-300 font-medium truncate"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btnNewCirurgia" onclick="OPME.openNewCirurgiaModal()"
+                        class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Inserir Cirurgia
+                    </button>
+                    <button id="btnNewUnidade" onclick="OPME.openUnidadeModal()"
+                        class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Inserir Unidade
+                    </button>
+                    <button id="btnNewSaldoAta" onclick="OPME.openSaldoAtaModal(null)"
+                        class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Inserir Item Ata
+                    </button>
+                    <button id="btnNewSaldoAtaHospital" onclick="OPME.openSaldoAtaHospitalModal(null)"
+                        class="hidden flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-nexo-600 hover:bg-nexo-700 rounded-lg transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Inserir Item Hosp.
+                    </button>
+                    <button onclick="OPME.clearContract()"
+                        class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-steel-500 dark:text-steel-400 hover:text-red-600 dark:hover:text-red-400 bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg hover:border-red-300 dark:hover:border-red-700 transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        Voltar para Contratos
+                    </button>
+                </div>
+            </div>
+
+
+            <!-- Tabela -->
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up animation-delay-150"
+                >
+
+                <!-- Loading overlay -->
+                <div id="tableLoading"
+                    class="absolute inset-0 bg-white/80 dark:bg-steel-800/80 backdrop-blur-sm z-30 flex flex-col items-center justify-center rounded-xl">
+                    <svg class="animate-spin h-8 w-8 text-nexo-500 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                        </path>
+                    </svg>
+                    <p class="text-sm text-steel-500 dark:text-steel-400">Carregando dados...</p>
+                </div>
+
+                <!-- Container com overflow -->
+                <%- include('../../components/data-grid/grid', { grid: {"bodyId": "opmeTableBody", "headerId": "opmeTableHead", "pageSizeId": "itemsPerPage", "infoId": "resultsCount", "paginationId": "paginationContainer", "clearId": "btnClearAllFilters", "export": false, "toolbar": true} }) %>
+            </div>
+
+            <!-- Barra de Soma (estilo Excel) - aparece ao selecionar células numéricas -->
+
+
+        </div>
+
+        <!-- Footer -->

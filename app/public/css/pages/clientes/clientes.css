@@ -1,0 +1,5 @@
+/* Ajustes exclusivos da pagina clientes. */
+
+.table-container {
+    max-height: calc(100vh - 210px);
+}

@@ -1,0 +1,89 @@
+.hub-grid-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #f3f4f6;
+    background: white;
+}
+.dark .hub-grid-pagination {
+    background: var(--color-steel-800);
+    border-color: var(--color-steel-700);
+}
+.hub-grid-pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--color-steel-500);
+}
+.dark .hub-grid-pagination-info {
+    color: var(--color-steel-400);
+}
+.hub-grid-pagination select {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: var(--color-steel-700);
+    outline-color: var(--color-nexo-500);
+}
+.dark .hub-grid-pagination select {
+    background: var(--color-steel-700);
+    border-color: var(--color-steel-600);
+    color: #e5e7eb;
+}
+.hub-grid-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.hub-grid-page-arrow,
+.hub-grid-page-number {
+    border-radius: 0.25rem;
+    color: var(--color-steel-500);
+    transition: background-color 0.2s;
+}
+.hub-grid-page-arrow {
+    padding: 0.25rem;
+}
+.hub-grid-page-arrow:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+.hub-grid-page-number {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.hub-grid-page-arrow:not(:disabled):hover,
+.hub-grid-page-number:hover {
+    background: #f3f4f6;
+}
+.hub-grid-page-number.is-active {
+    background: var(--color-nexo-50);
+    color: var(--color-nexo-600);
+}
+.dark .hub-grid-page-number,
+.dark .hub-grid-page-arrow {
+    color: var(--color-steel-400);
+}
+.dark .hub-grid-page-arrow:not(:disabled):hover,
+.dark .hub-grid-page-number:hover {
+    background: var(--color-steel-700);
+}
+.dark .hub-grid-page-number.is-active {
+    background: rgb(0 51 48 / 0.3);
+    color: var(--color-nexo-400);
+}
+@media (max-width: 639px) {
+    .hub-grid-pagination {
+        flex-direction: column;
+        padding: 0.75rem;
+    }
+    .hub-grid-pagination-info {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}

@@ -1,0 +1,12 @@
+<div class="hub-grid-pagination">
+    <div class="hub-grid-pagination-info">
+        <label for="<%= grid.pageSizeId %>">Registros por página:</label>
+        <select id="<%= grid.pageSizeId %>" data-grid-page-size>
+            <% for (const limit of [10,25,50,100,250,500,1000]) { %>
+                <option value="<%= limit %>" <%= limit === (grid.pageSize || 25) ? 'selected' : '' %>><%= limit %></option>
+            <% } %>
+        </select>
+        <span id="<%= grid.infoId %>" data-grid-info>Mostrando 0 a 0 de 0 registros</span>
+    </div>
+    <div id="<%= grid.paginationId %>" class="hub-grid-pagination-controls" role="group" aria-label="Paginação" data-grid-pagination></div>
+</div>

@@ -1,0 +1,19 @@
+<!-- Content Area -->
+        <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-steel-900 transition-colors duration-200 p-4 lg:p-6 md:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+                <!-- Header Actions -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-steel-800 p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-steel-700 transition-colors">
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Gerenciamento de Usuários</h2>
+                        <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Lista completa de usuários registrados no sistema.</p>
+                    </div>
+                </div>
+
+                <!-- Tabela de Usuários -->
+                <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-sm border border-gray-100 dark:border-steel-700 overflow-hidden transition-colors">
+                    <%- include('../../components/data-grid/grid', { grid: {"bodyId": "usersTableBody", "headerId": "usersTableHeader", "pageSizeId": "usersPerPage", "infoId": "usersPaginationInfo", "paginationId": "usersPaginationControls", "clearId": "usersGridClear", "export": false, "toolbar": true} }) %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->

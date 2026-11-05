@@ -1,0 +1,35 @@
+/* Ajustes exclusivos da pagina custos_produtos. */
+
+.table-container {
+    max-height: calc(100vh - 280px);
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.3s ease forwards;
+}
+
+.summary-table th {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.summary-table td {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(var(--color-nexo-500-rgb) / 0.3); }
+    50% { box-shadow: 0 0 0 6px rgb(var(--color-nexo-500-rgb) / 0); }
+}
+
+:root[data-page="custos_produtos"] #syncProgressBar {
+    width: 0%
+}

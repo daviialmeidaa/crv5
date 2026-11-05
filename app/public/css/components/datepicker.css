@@ -1,0 +1,3 @@
+/* A posicao top/left depende da viewport e continua calculada pelo componente. */
+.custom-datepicker.initialized { display: none !important; }
+.datepicker-positioned.absolute { position: fixed; bottom: auto; }

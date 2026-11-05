@@ -1,0 +1,9 @@
+/* Ajustes exclusivos da pagina reset_heroku. */
+
+.blink {
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+    50% { opacity: 0; }
+}
