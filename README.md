@@ -1,136 +1,120 @@
-# Hub Nexomed (Contas a Receber v5)
+# Hub Nexomed
 
-Bem-vindo ao repositório oficial do **Hub Nexomed** (Contas a Receber v5). Este projeto é um portal corporativo de alta performance focado na gestão financeira, licitações, OPME e relacionamento com clientes (Cobrança). 
+O Hub Nexomed é o portal de trabalho das equipes financeira, de cobrança,
+licitações e OPME da Nexomed. Ele reúne consultas, cadastros e acompanhamento das
+operações em uma interface compartilhada, com acesso conforme o perfil de cada
+usuário.
 
-O sistema foi desenhado para ser uma aplicação leve, responsiva e com uma interface premium, garantindo eficiência operacional e segurança de dados.
+O projeto nasceu como **Contas a Receber v5** e passou a reunir outros módulos.
+Esse nome ainda aparece no repositório e nos comandos internos.
 
----
+## Acesso e primeiros passos
 
-## 🚀 Stack Tecnológica
+1. Acesse o endereço do Hub disponibilizado pela empresa.
+2. Entre com o e-mail e a senha da sua conta. No primeiro acesso, siga a orientação
+   para definir sua senha.
+3. Use o menu lateral para acessar os módulos liberados para o seu perfil.
+4. No menu do seu avatar, acesse seu perfil ou encerre a sessão. O botão de tema
+   alterna a apresentação clara e escura.
 
-- **Backend:** Node.js com Express.js e FastAPI/Python para a API de integração.
-- **Bancos de Dados:** PostgreSQL (Banco Local) e SQL Server / mssql (Supra ERP).
-- **Autenticação:** JWT (JSON Web Tokens) e senhas encriptadas com `bcryptjs`.
-- **Frontend:** HTML renderizado pelo Express com EJS, CSS e JavaScript no navegador.
-- **Estilização:** Tailwind CSS (via CDN) com configurações e paletas injetadas customizadas.
-- **Cache & Performance:** Redis Cloud (Camada em memória) + Compressão de Rede (Gzip).
+As telas e ações disponíveis dependem das permissões da conta. Uma página de
+acesso restrito (`403`) indica que o perfil não permite aquela operação. Para
+solicitar acesso ou esclarecer uma permissão, procure o responsável pelo Hub.
 
----
+## O que você encontra no Hub
 
-## ⚙️ Arquitetura e Performance
+| Área | Uso no dia a dia |
+| --- | --- |
+| Dashboard | Acompanhar indicadores financeiros, gráficos e meta de recebimento. |
+| Contas a Receber | Consultar títulos e notas, aplicar filtros e abrir detalhes de produtos, observações, acompanhamento e DANFE, quando disponível. |
+| Clientes e cobrança | Consultar clientes, acessar suas notas, manter contatos e registrar o histórico de cobrança com agendamento de retorno. |
+| Agenda de Licitações | Consultar e manter pregões, datas, horários e observações, separados por empresa, como Nexomed e BML. |
+| Itens Arrematados | Acompanhar contratos, produtos arrematados, quantidades, valores, prazos e status. |
+| Cirurgias / OPME | Selecionar um contrato e trabalhar com cirurgias, unidades, saldos de ata, saldos por hospital e banco de códigos. |
+| Custos de Produtos | Consultar resumo e histórico de custos, identificar custos pendentes e informar valores manuais nas operações disponíveis. |
+| Usuários e perfis | Administrar contas e permissões, quando autorizado. |
 
-O Hub foi projetado com premissas rigorosas para economizar rede e banco de dados, sendo hospedado no Heroku:
-- **Compressão Gzip:** Reduz os payloads gigantes de dados JSON em até 80% antes do tráfego na rede (exceto em rotas de SSE/Notificações para não bloquear streaming).
-- **Cache de Memória (Redis):** Toda rota de GET massiva (ex: `/api/titulos`, `/api/opme/cirurgias`) passa pelo Redis antes de ir ao PostgreSQL. O cache possui tempo de vida padrão e é invalidado ativamente após qualquer mutação de dados (POST, PUT, DELETE).
-- **Client-Side Data Grids:** Um componente compartilhado gerencia filtros, ordenação, paginação, seleção/soma estilo Excel e exportação no navegador. Cada página configura suas colunas e ações. [Guia do componente](app/public/js/components/data-grid/README.md).
+## Como trabalhar com as tabelas
 
----
+As listagens usam um componente comum, baseado no grid de Contas a Receber.
+Cada tela habilita os recursos adequados ao seu trabalho:
 
-## 🧩 Módulos do Sistema
+- **Filtros:** use o funil no cabeçalho da coluna. Datas podem ser selecionadas
+  por ano, mês e dia. Remova os filtros para voltar à listagem completa.
+- **Ordenação:** clique nos cabeçalhos que oferecem ordenação.
+- **Paginação:** escolha a quantidade de registros e navegue pelas páginas,
+  quando esses controles estiverem disponíveis.
+- **Seleção e soma:** nas tabelas habilitadas, use `Ctrl` (ou `Command` no Mac)
+  com clique ou arrasto para selecionar células e consultar contagem, soma e
+  média. `Esc` limpa a seleção.
+- **Exportação:** nas telas com a ação de exportar, o Excel inclui os registros
+  filtrados, inclusive os que estão em outras páginas da listagem.
+- **Detalhes:** clique em uma linha nas telas que oferecem esse recurso para
+  abrir os detalhes ou selecionar o registro.
 
-### 1. Dashboard e KPIs
-- Visão global financeira baseada na data de emissão das notas.
-- Cálculos robustos de: **Total Vendido**, **Total Recebido** e **Total em Aberto** (filtrando valores residuais e status pendentes).
-- Gráficos adaptativos (Light/Dark Mode) via ApexCharts.
-- Acompanhamento de Metas de Recebimento em tempo real via componente Velocímetro.
+Algumas consultas têm comportamento próprio. No modal de Banco de Códigos do
+OPME, por exemplo, o cabeçalho permite escolher a coluna pesquisada; a consulta
+não possui exportação nem paginação e orienta a refinar buscas muito amplas.
 
-### 2. Contas a Receber & Data Grids
-- **Filtros Avançados:** Filtros dinâmicos por coluna estilo Excel, suportando dados nulos e hierarquia em datas (Ano > Mês > Dia).
-- **Cell Selector:** Ferramenta global (`CellSelector`) semelhante ao Excel, que permite selecionar células via `Ctrl+Click` ou `Ctrl+Arrasto` gerando **soma, média e contagem** instântanea em uma barra flutuante.
-- Exportação inteligente nativa para arquivos `.xlsx` mantendo o exato cenário filtrado pelo usuário.
+Para incluir ou alterar informações, use os formulários e confirme a gravação.
+Os tipos de ação variam por módulo: contratos OPME podem ser desativados e
+reativados; contatos de cobrança usam exclusão lógica para preservar o histórico.
 
-### 3. Licitações (Itens Arrematados e Agenda)
-- **Itens Arrematados:** Interface limpa e minimalista. Permite a criação de contratos atrelando múltiplos produtos (cálculos em tempo real para o Total Normalizado dependendo da faixa de valor).
-- **Agenda de Licitações:** Controle de pregões futuros separados por empresas (ex: Nexomed e BML).
-- Interface sem quebras horizontais e adequação visual rigorosa das linhas.
+## De onde vêm as informações
 
-### 4. OPME (Órteses, Próteses e Materiais Especiais)
-- Controle de Atas, Contratos, Cirurgias (com mais de 18k registros), Unidades hospitalares e Banco de Códigos.
-- Interface dividida por abas navegacionais habilitadas seletivamente após a escolha do contrato master.
-- Cálculo virtual e colorido do "Deadline" das atas de contrato (dias restantes para o fim da vigência).
+O Hub consulta o **Supra ERP** para informações como clientes e documentos
+fiscais. Dados mantidos pelo portal, como agenda de licitações, contatos,
+histórico de cobrança e registros OPME, ficam no **PostgreSQL** usado pelo Hub.
+As rotinas de sincronização atualizam os dados integrados conforme o fluxo de
+cada módulo; uma consulta no portal não significa que todo o ERP tenha sido
+sincronizado naquele instante.
 
-### 5. Clientes e CRM de Cobrança
-- Listagem otimizada baseada na View do ERP legado.
-- Tela de detalhes dividida em: **Notas Fiscais**, **Agenda de Contatos** e **Histórico (Timeline)**.
-- Motor embutido para agendamento do próximo contato forçando a alimentação do CRM.
+O **Redis** guarda temporariamente algumas consultas para acelerar as telas.
+Ele é uma camada de cache; os registros persistentes ficam nos bancos de dados.
 
----
+O sino reúne notificações conforme as permissões do usuário. Rotinas de agenda
+e cobrança também geram lembretes e e-mails de acordo com as configurações e os
+agendamentos do ambiente.
 
-## 🔗 Integrações
+## Integração com a planilha VBA
 
-O ecossistema não atua isolado. Ele lê ativamente dados do legado e os enriquece:
+A Agenda de Licitações pode ser utilizada pelo Hub e pela planilha Excel/VBA
+integrada. Os dois acessam **a mesma tabela no PostgreSQL**, por meio das APIs
+do Hub; não são duas bases que precisam ser copiadas uma para a outra.
 
-- **Supra ERP (SQL Server - SGC/SGC2):** 
-  - **Somente Leitura (Read-Only):** A imensa maioria do tempo, o Hub atua em modo de leitura extrema do ERP. 
-  - **Faturamento (OPME):** O sistema possui integração de escrita CRÍTICA e cirúrgica (`dbo.pedido` e `dbo.pedido_item`) com o Supra ERP para a emissão automática de Pedidos de Venda baseados nas cirurgias do módulo OPME.
-  - Sincronização inteligente baseada em *Diff* de campos (cruzando `nf_numero` contra `codigo`).
-- **MS Access Legado (OPME):** Script auxiliar Python que realiza o UPSERT de dados vitais do VBA diretamente no PostgreSQL local.
-- **E-mails Transacionais (SMTP/Nodemailer):** Envio corporativo (com templates HTML rigorosos da Nexomed) para boas-vindas e relatórios (ex: Resumo diário de cobrança ou agenda de pregões).
-- **Integração VBA:** endpoints da agenda executados pela FastAPI, protegidos pelo mesmo header `x-api-key`. O Hub encaminha as URLs existentes para a API no mesmo servidor. O GET permite à planilha ler também o que foi inserido/alterado no Hub, usando o mesmo PostgreSQL. [Instalação, Swagger e contrato](api/README.md).
+Na macro migrada da Agenda:
 
-## Organização do repositório
+- **Ler Dados** consulta a API e permite mostrar na planilha o que foi cadastrado
+  ou alterado pelo Hub.
+- As ações de inclusão, alteração e exclusão enviam as operações à API.
+- O Access deixa de ser necessário para esse fluxo da Agenda. Isso não significa
+  que outras integrações legadas tenham sido migradas automaticamente.
+- A atualização da planilha ocorre quando a macro de leitura é executada;
+  ela não recebe alterações automaticamente apenas por estar aberta.
 
-Os testes de ponta a ponta com PostgreSQL e Redis descartáveis são executados
-com `npm run test:e2e`. [Preparação, cobertura e limites](tests/e2e/README.md).
+A integração mantém os caminhos existentes em
+`/api/vba/agenda_licitacoes`, com os métodos `GET`, `POST`, `PUT` e `DELETE`
+(os dois últimos usam `/{chave}`). A autenticação utiliza o cabeçalho
+`x-api-key`, configurado pela equipe responsável. Não compartilhe essa chave em
+código versionado ou mensagens de suporte.
 
-```text
-app/                           Hub Node.js e frontend
-  server.js                    Entrada do servidor Express
-  config/publicPaths.js        Caminhos das páginas e compatibilidade de URLs
-  config/pageViews.js          Títulos, navegação ativa e variações das páginas internas
-  routes/                      Endpoints atuais do Hub
-  services/                    Serviços, integrações, cron e comunicação com a FastAPI
-  middleware/                  Autenticação e permissões
-  db/                          Conexões e arquivos de banco
-  scripts/                     Entradas dos agendamentos do Hub
-  views/
-    layouts/base.ejs            Estrutura comum das páginas internas
-    components/                Sidebar, navbar, footer e subcomponentes da navbar
-    pages/<pagina>/            Conteúdo, recursos e diálogos de cada página interna
-  public/
-    html/<pagina>/index.html   Login, primeiro acesso e 403, independentes da base
-    js/pages/<pagina>/        Scripts específicos de cada página
-    js/shared/                Scripts compartilhados entre páginas
-    js/components/            Componentes reutilizáveis
-    css/global.css            Paleta e estados semânticos do portal
-    css/shared/               Layout compartilhado
-    css/components/           Estilos dos componentes existentes
-    css/pages/<pagina>/       Estilos específicos de cada página
-    assets/                   Imagens e áudios
-    uploads/                  Arquivos públicos já utilizados pelos usuários
-api/                           Aplicação FastAPI
-  main.py                      Entrada da API
-  routers/                     Endpoints HTTP
-  services/                    Lógica dos endpoints
-  config.py                    Configuração e leitura do .env da raiz
-  database.py                  Acesso ao PostgreSQL
-  security.py                  Autenticação da API
-  schemas.py                   Documentação dos contratos
-  compat.py                    Conversões da integração VBA
-  requirements.txt             Dependências Python
-scripts/                       Inicialização conjunta e ferramentas de instalação
-requirements.txt               Encaminha a instalação Python para api/requirements.txt
-package.json                   Comandos e dependências Node do projeto
-```
+Essa API foi construída com **FastAPI**, em Python, e roda junto do Hub Node.js.
+O Hub recebe as chamadas no mesmo endereço público e as encaminha internamente.
+A documentação interativa **Swagger** fica em `/docs` no endereço do Hub;
+`/api/docs` também está disponível. As operações executadas pelo Swagger usam
+os dados do ambiente acessado e podem gravar ou excluir registros.
 
-Os estilos ficam em arquivos CSS separados por página e componente. A paleta
-compartilhada alimenta também a configuração do Tailwind. Veja as convenções em
-[app/public/css/README.md](app/public/css/README.md).
-As páginas internas usam a base compartilhada, composta no servidor antes de
-enviar o HTML ao navegador. Sidebar, navbar e footer têm seus próprios templates,
-CSS e JS. Login, primeiro acesso e 403 continuam independentes; telas futuras de
-recuperação/troca de senha também devem permanecer fora dessa base. Veja como
-adicionar páginas em [app/views/README.md](app/views/README.md).
-O `.env`, `node_modules/` e `.venv/` permanecem na raiz. Os comandos npm são
-executados na raiz, inclusive os comandos usados pelo Heroku Scheduler.
-As URLs públicas de páginas, APIs, imagens, áudios e uploads foram mantidas.
-Os caminhos antigos `/js/<arquivo>.js` e `/<pagina>.html` também continuam
-disponíveis para links existentes; as páginas atualizadas
-referenciam os novos caminhos dos scripts.
+A instalação e o contrato completo estão no [guia da API](api/README.md).
+As configurações do servidor não preenchem automaticamente as configurações da
+macro: a URL e a chave usadas pelo Excel precisam corresponder ao ambiente.
 
-## Executar o Hub e a FastAPI
+## Execução local — equipe técnica
 
-Requer Node.js 20+ e Python 3.11+ (3.12 recomendado). Preserve o `.env` existente.
+Requisitos: Node.js 20+ e Python 3.11+ (versão indicada em `.python-version`: 3.12),
+além dos acessos aos serviços utilizados pelo ambiente. Preserve o `.env`
+existente e solicite as configurações ao responsável; não versione credenciais.
+
+Na raiz do projeto:
 
 ```bash
 npm ci
@@ -139,51 +123,50 @@ python3 -m venv .venv
 npm run dev
 ```
 
-O comando inicia os dois processos e encerra ambos ao parar o serviço. O Hub continua
-na porta `PORT` (padrão `3001`) e o Swagger fica em `http://localhost:3001/docs`
-(também disponível em `/api/docs`).
-Se a porta interna `8000` estiver ocupada, outra porta livre é escolhida automaticamente.
-Para execução sem reinício automático, use `npm start`.
-Detalhes de desenvolvimento, Docker e hospedagem em [api/README.md](api/README.md).
+No Windows, o executável Python fica em `.venv\Scripts\python.exe`.
+O comando padrão **`npm run dev` inicia o Hub e a FastAPI juntos**, com reinício
+após alterações nos arquivos monitorados. `npm start` inicia ambos sem esse
+monitoramento. `npm run start:node` inicia somente a parte Node.
 
-## Validação da reorganização
+A porta pública padrão é `3001`, podendo ser alterada por `PORT`:
 
-Antes da limpeza do material de QA, foram aprovados 119 testes de regressão,
-83 testes de homologação e 5 cenários de recuperação. A confirmação do ambiente
-de produção deve ser feita após o deploy.
+- Hub: `http://localhost:3001`
+- Swagger: `http://localhost:3001/docs`
 
----
+A `.venv` contém as dependências locais da parte Python, assim como
+`node_modules` contém as dependências Node. O `requirements.txt` da raiz
+encaminha a instalação para `api/requirements.txt`. Essas duas tecnologias
+fazem parte do projeto atual.
 
-## ⏰ Cron Jobs e Notificações (SSE)
+## Organização e manutenção
 
-- **Sumário Diário (Heroku Scheduler):** Tarefas rodadas em nuvem fora do escopo do usuário enviando compilações diárias por e-mail (ex: Licitações do dia seguinte às 08h e 17h, Agenda de Cobrança às 08h).
-- **Lembretes Nativos (Node-Cron):** Motor assíncrono acoplado ao servidor disparando alertas ao vivo para o Frontend faltando exatos 10 minutos para o compromisso.
-- **Central de Notificações (SSE):** Ícone de sino nativo utilizando *Server-Sent Events* e exibindo as notificações no canto da tela sem a necessidade de refresh ou AJAX polling.
+```text
+app/          Hub Node/Express, rotas, serviços e frontend
+  views/      Base EJS, componentes e conteúdo das páginas internas
+  public/     CSS, JavaScript, assets e páginas independentes de autenticação/403
+api/          FastAPI, endpoints VBA e acesso ao PostgreSQL
+scripts/      Inicialização conjunta e ferramentas de instalação
+tests/        Testes automatizados
+```
 
----
+Sidebar, navbar e footer são componentes compartilhados. Cada página tem seus
+arquivos de CSS e JavaScript, e os grids reutilizam um componente com filtros,
+ordenação, paginação e seleção. Essa organização permite manter a apresentação
+comum sem repetir a estrutura em todas as telas.
 
-## 🔒 Segurança e Controle de Acesso (RBAC)
+Documentação para quem mantém ou desenvolve o Hub:
 
-O sistema possui Roles (Papéis) divididos por departamento e níveis de atuação, ao invés de meros "Admins" booleanos.
+- [API, variáveis de ambiente e hospedagem](api/README.md).
+- [Base EJS e inclusão de páginas](app/views/README.md).
+- [CSS, paleta global e estilos por componente](app/public/css/README.md).
+- [Data Grid e seus recursos opcionais](app/public/js/components/data-grid/README.md).
+- [Testes de ponta a ponta com Playwright](tests/e2e/README.md).
+- [Regras para agentes de IA](.agents/AGENTS.md).
 
-- **Níveis Atuais:**
-  - `ADMIN` (Acesso Completo e Universal)
-  - `CR1`, `CR2`, `CR3`, `CR4` (Contas a Receber)
-  - `LC1`, `LC2`, `LC3`, `LC4` (Licitações)
-  - `OPME1`, `OPME2`, `OPME3`, `OPME4` (Materiais Especiais)
-- **Auth Guard (Client e Server):** As rotas de backend exigem validação minuciosa via middleware. No frontend, um guardião injetado no `<head>` das páginas varre o JWT, esconde itens do menu de forma condicional e bloqueia visualizações indevidas com redirecionamento rápido para páginas de Erro `403`.
-- Não existem senhas salvas em texto limpo ou inputs de senha no cadastro: o servidor as gera, criptografa e envia para o e-mail do titular com login provisório.
+A suíte `npm run test:e2e` usa PostgreSQL e Redis descartáveis, dados fictícios e
+as APIs reais do Hub. Supra, e-mail e consulta de municípios usam substitutos de
+teste. Seus resultados verificam os cenários cobertos, sem garantir a
+configuração ou a disponibilidade dos serviços de produção.
 
----
-
-## 🎨 UI/UX (Aesthetics e Design System)
-
-A interface foi projetada para surpreender e reter a atenção do usuário.
-- **Tailwind JIT e Cores Marca:** Paleta restrita aos tons `nexo` (Teal/Cyan) e `steel` (Cinza/Grafite).
-- **Dark Mode Nativo:** Total suporte aos temas Claro/Escuro (persistido em LocalStorage) mudando dinamicamente até as cores dos gráficos ApexCharts.
-- **Microinterações:** Botões e linhas com *Sash/Soft UI* (`hover` elevando elementos sutilmente e realçando em core primária), abolindo fundos chapados.
-- **Sidebar Colapsável:** Menu lateral modular agrupado com animação de submenus via chevrons (`rotate(90deg)`) mantendo sempre o foco principal no meio geométrico da tela.
-- **Custom Scrollbars e Dropdowns:** Abandono da tag nativa `<select>` e scrollbars do windows em prol de componentes puros estilizados que imitam apps nativos.
-
----
-*Este documento reflete a versão 5 do sistema Contas a Receber e o contexto global do Hub Nexomed.*
+Ao relatar um problema, informe a tela, a ação realizada e a mensagem exibida.
+Não envie senhas, chaves de API ou o conteúdo do `.env`.
