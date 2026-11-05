@@ -7,6 +7,7 @@
     "dev": "nodemon --signal SIGTERM --ext js,json,py --ignore .venv/ scripts/start_hub.js",
     "start": "node scripts/start_hub.js",
     "start:node": "node app/server.js",
+    "test:e2e": "node tests/e2e/run.cjs",
     "scheduler:agenda": "node app/scripts/run_cron_agenda_standalone.js",
     "scheduler:cobranca": "node app/scripts/run_cron_cobranca_standalone.js",
     "scheduler:agenda:friday": "node app/scripts/run_cron_agenda_friday.js",
@@ -36,6 +37,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "nodemon": "^3.1.14"
   }
 }

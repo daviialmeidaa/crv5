@@ -786,10 +786,109 @@ const IA = (() => {
     // 15. Init
     // ==========================================
     function init() {
+        document.getElementById('btnClearFilters').addEventListener('click', () => {
+            state.filters = {};
+            state.sort = { key: null, dir: 'desc' };
+            state.pagination.current = 1;
+            processData();
+        });
+        document.getElementById('itemsPerPage').addEventListener('change', e => {
+            state.pagination.limit = parseInt(e.target.value);
+            state.pagination.current = 1;
+            processData();
+        });
+
+        const updateCodContratoConcat = () => {
+            const participante = document.getElementById('formParticipante').value;
+            const cod = document.getElementById('formCodContrato').value;
+            const prefix = participante === 'NEXOMED' ? 'BIO' : (participante === 'BML HOSPITALAR' ? 'BML' : '');
+            document.getElementById('formCodContratoConcat').value = cod ? `${prefix}${cod}` : '';
+        };
+        document.getElementById('formParticipante').addEventListener('change', updateCodContratoConcat);
+        document.getElementById('formCodContrato').addEventListener('input', updateCodContratoConcat);
+
+        // Setup Custom Dropdowns
+        function setupCustomDropdown(inputId, dropdownId, listId, dataFetcher = null, onChange = null) {
+            const input = document.getElementById(inputId);
+            const dropdown = document.getElementById(dropdownId);
+            const ul = document.getElementById(listId);
+            let optionsData = [];
+
+            const renderOptions = (filter = '') => {
+                ul.innerHTML = '';
+                const filtered = optionsData.filter(opt => opt.includes(filter.toUpperCase()));
+                if (filtered.length === 0) {
+                    ul.innerHTML = '<li class="px-4 py-2 text-steel-400 text-xs text-center italic">Nenhum resultado</li>';
+                    return;
+                }
+                filtered.forEach(opt => {
+                    const li = document.createElement('li');
+                    li.textContent = opt;
+                    li.className = 'px-4 py-2 cursor-pointer hover:bg-nexo-50 dark:hover:bg-steel-700 transition-colors text-steel-700 dark:text-gray-200';
+                    li.onmousedown = (e) => { // mousedown dispara antes do blur
+                        e.preventDefault();
+                        input.value = opt;
+                        dropdown.classList.add('hidden');
+                        if (onChange) onChange(opt);
+                    };
+                    ul.appendChild(li);
+                });
+            };
+
+            const loadData = async () => {
+                if (dataFetcher && optionsData.length === 0) {
+                    optionsData = await dataFetcher();
+                }
+                renderOptions(input.value);
+            };
+
+            input.addEventListener('focus', async () => {
+                dropdown.classList.remove('hidden');
+                await loadData();
+                renderOptions();
+            });
+
+            input.addEventListener('input', async (e) => {
+                dropdown.classList.remove('hidden');
+                await loadData();
+                renderOptions(e.target.value);
+            });
+
+            input.addEventListener('blur', () => { dropdown.classList.add('hidden'); });
+
+            return {
+                setOptions: (data) => { optionsData = data; renderOptions(); },
+                clearOptions: () => { optionsData = []; }
+            };
+        }
+
+        const ufs = ["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"];
+
+        let munDropdown;
+        const ufDropdown = setupCustomDropdown('formUF', 'ufDropdown', 'ufList', null, (uf) => {
+            document.getElementById('formMunicipio').value = '';
+            if (munDropdown) munDropdown.clearOptions();
+        });
+        ufDropdown.setOptions(ufs);
+
+        munDropdown = setupCustomDropdown('formMunicipio', 'municipioDropdown', 'municipiosList', async () => {
+            const uf = document.getElementById('formUF').value;
+            if (!uf) return [];
+            try {
+                const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`);
+                const data = await res.json();
+                return data.map(m => m.nome.toUpperCase());
+            } catch (e) {
+                return [];
+            }
+        });
+
+        // Botão Adicionar Produto
+        document.getElementById('btnAddProduto').addEventListener('click', () => addProdutoBox());
+
         fetchData();
 
         // Seleção de células (Ctrl+Click+Arrasto)
-
     }
 
     document.addEventListener('DOMContentLoaded', init);

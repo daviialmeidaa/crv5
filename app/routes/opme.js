@@ -325,24 +325,27 @@ router.post('/saldo-ata', async (req, res) => {
         return res.status(400).json({ error: 'Payload deve conter um array "items".' });
     }
 
+    const client = await pgPool.connect();
     try {
-        await pgPool.query('BEGIN');
+        await client.query('BEGIN');
         
         for (const item of items) {
             const { contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total } = item;
-            await pgPool.query(
+            await client.query(
                 `INSERT INTO opme.saldoata (contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total)
                  VALUES ($1, $2, $3, $4, $5, $6)`,
                 [contrato, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total]
             );
         }
 
-        await pgPool.query('COMMIT');
+        await client.query('COMMIT');
         res.json({ message: 'Itens de saldo ata inseridos com sucesso.' });
     } catch (err) {
-        await pgPool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error('[OPME] Erro ao inserir itens de saldo ata:', err.message);
         res.status(500).json({ error: 'Erro ao inserir itens de saldo ata.' });
+    } finally {
+        client.release();
     }
 });
 
@@ -451,24 +454,27 @@ router.post('/saldo-ata-hospital', async (req, res) => {
         return res.status(400).json({ error: 'Nenhum item enviado.' });
     }
 
+    const client = await pgPool.connect();
     try {
-        await pgPool.query('BEGIN');
+        await client.query('BEGIN');
         
         for (const item of items) {
             const { contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total } = item;
-            await pgPool.query(
+            await client.query(
                 `INSERT INTO opme.saldoatahospital (contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total)
                  VALUES ($1, $2, $3, $4, $5, $6, $7)`,
                 [contrato, unidade, item_ata, descricao_item, quantidade_ata, valor_unitario, valor_total]
             );
         }
 
-        await pgPool.query('COMMIT');
+        await client.query('COMMIT');
         res.json({ message: 'Itens de saldo ata hospital inseridos com sucesso.' });
     } catch (err) {
-        await pgPool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         console.error('[OPME] Erro ao inserir itens de saldo ata hospital:', err.message);
         res.status(500).json({ error: 'Erro ao inserir itens de saldo ata hospital.' });
+    } finally {
+        client.release();
     }
 });
 
@@ -1092,14 +1098,16 @@ router.post('/cirurgias/batch-delete', async (req, res) => {
         // Proteção extra: a exclusão poderia exigir um role mais alto se controlássemos via middleware
         // Como o JS de frontend já bloqueia, vamos garantir a deleção via query segura
         const params = ids.map((_, idx) => `$${idx + 1}`).join(',');
-        await client.query(`DELETE FROM opme.cirurgias WHERE id IN (${params})`, ids);
+        const deleted = await client.query(`DELETE FROM opme.cirurgias WHERE id IN (${params}) RETURNING contrato`, ids);
 
         await client.query('COMMIT');
-        res.json({ success: true, message: 'Itens da cirurgia excluídos com sucesso' });
-        
-        // Invalida o cache
+        // Deriva os contratos dos registros excluidos: clientes antigos enviam
+        // apenas ids, e a lista por contrato tambem precisa perder seu cache.
+        const contratos = new Set(deleted.rows.map(row => row.contrato).filter(Boolean));
+        if (contrato) contratos.add(contrato);
         await clearCache(`opme:cirurgias:all`);
-        if (contrato) await clearCache(`opme:cirurgias:${contrato}`);
+        for (const codigo of contratos) await clearCache(`opme:cirurgias:${codigo}`);
+        res.json({ success: true, message: 'Itens da cirurgia excluídos com sucesso' });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('[OPME] Erro ao excluir cirurgias (DELETE):', err.message);

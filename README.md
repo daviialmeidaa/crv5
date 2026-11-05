@@ -70,6 +70,9 @@ O ecossistema não atua isolado. Ele lê ativamente dados do legado e os enrique
 
 ## Organização do repositório
 
+Os testes de ponta a ponta com PostgreSQL e Redis descartáveis são executados
+com `npm run test:e2e`. [Preparação, cobertura e limites](tests/e2e/README.md).
+
 ```text
 app/                           Hub Node.js e frontend
   server.js                    Entrada do servidor Express
