@@ -101,6 +101,10 @@ migrar um controller sem alterar suas ações de negócio.
 - `onChange(state)`: atualiza indicadores da página após o processamento.
 - `renderHeader(th, col, grid)`: adapta a apresentação e a interação do cabeçalho
   quando uma consulta existente precisa manter seu comportamento específico.
+- `headerClassName` e `refreshHeaders: false`: permitem um cabeçalho com as
+  classes originais da consulta, sem recriar suas células a cada pesquisa. O
+  Banco de Códigos usa essas opções para preservar o hover e a transição da
+  coluna pesquisada; as demais tabelas mantêm o cabeçalho padrão do componente.
 - `rowLimit`: limita as linhas renderizadas sem alterar o total de resultados,
   usado junto com `pagination: false` em consultas que orientam a refinar a busca.
 - `selectionValue(row, col)`: valor numérico quando a apresentação altera o sinal

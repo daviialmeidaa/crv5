@@ -613,6 +613,26 @@ const OPME = (() => {
         requestAnimationFrame(() => {
             modal.querySelector('.modal-content').classList.remove('scale-95', 'opacity-0');
         });
+        function updateLookupHeader() {
+            document.querySelectorAll('#bcLookupHeaders .bc-th').forEach((th) => {
+                if (th.dataset.col === activeCol) {
+                    th.classList.add('text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500');
+                    th.classList.remove(
+                        'text-steel-500', 'dark:text-steel-400', 'border-b-gray-200', 'dark:border-b-steel-700'
+                    );
+                } else {
+                    th.classList.remove('text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500');
+                    th.classList.add(
+                        'text-steel-500', 'dark:text-steel-400', 'border-b-gray-200', 'dark:border-b-steel-700'
+                    );
+                }
+            });
+            const search = document.getElementById('bcLookupSearch');
+            const col = BC_COLS.find((col) => col.key === activeCol);
+            search.placeholder = activeCol === 'all'
+                ? 'Pesquisar em todas as colunas...'
+                : `Pesquisar por ${col ? col.label : ''}...`;
+        }
         bancoLookupGrid = HubDataGrid.mount('bancoCodigosGridTemplate', 'bcLookupGridHost', {
             columns: BC_COLS,
             searchId: 'bcLookupSearch',
@@ -621,24 +641,12 @@ const OPME = (() => {
             pagination: false,
             selection: false,
             rowLimit: 100,
+            refreshHeaders: false,
+            headerClassName: 'sticky top-0 z-10 bg-nexo-600 dark:bg-steel-900',
             emptyMessage: 'Nenhum item encontrado.',
             renderHeader: (th, col, lookup) => {
                 th.className =
                     'bc-th px-5 py-2 text-[10px] font-semibold uppercase tracking-wider border-b-2 border-nexo-700 dark:border-steel-700 cursor-pointer select-none transition-all text-white dark:text-steel-400 hover:text-nexo-100 dark:hover:text-nexo-400';
-                const active = activeCol === col.key;
-                th.dataset.searchActive = String(active);
-                th.dataset.loading = String(!lookupLoaded);
-                th.classList.add(
-                    ...(active
-                        ? ['text-nexo-600', 'dark:text-nexo-400', 'border-b-nexo-500']
-                        : [
-                              'text-steel-500',
-                              'dark:text-steel-400',
-                              'border-b-gray-200',
-                              'dark:border-b-steel-700'
-                          ])
-                );
-                if (active) th.classList.remove('dark:text-steel-400', 'dark:border-steel-700');
                 const label = document.createElement('span');
                 label.className = 'inline-flex items-center gap-1';
                 label.textContent = col.label;
@@ -648,12 +656,8 @@ const OPME = (() => {
                     activeCol = activeCol === col.key ? 'all' : col.key;
                     lookup.options.searchKeys =
                         activeCol === 'all' ? BC_COLS.map((item) => item.key) : [activeCol];
-                    const search = document.getElementById('bcLookupSearch');
-                    search.placeholder =
-                        activeCol === 'all'
-                            ? 'Pesquisar em todas as colunas...'
-                            : 'Pesquisar por ' + col.label + '...';
-                    search.focus();
+                    updateLookupHeader();
+                    document.getElementById('bcLookupSearch').focus();
                     lookup.process();
                 });
             },
@@ -719,6 +723,7 @@ const OPME = (() => {
             bancoCodigosCache = await res.json();
             if (!modal.isConnected) return;
             lookupLoaded = true;
+            updateLookupHeader();
             bancoLookupGrid.setData(bancoCodigosCache, true);
         } catch (error) {
             if (!modal.isConnected) return;

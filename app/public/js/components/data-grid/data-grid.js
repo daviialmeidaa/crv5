@@ -160,7 +160,7 @@
             this.options.onChange?.(this.state);
         }
         render() {
-            this.renderHeaders();
+            if (this.options.refreshHeaders !== false) this.renderHeaders();
             this.renderBody();
             if (this.options.pagination !== false) this.pagination.render();
             const clear = this.element('clearId');
@@ -175,7 +175,8 @@
         renderHeaders() {
             const header = this.element('headerId') || this.tbody.closest('table').tHead;
             if (!header) return;
-            header.classList.add('hub-grid-header');
+            if (this.options.headerClassName !== undefined) header.className = this.options.headerClassName;
+            else header.classList.add('hub-grid-header');
             const inlineHeading = this.options.headerLayout === 'inline';
             header.classList.toggle('hub-grid-header-inline', inlineHeading);
             const row = document.createElement('tr');

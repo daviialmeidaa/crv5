@@ -150,55 +150,6 @@ input[type="number"] {
     font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
-#bcLookupHeaders {
-    z-index: 10;
-}
-
-#bcLookupHeaders th {
-    padding: 0.5rem 1.25rem;
-    border-bottom-width: 2px;
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1.5;
-    text-align: left;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    white-space: normal;
-    color: var(--color-steel-500);
-}
-
-.dark #bcLookupHeaders th {
-    color: var(--color-steel-400);
-}
-
-#bcLookupHeaders th[data-search-active="true"] {
-    color: white;
-    border-bottom-color: var(--color-nexo-500);
-}
-
-#bcLookupHeaders th[data-loading="true"] {
-    color: white;
-    border-bottom-color: var(--color-nexo-700);
-}
-
-.dark #bcLookupHeaders th[data-loading="true"] {
-    color: var(--color-steel-400);
-    border-bottom-color: var(--color-steel-700);
-}
-
-#bcLookupHeaders th:hover {
-    color: var(--color-nexo-100);
-}
-
-.dark #bcLookupHeaders th[data-search-active="true"],
-.dark #bcLookupHeaders th:hover {
-    color: var(--color-nexo-400);
-}
-
-.dark #bcLookupHeaders th[data-search-active="true"] {
-    border-bottom-color: var(--color-steel-700);
-}
-
 #bcLookupBody > tr {
     border-top-width: 0;
 }
