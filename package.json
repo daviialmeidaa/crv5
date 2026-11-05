@@ -2,16 +2,23 @@
   "name": "contas_a_receber_v5",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "app/server.js",
   "scripts": {
     "dev": "nodemon --signal SIGTERM --ext js,json,py --ignore .venv/ scripts/start_hub.js",
     "start": "node scripts/start_hub.js",
-    "start:node": "node server.js",
-    "scheduler:agenda": "node scripts/run_cron_agenda_standalone.js",
-    "scheduler:cobranca": "node scripts/run_cron_cobranca_standalone.js",
-    "scheduler:agenda:friday": "node scripts/run_cron_agenda_friday.js",
+    "start:node": "node app/server.js",
+    "scheduler:agenda": "node app/scripts/run_cron_agenda_standalone.js",
+    "scheduler:cobranca": "node app/scripts/run_cron_cobranca_standalone.js",
+    "scheduler:agenda:friday": "node app/scripts/run_cron_agenda_friday.js",
     "postinstall": "node scripts/patch-node-sped-pdf.js",
-    "patch-pdf": "node scripts/patch-node-sped-pdf.js"
+    "patch-pdf": "node scripts/patch-node-sped-pdf.js",
+    "test": "npm run test:unit && npm run test:api && npm run test:e2e",
+    "test:unit": "node --test tests/unit/*.test.cjs",
+    "test:api": ".venv/bin/python -m pytest",
+    "test:e2e": "playwright test",
+    "test:e2e:report": "playwright show-report playwright-report/e2e",
+    "test:staging": "playwright test -c playwright.staging.config.cjs",
+    "test:staging:report": "playwright show-report playwright-report/staging"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +42,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@playwright/test": "1.64.1",
     "nodemon": "^3.1.14"
   }
 }

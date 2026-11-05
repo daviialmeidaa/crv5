@@ -66,7 +66,49 @@ O ecossistema não atua isolado. Ele lê ativamente dados do legado e os enrique
   - Sincronização inteligente baseada em *Diff* de campos (cruzando `nf_numero` contra `codigo`).
 - **MS Access Legado (OPME):** Script auxiliar Python que realiza o UPSERT de dados vitais do VBA diretamente no PostgreSQL local.
 - **E-mails Transacionais (SMTP/Nodemailer):** Envio corporativo (com templates HTML rigorosos da Nexomed) para boas-vindas e relatórios (ex: Resumo diário de cobrança ou agenda de pregões).
-- **Integração VBA:** endpoints da agenda executados pela FastAPI, protegidos pelo mesmo header `x-api-key`. O Hub encaminha as URLs existentes para a API no mesmo servidor. O GET permite à planilha ler também o que foi inserido/alterado no Hub, usando o mesmo PostgreSQL. [Instalação, Swagger e contrato](hub_api/README.md) e [macro da agenda sem Access](vba/README.md).
+- **Integração VBA:** endpoints da agenda executados pela FastAPI, protegidos pelo mesmo header `x-api-key`. O Hub encaminha as URLs existentes para a API no mesmo servidor. O GET permite à planilha ler também o que foi inserido/alterado no Hub, usando o mesmo PostgreSQL. [Instalação, Swagger e contrato](api/README.md).
+
+## Organização do repositório
+
+```text
+app/                           Hub Node.js e frontend
+  server.js                    Entrada do servidor Express
+  config/publicPaths.js        Caminhos das páginas e compatibilidade de URLs
+  routes/                      Endpoints atuais do Hub
+  services/                    Serviços, integrações, cron e comunicação com a FastAPI
+  middleware/                  Autenticação e permissões
+  db/                          Conexões e arquivos de banco
+  scripts/                     Entradas dos agendamentos do Hub
+  public/
+    html/<pagina>/index.html   Uma pasta para cada página
+    js/pages/<pagina>/        Scripts específicos de cada página
+    js/shared/                Scripts compartilhados entre páginas
+    js/components/            Componentes reutilizáveis
+    css/                      Espaço para folhas de estilo externas
+    assets/                   Imagens e áudios
+    uploads/                  Arquivos públicos já utilizados pelos usuários
+api/                           Aplicação FastAPI
+  main.py                      Entrada da API
+  routers/                     Endpoints HTTP
+  services/                    Lógica dos endpoints
+  config.py                    Configuração e leitura do .env da raiz
+  database.py                  Acesso ao PostgreSQL
+  security.py                  Autenticação da API
+  schemas.py                   Documentação dos contratos
+  compat.py                    Conversões da integração VBA
+  requirements.txt             Dependências Python
+scripts/                       Inicialização conjunta e ferramentas de instalação
+requirements.txt               Encaminha a instalação Python para api/requirements.txt
+package.json                   Comandos e dependências Node do projeto
+```
+
+Os estilos que já estavam dentro do HTML continuam nas respectivas páginas.
+O `.env`, `node_modules/` e `.venv/` permanecem na raiz. Os comandos npm são
+executados na raiz, inclusive os comandos usados pelo Heroku Scheduler.
+As URLs públicas de páginas, APIs, imagens, áudios e uploads foram mantidas.
+Os caminhos antigos `/js/<arquivo>.js` e `/<pagina>.html` também continuam
+disponíveis para páginas em cache e links existentes; as páginas atualizadas
+referenciam os novos caminhos dos scripts.
 
 ## Executar o Hub e a FastAPI
 
@@ -84,7 +126,58 @@ na porta `PORT` (padrão `3001`) e o Swagger fica em `http://localhost:3001/docs
 (também disponível em `/api/docs`).
 Se a porta interna `8000` estiver ocupada, outra porta livre é escolhida automaticamente.
 Para execução sem reinício automático, use `npm start`.
-Detalhes de desenvolvimento, Docker e hospedagem em [hub_api/README.md](hub_api/README.md).
+Detalhes de desenvolvimento, Docker e hospedagem em [api/README.md](api/README.md).
+
+## Verificar a aplicação
+
+```bash
+npm ci
+.venv/bin/python -m pip install -r api/requirements-dev.txt
+npm test
+```
+
+Os testes unitários do Node verificam imports, recursos das páginas, proxy,
+portas e notificações. Os testes Python verificam autenticação, conversões e
+contratos da FastAPI. Os testes Playwright iniciam Hub e FastAPI em portas de
+teste e exercitam páginas, login, permissões, agenda, clientes, cadastro, OPME
+e Swagger. Bancos reais, Redis, ERP, cron e envio de e-mails ficam bloqueados;
+as interações de negócio do navegador usam respostas simuladas.
+
+Se não houver Chrome instalado, execute `npx playwright install chromium`.
+Para usar outro navegador Chromium, defina `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
+O relatório visual fica disponível com `npm run test:e2e:report`.
+
+A homologação adicional com a imagem de produção, PostgreSQL e Redis reais,
+frontend sem mocks e testes de recuperação está em
+[tests/staging/README.md](tests/staging/README.md). O resultado e as quatro
+falhas preexistentes reproduzidas estão em
+[docs/QA_PRODUCAO.md](docs/QA_PRODUCAO.md). Essa bateria é executada separadamente
+com `npm run test:staging`, exclusivamente no ambiente descartável descrito ali.
+
+Os comandos também podem ser executados separadamente:
+
+```bash
+npm run test:unit
+npm run test:api
+npm run test:e2e
+```
+
+A integração com PostgreSQL real é opcional e usa exclusivamente um banco
+descartável chamado `nexomed_test`. Para executá-la:
+
+```bash
+docker run --rm -d --name nexomed-refactoring-db-test \
+  --tmpfs /var/lib/postgresql/data \
+  -e POSTGRES_PASSWORD=test-only -e POSTGRES_DB=nexomed_test \
+  -p 127.0.0.1::5432 postgres:15-alpine
+docker port nexomed-refactoring-db-test 5432
+# Substitua PORTA pela porta exibida:
+HUB_TEST_PG_PORT=PORTA npm run test:api
+docker stop nexomed-refactoring-db-test
+```
+
+Esse teste executa inclusão, leitura, alteração e exclusão, confirma as notificações
+e cobre a data histórica BC que não pode interromper a leitura da planilha.
 
 ---
 

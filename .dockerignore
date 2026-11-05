@@ -1,6 +1,14 @@
 node_modules/
 .venv/
 __pycache__/
+**/__pycache__/
+.agents/
+.pytest_cache/
+tests/
+test-results/
+playwright-report/
+playwright.config.cjs
+playwright.staging.config.cjs
 .aws/
 .codex/
 .env
