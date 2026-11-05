@@ -70,6 +70,12 @@ O Swagger usa os endpoints reais: os botões de execução fazem gravações.
 
 Header obrigatório: `x-api-key`. Chave ausente/vazia retorna `401`, chave incorreta
 retorna `403`. Os erros mantêm o objeto `{"error": "..."}` e os textos anteriores.
+
+Identificadores de registro inválidos retornam `400` com `{"error": "CHAVE inválida..."}`,
+antes de qualquer consulta ou notificação. Isso vale para o caminho de PUT/DELETE
+e para `chave` explícita no POST. São aceitos inteiros no intervalo bigint do
+PostgreSQL (`-9223372036854775808` a `9223372036854775807`); envie IDs grandes como
+string para preservar os dígitos. Omitir `chave` no POST continua gerando o ID no Hub.
 PUT/DELETE sem registro retornam `404`; falhas de banco retornam `500`.
 O proxy retorna `502` se a FastAPI ficar indisponível e não repete gravações.
 

@@ -128,56 +128,11 @@ Se a porta interna `8000` estiver ocupada, outra porta livre é escolhida automa
 Para execução sem reinício automático, use `npm start`.
 Detalhes de desenvolvimento, Docker e hospedagem em [api/README.md](api/README.md).
 
-## Verificar a aplicação
+## Validação da reorganização
 
-```bash
-npm ci
-.venv/bin/python -m pip install -r api/requirements-dev.txt
-npm test
-```
-
-Os testes unitários do Node verificam imports, recursos das páginas, proxy,
-portas e notificações. Os testes Python verificam autenticação, conversões e
-contratos da FastAPI. Os testes Playwright iniciam Hub e FastAPI em portas de
-teste e exercitam páginas, login, permissões, agenda, clientes, cadastro, OPME
-e Swagger. Bancos reais, Redis, ERP, cron e envio de e-mails ficam bloqueados;
-as interações de negócio do navegador usam respostas simuladas.
-
-Se não houver Chrome instalado, execute `npx playwright install chromium`.
-Para usar outro navegador Chromium, defina `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`.
-O relatório visual fica disponível com `npm run test:e2e:report`.
-
-A homologação adicional com a imagem de produção, PostgreSQL e Redis reais,
-frontend sem mocks e testes de recuperação está em
-[tests/staging/README.md](tests/staging/README.md). O resultado e as quatro
-falhas preexistentes reproduzidas estão em
-[docs/QA_PRODUCAO.md](docs/QA_PRODUCAO.md). Essa bateria é executada separadamente
-com `npm run test:staging`, exclusivamente no ambiente descartável descrito ali.
-
-Os comandos também podem ser executados separadamente:
-
-```bash
-npm run test:unit
-npm run test:api
-npm run test:e2e
-```
-
-A integração com PostgreSQL real é opcional e usa exclusivamente um banco
-descartável chamado `nexomed_test`. Para executá-la:
-
-```bash
-docker run --rm -d --name nexomed-refactoring-db-test \
-  --tmpfs /var/lib/postgresql/data \
-  -e POSTGRES_PASSWORD=test-only -e POSTGRES_DB=nexomed_test \
-  -p 127.0.0.1::5432 postgres:15-alpine
-docker port nexomed-refactoring-db-test 5432
-# Substitua PORTA pela porta exibida:
-HUB_TEST_PG_PORT=PORTA npm run test:api
-docker stop nexomed-refactoring-db-test
-```
-
-Esse teste executa inclusão, leitura, alteração e exclusão, confirma as notificações
-e cobre a data histórica BC que não pode interromper a leitura da planilha.
+Antes da limpeza do material de QA, foram aprovados 119 testes de regressão,
+83 testes de homologação e 5 cenários de recuperação. A confirmação do ambiente
+de produção deve ser feita após o deploy.
 
 ---
 

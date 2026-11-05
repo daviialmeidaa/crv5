@@ -3108,10 +3108,19 @@ const OPME = (() => {
         }
     }
 
+    function getSaldoAtaCasas() {
+        const contrato = document.getElementById('fcSaldoAtaContrato').value;
+        if (contrato && window.contratosCasasMap && window.contratosCasasMap[contrato]) {
+            return window.contratosCasasMap[contrato];
+        }
+        return 2;
+    }
+
     function renderSaldoAtaBlock(item, idx, canRemove) {
         const container = document.getElementById('saldoAtaProductsContainer');
         const block = document.createElement('div');
         block.className = 'saldoata-block border-l-4 border-l-nexo-500 border border-gray-200 dark:border-steel-600 rounded-lg bg-gray-50/50 dark:bg-steel-800/50 relative overflow-visible transition-all duration-300';
+        const casas = getSaldoAtaCasas();
 
         let removeBtnHtml = '';
         if (canRemove) {
@@ -3193,7 +3202,7 @@ const OPME = (() => {
 
     function calculateTotalSaldoAta(input) {
         const block = input.closest('.saldoata-block');
-        const casas = getSaldoAtaCasas(block);
+        const casas = getSaldoAtaCasas();
         const qtdeStr = block.querySelector('.sa-qtde').value;
         const qtde = parseFloat(qtdeStr) || 0;
 

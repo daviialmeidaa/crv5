@@ -3,6 +3,7 @@ import logging
 from ..compat import js_iso, js_string, js_truthy, parse_vba_date, parse_vba_time
 from ..database import Database
 from ..security import LegacyAPIError
+from ..validation import validate_agenda_key
 
 log = logging.getLogger(__name__)
 ACTOR = "Integração VBA (Sistema Legado)"
@@ -76,6 +77,8 @@ class AgendaService:
             log.exception("Erro ao publicar refresh de notificações")
 
     def create(self, payload):
+        if isinstance(payload, dict) and 'chave' in payload:
+            validate_agenda_key(payload['chave'])
         try:
             values = values_from_payload(payload)
             data = payload if isinstance(payload, dict) else {}
@@ -102,6 +105,7 @@ class AgendaService:
             raise LegacyAPIError(500, "Erro interno do servidor ao criar item via VBA") from exc
 
     def update(self, chave, payload):
+        chave = validate_agenda_key(chave)
         try:
             values = values_from_payload(payload)
             old = None
@@ -141,6 +145,7 @@ class AgendaService:
             raise LegacyAPIError(500, "Erro interno do servidor ao atualizar item via VBA") from exc
 
     def delete(self, chave):
+        chave = validate_agenda_key(chave)
         try:
             rows = self.db.query(f'DELETE FROM {TABLE} WHERE "CHAVE" = %s RETURNING *', (chave,))
             if not rows:

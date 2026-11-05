@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import Any, Protocol
 
+from psycopg import InterfaceError, OperationalError
 from psycopg.rows import dict_row
 from psycopg_pool import ConnectionPool
 
@@ -21,7 +22,18 @@ class PostgresDatabase:
             conninfo=settings.database_url or "",
             kwargs={**settings.database_kwargs(), "autocommit": True, "row_factory": dict_row},
             min_size=0, max_size=10, open=False,
+            # Descarta conexoes mortas antes da operacao, sem repetir gravacoes.
+            check=self._check_connection,
         )
+
+    def _check_connection(self, conn):
+        try:
+            ConnectionPool.check_connection(conn)
+        except (InterfaceError, OperationalError):
+            # Um restart pode invalidar todas as conexoes ociosas. Verifica o
+            # restante do pool de uma vez, antes de executar qualquer operacao.
+            self.pool.check()
+            raise
 
     def open(self):
         self.pool.open()

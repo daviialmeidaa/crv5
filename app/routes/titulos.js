@@ -3,10 +3,14 @@ const router = express.Router();
 const pgPool = require('../db/pgConnection');
 const { runSync } = require('../services/syncService');
 const { authMiddleware } = require('../middleware/authMiddleware');
+const { requirePermission } = require('../middleware/rbac');
 const { getCache, setCache, clearCache } = require('../db/redis');
 
+router.use(authMiddleware);
+router.use(requirePermission('canViewCR'));
+
 // Rota para buscar os títulos salvos localmente
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const cacheKey = 'cr:titulos';
         const cached = await getCache(cacheKey);
@@ -32,7 +36,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // Rota para forçar a sincronização com o Supra (Stream Chunked)
-router.post('/sync', authMiddleware, async (req, res) => {
+router.post('/sync', async (req, res) => {
     // Configura os headers para manter a conexão aberta e enviar os dados aos pedaços
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Transfer-Encoding', 'chunked');
