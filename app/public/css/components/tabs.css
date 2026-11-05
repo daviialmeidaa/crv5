@@ -1,0 +1,26 @@
+/* Abas utilizadas pelo modulo de custos. */
+
+.tab-btn {
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--color-nexo-500);
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+}
+
+.tab-btn.active::after {
+    width: 100%;
+}
+
+.tab-content:not(.active) {
+    display: none !important;
+}

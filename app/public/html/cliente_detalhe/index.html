@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html data-page="cliente_detalhe" lang="pt-BR" class="h-full">
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
     <script src="/js/shared/auth_guard.js"></script>
@@ -7,112 +7,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalhe do Cliente | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        nexo: {
-                            50:  '#e0f7fa',
-                            100: '#b2ebf2',
-                            200: '#80deea',
-                            300: '#4dd0e1',
-                            400: '#26c6da',
-                            500: '#0097A7',
-                            600: '#00838F',
-                            700: '#006064',
-                            800: '#004D40',
-                            900: '#003330',
-                        },
-                        steel: {
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="/js/shared/tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body.loading-auth { visibility: hidden; }
-        
-        /* Layout Fixos (Sidebar) */
-        aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; }
-        body.sidebar-collapsed .sidebar-text { display: none; }
-        body.sidebar-collapsed .logo-full { display: none; }
-        body.sidebar-collapsed .logo-mini { display: block; }
-
-        body.sidebar-collapsed aside h4 {
-            text-align: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-        
-        .logo-mini { display: none; }
-        
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 10px;
-            width: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.02);
-            border-radius: 8px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.02);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #94a3b8;
-        }
-
-        /* Animação fade-in-up para os elementos */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-up {
-            animation: fadeInUp 0.4s ease-out forwards;
-        }
-        .animate-delay-1 { animation-delay: 0.05s; }
-        .animate-delay-2 { animation-delay: 0.1s; }
-        .animate-delay-3 { animation-delay: 0.15s; }
-        .animate-delay-4 { animation-delay: 0.2s; }
-
-        /* Table container */
-        .table-container {
-            max-height: calc(100vh - 520px);
-        }
-    </style>
+    <link rel="stylesheet" href="/css/shared/layout.css">
+    <link rel="stylesheet" href="/css/components/scrollbar.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/components/datepicker.css">
+    <link rel="stylesheet" href="/css/components/timepicker.css">
+    <link rel="stylesheet" href="/css/components/cell-selector.css">
+    <link rel="stylesheet" href="/css/components/data-grid.css">
+    <link rel="stylesheet" href="/css/components/badges.css">
+    <link rel="stylesheet" href="/css/pages/cliente_detalhe/cliente_detalhe.css">
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -121,7 +30,7 @@
     </script>
 </head>
 <body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
-    
+
     <!-- Sidebar -->
     <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
         <a href="/dashboard" class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
@@ -147,7 +56,7 @@
             <!-- HUB -->
             <div class="space-y-1">
                 <h4 class="px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-steel-500/70 mb-3 mt-6">Hub</h4>
-                
+
                 <!-- Grupo Financeiro (Aberto, Cobrança ativa) -->
                 <div class="sidebar-group" id="menu-group-financeiro">
                     <button
@@ -160,7 +69,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Financeiro</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style="transform: rotate(90deg)"
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50 sidebar-chevron-expanded"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -196,7 +105,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Licitações</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -225,7 +134,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Opme</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -254,7 +163,7 @@
                 </button>
                 <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Detalhe do Cliente</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- Dark Mode Toggle -->
                 <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
@@ -447,7 +356,7 @@
             <!-- ═══════════ TAB CONTENT: NOTAS FISCAIS ═══════════ -->
             <div id="tabContentNotas" class="animate-fade-in-up">
                 <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden">
-                    
+
                     <!-- Toolbar -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-steel-700">
                         <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider flex items-center gap-2">
@@ -477,7 +386,7 @@
                             </tbody>
                         </table>
                     </div>
-                    
+
                     <!-- Paginação -->
                     <div class="px-6 py-4 border-t border-gray-100 dark:border-steel-700 bg-white dark:bg-steel-800 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div class="flex items-center gap-3">
@@ -500,7 +409,7 @@
             <!-- ═══════════ TAB CONTENT: AGENDA DE CONTATOS ═══════════ -->
             <div id="tabContentAgenda" class="hidden animate-fade-in-up">
                 <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm overflow-hidden">
-                    
+
                     <!-- Toolbar -->
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-6 py-4 border-b border-gray-100 dark:border-steel-700">
                         <h3 class="text-sm font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider flex items-center gap-2">
@@ -541,7 +450,7 @@
             <!-- ═══════════ TAB CONTENT: HISTÓRICO DE COBRANÇA ═══════════ -->
             <div id="tabContentHistorico" class="hidden animate-fade-in-up">
                 <div class="space-y-5">
-                    
+
                     <!-- Formulário Inline para Registro -->
                     <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm">
                         <div class="px-6 py-4 border-b border-gray-100 dark:border-steel-700">
@@ -697,7 +606,7 @@
         <div id="notaModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center">
             <!-- Overlay com backdrop-blur -->
             <div class="absolute inset-0 bg-steel-900/40 backdrop-blur-sm transition-opacity" onclick="ClienteDetalhe.closeNotaModal()"></div>
-            
+
             <!-- Modal Content -->
             <div class="bg-white dark:bg-steel-800 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col relative z-10 mx-4 transform transition-all border border-gray-100 dark:border-steel-700">
                 <!-- Loading Overlay -->
@@ -732,7 +641,7 @@
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Empresa Vendedora</p>
                                 <p class="text-steel-800 dark:text-gray-100" id="modalEmpresa">---</p>
                             </div>
-                            
+
                             <!-- Contrato -->
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
@@ -760,13 +669,13 @@
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Data da Emissão</p>
                                 <p class="text-steel-800 dark:text-gray-100" id="modalDataEmissao">---</p>
                             </div>
-                            
+
                             <!-- Natureza da Operação -->
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Natureza da Operação</p>
                                 <p class="text-steel-800 dark:text-gray-100" id="modalNatureza">---</p>
                             </div>
-                            
+
                             <!-- Valor Total -->
                             <div>
                                 <p class="text-xs text-steel-500 dark:text-steel-400 mb-1">Valor Total</p>
@@ -780,7 +689,7 @@
                         <button id="tabBtnProdutos" onclick="ClienteDetalhe.switchNotaTab('produtos')" class="pb-3 border-b-2 border-nexo-500 text-nexo-600 dark:text-nexo-400 font-medium text-sm transition-colors">Produtos <span class="ml-1 bg-nexo-100 text-nexo-700 dark:bg-nexo-900/30 dark:text-nexo-300 py-0.5 px-2 rounded-full text-[10px]" id="modalItensCount">0 itens</span></button>
                         <button id="tabBtnObservacoes" onclick="ClienteDetalhe.switchNotaTab('observacoes')" class="pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors">Observações</button>
                         <button id="tabBtnFollowUp" onclick="ClienteDetalhe.switchNotaTab('followup')" class="pb-3 border-b-2 border-transparent text-steel-500 hover:text-steel-800 dark:text-steel-400 dark:hover:text-gray-200 font-medium text-sm transition-colors">Follow-Up <span class="ml-1 bg-gray-100 text-steel-700 dark:bg-steel-700 dark:text-gray-300 py-0.5 px-2 rounded-full text-[10px]" id="modalFollowUpCount">0 reg</span></button>
-                        
+
                         <button id="btnVerDanfe" onclick="ClienteDetalhe.downloadDanfe()" class="ml-auto pb-3 text-nexo-600 hover:text-nexo-700 dark:text-nexo-400 dark:hover:text-nexo-300 font-semibold text-sm transition-colors flex items-center gap-1 group">
                             <svg class="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             Ver Danfe
@@ -850,7 +759,7 @@
         </div>
 
 
-    
+
         <!-- Footer -->
         <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200 mt-auto">
             <p class="text-xs text-steel-400">

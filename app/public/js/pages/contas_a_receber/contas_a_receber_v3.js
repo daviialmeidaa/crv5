@@ -22,13 +22,9 @@ const ContasGrid = (function () {
         { key: 'dataPagamento', label: 'Data de Pagamento', type: 'date', center: true },
         {
             key: 'status', label: 'Status do Pagamento', center: true, render: v => {
-                const styles = {
-                    'PAGO': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
-                    'ATRASADO': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
-                    'PENDENTE': { grad: 'linear-gradient(135deg, #f6c23e, #dda520)', color: '#fff' }
-                };
-                const s = styles[v] || { grad: 'linear-gradient(135deg, #858796, #6c6d7e)', color: '#fff' };
-                return `<span style="background:${s.grad};color:${s.color};padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
+                const variants = { PAGO: 'success', ATRASADO: 'danger', PENDENTE: 'alert' };
+                const variant = variants[v] || 'neutral';
+                return `<span class="status-badge status-badge-${variant}">${v}</span>`;
             }
         },
         { key: 'conta', label: 'Banco', center: true },
@@ -519,7 +515,7 @@ const ContasGrid = (function () {
                     const yHeader = document.createElement('div');
                     yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
                     yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                         <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
                         <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
                     `;
@@ -564,7 +560,7 @@ const ContasGrid = (function () {
                         const mHeader = document.createElement('div');
                         mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
                         mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                             <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
                             <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
                         `;
@@ -896,19 +892,19 @@ const ContasGrid = (function () {
                                         <p class="font-semibold text-steel-800 dark:text-gray-200 mb-1.5">${emp.empresa}</p>
                                         <div class="grid grid-cols-4 gap-2 text-xs">
                                             <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
-                                                <span class="text-lg font-bold" style="color:#007BFF;">${emp.analyzed}</span>
+                                                <span class="text-lg font-bold sync-count-analyzed">${emp.analyzed}</span>
                                                 <span class="text-steel-500 dark:text-steel-400">Analisados</span>
                                             </div>
                                             <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
-                                                <span class="text-lg font-bold" style="color:#0097A7;">${emp.updated}</span>
+                                                <span class="text-lg font-bold sync-count-updated">${emp.updated}</span>
                                                 <span class="text-steel-500 dark:text-steel-400">Atualizados</span>
                                             </div>
                                             <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
-                                                <span class="text-lg font-bold" style="color:#1cc88a;">${emp.new}</span>
+                                                <span class="text-lg font-bold sync-count-new">${emp.new}</span>
                                                 <span class="text-steel-500 dark:text-steel-400">Novos</span>
                                             </div>
                                             <div class="flex flex-col items-center bg-white dark:bg-steel-800 rounded-md p-2">
-                                                <span class="text-lg font-bold" style="color:#e74a3b;">${emp.deleted}</span>
+                                                <span class="text-lg font-bold sync-count-deleted">${emp.deleted}</span>
                                                 <span class="text-steel-500 dark:text-steel-400">Excluídos</span>
                                             </div>
                                         </div>

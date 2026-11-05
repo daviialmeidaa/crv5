@@ -1,0 +1,13 @@
+/* Tratamento dos botoes de entrada do portal. */
+
+.btn-nexo {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-nexo::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
+}

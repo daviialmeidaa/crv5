@@ -1,0 +1,3 @@
+/* A abertura para cima/baixo continua controlada pelo componente. */
+.custom-timepicker.initialized { display: none !important; }
+.timepicker-popup { top: 100%; left: 0; }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html data-page="reset_heroku" lang="pt-BR" class="h-full">
 
 <head>
     <script src="/js/shared/auth_guard.js"></script>
@@ -7,59 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Resetar Servidor | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        nexo: {
-                            50: '#e0f7fa',
-                            100: '#b2ebf2',
-                            200: '#80deea',
-                            300: '#4dd0e1',
-                            400: '#26c6da',
-                            500: '#0097A7',
-                            600: '#00838F',
-                            700: '#006064',
-                            800: '#004D40',
-                            900: '#003330',
-                        },
-                        steel: {
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', "Liberation Mono", "Courier New", 'monospace'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="/js/shared/tailwind.config.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body.loading-auth { visibility: hidden; }
-        aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; }
-        body.sidebar-collapsed .sidebar-text { display: none; }
-        body.sidebar-collapsed .logo-full { display: none; }
-        body.sidebar-collapsed .logo-mini { display: block; }
-        body.sidebar-collapsed aside h4 { text-align: center; padding-left: 0; padding-right: 0; }
-        body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn { justify-content: center; padding-left: 0; padding-right: 0; }
-        .logo-mini { display: none; }
-
-        /* Terminal Blink Effect */
-        .blink { animation: blinker 1s linear infinite; }
-        @keyframes blinker { 50% { opacity: 0; } }
-    </style>
+    <link rel="stylesheet" href="/css/shared/layout.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/pages/reset_heroku/reset_heroku.css">
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -152,7 +106,7 @@
                 </button>
                 <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Administração de Servidor</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- Theme Toggle -->
                 <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
@@ -184,7 +138,7 @@
 
         <!-- Content Area -->
         <div class="flex-1 overflow-y-auto bg-gray-50 dark:bg-steel-900/50 p-4 lg:p-6">
-            
+
             <div class="max-w-4xl mx-auto space-y-6">
                 <!-- Warning Alert -->
                 <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm">
@@ -214,7 +168,7 @@
                         <h2 class="text-lg font-bold text-steel-800 dark:text-gray-100">Reiniciar Aplicação (Dynos)</h2>
                         <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Aciona o "heroku restart" na infraestrutura em produção.</p>
                     </div>
-                    
+
                     <button id="btnRestart" class="px-6 py-2.5 bg-nexo-600 hover:bg-nexo-700 text-white rounded-lg font-semibold shadow-md shadow-nexo-500/30 transition-all flex items-center gap-2 flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -236,7 +190,7 @@
                     <div id="terminalBody" class="p-4 font-mono text-[13px] text-green-400 overflow-y-auto flex-1 whitespace-pre-wrap flex flex-col gap-1 custom-scrollbar">
                         <div class="text-steel-400">Nexomed Console System v1.0.0</div>
                         <div class="text-steel-400 mb-2">Aguardando comando do administrador...</div>
-                        
+
                         <!-- Log lines will be appended here -->
                         <div id="logContainer"></div>
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html data-page="custos_produtos" lang="pt-BR" class="h-full">
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
     <script src="/js/shared/auth_guard.js"></script>
@@ -7,145 +7,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custos Produtos | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        nexo: {
-                            50: '#e0f7fa',
-                            100: '#b2ebf2',
-                            200: '#80deea',
-                            300: '#4dd0e1',
-                            400: '#26c6da',
-                            500: '#0097A7',
-                            600: '#00838F',
-                            700: '#006064',
-                            800: '#004D40',
-                            900: '#003330',
-                        },
-                        steel: {
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="/js/shared/tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body.loading-auth { visibility: hidden; }
-        
-        /* Layout Fixos (Sidebar) */
-        aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; }
-        body.sidebar-collapsed .sidebar-text { display: none; }
-        body.sidebar-collapsed .logo-full { display: none; }
-        body.sidebar-collapsed .logo-mini { display: block; }
-
-        body.sidebar-collapsed aside h4 {
-            text-align: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-        
-        .logo-mini { display: none; }
-        
-        /* Estilos para a tabela */
-        .table-container {
-            max-height: calc(100vh - 280px);
-        }
-        
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 10px;
-            width: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.02);
-            border-radius: 8px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.02);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #94a3b8;
-        }
-        
-        /* Tab transitions */
-        .tab-btn {
-            position: relative;
-            transition: all 0.2s ease;
-        }
-        .tab-btn::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            width: 0;
-            height: 2px;
-            background: #0097A7;
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
-        }
-        .tab-btn.active::after {
-            width: 100%;
-        }
-        .tab-content:not(.active) { display: none !important; }
-
-        /* Fade-in animation */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .fade-in-up { animation: fadeInUp 0.3s ease forwards; }
-
-        /* Summary table styling */
-        .summary-table th {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-        .summary-table td {
-            font-size: 11px;
-            font-variant-numeric: tabular-nums;
-        }
-
-        /* Pulse glow for active tab icon */
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(0, 151, 167, 0.3); }
-            50% { box-shadow: 0 0 0 6px rgba(0, 151, 167, 0); }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/shared/layout.css">
+    <link rel="stylesheet" href="/css/components/scrollbar.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/components/cell-selector.css">
+    <link rel="stylesheet" href="/css/components/data-grid.css">
+    <link rel="stylesheet" href="/css/components/tabs.css">
+    <link rel="stylesheet" href="/css/pages/custos_produtos/custos_produtos.css">
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -193,7 +67,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Financeiro</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style="transform: rotate(90deg)"
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50 sidebar-chevron-expanded"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -229,7 +103,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Licitações</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -258,7 +132,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Opme</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -287,7 +161,7 @@
                 </button>
                 <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Custos Produtos</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- Dark Mode Toggle -->
                 <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
@@ -364,7 +238,7 @@
             <!-- TAB 1: RESUMO -->
             <!-- ============================================== -->
             <div id="tab-resumo" class="tab-content active flex-1 overflow-y-auto custom-scrollbar fade-in-up pr-2">
-                
+
                 <!-- Filtro de Ano -->
                 <div class="flex items-center gap-3 mb-6">
                     <label class="text-sm font-medium text-steel-600 dark:text-steel-400">Ano:</label>
@@ -535,7 +409,7 @@
             <!-- TAB 2: CUSTOS NULOS -->
             <!-- ============================================== -->
             <div id="tab-custos-nulos" class="tab-content flex-1 flex flex-col overflow-hidden">
-                
+
                 <!-- Toolbar -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <div class="flex items-center gap-3">
@@ -615,7 +489,7 @@
             <!-- TAB 3: HISTÓRICO -->
             <!-- ============================================== -->
             <div id="tab-historico" class="tab-content flex-1 flex flex-col overflow-hidden">
-                
+
                 <!-- Toolbar -->
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                     <div class="flex items-center gap-3">
@@ -730,7 +604,7 @@
                 <h3 class="text-lg font-bold text-steel-900 dark:text-gray-100" id="syncModalTitle">Sincronizando Custos...</h3>
                 <p class="text-xs text-steel-500 dark:text-steel-400 mt-2" id="syncModalSubtitle">Não feche esta janela. O processo pode levar alguns instantes.</p>
             </div>
-            
+
             <div class="p-0 bg-gray-50 dark:bg-steel-900/30 flex-1">
                 <!-- Progress Bar Container -->
                 <div class="px-6 pt-4 pb-2">
@@ -739,7 +613,7 @@
                         <span class="text-xs font-bold text-nexo-600 dark:text-nexo-400" id="syncProgressText">0%</span>
                     </div>
                     <div class="w-full bg-steel-200 dark:bg-steel-700 rounded-full h-2.5 overflow-hidden">
-                        <div id="syncProgressBar" class="bg-nexo-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        <div id="syncProgressBar" class="bg-nexo-500 h-2.5 rounded-full transition-all duration-300" ></div>
                     </div>
                 </div>
 
@@ -773,7 +647,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
+
             <form id="emailForm" onsubmit="CustosApp.submitEmailForm(event)" class="flex flex-col">
                 <div class="p-6 space-y-4">
                     <div>
@@ -794,7 +668,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="px-6 py-4 bg-gray-50 dark:bg-steel-900/30 border-t border-steel-200 dark:border-steel-700/50 flex justify-end gap-3">
                     <button type="button" onclick="CustosApp.closeEmailModal()" class="px-4 py-2 bg-white dark:bg-steel-800 border border-steel-200 dark:border-steel-600 text-steel-700 dark:text-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-steel-700 transition-colors">
                         Cancelar

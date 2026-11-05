@@ -1,0 +1,25 @@
+/* Ajustes exclusivos da pagina dashboard. */
+
+#brazilMapContainer>div>div>iframe {
+    background: transparent !important;
+}
+
+:root[data-page="dashboard"] #barTotalVendido {
+    width: 0%
+}
+
+:root[data-page="dashboard"] #barTotalRecebido {
+    width: 0%
+}
+
+:root[data-page="dashboard"] #barTotalAberto {
+    width: 0%
+}
+
+:root[data-page="dashboard"] .dashboard-chart-tall {
+    min-height: 320px;
+}
+
+:root[data-page="dashboard"] .dashboard-chart {
+    min-height: 280px;
+}

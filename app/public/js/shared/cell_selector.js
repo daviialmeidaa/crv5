@@ -115,7 +115,7 @@ const CellSelector = (function () {
             const bar = document.createElement('div');
             bar.id = 'selectionSumBar';
             bar.className = 'hidden fixed bottom-12 right-6 z-50 bg-steel-800 dark:bg-steel-900 text-white rounded-xl shadow-2xl border border-steel-700 px-5 py-3 items-center gap-5 text-sm font-medium';
-            bar.style.backdropFilter = 'blur(12px)';
+
             bar.innerHTML = `
                 <div class="flex items-center gap-2">
                     <svg class="w-4 h-4 text-nexo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

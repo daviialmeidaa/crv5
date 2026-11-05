@@ -1,0 +1,54 @@
+/* Badges existentes: variacoes claras e escuras definidas em global.css. */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.badge-success {
+    background: var(--badge-success-bg);
+    color: var(--badge-success-color);
+}
+
+.badge-alert, .badge-warning {
+    background: var(--badge-alert-bg);
+    color: var(--badge-alert-color);
+}
+
+.badge-danger {
+    background: var(--badge-danger-bg);
+    color: var(--badge-danger-color);
+}
+
+.badge-info {
+    background: var(--badge-info-bg);
+    color: var(--badge-info-color);
+}
+
+.badge-neutral {
+    background: var(--badge-neutral-bg);
+    color: var(--badge-neutral-color);
+}
+
+/* Indicadores financeiros compactos, preservando o desenho atual. */
+.status-badge {
+    background: var(--status-badge-background);
+    color: var(--color-on-status);
+    padding: 1px 7px;
+    border-radius: 9999px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    display: inline-block;
+    line-height: 1.4;
+}
+.status-badge-success { --status-badge-background: var(--gradient-success); }
+.status-badge-alert { --status-badge-background: var(--gradient-alert); }
+.status-badge-danger { --status-badge-background: var(--gradient-danger); }
+.status-badge-neutral { --status-badge-background: var(--gradient-neutral); }

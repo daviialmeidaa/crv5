@@ -1,0 +1,11 @@
+/* Estilos do componente data-grid. */
+
+.sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+/* Apresentacao dos filtros; selecao e ordenacao continuam nos controllers. */
+:root[data-page] .data-grid-filter { animation: fadeInUp 0.15s ease-out; }
+:root[data-page] .filter-tree-toggle { font-size: 12px; }

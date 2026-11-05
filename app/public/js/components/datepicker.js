@@ -13,9 +13,8 @@ function initCustomDatepickers() {
             return val.split('T')[0];
         }
         
-        // Esconder o input original mas mantê-lo no DOM para o código existente conseguir ler seu .value
-        originalInput.style.display = 'none';
-        
+        // O CSS oculta o input inicializado; seu valor continua disponivel no DOM.
+
         // Criar o wrapper que vai conter o display visual e o popup do calendário
         const wrapper = document.createElement('div');
         wrapper.className = 'relative w-full';
@@ -35,9 +34,6 @@ function initCustomDatepickers() {
         let baseClass = originalInput.className.replace('custom-datepicker', '').replace('initialized', '').trim();
         if (!baseClass.includes('pr-8')) baseClass += ' pr-8'; // Espaço para o ícone
         displayInput.className = baseClass + ' cursor-text relative z-10 bg-transparent';
-        
-        // Remove bordas e fundos do wrapper, deixa apenas no displayInput
-        originalInput.style.display = 'none';
         
         // Sincronizar valor inicial (suportando se o BD mandou atributo em formato brasileiro ou ISO)
         let rawVal = originalInput.getAttribute('value') || originalInput.value;
@@ -284,12 +280,11 @@ function initCustomDatepickers() {
             
             renderCalendar();
             
-            popup.classList.add('custom-datepicker-popup');
+            popup.classList.add('custom-datepicker-popup', 'datepicker-positioned');
             popup.classList.remove('hidden');
             
             const rect = wrapper.getBoundingClientRect();
-            popup.style.position = 'fixed';
-            
+
             // Altura aproximada do popup do calendário
             const popupHeight = 320;
             const popupWidth = 288;
@@ -310,7 +305,6 @@ function initCustomDatepickers() {
             
             popup.style.top = `${topPos}px`;
             popup.style.left = `${leftPos}px`;
-            popup.style.bottom = 'auto';
             setTimeout(() => {
                 popup.classList.remove('opacity-0', 'scale-95');
                 popup.classList.add('opacity-100', 'scale-100');

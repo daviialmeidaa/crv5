@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html data-page="perfis" lang="pt-BR" class="h-full">
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
     <script src="/js/shared/auth_guard.js"></script>
@@ -7,76 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfis de Usuário - Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        nexo: {
-                            50:  '#e0f7fa',
-                            100: '#b2ebf2',
-                            200: '#80deea',
-                            300: '#4dd0e1',
-                            400: '#26c6da',
-                            500: '#0097A7',
-                            600: '#00838F',
-                            700: '#006064',
-                            800: '#004D40',
-                            900: '#003330',
-                        },
-                        steel: {
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="/js/shared/tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
-
-        body.loading-auth { visibility: hidden; }
-        
-        /* Layout Fixos (Sidebar) */
-        aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; } /* w-20 */
-        body.sidebar-collapsed .sidebar-text { display: none; }
-        body.sidebar-collapsed .logo-full { display: none; }
-        body.sidebar-collapsed .logo-mini { display: block; }
-
-        body.sidebar-collapsed aside h4 {
-            text-align: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-        
-        .logo-mini { display: none; }
-    </style>
+    <link rel="stylesheet" href="/css/shared/layout.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/pages/perfis/perfis.css">
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -85,7 +25,7 @@
     </script>
 </head>
 <body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
-    
+
     <!-- Sidebar -->
     <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
         <a href="/dashboard" class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
@@ -111,7 +51,7 @@
             <!-- HUB -->
             <div class="space-y-1">
                 <h4 class="px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-steel-500/70 mb-3 mt-6">Hub</h4>
-                
+
                 <!-- Grupo Financeiro -->
                 <div class="sidebar-group" id="menu-group-financeiro">
                     <button
@@ -124,7 +64,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Financeiro</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -160,7 +100,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Licitações</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -189,7 +129,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Opme</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -218,7 +158,7 @@
                 </button>
                 <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Perfis de Usuário</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- Dark Mode Toggle -->
                 <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
@@ -252,7 +192,7 @@
             </div>
         </header>
 
-        
+
         <!-- Content Area -->
         <div class="flex-1 flex overflow-hidden bg-gray-50 dark:bg-steel-900 transition-colors duration-200 h-[calc(100vh-4rem)]">
             <!-- Left Side: List of Profiles -->
@@ -271,7 +211,7 @@
 
             <!-- Right Side: Editor -->
             <div class="flex-1 flex flex-col bg-gray-50 dark:bg-steel-900 overflow-y-auto custom-scrollbar p-4 lg:p-6 relative">
-                
+
                 <div id="editorEmptyState" class="absolute inset-0 flex flex-col items-center justify-center text-steel-400 dark:text-steel-500 transition-opacity duration-300">
                     <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <p>Selecione um perfil na lista ou crie um novo.</p>
@@ -292,7 +232,7 @@
 
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-3">Atribuição de Permissões</label>
-                            
+
                             <!-- Dual Listbox -->
                             <div class="flex gap-4 items-stretch h-64">
                                 <!-- Available -->
@@ -337,7 +277,7 @@
 
             </div>
         </div>
-        
+
         <!-- Footer -->
         <footer class="h-10 bg-white dark:bg-steel-800 border-t border-gray-200 dark:border-steel-700 flex items-center justify-center px-6 transition-colors duration-200">
             <p class="text-xs text-steel-400">
@@ -345,11 +285,11 @@
             </p>
         </footer>
     </main>
-    
+
     <script>
         document.getElementById('footerYear').textContent = new Date().getFullYear();
     </script>
-    
+
     <!-- Delete Modal -->
     <div id="deleteModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center">
         <div class="absolute inset-0 bg-steel-900/50 backdrop-blur-sm" onclick="PerfisModule.closeDeleteModal()"></div>

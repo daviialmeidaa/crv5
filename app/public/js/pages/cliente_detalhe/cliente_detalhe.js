@@ -74,13 +74,9 @@ const ClienteDetalhe = (() => {
         },
         {
             key: 'status', label: 'Status', render: v => {
-                const styles = {
-                    'PAGO': { grad: 'linear-gradient(135deg, #1cc88a, #17a673)', color: '#fff' },
-                    'ATRASADO': { grad: 'linear-gradient(135deg, #e74a3b, #c0392b)', color: '#fff' },
-                    'PENDENTE': { grad: 'linear-gradient(135deg, #f6c23e, #dda520)', color: '#fff' }
-                };
-                const s = styles[v] || { grad: 'linear-gradient(135deg, #858796, #6c6d7e)', color: '#fff' };
-                return `<span style="background:${s.grad};color:${s.color};padding:1px 7px;border-radius:9999px;font-size:9px;font-weight:600;letter-spacing:0.03em;white-space:nowrap;display:inline-block;line-height:1.4;">${v}</span>`;
+                const variants = { PAGO: 'success', ATRASADO: 'danger', PENDENTE: 'alert' };
+                const variant = variants[v] || 'neutral';
+                return `<span class="status-badge status-badge-${variant}">${v}</span>`;
             }
         }
     ];
@@ -554,19 +550,6 @@ const ClienteDetalhe = (() => {
         document.body.appendChild(modal);
         activeFilterModal = modal;
         
-        // Injetar custom-scrollbar se não existir
-        if (!document.getElementById('filterScrollStyle')) {
-            const style = document.createElement('style');
-            style.id = 'filterScrollStyle';
-            style.textContent = `
-                #filterCheckboxList::-webkit-scrollbar { width: 6px; }
-                #filterCheckboxList::-webkit-scrollbar-track { background: transparent; }
-                #filterCheckboxList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-                .dark #filterCheckboxList::-webkit-scrollbar-thumb { background: #475569; }
-            `;
-            document.head.appendChild(style);
-        }
-
         const listContainer = modal.querySelector('#filterCheckboxList');
         const searchInput = modal.querySelector('#filterSearchInput');
 
@@ -677,7 +660,7 @@ const ClienteDetalhe = (() => {
                     const yHeader = document.createElement('div');
                     yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
                     yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                         <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
                         <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
                     `;
@@ -722,7 +705,7 @@ const ClienteDetalhe = (() => {
                         const mHeader = document.createElement('div');
                         mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
                         mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                             <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
                             <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
                         `;

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html data-page="dashboard" lang="pt-BR" class="h-full">
 
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
@@ -8,126 +8,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <!-- Google Charts para o Mapa do Brasil -->
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        nexo: {
-                            50: '#e0f7fa',
-                            100: '#b2ebf2',
-                            200: '#80deea',
-                            300: '#4dd0e1',
-                            400: '#26c6da',
-                            500: '#0097A7',
-                            600: '#00838F',
-                            700: '#006064',
-                            800: '#004D40',
-                            900: '#003330',
-                        },
-                        steel: {
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="/js/shared/tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body.loading-auth {
-            visibility: hidden;
-        }
-
-        /* Layout Fixos (Sidebar) */
-        aside {
-            transition: width 0.3s ease;
-        }
-
-        body.sidebar-collapsed aside {
-            width: 5rem !important;
-        }
-
-        /* w-20 */
-        body.sidebar-collapsed .sidebar-text {
-            display: none;
-        }
-
-        body.sidebar-collapsed .logo-full {
-            display: none;
-        }
-
-        body.sidebar-collapsed .logo-mini {
-            display: block;
-        }
-
-        body.sidebar-collapsed aside h4 {
-            text-align: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        .logo-mini {
-            display: none;
-        }
-
-        /* Google GeoChart: forçar fundo transparente apenas no iframe */
-        #brazilMapContainer>div>div>iframe {
-            background: transparent !important;
-        }
-
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 10px;
-            width: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.02);
-            border-radius: 8px;
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #94a3b8;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/shared/layout.css">
+    <link rel="stylesheet" href="/css/components/scrollbar.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/pages/dashboard/dashboard.css">
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -180,7 +73,7 @@
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Financeiro</span>
                         </div>
                         <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
-                            style="" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
@@ -218,7 +111,7 @@
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Licitações</span>
                         </div>
                         <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
-                            style="" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
@@ -251,7 +144,7 @@
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Opme</span>
                         </div>
                         <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
-                            style="" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
@@ -461,7 +354,7 @@
                         <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
                             <div id="barTotalVendido"
                                 class="h-full bg-gradient-to-r from-nexo-500 to-nexo-400 rounded-full transition-all duration-700 ease-out"
-                                style="width: 0%"></div>
+                                ></div>
                         </div>
                     </div>
                     <!-- Total Recebido -->
@@ -476,7 +369,7 @@
                         <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
                             <div id="barTotalRecebido"
                                 class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-700 ease-out"
-                                style="width: 0%"></div>
+                                ></div>
                         </div>
                     </div>
                     <!-- Total em Aberto -->
@@ -491,7 +384,7 @@
                         <div class="w-full h-3 bg-gray-100 dark:bg-steel-700 rounded-full overflow-hidden">
                             <div id="barTotalAberto"
                                 class="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-700 ease-out"
-                                style="width: 0%"></div>
+                                ></div>
                         </div>
                     </div>
                 </div>
@@ -500,8 +393,8 @@
             <!-- ═══════════ NEW ROW: TOP PAGADORES ═══════════ -->
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 <!-- Donut: Top 5 Contratos -->
-                <div class="lg:col-span-1 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
-                    style="min-height: 320px;">
+                <div class="lg:col-span-1 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col dashboard-chart-tall"
+                    >
                     <h3 id="titleTopContratos"
                         class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 5
                         Contratos</h3>
@@ -509,8 +402,8 @@
                 </div>
 
                 <!-- Bar: Top 10 Clientes -->
-                <div class="lg:col-span-4 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
-                    style="min-height: 320px;">
+                <div class="lg:col-span-4 bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col dashboard-chart-tall"
+                    >
                     <h3 id="titleTopClientes"
                         class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">Top 10
                         Clientes</h3>
@@ -521,16 +414,16 @@
             <!-- ═══════════ MIDDLE ROW: 3 Charts ═══════════ -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Bar Chart: Recebimento por Banco -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
-                    style="min-height: 280px;">
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col dashboard-chart"
+                    >
                     <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">
                         Recebimento por Banco</h3>
                     <div id="chartBancos" class="flex-1 w-full"></div>
                 </div>
 
                 <!-- Gauge: Desempenho Recebimento do Mês -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col items-center"
-                    style="min-height: 280px;">
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col items-center dashboard-chart"
+                    >
                     <div class="flex items-center justify-between w-full mb-1">
                         <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider">
                             Desempenho do Mês</h3>
@@ -582,8 +475,8 @@
                 </div>
 
                 <!-- Donut: Recebimento por Esfera -->
-                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
-                    style="min-height: 280px;">
+                <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col dashboard-chart"
+                    >
                     <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">
                         Recebimento por Esfera</h3>
                     <div id="chartEsfera" class="flex-1 w-full"></div>
@@ -591,8 +484,8 @@
             </div>
 
             <!-- ═══════════ BOTTOM: Evolução Mensal ═══════════ -->
-            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col"
-                style="min-height: 280px;">
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 p-4 flex flex-col dashboard-chart"
+                >
                 <h3 class="text-xs font-bold text-steel-700 dark:text-gray-200 uppercase tracking-wider mb-2">
                     Recebimento por Mês</h3>
                 <div id="chartEvolucao" class="flex-1 w-full"></div>

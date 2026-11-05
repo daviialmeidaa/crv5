@@ -298,7 +298,7 @@ const ClientesGrid = (() => {
         const modal = document.createElement('div');
         modal.id = 'filterModal';
         modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm';
-        modal.style.cssText = 'animation: fadeInUp 0.15s ease-out;';
+        modal.classList.add('data-grid-filter');
         modal.addEventListener('click', e => e.stopPropagation());
 
         const rect = event.currentTarget.getBoundingClientRect();

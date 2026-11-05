@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html data-page="agenda_licitacoes" lang="pt-BR" class="h-full">
 
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
@@ -8,243 +8,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda Licitações | Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        nexo: {
-                            50: '#e0f7fa',
-                            100: '#b2ebf2',
-                            200: '#80deea',
-                            300: '#4dd0e1',
-                            400: '#26c6da',
-                            500: '#0097A7',
-                            600: '#00838F',
-                            700: '#006064',
-                            800: '#004D40',
-                            900: '#003330',
-                        },
-                        steel: {
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="/js/shared/tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body.loading-auth {
-            visibility: hidden;
-        }
-
-        /* Layout Fixos (Sidebar) */
-        aside {
-            transition: width 0.3s ease;
-        }
-
-        body.sidebar-collapsed aside {
-            width: 5rem !important;
-        }
-
-        body.sidebar-collapsed .sidebar-text {
-            display: none;
-        }
-
-        body.sidebar-collapsed .logo-full {
-            display: none;
-        }
-
-        body.sidebar-collapsed .logo-mini {
-            display: block;
-        }
-
-        body.sidebar-collapsed aside h4 {
-            text-align: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        .logo-mini {
-            display: none;
-        }
-
-        /* Tabela */
-        .table-container {
-            max-height: calc(100vh - 260px);
-        }
-
-        /* Custom Scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            height: 10px;
-            width: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.02);
-            border-radius: 8px;
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #cbd5e1;
-            border-radius: 8px;
-            border: 2px solid transparent;
-            background-clip: padding-box;
-        }
-
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: #475569;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background-color: #94a3b8;
-        }
-
-        /* Animações */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(15px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in-up {
-            animation: fadeInUp 0.3s ease-out;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: scale(0.96);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        .slide-in {
-            animation: slideIn 0.2s ease-out;
-        }
-
-        /* Status badges */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 2px 10px;
-            border-radius: 9999px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-            white-space: nowrap;
-        }
-
-        .badge-success {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .dark .badge-success {
-            background: rgba(16, 185, 129, 0.15);
-            color: #6ee7b7;
-        }
-
-        .badge-warning {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .dark .badge-warning {
-            background: rgba(245, 158, 11, 0.15);
-            color: #fbbf24;
-        }
-
-        .badge-info {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .dark .badge-info {
-            background: rgba(59, 130, 246, 0.15);
-            color: #93c5fd;
-        }
-
-        .badge-danger {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .dark .badge-danger {
-            background: rgba(239, 68, 68, 0.15);
-            color: #fca5a5;
-        }
-
-        .badge-neutral {
-            background: #f3f4f6;
-            color: #4b5563;
-        }
-
-        .dark .badge-neutral {
-            background: rgba(107, 114, 128, 0.15);
-            color: #d1d5db;
-        }
-
-        /* Glow focus em inputs do modal */
-        .input-glow:focus {
-            box-shadow: 0 0 0 3px rgba(0, 151, 167, 0.15);
-        }
-
-        /* Toast notification */
-        .toast {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            z-index: 200;
-            padding: 12px 20px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/shared/layout.css">
+    <link rel="stylesheet" href="/css/components/scrollbar.css">
+    <link rel="stylesheet" href="/css/components/modal.css">
+    <link rel="stylesheet" href="/css/components/badges.css">
+    <link rel="stylesheet" href="/css/components/forms.css">
+    <link rel="stylesheet" href="/css/components/toast.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/components/datepicker.css">
+    <link rel="stylesheet" href="/css/components/timepicker.css">
+    <link rel="stylesheet" href="/css/components/cell-selector.css">
+    <link rel="stylesheet" href="/css/components/data-grid.css">
+    <link rel="stylesheet" href="/css/pages/agenda_licitacoes/agenda_licitacoes.css">
     <!-- Aplicar tema antes de renderizar -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -297,7 +78,7 @@
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Financeiro</span>
                         </div>
                         <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
-                            style="" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
@@ -333,8 +114,8 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Licitações</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
-                            style="transform: rotate(90deg)" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50 sidebar-chevron-expanded"
+                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
                     </button>
@@ -364,7 +145,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Opme</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -451,8 +232,8 @@
 
             <!-- KPI Cards Row (Removido a pedido) -->
             <!-- Ferramentas e Filtros -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 fade-in-up"
-                style="animation-delay: 0.1s">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 fade-in-up animation-delay-100"
+                >
                 <div class="flex items-center gap-2">
                     <!-- Tabs: Participante -->
                     <div class="flex bg-gray-100 dark:bg-steel-700 rounded-lg p-0.5">
@@ -493,8 +274,8 @@
             </div>
 
             <!-- Tabela -->
-            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up"
-                style="animation-delay: 0.15s">
+            <div class="bg-white dark:bg-steel-800 rounded-xl border border-gray-200 dark:border-steel-700 shadow-sm flex-1 flex flex-col overflow-hidden relative fade-in-up animation-delay-150"
+                >
 
                 <!-- Loading overlay -->
                 <div id="tableLoading"

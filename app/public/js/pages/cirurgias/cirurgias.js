@@ -1338,7 +1338,7 @@ const OPME = (() => {
                     const yHeader = document.createElement('div');
                     yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
                     yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                         <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
                         <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
                     `;
@@ -1383,7 +1383,7 @@ const OPME = (() => {
                         const mHeader = document.createElement('div');
                         mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
                         mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                             <input type="checkbox" class="rounded border-gray-300 dark:border-steel-600 text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
                             <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
                         `;
@@ -2465,7 +2465,7 @@ const OPME = (() => {
             ${idHtml}
             ${itemPregaoHtml}
             <td class="px-2 py-1.5 text-center whitespace-nowrap sticky left-0 bg-white dark:bg-steel-800 group-hover:bg-[#e8f9fa] dark:group-hover:bg-[#1c3442] transition-colors z-[5]">
-                <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio ${cellInput}" value="${item.cod_bio || ''}" style="min-width:60px">
+                <input type="number" onblur="OPME.fetchProdutoInfo(this)" onkeydown="if(event.key==='Enter'){event.preventDefault(); OPME.fetchProdutoInfo(this);}" class="prod-cod-bio ${cellInput}" value="${item.cod_bio || ''}">
             </td>
             <td class="col-tipoCirurgia px-2 py-1.5 text-center min-w-[80px]">
                 <span class="prod-tipo ${cellReadonly}">${item.classificacao || '-'}</span>
@@ -2477,34 +2477,34 @@ const OPME = (() => {
                 <div class="prod-desc text-[11px] text-steel-700 dark:text-gray-300 line-clamp-3 leading-tight" title="${(item.descricao_personalizada || '').replace(/"/g, '&quot;')}">${item.descricao_personalizada || ''}</div>
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <input type="text" class="prod-lote ${cellInput} uppercase" value="${item.lote || ''}" style="min-width:50px">
+                <input type="text" class="prod-lote ${cellInput} uppercase" value="${item.lote || ''}">
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}" style="width:40px">
+                <input type="number" oninput="OPME.calculateTotalCirurgia()" class="prod-qtde ${cellInput}" value="${item.quantidade_utilizada !== null && item.quantidade_utilizada !== undefined ? item.quantidade_utilizada : ''}">
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
-                <input type="text" data-original-vlr="${item.valor_unitario !== null && item.valor_unitario !== undefined ? item.valor_unitario : ''}" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'} style="min-width:60px">
+                <input type="text" data-original-vlr="${item.valor_unitario !== null && item.valor_unitario !== undefined ? item.valor_unitario : ''}" oninput="OPME.calculateTotalCirurgia()" onblur="this.value = formatCurrencyInput(parseCurrency(this.value), OPME.getCirurgiaModalCasas()); OPME.calculateTotalCirurgia()" class="prod-vlr-un w-full bg-transparent text-[11px] outline-none text-right py-1 border-0 rounded transition-all ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? 'text-steel-800 dark:text-gray-200 focus:ring-1 focus:ring-nexo-500/40 cursor-text' : 'text-steel-600 dark:text-steel-400 cursor-default'}" value="${formatCurrencyInput(item.valor_unitario, casas)}" ${item.valor_unitario !== null && item.valor_unitario !== undefined && parseFloat(item.valor_unitario) === 0 ? '' : 'readonly'}>
             </td>
             <td class="px-2 py-1.5 text-right whitespace-nowrap">
                 <span class="prod-vlr-tot ${cellReadonly} font-semibold">${formatCurrencyInput(item.valor_total, casas)}</span>
             </td>
             <td class="col-modalidade hidden px-2 py-1.5 text-center whitespace-nowrap">
-                <select class="prod-modalidade ${cellSelect}" onchange="OPME.handleModalidadeChange(this)" style="min-width:70px">
+                <select class="prod-modalidade ${cellSelect}" onchange="OPME.handleModalidadeChange(this)">
                     <option value="Venda" ${(item.modalidade || 'Venda') === 'Venda' ? 'selected' : ''}>Venda</option>
                     <option value="Doação" ${(item.modalidade || 'Venda') === 'Doação' ? 'selected' : ''}>Doação</option>
                 </select>
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <input type="text" class="prod-empenho ${cellInput} uppercase" value="${item.empenho || ''}" style="min-width:55px">
+                <input type="text" class="prod-empenho ${cellInput} uppercase" value="${item.empenho || ''}">
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <input type="text" class="prod-autorizacao ${cellInput} uppercase" value="${item.autorizacao || ''}" style="min-width:55px">
+                <input type="text" class="prod-autorizacao ${cellInput} uppercase" value="${item.autorizacao || ''}">
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <input type="text" class="prod-pedido ${cellInput}" value="${item.pedido || ''}" style="min-width:50px">
+                <input type="text" class="prod-pedido ${cellInput}" value="${item.pedido || ''}">
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <select class="prod-retorno-consignacao ${cellSelect}" style="min-width:85px">
+                <select class="prod-retorno-consignacao ${cellSelect} surgery-min-width-85">
                     <option value="">-</option>
                     <option value="AGUARDANDO" ${retConsigVal === 'AGUARDANDO' ? 'selected' : ''}>AGUARDANDO</option>
                     <option value="FEITO" ${retConsigVal === 'FEITO' ? 'selected' : ''}>FEITO</option>
@@ -2514,14 +2514,14 @@ const OPME = (() => {
                 <span class="prod-status-expedicao ${cellReadonly}">${item.status_expedicao || '-'}</span>
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <select class="prod-autorizacao-opme ${cellSelect}" style="min-width:90px">
+                <select class="prod-autorizacao-opme ${cellSelect} surgery-min-width-90">
                     <option value="">-</option>
                     <option value="NÃO FATURAR" ${autOpmeVal === 'NÃO FATURAR' ? 'selected' : ''}>NÃO FATURAR</option>
                     <option value="FATURAR" ${autOpmeVal === 'FATURAR' ? 'selected' : ''}>FATURAR</option>
                 </select>
             </td>
             <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                <input type="text" class="prod-nota-fiscal ${cellInput} uppercase" value="${item.nota_fiscal || ''}" style="min-width:50px">
+                <input type="text" class="prod-nota-fiscal ${cellInput} uppercase" value="${item.nota_fiscal || ''}">
             </td>
             <td class="px-1 py-1.5 text-center whitespace-nowrap">
                 <button type="button" onclick="OPME.removeCirurgiaProduct(this)" class="p-1 rounded text-steel-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Remover Produto">
@@ -2597,9 +2597,9 @@ const OPME = (() => {
         const dropdown = document.createElement('div');
         dropdown.id = 'headerSelectDropdown';
         dropdown.className = 'fixed mt-2 z-[200]';
-        dropdown.style.cssText = 'min-width: 170px;';
+
         dropdown.innerHTML = `
-            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm" style="animation: fadeIn 0.15s ease-out">
+            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm surgery-dropdown-panel">
                 <div class="px-3 py-2 border-b border-gray-100 dark:border-steel-700/50">
                     <span class="text-[10px] font-semibold text-nexo-600 dark:text-nexo-400 uppercase tracking-wider">Aplicar a todos</span>
                 </div>
@@ -2663,9 +2663,9 @@ const OPME = (() => {
         const dropdown = document.createElement('div');
         dropdown.id = 'colVisibilityMenu';
         dropdown.className = 'fixed z-[200]';
-        dropdown.style.cssText = 'min-width: 190px;';
+
         dropdown.innerHTML = `
-            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden" style="animation: fadeIn 0.15s ease-out">
+            <div class="bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600/50 rounded-xl shadow-2xl overflow-hidden surgery-dropdown-panel">
                 <div class="px-3 py-2 border-b border-gray-100 dark:border-steel-700/50">
                     <span class="text-[10px] font-semibold text-nexo-600 dark:text-nexo-400 uppercase tracking-wider">Colunas visíveis</span>
                 </div>

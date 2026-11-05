@@ -3,9 +3,8 @@ function initCustomTimepickers() {
     document.querySelectorAll('.custom-timepicker:not(.initialized)').forEach(originalInput => {
         originalInput.classList.add('initialized');
         
-        // Esconder o input original mas mantê-lo no DOM para o código existente conseguir ler seu .value
-        originalInput.style.display = 'none';
-        
+        // O CSS oculta o input inicializado; seu valor continua disponivel no DOM.
+
         // Criar o wrapper
         const wrapper = document.createElement('div');
         wrapper.className = 'relative flex-1 w-full';
@@ -35,10 +34,8 @@ function initCustomTimepickers() {
         
         // Popup
         const popup = document.createElement('div');
-        popup.className = 'absolute z-50 mt-1 hidden bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg shadow-xl w-40 transform transition-all duration-200 opacity-0 scale-95 origin-top-left overflow-hidden flex h-64';
-        
-        popup.style.top = '100%';
-        popup.style.left = '0';
+        popup.className = 'timepicker-popup absolute z-50 mt-1 hidden bg-white dark:bg-steel-800 border border-gray-200 dark:border-steel-600 rounded-lg shadow-xl w-40 transform transition-all duration-200 opacity-0 scale-95 origin-top-left overflow-hidden flex h-64';
+
         wrapper.appendChild(popup);
         
         // Colunas de horas e minutos

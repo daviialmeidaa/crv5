@@ -359,7 +359,7 @@ const AL = (() => {
         const modal = document.createElement('div');
         modal.id = 'filterModal';
         modal.className = 'absolute z-50 bg-white dark:bg-steel-800 rounded-lg shadow-xl border border-gray-200 dark:border-steel-700 w-64 flex flex-col font-sans text-sm';
-        modal.style.cssText = 'animation: fadeInUp 0.15s ease-out;';
+        modal.classList.add('data-grid-filter');
         modal.addEventListener('click', e => e.stopPropagation());
 
         const rect = event.currentTarget.getBoundingClientRect();
@@ -484,7 +484,7 @@ const AL = (() => {
                     const yHeader = document.createElement('div');
                     yHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer mt-1';
                     yHeader.innerHTML = `
-                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                        <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                         <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${yearAllChecked ? 'checked' : ''}>
                         <span class="font-semibold text-steel-700 dark:text-gray-300 text-xs">${year}</span>
                     `;
@@ -529,7 +529,7 @@ const AL = (() => {
                         const mHeader = document.createElement('div');
                         mHeader.className = 'flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-steel-700 rounded cursor-pointer';
                         mHeader.innerHTML = `
-                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none" style="font-size: 12px;">+</span>
+                            <span class="w-4 text-center text-steel-400 font-bold transition-transform transform select-none filter-tree-toggle">+</span>
                             <input type="checkbox" class="rounded text-nexo-600 focus:ring-nexo-500 cursor-pointer" ${monthAllChecked ? 'checked' : ''}>
                             <span class="text-steel-600 dark:text-gray-400 text-xs">${mName}</span>
                         `;

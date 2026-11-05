@@ -84,7 +84,10 @@ app/                           Hub Node.js e frontend
     js/pages/<pagina>/        Scripts específicos de cada página
     js/shared/                Scripts compartilhados entre páginas
     js/components/            Componentes reutilizáveis
-    css/                      Espaço para folhas de estilo externas
+    css/global.css            Paleta e estados semânticos do portal
+    css/shared/               Layout compartilhado
+    css/components/           Estilos dos componentes existentes
+    css/pages/<pagina>/       Estilos específicos de cada página
     assets/                   Imagens e áudios
     uploads/                  Arquivos públicos já utilizados pelos usuários
 api/                           Aplicação FastAPI
@@ -102,7 +105,9 @@ requirements.txt               Encaminha a instalação Python para api/requirem
 package.json                   Comandos e dependências Node do projeto
 ```
 
-Os estilos que já estavam dentro do HTML continuam nas respectivas páginas.
+Os estilos ficam em arquivos CSS separados por página e componente. A paleta
+compartilhada alimenta também a configuração do Tailwind. Veja as convenções em
+[app/public/css/README.md](app/public/css/README.md).
 O `.env`, `node_modules/` e `.venv/` permanecem na raiz. Os comandos npm são
 executados na raiz, inclusive os comandos usados pelo Heroku Scheduler.
 As URLs públicas de páginas, APIs, imagens, áudios e uploads foram mantidas.

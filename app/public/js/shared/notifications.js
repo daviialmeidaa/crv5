@@ -101,21 +101,6 @@
         };
     }
 
-    // 0. Injetar Estilos (Scrollbar customizado)
-    if (!document.getElementById('notif-styles')) {
-        const style = document.createElement('style');
-        style.id = 'notif-styles';
-        style.textContent = `
-            #notifDropdown .custom-scrollbar::-webkit-scrollbar { height: 10px; width: 10px; }
-            #notifDropdown .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); border-radius: 8px; }
-            .dark #notifDropdown .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
-            #notifDropdown .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
-            .dark #notifDropdown .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
-            #notifDropdown .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
-        `;
-        document.head.appendChild(style);
-    }
-
     // 1. Injetar Botão do Sininho e Dropdown
     const container = document.createElement('div');
     container.className = 'relative flex items-center mr-2'; // Adiciona margem direita para separar do themeToggle

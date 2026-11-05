@@ -1,0 +1,135 @@
+/* Ajustes exclusivos da pagina cirurgias. */
+
+.table-container {
+    max-height: calc(100vh - 310px);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.15s ease-out;
+}
+
+body.fullscreen-grid aside,
+        body.fullscreen-grid header,
+        body.fullscreen-grid footer,
+        body.fullscreen-grid #kpisContainer {
+    display: none !important;
+}
+
+body.fullscreen-grid .flex-1.p-6 {
+    padding: 1rem !important;
+}
+
+body.fullscreen-grid .table-container {
+    max-height: calc(100vh - 150px) !important;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+#cirurgiaProductsTable .col-tipoCirurgia,
+        #cirurgiaProductsTable .col-descPersonalizada,
+        #cirurgiaProductsTable .col-modalidade,
+        #cirurgiaProductsTable .col-expedicao {
+    display: none;
+}
+
+#cirurgiaProductsTable.show-tipoCirurgia .col-tipoCirurgia,
+        #cirurgiaProductsTable.show-descPersonalizada .col-descPersonalizada,
+        #cirurgiaProductsTable.show-modalidade .col-modalidade,
+        #cirurgiaProductsTable.show-expedicao .col-expedicao {
+    display: table-cell;
+}
+
+.dark #cirurgiaProductsTable select option {
+    background-color: var(--color-steel-800);
+    color: #e5e7eb;
+}
+
+:root[data-page="cirurgias"] .cirurgias-surgery-tab-panel {
+    min-height: var(--cirurgia-tab-height, auto)
+}
+
+:root[data-page="cirurgias"] .surgery-min-width-85 {
+    min-width:85px
+}
+
+:root[data-page="cirurgias"] .surgery-min-width-90 {
+    min-width:90px
+}
+
+:root[data-page="cirurgias"] .surgery-dropdown-panel {
+    animation: fadeIn 0.15s ease-out
+}
+
+:root[data-page="cirurgias"] .prod-cod-bio {
+    min-width:60px;
+}
+
+:root[data-page="cirurgias"] .prod-lote {
+    min-width:50px;
+}
+
+:root[data-page="cirurgias"] .prod-qtde {
+    width:40px;
+}
+
+:root[data-page="cirurgias"] .prod-vlr-un {
+    min-width:60px;
+}
+
+:root[data-page="cirurgias"] .prod-modalidade {
+    min-width:70px;
+}
+
+:root[data-page="cirurgias"] .prod-empenho {
+    min-width:55px;
+}
+
+:root[data-page="cirurgias"] .prod-autorizacao {
+    min-width:55px;
+}
+
+:root[data-page="cirurgias"] .prod-pedido {
+    min-width:50px;
+}
+
+:root[data-page="cirurgias"] .prod-nota-fiscal {
+    min-width:50px;
+}
+
+#headerSelectDropdown { min-width: 170px; }
+#colVisibilityMenu { min-width: 190px; }

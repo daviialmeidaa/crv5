@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="h-full">
+<html data-page="cadastro_usuario" lang="pt-BR" class="h-full">
 <head>
     <!-- Guard: Verifica autenticação e permissões -->
     <script src="/js/shared/auth_guard.js"></script>
@@ -7,70 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastrar Usuário - Nexomed</title>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.ico">
+    <link rel="stylesheet" href="/css/global.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        nexo: {
-                            50:  '#e0f7fa',
-                            100: '#b2ebf2',
-                            200: '#80deea',
-                            300: '#4dd0e1',
-                            400: '#26c6da',
-                            500: '#0097A7',
-                            600: '#00838F',
-                            700: '#006064',
-                            800: '#004D40',
-                            900: '#003330',
-                        },
-                        steel: {
-                            400: '#9ca3af',
-                            500: '#6b7280',
-                            600: '#4b5563',
-                            700: '#374151',
-                            800: '#1f2937',
-                            900: '#111827',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+    <script src="/js/shared/tailwind.config.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body.loading-auth { visibility: hidden; }
-        
-        /* Layout Fixos (Sidebar) */
-        aside { transition: width 0.3s ease; }
-        body.sidebar-collapsed aside { width: 5rem !important; } /* w-20 */
-        body.sidebar-collapsed .sidebar-text { display: none; }
-        body.sidebar-collapsed .logo-full { display: none; }
-        body.sidebar-collapsed .logo-mini { display: block; }
-
-        body.sidebar-collapsed aside h4 {
-            text-align: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        body.sidebar-collapsed aside nav a,
-        body.sidebar-collapsed aside nav .sidebar-group-btn {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-        
-        .logo-mini { display: none; }
-    </style>
+    <link rel="stylesheet" href="/css/shared/layout.css">
+    <link rel="stylesheet" href="/css/components/notifications.css">
+    <link rel="stylesheet" href="/css/pages/cadastro_usuario/cadastro_usuario.css">
     <!-- Aplicar tema antes de renderizar (evita flash) -->
     <script>
         if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -79,7 +25,7 @@
     </script>
 </head>
 <body class="h-full flex font-sans loading-auth bg-gray-50 dark:bg-steel-900 text-steel-800 dark:text-gray-200 transition-colors duration-200">
-    
+
     <!-- Sidebar -->
     <aside class="w-64 bg-steel-900 dark:bg-steel-900 text-white flex flex-col shadow-xl hidden md:flex border-r border-steel-800 z-20">
         <a href="/dashboard" class="h-16 flex items-center justify-center px-6 border-b border-steel-700/50 shrink-0 hover:bg-steel-800 transition-colors cursor-pointer">
@@ -105,7 +51,7 @@
             <!-- HUB -->
             <div class="space-y-1">
                 <h4 class="px-4 text-[11px] font-bold uppercase tracking-[0.15em] text-steel-500/70 mb-3 mt-6">Hub</h4>
-                
+
                 <!-- Grupo Financeiro -->
                 <div class="sidebar-group" id="menu-group-financeiro">
                     <button
@@ -118,7 +64,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Financeiro</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -154,7 +100,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Licitações</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -183,7 +129,7 @@
                             </svg>
                             <span class="sidebar-text truncate text-[13px] 2xl:text-[13px] 2xl:text-[14.5px]">Opme</span>
                         </div>
-                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50" style=""
+                        <svg class="w-3.5 h-3.5 transition-transform duration-200 sidebar-chevron sidebar-text opacity-50"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                         </svg>
@@ -212,7 +158,7 @@
                 </button>
                 <h2 class="text-lg font-semibold text-steel-800 dark:text-gray-100">Cadastrar Usuário</h2>
             </div>
-            
+
             <div class="flex items-center gap-4">
                 <!-- Dark Mode Toggle -->
                 <button id="themeToggle" class="p-2 rounded-lg text-steel-500 dark:text-steel-400 hover:bg-gray-100 dark:hover:bg-steel-700 transition-colors" title="Alternar tema">
@@ -254,7 +200,7 @@
                     <h3 class="text-xl font-bold text-steel-800 dark:text-gray-100 tracking-tight">Novo Usuário</h3>
                     <p class="text-sm text-steel-500 dark:text-steel-400 mt-1">Preencha os dados abaixo para cadastrar um novo membro da equipe.</p>
                 </div>
-                
+
                 <div class="p-8">
                     <form id="cadastroForm" class="space-y-6">
                         <!-- Campos -->
@@ -272,7 +218,7 @@
                                     Uma senha temporária será gerada e enviada automaticamente para este e-mail.
                                 </p>
                             </div>
-                            
+
                             <div class="pt-2" id="adminToggleContainer">
                                 <label class="block text-sm font-medium text-steel-700 dark:text-gray-300 mb-1.5">Perfil de Acesso</label>
                                 <select id="userRole" required class="w-full px-4 py-2 2xl:py-2.5 bg-gray-50 dark:bg-steel-900 border border-gray-200 dark:border-steel-600 rounded-lg text-steel-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-nexo-500/20 focus:border-nexo-500 transition-all shadow-sm">
@@ -305,7 +251,7 @@
 
     <script>
         document.getElementById('footerYear').textContent = new Date().getFullYear();
-        
+
         // Simulação de carregamento do auth (para manter o padrão do template)
         document.addEventListener('DOMContentLoaded', () => {
             document.body.classList.remove('loading-auth');
