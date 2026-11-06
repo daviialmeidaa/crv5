@@ -9,6 +9,9 @@ playwright-report/
 .env.*
 !.env.example
 
+# Planilhas reais e exportacoes VBA temporarias com dados e credenciais locais.
+/vba-temp/
+
 # Logs
 logs
 *.log
