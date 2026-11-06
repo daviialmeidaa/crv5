@@ -6,6 +6,7 @@ __pycache__/
 .pytest_cache/
 tests/
 test-results/
+vba-temp/
 playwright-report/
 playwright.config.cjs
 playwright.staging.config.cjs
