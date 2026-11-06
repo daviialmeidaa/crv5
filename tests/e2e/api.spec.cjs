@@ -37,7 +37,10 @@ test('FastAPI e Hub: criar, ler, alterar e excluir na mesma base PostgreSQL', as
     const payload = {
         empresa: 'NEXOMED',
         pregao: 'QA-VBA',
-        orgao: 'Hospital QA',
+        orgao: 'Hospital QA São José',
+        modalidade: 'Pregão Eletrônico',
+        categoria: 'Descartável',
+        observacoes_status: 'PERDEMOS NO PREÇO',
         data_lances: '05/11/2026',
         hora_lances: '0.5'
     };
@@ -56,11 +59,16 @@ test('FastAPI e Hub: criar, ler, alterar e excluir na mesma base PostgreSQL', as
     const hub = await request.get('/api/agenda_licitacoes/' + id, { headers });
     expect(hub.status()).toBe(200);
     const row = await hub.json();
+    for (const field of ['orgao', 'modalidade', 'categoria', 'observacoes_status'])
+        expect(row[field]).toBe(payload[field]);
     row.pregao = 'QA-VBA-EDITADO';
     row.data_lances = '2026-11-06';
     expect((await request.put('/api/agenda_licitacoes/' + id, { headers, data: row })).status()).toBe(200);
     const list = await request.get('/api/vba/agenda_licitacoes', { headers: vba });
-    expect((await list.json()).find((r) => String(r.CHAVE) === String(id)).pregao).toBe('QA-VBA-EDITADO');
+    const reread = (await list.json()).find((r) => String(r.CHAVE) === String(id));
+    expect(reread.pregao).toBe('QA-VBA-EDITADO');
+    for (const field of ['orgao', 'modalidade', 'categoria', 'observacoes_status'])
+        expect(reread[field]).toBe(payload[field]);
     expect((await request.delete('/api/vba/agenda_licitacoes/' + id, { headers: vba })).status()).toBe(200);
     expect((await request.get('/api/agenda_licitacoes/' + id, { headers })).status()).toBe(404);
     expect(
