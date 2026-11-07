@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from .config import Settings
 from .database import PostgresDatabase
 from .routers.vba import router as vba_router
+from .routers.itens_vba import router as itens_vba_router
 from .security import LegacyAPIError
 
 
@@ -66,6 +67,7 @@ def create_app(settings=None, database=None):
         return {"status": "ok", "service": "nexomed-api", "pid": os.getpid()}
 
     app.include_router(vba_router)
+    app.include_router(itens_vba_router)
 
     original_openapi = app.openapi
 

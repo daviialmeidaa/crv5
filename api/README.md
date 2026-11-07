@@ -122,6 +122,87 @@ PostgreSQL `hub_notifications_refresh`, recebido pelo Node e entregue ao SSE
 existente. Isso consome uma conexão PostgreSQL dedicada adicional no Hub e um
 pool de até 10 conexões na FastAPI.
 
+## Integração VBA — Itens Arrematados
+
+Estes endpoints usam o mesmo proxy, `x-api-key`, `VBA_API_KEY` e formato de erros
+da Agenda. As rotas e o modal agrupado do portal `/api/itens_arrematados` permanecem
+no Node com seu contrato atual. Cada chamada VBA representa **um item**.
+
+| Método | Caminho público | Sucesso |
+| --- | --- | --- |
+| GET | `/api/vba/itens_arrematados/{empresa}` | `200`, array ordenado por CHAVE crescente |
+| GET | `/api/vba/itens_arrematados/{empresa}/{chave}` | `200`, um item |
+| POST | `/api/vba/itens_arrematados/{empresa}` | `201`, item criado com CHAVE gerada no Hub |
+| PUT | `/api/vba/itens_arrematados/{empresa}/{chave}` | `200`, item atualizado |
+| DELETE | `/api/vba/itens_arrematados/{empresa}/{chave}` | `200`, mensagem e CHAVE removida |
+
+`empresa` aceita `BML` ou `NEXOMED`, sem distinguir maiúsculas/minúsculas, e
+seleciona uma tabela fixa: `itens_arrematados."IA_BML"` ou `"IA_NEXOMED"`.
+Uma mesma CHAVE pode existir nas duas tabelas; a empresa faz parte da identidade.
+O campo PARTICIPANTE não redireciona a gravação. BML aceita `BML` e
+`BML HOSPITALAR`, gravando **BML HOSPITALAR**, o valor da opção existente no modal.
+NEXOMED normaliza variações de caixa/espaços para **NEXOMED** e continua aceitando
+MEDICAL LIFE para os contratos legados ML. Na inclusão sem participante, ou quando
+o campo é enviado vazio/nulo, usa o participante da empresa da URL. Valores de
+outra empresa são rejeitados. Essa normalização não muda a tabela nem o código
+concatenado do contrato.
+
+As leituras VBA e os GETs do portal compatibilizam os nomes conhecidos antigos
+(por exemplo, BML) e participantes vazios conforme a tabela, para preencher o
+select atual sem regravar dados durante um GET. Um PUT VBA persiste também a
+normalização conhecida de um participante legado, mesmo se esse campo for
+omitido. Não há atualização em massa nem mudança no frontend. Participantes
+legados desconhecidos são preservados nas leituras.
+
+Os campos em maiúsculas estão documentados integralmente no Swagger e seguem
+as 34 colunas B:AI da planilha. `CODIGO_STATUS` é um alias adicional de
+`COD_STATUS`. CHAVE e created_at não são editáveis. Campos desconhecidos, números
+inválidos, datas inexistentes e inclusões sem dados retornam `400`.
+
+- PUT atualiza **somente os campos enviados**, além da normalização de participante
+  descrita acima. Os outros campos omitidos são preservados;
+  `null` ou string vazia limpa os demais campos enviados. Um PUT com todos os campos vazios
+  é bloqueado. A macro envia o conteúdo das 34 colunas da linha selecionada.
+- CHAVE retorna como string bigint. POST usa a sequência existente, sem
+  `MAX(CHAVE)+1`, chave da planilha ou dependência do Access.
+- DATA_PREGAO e DATA_PROPOSTA são datas reais: recebem DD/MM/AAAA, ISO ou serial
+  numérico Excel; zero/vazio vira nulo. GET retorna ISO ou nulo para datas fora
+  do intervalo VBA 0100–9999. DATA_ADJUDICACAO, DATA_INICIO, DATA_TERMINO,
+  DATA_EMPENHO e VIGENCIA são textos no banco e conservam observações livres.
+- QTDE, COD_CONTRATO, COD_SUPRA e CODIGO_STATUS são inteiros de 32 bits.
+  VALOR_UNITARIO e VALOR_TOTAL aceitam ponto ou vírgula decimal, sem separador de
+  milhar. Zero é preservado. TOTAL_NORMALIZADO continua texto, inclusive
+  `AVALIAÇÃO INDIVIDUAL`. Não há arredondamento adicional no serviço.
+- COD_STATUS e CODIGO_STATUS são gravados juntos; se enviados ambos, precisam
+  coincidir. GET usa CODIGO_STATUS quando preenchido, para refletir alterações
+  feitas pelo modal atual, que grava essa coluna.
+- Sem COD_CONTRATO_CONCAT, um COD_CONTRATO informado gera prefixo BML, BIO
+  (Nexomed) ou ML (Medical Life), conforme as fórmulas atuais.
+
+Inserção/alteração do item e sincronização dos metadados de contrato usam uma
+única transação PostgreSQL. O resumo legado se chama **`UNIQUE_TBL`**, sem prefixo
+IA, e recebe código, edital, tipo e classificação. A tabela financeira `contratos`
+recebe esses metadados com a empresa, preservando os demais campos financeiros.
+Uma trava por código evita duplicar resumos entre inclusões simultâneas desta
+integração; não elimina duplicatas históricas nem exige restrição nova no banco.
+
+DELETE remove somente o item da empresa indicada. Preserva os resumos e contratos
+financeiros, como o fluxo atual do portal. Uma seleção de várias linhas na macro
+gera chamadas independentes: cada item confirmado fica salvo, mesmo se uma chamada
+posterior falhar. A macro informa quantos foram confirmados e não repete chamadas
+automaticamente após falha de rede.
+
+Após confirmação, mudanças efetivas geram notificação ITENS_ARREMATADOS e o
+refresh existente por PostgreSQL/SSE. Falha de notificação não desfaz o item.
+O proxy invalida `cr:titulos` antes de responder às gravações bem-sucedidas, porque
+os metadados de contratos participam de Contas a Receber. GET usa `no-store`.
+Nenhuma migração de produção é necessária; a suíte contém apenas o espelho QA
+da tabela de resumos já existente.
+
+O pacote local para colar no Excel e as instruções de substituição ficam em
+`vba-temp/pronto/` e `vba-temp/LEIA-ME.md` (arquivos locais ignorados pelo Git).
+O pacote preserva os nomes dos botões, os dois formulários e as fórmulas B/S/U/V.
+
 ## Organização e novos endpoints
 
 Toda a aplicação Python e suas dependências ficam em `api/`. O arquivo
@@ -132,6 +213,8 @@ instalação pelo Heroku e pelos comandos existentes. O `.env` continua na raiz.
 - `config.py`, `database.py`, `security.py`: configuração, PostgreSQL e autenticação.
 - `routers/vba.py`: caminhos HTTP existentes.
 - `services/agenda.py`: lógica migrada da agenda.
+- `routers/itens_vba.py`, `services/itens_arrematados.py`: CRUD VBA por empresa,
+  sincronização transacional com resumos e metadados de contratos.
 - `compat.py`: conversões/serialização que reproduzem o JavaScript original.
 - `schemas.py`: documentação dos corpos de requisição no OpenAPI.
 
