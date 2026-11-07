@@ -53,6 +53,7 @@ Os relatórios ficam em `test-results/e2e/`, ignorado pelo Git:
 | Usuários e perfis | Criar, editar, excluir; hash de senha, boas-vindas e permissões persistidas |
 | Agenda | CRUD pelas telas das duas empresas; leitura cruzada Hub/FastAPI e horas do Excel |
 | Itens arrematados | CRUD nas duas empresas, UF/município, adicionar produto e integração com contratos |
+| VBA Itens Arrematados | CRUD por empresa, UTF-8, bigint, zeros/decimais, status, PUT parcial, cache, concorrência do resumo e rollback de inclusão/alteração |
 | Clientes | Contatos, edição, exclusão lógica e histórico de cobrança preservado |
 | Custos | Salvar pela célula, calcular total e reler sem cache antigo |
 | OPME | Contratos ativos/inativos, unidades, saldos, cirurgia com vários produtos, valor zero, observações e exclusão |

@@ -1,5 +1,6 @@
 from collections.abc import Sequence
-from typing import Any, Protocol
+from contextlib import contextmanager
+from typing import Any, ContextManager, Protocol
 
 from psycopg import InterfaceError, OperationalError
 from psycopg.rows import dict_row
@@ -14,6 +15,7 @@ NOTIFICATION_CHANNEL = "hub_notifications_refresh"
 class Database(Protocol):
     def query(self, sql: str, params: Sequence[Any] = ()) -> list[dict]: ...
     def notify_refresh(self) -> None: ...
+    def transaction(self) -> ContextManager["TransactionDatabase"]: ...
 
 
 class PostgresDatabase:
@@ -44,15 +46,34 @@ class PostgresDatabase:
     def query(self, sql, params=()):
         # Autocommit por query preserva os commits independentes do pgPool.query.
         with self.pool.connection() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(sql, tuple(pg_value(value) for value in params))
-                if cursor.description is None:
-                    return []
-                columns = {column.name: column.type_code for column in cursor.description}
-                return [
-                    {key: serialize_pg_value(value, columns[key]) for key, value in row.items()}
-                    for row in cursor.fetchall()
-                ]
+            return _query(conn, sql, params)
+
+    @contextmanager
+    def transaction(self):
+        """Mantem todas as consultas do lote na mesma conexao e transacao."""
+        with self.pool.connection() as conn:
+            with conn.transaction():
+                yield TransactionDatabase(conn)
 
     def notify_refresh(self):
         self.query("SELECT pg_notify(%s, %s)", (NOTIFICATION_CHANNEL, "refresh"))
+
+
+class TransactionDatabase:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def query(self, sql, params=()):
+        return _query(self.conn, sql, params)
+
+
+def _query(conn, sql, params):
+    with conn.cursor() as cursor:
+        cursor.execute(sql, tuple(pg_value(value) for value in params))
+        if cursor.description is None:
+            return []
+        columns = {column.name: column.type_code for column in cursor.description}
+        return [
+            {key: serialize_pg_value(value, columns[key]) for key, value in row.items()}
+            for row in cursor.fetchall()
+        ]

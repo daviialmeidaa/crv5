@@ -2,7 +2,7 @@ const http = require('http');
 const https = require('https');
 
 // Não repetir chamadas: isso pode duplicar inclusões da planilha.
-function createFastapiProxy({ baseUrl = process.env.FASTAPI_URL || ('http://127.0.0.1:' + (process.env.FASTAPI_PORT || 8000)), timeout = 30000 } = {}) {
+function createFastapiProxy({ baseUrl = process.env.FASTAPI_URL || ('http://127.0.0.1:' + (process.env.FASTAPI_PORT || 8000)), timeout = 30000, onSuccess } = {}) {
     const base = new URL(baseUrl);
     if (!['http:', 'https:'].includes(base.protocol)) throw new Error('FASTAPI_URL deve usar HTTP ou HTTPS');
     const transport = base.protocol === 'https:' ? https : http;
@@ -17,12 +17,18 @@ function createFastapiProxy({ baseUrl = process.env.FASTAPI_URL || ('http://127.
             headers['content-type'] = 'application/json';
             headers['content-length'] = body.length;
         } else delete headers['content-length'];
-        const upstream = transport.request(target, { method: req.method, headers, timeout }, response => {
+        const upstream = transport.request(target, { method: req.method, headers, timeout }, async response => {
+            response.pause();
+            response.on('error', () => res.destroy());
+            if (onSuccess && response.statusCode >= 200 && response.statusCode < 300) {
+                try { await onSuccess(req); }
+                catch (err) { console.error('Falha ao invalidar cache apos API:', err.message); }
+            }
+            if (res.destroyed) { response.destroy(); return; }
             res.statusCode = response.statusCode;
             for (const [name, value] of Object.entries(response.headers)) {
                 if (!['connection', 'transfer-encoding', 'content-length'].includes(name) && value !== undefined) res.setHeader(name, value);
             }
-            response.on('error', () => res.destroy());
             response.pipe(res);
         });
         upstream.on('timeout', () => upstream.destroy(new Error('FastAPI timeout')));

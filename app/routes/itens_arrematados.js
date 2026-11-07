@@ -10,6 +10,19 @@ const eventBus = require('../services/eventBus');
 router.use(authMiddleware);
 router.use(requirePermission('canViewLC'));
 
+// O select existente usa BML HOSPITALAR; planilhas legadas enviavam BML.
+// Compatibiliza a leitura sem regravar registros nem mudar o modal.
+function itemForPortal(row, isBml) {
+    const participant = String(row.PARTICIPANTE ?? '').trim().toUpperCase();
+    if (isBml && ['', 'BML', 'BML HOSPITALAR'].includes(participant)) {
+        return { ...row, PARTICIPANTE: 'BML HOSPITALAR' };
+    }
+    if (!isBml && ['', 'NEXOMED'].includes(participant)) {
+        return { ...row, PARTICIPANTE: 'NEXOMED' };
+    }
+    return row;
+}
+
 // ==========================================
 // GET /api/itens_arrematados
 // Lista todos os itens (IA_BML + IA_NEXOMED)
@@ -64,7 +77,7 @@ router.get('/', async (req, res) => {
             ORDER BY "CHAVE" DESC
         `);
         
-        res.json(result.rows);
+        res.json(result.rows.map(row => itemForPortal(row, participante === 'BML')));
     } catch (error) {
         console.error('Erro na API Itens Arrematados (GET /):', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
@@ -94,7 +107,7 @@ router.get('/:chave', async (req, res) => {
             return res.status(404).json({ error: 'Item não encontrado' });
         }
         
-        res.json(result.rows[0]);
+        res.json(itemForPortal(result.rows[0], participante === 'BML'));
     } catch (error) {
         console.error('Erro na API Itens Arrematados (GET /:chave):', error);
         res.status(500).json({ error: 'Erro interno do servidor' });
